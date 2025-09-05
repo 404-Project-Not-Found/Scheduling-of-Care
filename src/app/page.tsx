@@ -1,3 +1,4 @@
+// src/app/page.tsx
 import Image from "next/image";
 import Link from "next/link";
 
@@ -9,19 +10,19 @@ export default function Home() {
         {/* Left section */}
         <section className="bg-[#F3C8A5] relative flex flex-col h-full">
           {/* Logo pinned top-left */}
-            <div className="absolute top-8 left-8 flex items-center gap-4">
+          <div className="absolute top-8 left-8 flex items-center gap-4">
             <Image
-                src="/logo.png"   // logo image
-                alt="App Logo"
-                width={64}
-                height={64}
-                className="rounded-md"
-                priority
+              src="/logo.png"   
+              alt="App Logo"
+              width={64}
+              height={64}
+              className="rounded-md"
+              priority
             />
             <p className="text-4xl font-semibold tracking-tight text-[rgba(214,92,75,1)]">
-                Scheduling of Care
+              Scheduling of Care
             </p>
-            </div>
+          </div>
 
           {/* Welcome block */}
           <div className="flex flex-col justify-center items-start h-full pl-28 pr-10">
@@ -35,36 +36,79 @@ export default function Home() {
           </div>
         </section>
 
-        {/* right login section */}
+        {/* Right: login form */}
         <section className="bg-[#F7ECD9] p-12 flex items-center justify-center">
-          <div className="w-full max-w-md text-center">
-            <h2 className="text-6xl font-extrabold tracking-tight mb-8">
-              Login
+          <div className="w-full max-w-md">
+            <h2 className="text-5xl font-extrabold tracking-tight mb-10 text-center">
+              User Login
             </h2>
-            <p className="text-2xl mb-10">Select your role</p>
 
-            <div className="space-y-6">
-              <Link
-                href="/login/carer"
-                className="block w-full rounded-full px-10 py-5 text-2xl font-semibold bg-[#4A0A0A] text-white hover:opacity-95 transition text-center"
+            <form className="space-y-6">
+              {/* Email */}
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block text-xl font-medium mb-2 text-left"
+                >
+                  Email
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  className="w-full rounded-md border border-[#4A0A0A] bg-white shadow-sm px-3 py-3 text-lg outline-none focus:ring-2 focus:ring-[#4A0A0A]/40"
+                />
+              </div>
+
+              {/* Password */}
+              <div>
+                <label
+                  htmlFor="password"
+                  className="block text-xl font-medium mb-2 text-left"
+                >
+                  Password
+                </label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  className="w-full rounded-md border border-[#4A0A0A] bg-white shadow-sm px-3 py-3 text-lg outline-none focus:ring-2 focus:ring-[#4A0A0A]/40"
+                />
+              </div>
+
+              {/* Stay signed in */}
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="staySignedIn"
+                  className="h-5 w-5 rounded border border-black/40 accent-[#4A0A0A]"
+                />
+                <label htmlFor="staySignedIn" className="text-lg">
+                  Stay signed in for 30 days
+                </label>
+              </div>
+
+              {/* Login button */}
+              <button
+                type="submit"
+                className="w-full rounded-full px-8 py-4 text-xl font-semibold bg-[#4A0A0A] text-white hover:opacity-95 transition"
               >
-                Carer
-              </Link>
+                Login
+              </button>
+            </form>
+
+            {/* Links */}
+            <div className="mt-6 text-center">
               <Link
-                href="/login/management"
-                className="block w-full rounded-full px-10 py-5 text-2xl font-semibold bg-[#4A0A0A] text-white hover:opacity-95 transition text-center"
+                href="/forgot-password"
+                className="text-lg underline underline-offset-4 hover:opacity-80"
               >
-                Management
-              </Link>
-              <Link
-                href="/login/family"
-                className="block w-full rounded-full px-10 py-5 text-2xl font-semibold bg-[#4A0A0A] text-white hover:opacity-95 transition text-center"
-              >
-                Family/Power of Attorney
+                Forgot Password?
               </Link>
             </div>
-
-            <p className="mt-12 text-xl">
+            <p className="mt-4 text-lg text-center">
               Don’t have an account?{" "}
               <Link
                 href="/signup"
@@ -89,4 +133,3 @@ export default function Home() {
     </div>
   );
 }
-
