@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
-export default function CarerSignupPage() {
+export default function ManagementSignupPage() {
   const [showPw, setShowPw] = useState(false);
 
   return (
@@ -16,7 +16,7 @@ export default function CarerSignupPage() {
 
       {/* Title - make sure it's centered */}
       <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-black mb-12 text-center w-full">
-        Carer Sign Up
+        Management Sign Up
       </h1>
 
       {/* Vertical form layout */}
@@ -67,7 +67,6 @@ export default function CarerSignupPage() {
                 </button>
             </div>
         </div>
-
 
         {/* Confirm password */}
         <div className="flex flex-col gap-2">

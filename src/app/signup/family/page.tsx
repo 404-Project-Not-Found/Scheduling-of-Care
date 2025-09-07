@@ -119,8 +119,8 @@ export default function FamilySignupPage() {
         {/* Back to role selection link */}
         <p className="text-center text-lg mt-4">
           Not your role? Back to{" "}
-          <Link href="/signup" className="underline underline-offset-4 hover:opacity-80">
-            role selection
+          <Link href="/signup" className="underline underline-offset-4 hover:opacity-80 font-bold">
+            Role Selection
           </Link>
         </p>
       </form>
