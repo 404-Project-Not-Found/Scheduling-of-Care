@@ -11,8 +11,14 @@ export default function ManagementSignupPage() {
     <div className="min-h-screen w-full bg-[#F3E9D9] flex flex-col items-center justify-center px-4">
       {/* Top-left logo */}
       <div className="absolute left-8 top-8">
-        <Image src="/logo.png" alt="Scheduling of Care" width={210} height={64} />
-      </div>
+              <Image
+                  src="/logo-name.png"   
+                  alt="Scheduling of Care"
+                  width={210}          
+                  height={64}
+                  priority
+              />
+       </div>
 
       {/* Title - make sure it's centered */}
       <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-black mb-12 text-center w-full">
