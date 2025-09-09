@@ -27,23 +27,23 @@ export default function FamilySignupPage() {
 
       {/* Vertical form layout */}
       <form className="w-full max-w-lg space-y-8 text-black">
-        {/* Client Name */}
+        {/* Full Name */}
         <div className="flex flex-col gap-2">
-          <label
-            htmlFor="clientName"
-            className="text-[20px] font-medium flex items-center gap-2"
-          >
-            <span>Enter Client Name</span>
-            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#E37E72] text-white text-sm font-bold">
-              i
-            </span>
-          </label>
-          <input
-            id="clientName"
-            type="text"
-            className="w-full rounded-md border border-[#6E1B1B] bg-white text-black px-4 py-2.5 text-lg outline-none focus:ring-2 focus:ring-[#4A0A0A]/30"
-            required
-          />
+            <label
+                htmlFor="userName"
+                className="text-[20px] font-medium flex items-center gap-2"
+            >
+                <span>Enter Full Name</span>
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#E37E72] text-white text-sm font-bold">
+                i
+                </span>
+            </label>
+            <input
+                id="userName"
+                type="text"
+                className="w-full rounded-md border border-[#6E1B1B] bg-white text-black px-4 py-2.5 text-lg outline-none focus:ring-2 focus:ring-[#4A0A0A]/30"
+                required
+            />
         </div>
 
         {/* Email */}

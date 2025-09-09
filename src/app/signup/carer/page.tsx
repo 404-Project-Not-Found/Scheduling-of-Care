@@ -12,11 +12,11 @@ export default function CarerSignupPage() {
       {/* Top-left logo */}
       <div className="absolute left-8 top-8">
         <Image
-            src="/logo-name.png"   
-            alt="Scheduling of Care"
-            width={210}          
-            height={64}
-            priority
+          src="/logo-name.png"
+          alt="Scheduling of Care"
+          width={210}
+          height={64}
+          priority
         />
       </div>
 
@@ -27,6 +27,26 @@ export default function CarerSignupPage() {
 
       {/* Vertical form layout */}
       <form className="w-full max-w-lg space-y-8 text-black">
+
+        {/* User Name */}
+        <div className="flex flex-col gap-2">
+            <label
+                htmlFor="userName"
+                className="text-[20px] font-medium flex items-center gap-2"
+            >
+                <span>Enter Full Name</span>
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#E37E72] text-white text-sm font-bold">
+                i
+                </span>
+            </label>
+            <input
+                id="userName"
+                type="text"
+                className="w-full rounded-md border border-[#6E1B1B] bg-white text-black px-4 py-2.5 text-lg outline-none focus:ring-2 focus:ring-[#4A0A0A]/30"
+                required
+            />
+        </div>
+
         {/* Email */}
         <div className="flex flex-col gap-2">
           <label
@@ -48,32 +68,31 @@ export default function CarerSignupPage() {
 
         {/* Password */}
         <div className="flex flex-col gap-2 relative">
-            <label
-                htmlFor="password"
-                className="text-[20px] font-medium flex items-center gap-2"
+          <label
+            htmlFor="password"
+            className="text-[20px] font-medium flex items-center gap-2"
+          >
+            <span>Create Password</span>
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#E37E72] text-white text-sm font-bold">
+              i
+            </span>
+          </label>
+          <div className="relative w-full">
+            <input
+              id="password"
+              type={showPw ? "text" : "password"}
+              className="w-full rounded-md border border-[#6E1B1B] bg-white text-black px-4 py-2.5 text-lg outline-none focus:ring-2 focus:ring-[#4A0A0A]/30"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPw((v) => !v)}
+              className="absolute top-1/2 -translate-y-1/2 right-[-8rem] text-[16px] underline underline-offset-4 text-[#4A0A0A] hover:opacity-80 whitespace-nowrap"
             >
-                <span>Create Password</span>
-                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#E37E72] text-white text-sm font-bold">
-                i
-                </span>
-            </label>
-            <div className="relative w-full">
-                <input
-                id="password"
-                type={showPw ? "text" : "password"}
-                className="w-full rounded-md border border-[#6E1B1B] bg-white text-black px-4 py-2.5 text-lg outline-none focus:ring-2 focus:ring-[#4A0A0A]/30"
-                required
-                />
-                <button
-                type="button"
-                onClick={() => setShowPw((v) => !v)}
-                className="absolute top-1/2 -translate-y-1/2 right-[-8rem] text-[16px] underline underline-offset-4 text-[#4A0A0A] hover:opacity-80 whitespace-nowrap"
-                >
-                {showPw ? "hide password" : "show password"}
-                </button>
-            </div>
+              {showPw ? "hide password" : "show password"}
+            </button>
+          </div>
         </div>
-
 
         {/* Confirm password */}
         <div className="flex flex-col gap-2">
@@ -107,7 +126,10 @@ export default function CarerSignupPage() {
         {/* Back to role selection link */}
         <p className="text-center text-lg mt-4">
           Not your role? Back to{" "}
-          <Link href="/signup" className="underline underline-offset-4 hover:opacity-80 font-bold">
+          <Link
+            href="/signup"
+            className="underline underline-offset-4 hover:opacity-80 font-bold"
+          >
             Role Selection
           </Link>
         </p>
