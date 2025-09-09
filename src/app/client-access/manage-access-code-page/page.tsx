@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
+import Image from 'next/image'; // ✅ use Next.js Image instead
 
 type OrgStatus = 'active' | 'pending' | 'revoked';
 interface Organization {
@@ -42,7 +42,14 @@ export default function ManageAccessPage() {
 
       {/*logo top-left */}
       <div className="absolute top-8 left-8 w-64 h-32">
-        <img src="/logo-name.png" alt="Logo" className="w-full h-full object-contain" />
+        <Image
+          src="/logo-name.png"
+          alt="Logo"
+          width={256}
+          height={128}
+          className="object-contain"
+          priority
+        />
       </div>
 
       <div className="w-full max-w-6xl bg-[#F7ECD9] rounded-2xl shadow-lg overflow-hidden mt-16">
@@ -74,7 +81,7 @@ export default function ManageAccessPage() {
         {/*save and Continue button in the center */}
         <div className="flex justify-center p-8">
           <button className="bg-[#4A0A0A] text-white font-semibold px-8 py-4 rounded-md hover:bg-[#3a0808] transition-colors">
-            Save & Continue
+            Save &amp; Continue
           </button>
         </div>
       </div>
@@ -94,7 +101,7 @@ export default function ManageAccessPage() {
             <ul className="list-disc pl-5 space-y-1">
               <li>View all organisations and their access status.</li>
               <li>Approve pending organisations or revoke access as needed.</li>
-              <li>Click "Save & Continue" to confirm changes.</li>
+              <li>Click &quot;Save &amp; Continue&quot; to confirm changes.</li>
             </ul>
           </div>
         </div>
