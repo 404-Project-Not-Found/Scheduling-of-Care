@@ -9,31 +9,26 @@ export default function Home() {
         
         {/* Left section */}
         <section className="bg-[#F3C8A5] relative flex flex-col h-full">
-          {/* Logo pinned top-left */}
-          <div className="absolute top-8 left-8 flex items-center gap-4">
-            <Image
-              src="/logo.png"   
-              alt="App Logo"
-              width={64}
-              height={64}
-              className="rounded-md"
-              priority
-            />
-            <p className="text-4xl font-semibold tracking-tight text-[rgba(214,92,75,1)]">
-              Scheduling of Care
-            </p>
-          </div>
+            <div className="flex flex-col items-start h-full pl-10 lg:pl-28 pr-8 lg:pr-10 justify-start mt-40">
+                {/* big logo with name */}
+                <Image
+                src="/logo-name.png"
+                alt="App Logo"
+                width={600}
+                height={150}
+                priority
+                className="mb-10 -ml-16 lg:-ml-12"
+                />
 
-          {/* Welcome block */}
-          <div className="flex flex-col justify-center items-start h-full pl-28 pr-10">
-            <h1 className="text-7xl font-extrabold tracking-tight mb-8">
-              Welcome!
-            </h1>
-            <p className="max-w-[38rem] text-2xl leading-9">
-              Our platform helps streamline care management by connecting parents/power of attorney, carers, clients, and management in one place. 
-              Easily schedule, manage, and track care activities with clarity and confidence.
-            </p>
-          </div>
+                <h1 className="text-7xl font-extrabold tracking-tight mb-8">
+                Welcome!
+                </h1>
+                <p className="max-w-[42rem] text-2xl leading-9">
+                Our platform helps streamline care management by connecting parents/power of attorney,
+                carers, clients, and management in one place. Easily schedule, manage, and track care
+                activities with clarity and confidence.
+                </p>
+            </div>
         </section>
 
         {/* Right: login form */}
