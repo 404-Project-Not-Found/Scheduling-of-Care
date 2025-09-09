@@ -23,7 +23,7 @@ export default function ClientAccessPage() {
     const newCode = Array.from({ length: 8 }, () => charset[Math.floor(Math.random() * charset.length)]).join('');
     setCode(newCode);
     setCodeRegistered(false);
-    setMessage({ type: 'success', text: 'Access code generated &mdash; copy it and email to management.' });
+    setMessage({ type: 'success', text: 'Access code generated. Copy it and email to management.' });
     setSubmissionMessage(null);
   }
 
@@ -34,7 +34,7 @@ export default function ClientAccessPage() {
       await navigator.clipboard.writeText(code);
       setMessage({ type: 'success', text: 'Copied to clipboard!' });
     } catch {
-      setMessage({ type: 'error', text: 'Copy failed &mdash; please copy manually.' });
+      setMessage({ type: 'error', text: 'Copy failed. Please copy manually.' });
     }
   }
 
@@ -45,7 +45,7 @@ export default function ClientAccessPage() {
       return;
     }
     if (code && input.trim() === code) {
-      setSubmissionMessage({ type: 'success', text: 'Code accepted &mdash; client registered.' });
+      setSubmissionMessage({ type: 'success', text: 'Code accepted. Client registered.' });
       setCodeRegistered(true);
     } else {
       setSubmissionMessage({ type: 'error', text: 'Invalid code.' });
