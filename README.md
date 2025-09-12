@@ -4,6 +4,8 @@ Project for COMP30022 IT Project 2025
 Link to project: Add web app link here 
 
 
+
+# Template from the Next.js framework
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
