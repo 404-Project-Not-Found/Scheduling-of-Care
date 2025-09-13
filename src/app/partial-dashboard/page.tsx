@@ -49,7 +49,8 @@ export default function PartialDashboardPage() {
         <div className="bg-[#F9C9B1] px-4 py-3 flex items-start gap-2 border-b border-[#e2b197]">
           <p className="text-sm text-[#4A0A0A]">
             Your dashboard currently has partial functionality until the
-            management completes registration for your client{' '}
+            management completes registration for your client. You will receive
+            an email once it&apos;s done
           </p>
         </div>
 

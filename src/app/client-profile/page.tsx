@@ -64,7 +64,8 @@ export default function ClientProfilePage() {
               <span className="font-semibold">Name:</span> Florence Edwards
             </p>
             <p className="text-lg">
-              <span className="font-semibold">Date of Birth:</span> 16<sup>th</sup> September 1943
+              <span className="font-semibold">Date of Birth:</span> 16
+              <sup>th</sup> September 1943
             </p>
 
             <p className="text-lg font-semibold mt-4">Client Notes:</p>
@@ -111,19 +112,33 @@ export default function ClientProfilePage() {
         <div className="relative">
           <div
             className="w-12 h-12 bg-[#ff9900] text-white rounded-full flex items-center justify-center font-bold text-xl cursor-pointer"
-            onMouseEnter={(e) => e.currentTarget.nextElementSibling?.classList.remove('hidden')}
-            onMouseLeave={(e) => e.currentTarget.nextElementSibling?.classList.add('hidden')}
+            onMouseEnter={(e) =>
+              e.currentTarget.nextElementSibling?.classList.remove('hidden')
+            }
+            onMouseLeave={(e) =>
+              e.currentTarget.nextElementSibling?.classList.add('hidden')
+            }
           >
             ?
           </div>
           <div className="hidden absolute bottom-16 right-0 w-80 bg-white border border-gray-300 p-4 rounded shadow-lg text-sm z-50 text-black">
             <h4 className="font-semibold mb-2">How to use this page</h4>
             <ul className="list-disc pl-5 space-y-1">
-              <li>Write client notes in the text area under "Client Notes".</li>
-              <li>Click "Save Notes" to add the note permanently under Client Notes.</li>
+              <li>
+                Write client notes in the text area under &quot;Client Notes&quot;.
+              </li>
+              <li>
+                Click &quot;Save Notes&quot; to add the note permanently under
+                Client Notes.
+              </li>
               <li>You can add multiple notes; they will appear in order.</li>
-              <li>Click ✖ next to a note to delete it permanently.</li>
-              <li>Use the "Back to Dashboard" button to return to the partial dashboard.</li>
+              <li>
+                Click ✖ next to a note to delete it permanently.
+              </li>
+              <li>
+                Use the &quot;Back to Dashboard&quot; button to return to the
+                partial dashboard.
+              </li>
             </ul>
           </div>
         </div>
