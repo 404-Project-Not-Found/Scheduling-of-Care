@@ -1,16 +1,29 @@
+// src/app/task/edit/page.tsx
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+
+type Unit = "day" | "week" | "month" | "year";
 
 type Task = {
   label: string;
   slug: string;
-  frequency: string;
-  lastDone: string;
   status: string;
   category: string;
   deleted?: boolean;
+
+  // legacy string fields
+  frequency?: string;
+  lastDone?: string;
+
+  // structured fields
+  frequencyDays?: number;      // normalized to days
+  frequencyCount?: number;     // user-entered number
+  frequencyUnit?: Unit;        // user-chosen unit
+  dateFrom?: string;           // YYYY-MM-DD
+  dateTo?: string;             // YYYY-MM-DD
 };
 
 function humanize(slug: string) {
@@ -30,27 +43,75 @@ function saveTasks(tasks: Task[]) {
   localStorage.setItem("tasks", JSON.stringify(tasks));
 }
 
+// ---- frequency helpers ----
+const unitToDays: Record<Unit, number> = {
+  day: 1,
+  week: 7,
+  month: 30,  // simple approximation
+  year: 365,  // simple approximation
+};
+
+function toDays(count: number, unit: Unit) {
+  return Math.max(1, Math.floor(count || 1)) * unitToDays[unit];
+}
+
+function parseLegacyFrequency(freq?: string): { count: number; unit: Unit } | null {
+  if (!freq) return null;
+  const m = freq.trim().toLowerCase().match(/^(\d+)\s*(day|days|week|weeks|month|months|year|years)$/);
+  if (!m) return null;
+  const n = Math.max(1, parseInt(m[1], 10));
+  const u = m[2].replace(/s$/, "") as Unit;
+  return { count: n, unit: u };
+}
+
 export default function EditTaskPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const taskSlug = searchParams.get("task") ?? "";
 
-  const [frequency, setFrequency] = useState("every 3 months");
-  const [lastDone, setLastDone] = useState("23rd April 2025");
-  const [status, setStatus] = useState("Completed");
+  // structured state
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [frequencyCount, setFrequencyCount] = useState<number>(10);
+  const [frequencyUnit, setFrequencyUnit] = useState<Unit>("day");
+
+  // other fields
+  const [status, setStatus] = useState("in progress");
   const [category, setCategory] = useState("Appointments");
   const [label, setLabel] = useState("Replace Toothbrush Head");
 
-  // Load existing values from storage on mount
   useEffect(() => {
     const tasks = loadTasks();
     const t = tasks.find((x) => x.slug === taskSlug);
-    if (t) {
-      setLabel(t.label);
-      setFrequency(t.frequency);
-      setLastDone(t.lastDone);
-      setStatus(t.status);
-      setCategory(t.category);
+    if (!t) return;
+
+    setLabel(t.label || label);
+    setStatus(t.status || status);
+    setCategory(t.category || category);
+
+    // prefer structured frequency
+    if (typeof t.frequencyCount === "number" && t.frequencyUnit) {
+      setFrequencyCount(Math.max(1, t.frequencyCount));
+      setFrequencyUnit(t.frequencyUnit);
+    } else {
+      // fallback to legacy string like "90 days"
+      const parsed = parseLegacyFrequency(t.frequency);
+      if (parsed) {
+        setFrequencyCount(parsed.count);
+        setFrequencyUnit(parsed.unit);
+      } else if (t.frequencyDays) {
+        // crude back-conversion if only days were stored
+        setFrequencyCount(Math.max(1, t.frequencyDays));
+        setFrequencyUnit("day");
+      }
+    }
+
+    if (t.dateFrom) setDateFrom(t.dateFrom);
+    if (t.dateTo) setDateTo(t.dateTo);
+    if (!t.dateFrom && !t.dateTo && t.lastDone?.includes(" to ")) {
+      const [from, to] = t.lastDone.split(" to ").map((s) => s.trim());
+      if (from) setDateFrom(from);
+      if (to) setDateTo(to);
     }
   }, [taskSlug]);
 
@@ -63,14 +124,25 @@ export default function EditTaskPage() {
     const tasks = loadTasks();
     const idx = tasks.findIndex((x) => x.slug === taskSlug);
     if (idx >= 0) {
+      const days = toDays(frequencyCount, frequencyUnit);
+      const legacyStr = `${frequencyCount} ${frequencyUnit}${frequencyCount > 1 ? "s" : ""}`;
+
       tasks[idx] = {
         ...tasks[idx],
-        frequency,
-        lastDone,
         status,
         category,
+        // structured fields
+        frequencyCount: Math.max(1, frequencyCount),
+        frequencyUnit,
+        frequencyDays: days,
+        dateFrom,
+        dateTo,
+        // legacy fields for compatibility
+        frequency: legacyStr,
+        lastDone: dateFrom && dateTo ? `${dateFrom} to ${dateTo}` : tasks[idx].lastDone || "",
         deleted: false,
       };
+
       saveTasks(tasks);
     }
     router.push("/task/search");
@@ -88,8 +160,17 @@ export default function EditTaskPage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-[#F5CBA7] p-6">
+      {/* screen top-left logo (outside the card) */}
+      <Image
+        src="/logo-name.png"
+        alt="Scheduling of Care"
+        width={220}
+        height={55}
+        priority
+        className="fixed top-6 left-8"
+      />
+
       <div className="w-full max-w-xl rounded-[22px] border border-[#6b3f2a] bg-[#F7ECD9] p-8 shadow relative">
-        {/* Top bar */}
         <div className="-mx-8 -mt-8 px-8 py-4 bg-[#3A0000] text-white rounded-t-[22px] border-b border-black/10 text-center">
           <h1 className="text-3xl font-extrabold">Edit task</h1>
         </div>
@@ -97,29 +178,55 @@ export default function EditTaskPage() {
         <h2 className="mt-4 text-2xl font-bold text-[#1c130f]">{displayTitle}</h2>
 
         <div className="mt-8 space-y-6">
-          <Field label="Frequency:">
-            <input
-              value={frequency}
-              onChange={(e) => setFrequency(e.target.value)}
-              className="w-full rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black placeholder:text-black placeholder:opacity-100 caret-black"
-              placeholder="e.g., every 3 months"
-            />
+          {/* Date range */}
+          <Field label="Date range:">
+            <div className="flex items-center gap-3">
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="w-40 rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black"
+              />
+              <span className="text-[#1c130f] text-lg">to</span>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                min={dateFrom || undefined}
+                className="w-40 rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black"
+              />
+            </div>
           </Field>
 
-          <Field label="Last done:">
-            <input
-              value={lastDone}
-              onChange={(e) => setLastDone(e.target.value)}
-              className="w-full rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black placeholder:text-black placeholder:opacity-100 caret-black"
-              placeholder="e.g., 23 April 2025"
-            />
+          {/* Frequency count + unit */}
+          <Field label="Repeat every:">
+            <div className="flex items-center gap-3">
+              <input
+                type="number"
+                min={1}
+                step={1}
+                value={Number.isFinite(frequencyCount) ? frequencyCount : 1}
+                onChange={(e) => setFrequencyCount(Math.max(1, parseInt(e.target.value || "1", 10)))}
+                className="w-28 rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black"
+              />
+              <select
+                value={frequencyUnit}
+                onChange={(e) => setFrequencyUnit(e.target.value as Unit)}
+                className="w-40 rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black"
+              >
+                <option value="day">day(s)</option>
+                <option value="week">week(s)</option>
+                <option value="month">month(s)</option>
+                <option value="year">year(s)</option>
+              </select>
+            </div>
           </Field>
 
           <Field label="Status:">
             <input
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="w-full rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black placeholder:text-black placeholder:opacity-100 caret-black"
+              className="w-full rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black"
               placeholder="e.g., Completed"
             />
           </Field>
@@ -128,20 +235,18 @@ export default function EditTaskPage() {
             <input
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black placeholder:text-black placeholder:opacity-100 caret-black"
+              className="w-full rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black"
               placeholder="e.g., Appointments"
             />
           </Field>
         </div>
 
-        {/* Bottom banner */}
         <div className="mt-8 -mx-8 px-8 py-5 bg-rose-300/25 text-black border border-rose-300/50">
           Editing the frequency and dates will change the schedule of this care
           item for the rest of the year. Be aware of any budget implications
           caused by this change. Make this change?
         </div>
 
-        {/* Footer actions */}
         <div className="mt-8 flex items-center justify-between">
           <button
             onClick={onRemove}
@@ -178,3 +283,4 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     </div>
   );
 }
+

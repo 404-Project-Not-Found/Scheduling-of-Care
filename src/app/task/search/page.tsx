@@ -1,5 +1,7 @@
+// src/app/task/search/page.tsx
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -59,9 +61,7 @@ export default function SearchTaskPage() {
     const hits =
       q.length === 0
         ? []
-        : allTasks.filter(
-            (t) => !t.deleted && t.label.toLowerCase().includes(q)
-          );
+        : allTasks.filter((t) => !t.deleted && t.label.toLowerCase().includes(q));
     setResults(hits);
     setHasSearched(true);
   };
@@ -76,6 +76,16 @@ export default function SearchTaskPage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-[#F5CBA7] p-8">
+      {/* SCREEN top-left logo (outside the card) */}
+      <Image
+        src="/logo-name.png"
+        alt="Scheduling of Care"
+        width={220}
+        height={55}
+        priority
+        className="fixed top-6 left-8"
+      />
+
       <div className="w-full max-w-4xl rounded-[22px] border border-[#6b3f2a] bg-[#F7ECD9] p-10 shadow">
         <h1 className="text-3xl font-extrabold text-[#1c130f] mb-8">Edit task</h1>
 
@@ -85,7 +95,13 @@ export default function SearchTaskPage() {
             {/* input row */}
             <div className="px-5 py-4">
               <div className="flex items-center gap-3">
-                <svg viewBox="0 0 24 24" className="w-7 h-7 text-gray-600" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg
+                  viewBox="0 0 24 24"
+                  className="w-7 h-7 text-gray-600"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
                   <circle cx="11" cy="11" r="7" />
                   <line x1="21" y1="21" x2="16.65" y2="16.65" />
                 </svg>
@@ -102,8 +118,8 @@ export default function SearchTaskPage() {
             <div className="h-px w-full bg-[#7c5040]/40" />
 
             {/* results */}
-            {hasSearched && (
-              results.length > 0 ? (
+            {hasSearched &&
+              (results.length > 0 ? (
                 <ul role="listbox" className="py-2">
                   {results.map((r) => (
                     <li key={r.slug}>
@@ -123,8 +139,7 @@ export default function SearchTaskPage() {
                 query.trim() !== "" && (
                   <div className="py-3 px-5 text-gray-500">No results found.</div>
                 )
-              )
-            )}
+              ))}
           </div>
 
           {/* Search button aligned with input height */}
