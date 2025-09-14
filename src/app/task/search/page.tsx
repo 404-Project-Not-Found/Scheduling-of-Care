@@ -87,7 +87,7 @@ export default function SearchTaskPage() {
       />
 
       <div className="w-full max-w-4xl rounded-[22px] border border-[#6b3f2a] bg-[#F7ECD9] p-10 shadow">
-        <h1 className="text-3xl font-extrabold text-[#1c130f] mb-8">Edit task</h1>
+        <h1 className="text-3xl font-extrabold text-[#1c130f] mb-8">Search tasks</h1>
 
         <div className="flex items-start gap-4">
           {/* ONE continuous box: input + results */}

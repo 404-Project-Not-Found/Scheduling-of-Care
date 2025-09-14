@@ -242,9 +242,9 @@ export default function EditTaskPage() {
         </div>
 
         <div className="mt-8 -mx-8 px-8 py-5 bg-rose-300/25 text-black border border-rose-300/50">
-          Editing the frequency and dates will change the schedule of this care
-          item for the rest of the year. Be aware of any budget implications
-          caused by this change. Make this change?
+            <span className="font-bold mr-1">IMPORTANT:</span>
+            Deleting the task or editing the frequency and dates will change the schedule of this care
+            item for the rest of the year. Be aware of any budget implications caused by this change. Make this change?
         </div>
 
         <div className="mt-8 flex items-center justify-between">
