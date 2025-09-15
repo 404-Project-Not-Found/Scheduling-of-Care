@@ -171,8 +171,7 @@ export default function AddCareItemPage() {
             ?
           </button>
           <div className="absolute bottom-full right-0 mb-2 hidden w-64 max-w-[90vw] rounded bg-white border p-2 text-sm text-black group-hover:block shadow-lg">
-            Enter the care item name, frequency, start date, and category. 
-            Select "Yes" if this care item repeats yearly. Click Submit to save.
+            {"Enter the care item name, frequency, start date, and category. Select \"Yes\" if this care item repeats yearly. Click Submit to save."}
           </div>
         </div>
       </div>
