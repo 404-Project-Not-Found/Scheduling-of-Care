@@ -1,12 +1,11 @@
 import { Suspense } from "react";
-import EditTaskClient from "./EditTaskClient";
+import AssignCarerPage from "./AssignCarer";
 
-// export const dynamic = "force-dynamic";
 
 export default function Page() {
   return (
     <Suspense fallback={null}>
-      <EditTaskClient />
+      <AssignCarerPage />
     </Suspense>
   );
 }
