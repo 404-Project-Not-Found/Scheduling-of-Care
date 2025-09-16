@@ -12,9 +12,10 @@ export default function Home() {
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = e.currentTarget;
+    setError(null);
 
     // If required fields are empty, trigger native validation tooltip.
     if (!form.checkValidity()) {
@@ -22,8 +23,43 @@ export default function Home() {
       return;
     }
 
+    try{
+      // Send POST request to login API route
+      const res = await fetch("/api/login", {
+        method: "POST", 
+        headers: {"Content-Type": "application/json"}, 
+        body: JSON.stringify({email, password}) // Send login credentials
+      });
+
+      const data = await res.json();
+
+      // Login failed
+      if(!res.ok){
+        throw new Error(data.error || "Login failed");
+      }
+
+      console.log("logged in user:", data.user);
+
+      // Redirect user based on role
+      switch (data.user.role) {
+        case "carer":
+          window.location.href = "/dashboard/carer";
+          break;
+        case "management":
+          window.location.href = "/dashboard/management";
+          break;
+        case "family":
+          window.location.href = "/dashboard/family";
+        default:
+          window.location.href = "/dashboard";
+      }
+    }
+    catch(err: any) {
+      setError(err.message);
+    }
+
     // Fake auth: always show error for now (no backend yet).
-    setError("Incorrect email address or password, please try again.");
+    // setError("Incorrect email address or password, please try again.");
   }
 
   return (

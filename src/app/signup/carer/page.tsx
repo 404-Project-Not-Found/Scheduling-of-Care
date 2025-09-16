@@ -3,9 +3,59 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { signUpUser } from "@/lib/signup";
+import { setDefaultResultOrder } from "dns";
+import { setuid } from "process";
 
 export default function CarerSignupPage() {
   const [showPw, setShowPw] = useState(false);
+  const [error, setError] =useState<String | null>(null);
+  const [userExists, setUserExists] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError(null);
+    setUserExists(false);
+
+    const form = e.currentTarget;
+    const fullName = (form.userName as HTMLInputElement).value;
+    const email = (form.email as HTMLInputElement).value;
+    const password = (form.password as HTMLInputElement).value;
+    const confirm = (form.confirm as HTMLInputElement).value;
+
+    try{
+      // Call signup API route
+      const res = await fetch("/api/signup", {
+        method: "POST", 
+        headers: { "Content-Type": "application/json"}, 
+        body: JSON.stringify({fullName, email, password, role: "carer"})
+      });
+
+      const data = await res.json();
+
+      // Handle errors from server
+      if(!res.ok){
+        if(res.status === 409){
+          // User already exists
+          setUserExists(true);
+          return;
+        }
+        throw new Error(data.error || "Sign up failed")
+      }
+
+      // Sign up is successful, redirect to home after short delay
+      setSuccess(true);
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 3000);
+    }
+    catch(err: any){
+      // For unexpected errors
+      console.error("Sign up failed:", err);
+      alert(err.message);
+    }
+  }
 
   return (
     <div className="min-h-screen w-full bg-[#F3E9D9] flex flex-col items-center justify-center px-4">
@@ -26,7 +76,7 @@ export default function CarerSignupPage() {
       </h1>
 
       {/* Vertical form layout */}
-      <form className="w-full max-w-lg space-y-8 text-black">
+      <form onSubmit = {handleSubmit} className="w-full max-w-lg space-y-8 text-black">
 
         {/* User Name */}
         <div className="flex flex-col gap-2">
@@ -112,6 +162,28 @@ export default function CarerSignupPage() {
             required
           />
         </div>
+
+        {/* Error: User exists message */}
+        {error && (
+          <div className="text-red-700 bg-red-100 px-4 py-2 rounded">
+            {error}
+          </div>
+        )}
+        {userExists && (
+          <div className="bg-[#DFC9A9] px-4 py-2 rounded">
+            An account already exists under this email. Enter a new email or {" "}
+            <Link href="/" className="underline font-bold text-[#4A0A0A]">
+            login
+            </Link>
+          </div>
+        )}
+
+        {/* Sign Up success */}
+        {success && (
+          <div className="bg-[#DFC9A9] px-4 py 2 rounded">
+            Sign up was successful! Redirecting to login...
+          </div>
+        )}
 
         {/* Sign Up button */}
         <div className="flex justify-center pt-4">
