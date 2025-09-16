@@ -54,8 +54,13 @@ export default function Home() {
           window.location.href = "/dashboard";
       }
     }
-    catch(err: any) {
-      setError(err.message);
+    catch(err: unknown) {
+      if(err instanceof Error){
+        setError(err.message);
+      }
+      else{
+        setError("An unexepected error occurred")
+      }
     }
 
     // Fake auth: always show error for now (no backend yet).

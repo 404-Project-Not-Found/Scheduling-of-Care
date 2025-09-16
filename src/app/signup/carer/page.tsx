@@ -4,12 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { signUpUser } from "@/lib/signup";
-import { setDefaultResultOrder } from "dns";
-import { setuid } from "process";
 
 export default function CarerSignupPage() {
   const [showPw, setShowPw] = useState(false);
-  const [error, setError] =useState<String | null>(null);
+  const [error, setError] =useState<string | null>(null);
   const [userExists, setUserExists] = useState(false);
   const [success, setSuccess] = useState(false);
 
@@ -25,24 +23,7 @@ export default function CarerSignupPage() {
     const confirm = (form.confirm as HTMLInputElement).value;
 
     try{
-      // Call signup API route
-      const res = await fetch("/api/signup", {
-        method: "POST", 
-        headers: { "Content-Type": "application/json"}, 
-        body: JSON.stringify({fullName, email, password, role: "carer"})
-      });
-
-      const data = await res.json();
-
-      // Handle errors from server
-      if(!res.ok){
-        if(res.status === 409){
-          // User already exists
-          setUserExists(true);
-          return;
-        }
-        throw new Error(data.error || "Sign up failed")
-      }
+      const data = await signUpUser(fullName, email, password, confirm, "carer");
 
       // Sign up is successful, redirect to home after short delay
       setSuccess(true);
@@ -50,10 +31,18 @@ export default function CarerSignupPage() {
         window.location.href = "/";
       }, 3000);
     }
-    catch(err: any){
-      // For unexpected errors
-      console.error("Sign up failed:", err);
-      alert(err.message);
+    catch(err: unknown){
+      if(err instanceof Error){
+        if(err.message.includes("exists")){
+          setUserExists(true);
+        }
+        else{
+          setError(err.message);
+        }
+      }
+      else{
+        setError("An unexpected error has occurred")
+      }
     }
   }
 
