@@ -15,6 +15,7 @@ export async function POST(req: NextRequest){
             return NextResponse.json({error: "Missing fields"}, {status: 400});
         }
 
+        // Ensure passwords match
         if(password !== confirm){
             return NextResponse.json({error: "Passwords do not match"}, {status: 400});
         }

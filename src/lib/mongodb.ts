@@ -1,7 +1,10 @@
 import { MongoClient } from "mongodb";
 
 const uri = process.env.MONGODB_URI;
-const options = {}; // for MongoClient to add ssl, authSoruce, etc. if needed
+const options = {
+    tls: true,
+    tlsAllowInvalidCertificates: false
+}; // for MongoClient to add ssl, authSoruce, etc. if needed
 
 // Ensure uri exists before attempting connection
 if(!uri) {
