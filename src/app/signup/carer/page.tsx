@@ -26,7 +26,7 @@ export default function CarerSignupPage() {
       const res = await fetch("/api/signup", {
         method: "POST", 
         headers: { "Content-Type": "application/json"}, 
-        body: JSON.stringify({fullName, email, password, role: "carer"})
+        body: JSON.stringify({fullName, email, password, confirm, role: "carer"})
       });
 
       const data = await res.json();

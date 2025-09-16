@@ -8,11 +8,15 @@ const ROLES = ["carer", "management", "family"] as const;
 export async function POST(req: NextRequest){
     try{
         // Extract data from request body
-        const{fullName, email, password, role} = await req.json();
+        const{fullName, email, password, confirm, role} = await req.json();
 
         // Validate required fields
-        if(!fullName || !email || !password || !role){
+        if(!fullName || !email || !password || !confirm || !role){
             return NextResponse.json({error: "Missing fields"}, {status: 400});
+        }
+
+        if(password !== confirm){
+            return NextResponse.json({error: "Passwords do not match"}, {status: 400});
         }
         
         // Validate role against allowed roles

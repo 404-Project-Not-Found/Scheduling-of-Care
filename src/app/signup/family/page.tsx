@@ -25,7 +25,7 @@ export default function FamilySignupPage() {
         const res = await fetch("/api/signup", {
           method: "POST", 
           headers: { "Content-Type": "application/json"}, 
-          body: JSON.stringify({fullName, email, password, role: "family"})
+          body: JSON.stringify({fullName, email, password, confirm, role: "family"})
         });
 
         const data = await res.json();

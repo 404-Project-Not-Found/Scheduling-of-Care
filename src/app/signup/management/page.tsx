@@ -25,7 +25,7 @@ export default function ManagementSignupPage() {
         const res = await fetch("/api/signup", {
           method: "POST", 
           headers: { "Content-Type": "application/json"}, 
-          body: JSON.stringify({fullName, email, password, role: "management"})
+          body: JSON.stringify({fullName, email, password, confirm, role: "management"})
         });
 
         const data = await res.json();
