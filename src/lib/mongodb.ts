@@ -12,16 +12,17 @@ if(!uri) {
 }
 
 // For development, a single MongoClient instance
-/*if(process.env.NODE_ENV === "development"){
+if(process.env.NODE_ENV === "development"){
     if(!(global as any)._mongoClientPromise){
         client = new MongoClient(uri, options); // creates a new MongoClient instance
         (global as any)._mongoClientPromise = client.connect(); // connect and save the promise globally
     }
     clientPromise = (global as any)._mongoClientPromise;
-} */
-
-// For production, always create a new client and connect
-client = new MongoClient(uri, options);
-clientPromise = client.connect();
+}
+else{
+    // For production, always create a new client and connect
+    client = new MongoClient(uri, options);
+    clientPromise = client.connect();
+}
 
 export default clientPromise;
