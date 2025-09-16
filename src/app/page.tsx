@@ -2,5 +2,5 @@
 import { redirect } from "next/navigation";
 
 export default function Home() {
-  redirect("/request_of_change");
+  redirect("/request_of_change_page");
 }
