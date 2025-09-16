@@ -16,6 +16,7 @@ type Props = {
   year: string;
 };
 
+
 export default function OverspentTable({ items, year }: Props) {
   return (
     <div className="rounded-xl border border-black/10 bg-white text-black">
@@ -56,7 +57,7 @@ export default function OverspentTable({ items, year }: Props) {
                     {rem < 0 ? `-$${Math.abs(rem)}` : `$${rem}`}
                   </td>
                   <td className="px-4 py-3">
-                    <Badge tone={tone as any}>{r.status}</Badge>
+                    <Badge tone={tone}>{r.status}</Badge>
                   </td>
                 </tr>
               );
