@@ -17,17 +17,18 @@ function loadCarers(): Carer[] {
   }
 }
 
-export default function AssignCarerPage() {
+export default function RevokeCarerPage() {
   const router = useRouter();
   const params = useSearchParams();
   const carerId = params.get("carer") ?? "";
 
   const carers = useMemo(loadCarers, []);
-  const carerName =
-    carers.find((c) => c.id === carerId)?.name ?? "Jasmine Cook";
 
-  const onAssign = () => {
-    alert(`Assigned ${carerName}`);
+  const carerName =
+    carers.find((c) => c.id === carerId)?.name ?? "John Smith";
+
+  const onRevoke = () => {
+    alert(`Revoked access for ${carerName}`);
     router.push("/carer/search");
   };
 
@@ -45,14 +46,14 @@ export default function AssignCarerPage() {
 
       {/* main card */}
       <div className="w-full max-w-xl min-h-[520px] rounded-[22px] border border-[#6b3f2a] bg-[#F7ECD9] shadow relative overflow-hidden">
-        {/* brown top bar aligned with card */}
+        {/* brown top bar */}
         <div className="w-full px-8 py-4 bg-[#3A0000] text-white text-center rounded-t-[22px] border-b border-black/10">
-          <h1 className="text-3xl font-extrabold">Assign Carer Access</h1>
+          <h1 className="text-3xl font-extrabold">Revoke Carer Access</h1>
         </div>
 
         {/* description */}
         <p className="mt-8 text-lg text-[#1c130f] text-center leading-relaxed max-w-md mx-auto">
-          This carer does not currently have access to this client. 
+          This carer already has access to this client.
         </p>
 
         {/* selected row */}
@@ -64,8 +65,8 @@ export default function AssignCarerPage() {
         {/* IMPORTANT warning */}
         <div className="mt-8 mx-8 px-6 py-5 bg-rose-300/25 text-black border border-rose-300/50 rounded-lg">
           <span className="font-bold mr-1">IMPORTANT:</span>
-          Once assigned, this carer will gain access to the client’s
-          profile and related information.
+          Once revoked, this carer will no longer have access to the
+          client’s profile or any personal information.
         </div>
 
         {/* bottom row */}
@@ -77,10 +78,10 @@ export default function AssignCarerPage() {
             Cancel
           </button>
           <button
-            onClick={onAssign}
-            className="rounded-full bg-[#F39C6B] hover:bg-[#ef8a50] text-[#1c130f] text-xl font-extrabold px-8 py-2 shadow"
+            onClick={onRevoke}
+            className="rounded-full bg-[#8B0000] hover:bg-[#a40f0f] text-white text-xl font-extrabold px-8 py-2 shadow"
           >
-            Assign
+            Revoke Access
           </button>
         </div>
       </div>
