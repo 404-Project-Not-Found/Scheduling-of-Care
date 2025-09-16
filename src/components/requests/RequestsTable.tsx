@@ -24,7 +24,7 @@ export default function RequestsTable({ data }: Props) {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
+        <table className="w-full text-left text-sm divide-y">
           <thead className="text-gray-600">
             <tr>
               <th className="px-4 py-3">Task</th>
