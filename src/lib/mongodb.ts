@@ -8,15 +8,20 @@ if(!uri) {
     throw new Error("Please add your Mongo URI to .env.local");
 }
 
+declare global{
+    var _mongoClientPromise: Promise<MongoClient> | undefined;
+}
+
+let client: MongoClient;
 let clientPromise: Promise<MongoClient>;
 
 // For development, a single MongoClient instance
 if(process.env.NODE_ENV === "development"){
-    if(!(global as any)._mongoClientPromise){
+    if(!global._mongoClientPromise){
         const client = new MongoClient(uri, options); // creates a new MongoClient instance
-        (global as any)._mongoClientPromise = client.connect(); // connect and save the promise globally
+        global._mongoClientPromise = client.connect(); // connect and save the promise globally
     }
-    clientPromise = (global as any)._mongoClientPromise;
+    clientPromise = global._mongoClientPromise;
 }
 else{
     // For production, always create a new client and connect
