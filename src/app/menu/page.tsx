@@ -33,7 +33,6 @@ export default function MenuPage() {
 
   return (
     <div className="relative min-h-screen" style={{ backgroundColor: palette.bg }}>
-      {/* top-left hamburger */}
       <button
         aria-haspopup="dialog"
         aria-expanded={open}
@@ -46,6 +45,16 @@ export default function MenuPage() {
         <HamburgerIcon size={32} />
       </button>
 
+      {/* centered message */}
+      <div className="min-h-screen flex items-center justify-center">
+        <h1
+          className="text-2xl md:text-3xl font-semibold tracking-wide"
+          style={{ color: palette.border }}
+        >
+          Dashboard is coming soon
+        </h1>
+      </div>
+
       {open && (
         <div
           onClick={onBackdropClick}
@@ -54,7 +63,6 @@ export default function MenuPage() {
         />
       )}
 
-      {/* drawer */}
       <div
         id="menu-drawer"
         role="dialog"
@@ -67,7 +75,6 @@ export default function MenuPage() {
           borderRight: `3px solid ${palette.border}`,
         }}
       >
-        {/* header */}
         <div
           className="flex items-center justify-between px-4 py-3"
           style={{ backgroundColor: palette.border, color: palette.white }}
@@ -85,10 +92,9 @@ export default function MenuPage() {
           </button>
         </div>
 
-        {/* body */}
         <nav className="flex h-[calc(100%-56px)] flex-col justify-between">
           <ul className="px-2 py-3 space-y-2">
-            <MenuItem refLink={firstItemRef} href="#" label="Update your details" />
+            <MenuItem refLink={firstItemRef} href="/update_details" label="Update your details" />
             <MenuItem href="#" label="Request to change a task" />
             <MenuItem href="#" label="Manage organisation access to client" />
             <MenuItem href="#" label="List of clients" />
@@ -130,7 +136,7 @@ function HamburgerIcon({ size = 24, color = "currentColor" }: { size?: number; c
 type ItemProps = {
   href: string;
   label: string;
-  refLink?: React.Ref<HTMLAnchorElement>; 
+  refLink?: React.Ref<HTMLAnchorElement>;
 };
 
 function MenuItem({ href, label, refLink }: ItemProps) {
@@ -143,7 +149,6 @@ function MenuItem({ href, label, refLink }: ItemProps) {
         style={{ color: palette.text }}
       >
         <div className="flex items-center gap-3">
-          {/* solid accent bullet */}
           <span
             aria-hidden="true"
             className="inline-block h-3 w-3 rounded-full"
