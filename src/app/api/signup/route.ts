@@ -6,17 +6,17 @@ import bcrypt from "bcryptjs";
 // Defines valid user roles
 const ROLES = ["carer", "management", "family"] as const;
 
+const userSchema = new mongoose.Schema({
+    fullName: String,
+    email: String,
+    password: String,
+    role: String,
+    createdAt: Date
+});
+
+const User = mongoose.models.User || mongoose.model("User", userSchema);
+
 export async function POST(req: NextRequest){
-    const userSchema = new mongoose.Schema({
-        fullName: String,
-        email: String,
-        password: String,
-        role: String,
-        createdAt: Date
-    });
-
-    const User = mongoose.models.User || mongoose.model("User", userSchema);
-
     try{
         // Extract data from request body
         const{fullName, email, password, confirm, role} = await req.json();
