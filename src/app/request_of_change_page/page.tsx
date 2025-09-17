@@ -1,8 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function RequestChangeFormPage() {
+  const router = useRouter();
+
   const [taskName, setTaskName] = useState('');
   const [details, setDetails] = useState('');
   const [reason, setReason] = useState('');
@@ -14,16 +17,10 @@ export default function RequestChangeFormPage() {
       return;
     }
 
-    console.log({
-      taskName,
-      details,
-      reason,
-    });
+    // TODO: call API if needed
 
-    setSubmitMessage('Request submitted successfully!');
-    setTaskName('');
-    setDetails('');
-    setReason('');
+    // navigate to menu
+    router.push('/menu');
   };
 
   const handleCancel = () => {
@@ -31,6 +28,9 @@ export default function RequestChangeFormPage() {
     setDetails('');
     setReason('');
     setSubmitMessage('');
+
+    // navigate to menu
+    router.push('/menu');
   };
 
   return (
@@ -61,7 +61,10 @@ export default function RequestChangeFormPage() {
             <input
               type="text"
               value={taskName}
-              onChange={(e) => setTaskName(e.target.value)}
+              onChange={(e) => {
+                setTaskName(e.target.value);
+                setSubmitMessage('');
+              }}
               className="w-full border rounded px-3 py-2"
             />
           </div>
@@ -71,7 +74,10 @@ export default function RequestChangeFormPage() {
             <label className="block mb-1 font-semibold">Details of change</label>
             <textarea
               value={details}
-              onChange={(e) => setDetails(e.target.value)}
+              onChange={(e) => {
+                setDetails(e.target.value);
+                setSubmitMessage('');
+              }}
               className="w-full border rounded px-3 py-2 min-h-[120px]"
             />
           </div>
@@ -81,7 +87,10 @@ export default function RequestChangeFormPage() {
             <label className="block mb-1 font-semibold">Reason for request</label>
             <textarea
               value={reason}
-              onChange={(e) => setReason(e.target.value)}
+              onChange={(e) => {
+                setReason(e.target.value);
+                setSubmitMessage('');
+              }}
               className="w-full border rounded px-3 py-2 min-h-[100px]"
             />
           </div>
@@ -91,18 +100,20 @@ export default function RequestChangeFormPage() {
             <button
               onClick={handleCancel}
               className="px-4 py-2 border rounded hover:bg-gray-200"
+              type="button"
             >
               Cancel
             </button>
             <button
               onClick={handleSubmit}
               className="px-4 py-2 border rounded bg-orange-300 font-bold hover:bg-orange-400"
+              type="button"
             >
               Submit
             </button>
           </div>
 
-          {/* Submission message */}
+          {/* Validation message (won't show on successful submit because we navigate) */}
           {submitMessage && (
             <div className="text-blue-700 font-semibold mt-2">{submitMessage}</div>
           )}
@@ -117,7 +128,7 @@ export default function RequestChangeFormPage() {
           </button>
           <div className="absolute bottom-12 right-0 hidden w-64 max-w-[90vw] rounded bg-white border p-2 text-sm text-black group-hover:block shadow-lg">
             Fill in the task name, describe the details of the change, and provide a reason for the request. 
-            Click <b>Submit</b> to send or <b>Cancel</b> to clear the form.
+            Click <b>Submit</b> to send or <b>Cancel</b> to go back to the menu.
           </div>
         </div>
       </div>
