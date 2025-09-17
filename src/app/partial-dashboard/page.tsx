@@ -16,7 +16,7 @@ function PartialDashboardInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [name, setName] = useState<string>("");   
+  const [name, setName] = useState<string>("");
   const [dob, setDob] = useState<string>("");
 
   useEffect(() => {
@@ -56,7 +56,19 @@ function PartialDashboardInner() {
 
   return (
     <div className="min-h-screen w-full bg-[#FAEBDC] flex items-center justify-center p-6">
-      <div className="w-full max-w-5xl">
+      {/* Shared container so the orange button and the card align on the left */}
+      <div className="w-full max-w-5xl relative pt-16 -mt-10">
+        {/* Orange button (aligned with card left) */}
+        <button
+          onClick={() => router.push("/clients_list")}
+          className="absolute left-0 top-0 px-4 py-2 rounded-md font-semibold border transition
+                     bg-[#ff9900] border-[#f08a00] text-[#4A0A0A] hover:bg-[#f08a00] active:bg-[#e68100]"
+          aria-label="Return to your client list"
+          title="Return to your client list"
+        >
+          Back to Client List
+        </button>
+
         {/* Top Bar */}
         <div className="w-full bg-[#4A0A0A] text-white flex items-center justify-between px-6 py-3 rounded-t-lg">
           <div className="flex items-center gap-3">
@@ -90,8 +102,8 @@ function PartialDashboardInner() {
           </div>
         </div>
 
-        {/* Content Area */}
-        <div className="w-full bg-[#FAEBDC] border-4 border-[#4A0A0A] rounded-b-lg overflow-hidden h-[520px]">
+        {/* Content Area (adjust height here if needed) */}
+        <div className="w-full bg-[#FAEBDC] border-4 border-[#4A0A0A] rounded-b-lg overflow-hidden h-[480px]">
           <div className="bg-[#F9C9B1] px-4 py-3 flex items-start gap-2 border-b border-[#e2b197]">
             <p className="text-sm text-[#4A0A0A]">
               This dashboard currently has partial functionality until the

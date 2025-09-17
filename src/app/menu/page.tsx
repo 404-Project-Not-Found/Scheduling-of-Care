@@ -48,7 +48,7 @@ export default function MenuPage() {
           className="text-2xl md:text-3xl font-semibold tracking-wide"
           style={{ color: palette.border }}
         >
-          Dashboard is coming soon
+          (Family/POA) Dashboard is coming soon...
         </h1>
       </div>
 

@@ -26,10 +26,7 @@ const members = [
 export default function FamilyPOAListPage() {
   const router = useRouter();
 
-  const goBack = () => {
-    router.back();
-    setTimeout(() => router.push("/menu"), 0);
-  };
+  const goBack = () => router.replace("/menu");
 
   return (
     <main
