@@ -97,7 +97,7 @@ export default function MenuPage() {
             <MenuItem refLink={firstItemRef} href="/update_details" label="Update your details" />
             <MenuItem href="/request_of_change_page" label="Request to change a task" />  
             <MenuItem href="/manage-access-code-page" label="Manage organisation access to client" />
-            <MenuItem href="#" label="List of clients" />
+            <MenuItem href="/clients_list" label="List of clients" />
           </ul>
 
           <div className="px-4 pb-6 flex justify-end pr-6">
