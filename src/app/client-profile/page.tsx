@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 
 type Client = { name: string; dob: string; notes?: string[] };
 
-// --- Wrapper component: adds <Suspense> boundary ---
 export default function ClientProfilePage() {
   return (
     <Suspense fallback={<div style={{ padding: 24 }}>Loading client profile...</div>}>
@@ -152,10 +151,10 @@ function ClientProfilePageInner() {
       <div className="w-full bg-[#4A0A0A] text-white flex items-center justify-between px-6 py-4 rounded-t-lg shadow-md">
         <h2 className="text-2xl font-bold">Client Profile</h2>
         <button
-          onClick={() => router.push('/partial-dashboard')}
+          onClick={() => router.push(`/partial-dashboard?name=${encodeURIComponent(name)}&dob=${encodeURIComponent(dob)}`)}
           className="px-4 py-2 bg-[#ff9900] text-black rounded-md font-semibold hover:bg-[#e68a00] transition"
         >
-          Go to Dashboard
+          View Client Dashboard
         </button>
       </div>
 
