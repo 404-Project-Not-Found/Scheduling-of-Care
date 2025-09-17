@@ -1,8 +1,20 @@
 import {NextRequest, NextResponse} from "next/server";
-import clientPromise from "@/lib/mongodb";
+import mongoose from "mongoose";
+import { connectDB } from "@/lib/mongodb";
 import bcrypt from "bcryptjs";
+const userSchema = new mongoose.Schema({
+    fullName: {type:String, required: true},
+    email: {type: String, required: true}, 
+    password: {type: String, required: true}, 
+    role: {type: String, required: true},
+    createdAt: {type: Date, default: Date.now}
+});
+
+const User = mongoose.models.User || mongoose.model("User", userSchema);
 
 export async function POST(req: NextRequest) {
+    await connectDB();
+
     try{
         // Parse email and password from request JSON
         const{email, password} = await req.json();
@@ -11,13 +23,13 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({error: "Missing email or password"}, {status: 400});
         }
 
-        // Connect to MongoDB
+        /* Connect to MongoDB
         const client = await clientPromise;
         const db = client.db("schedule-of-care");
-        const usersCollection = db.collection("users");
+        const usersCollection = db.collection("users"); */
 
         // Find user by email
-        const user = await usersCollection.findOne({email});
+        const user = await User.findOne({email});
         // User does not exist
         if(!user){
             return NextResponse.json({error: "Incorrect email"}, {status: 404});

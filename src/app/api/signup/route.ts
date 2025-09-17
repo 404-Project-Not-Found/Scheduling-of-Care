@@ -1,11 +1,22 @@
-import { NextRequest, NextResponse } from "next/server";
-import clientPromise from "@/lib/mongodb";
+import { NextRequest, NextResponse, userAgent, userAgentFromString } from "next/server";
+import mongoose from "mongoose";
+import { connectDB } from "@/lib/mongodb";
 import bcrypt from "bcryptjs";
 
 // Defines valid user roles
 const ROLES = ["carer", "management", "family"] as const;
 
 export async function POST(req: NextRequest){
+    const userSchema = new mongoose.Schema({
+        fullName: String,
+        email: String,
+        password: String,
+        role: String,
+        createdAt: Date
+    });
+
+    const User = mongoose.models.User || mongoose.model("User", userSchema);
+
     try{
         // Extract data from request body
         const{fullName, email, password, confirm, role} = await req.json();
@@ -25,13 +36,15 @@ export async function POST(req: NextRequest){
             return NextResponse.json({error: "Invalid role"}, {status: 400});
         }
 
-        // Connect to MongoDB
+        /* Connect to MongoDB
         const client = await clientPromise;
         const db = client.db("schedule-of-care");
-        const usersCollection = db.collection("users");
+        const usersCollection = db.collection("users"); */
+
+        await connectDB();
 
         // Check if a user already exists under the email
-        const userExists = await usersCollection.findOne({email});
+        const userExists = await User.findOne({email});
         if(userExists){
             return NextResponse.json({error: "User already exists"}, {status: 409}); // Conflict status
         }
@@ -40,12 +53,12 @@ export async function POST(req: NextRequest){
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Insert new user info into the database
-        const newUser = await usersCollection.insertOne({
+        const newUser = await User.create({
             fullName, email, password: hashedPassword, role, createdAt: new Date()
         });
 
         // Success response with new user ID
-        return NextResponse.json({message: "New user created", userId: newUser.insertedId});
+        return NextResponse.json({message: "New user created", userId: newUser._id});
     }
     catch(error){
         console.error(error);

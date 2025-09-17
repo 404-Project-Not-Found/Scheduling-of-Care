@@ -28,7 +28,7 @@ export async function POST(req: Request){
 
         const resetLink = `${process.env.NEXT_PUBLIC_APP_URI}/reset-password?token=${token}`;
         await sendResetEmail(user.email, resetLink);
-
+        
         return NextResponse.json({message: "If the account exists, a reset link has been sent."});
     }
     catch(err){

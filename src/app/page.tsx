@@ -1,6 +1,4 @@
 // src/app/page.tsx
-import { redirect } from "next/navigation";
-// src/app/page.tsx
 "use client";
 
 import Image from "next/image";
@@ -8,7 +6,6 @@ import Link from "next/link";
 import { useState } from "react";
 
 export default function Home() {
-  redirect("/reset_password_link");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [staySigned, setStaySigned] = useState(false);
@@ -194,7 +191,7 @@ export default function Home() {
             {/* Links */}
             <div className="mt-6 text-center">
               <Link
-                href="/forgot-password"
+                href="/reset_password_link"
                 className="text-lg underline underline-offset-4 hover:opacity-80"
               >
                 Forgot Password?

@@ -47,7 +47,7 @@ export default function ResetPasswordEmailPage() {
         <h1 className="text-2xl font-bold mb-8 text-black">Reset Password</h1>
 
         {submitted ? (
-          <p className="text-green-700 text-center">
+          <p className="text-700 bg-[#DFC9A9] text-center">
             If an account with <b>{email}</b> exists, a reset link has been sent.
           </p>
         ) : (
@@ -77,7 +77,7 @@ export default function ResetPasswordEmailPage() {
         )}
 
         <button
-          onClick={() => router.push("/login")}
+          onClick={() => router.push("/")}
           className="mt-6 text-black underline"
         >
           Back to Login
