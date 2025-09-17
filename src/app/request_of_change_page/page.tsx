@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 export default function RequestChangeFormPage() {
   const router = useRouter();
 
+  const [clientName, setClientName] = useState(''); 
   const [taskName, setTaskName] = useState('');
   const [details, setDetails] = useState('');
   const [reason, setReason] = useState('');
@@ -21,6 +22,7 @@ export default function RequestChangeFormPage() {
   };
 
   const handleCancel = () => {
+    setClientName('');
     setTaskName('');
     setDetails('');
     setReason('');
@@ -65,6 +67,20 @@ export default function RequestChangeFormPage() {
 
         {/* Form Section */}
         <div className="p-8 space-y-4 text-black">
+          {/* Client Name*/}
+          <div>
+            <label className="block mb-1 font-semibold">Client name</label>
+            <input
+              type="text"
+              value={clientName}
+              onChange={(e) => {
+                setClientName(e.target.value);
+                setSubmitMessage('');
+              }}
+              className="w-full border rounded px-3 py-2 bg-white"
+            />
+          </div>
+
           {/* Task Name */}
           <div>
             <label className="block mb-1 font-semibold">Task name</label>
@@ -88,7 +104,7 @@ export default function RequestChangeFormPage() {
                 setDetails(e.target.value);
                 setSubmitMessage('');
               }}
-              className="w-full border rounded px-3 py-2 min-h-[120px] bg-white"
+              className="w-full border rounded px-3 py-2 min-h-[80px] bg-white"
             />
           </div>
 
@@ -101,7 +117,7 @@ export default function RequestChangeFormPage() {
                 setReason(e.target.value);
                 setSubmitMessage('');
               }}
-              className="w-full border rounded px-3 py-2 min-h-[100px] bg-white"
+              className="w-full border rounded px-3 py-2 min-h-[60px] bg-white"
             />
           </div>
 
@@ -137,7 +153,7 @@ export default function RequestChangeFormPage() {
             ?
           </button>
           <div className="absolute bottom-12 right-0 hidden w-64 max-w-[90vw] rounded bg-white border p-2 text-sm text-black group-hover:block shadow-lg">
-            Fill in the task name, describe the details of the change, and provide a reason for the request.
+            Fill in the client name, task name, describe the details of the change, and provide a reason for the request.
             Click <b>Submit</b> to send or <b>Cancel</b> to go back to the menu.
           </div>
         </div>

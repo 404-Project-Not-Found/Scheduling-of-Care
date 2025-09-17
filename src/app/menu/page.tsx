@@ -1,58 +1,87 @@
+// src/app/menu/page.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 
 const palette = {
-  bg: "#F3E9D9",
-  panelBg: "#F7ECD9",
-  border: "#3A0000",
+  pageBg: "#ffd9b3",      // page background
+  cardBg: "#FAEBDC",     // dashboard inner background
+  header: "#4A0A0A",     // dark brown
+  banner: "#F9C9B1",     // notice banner
+  border: "#4A0A0A",     // card border
+  panelBg: "#F7ECD9",    // drawer background
   text: "#2b2b2b",
   white: "#FFFFFF",
-  accent: "#FF5C5C",
-  panelHover: "#EADBC4",
-  panelActive: "#E1D0B5",
 };
 
 export default function MenuPage() {
   const [open, setOpen] = useState(false);
 
+  // Close drawer with ESC
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     if (open) document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [open]);
 
+  // Backdrop click to close
   function onBackdropClick(e: React.MouseEvent<HTMLDivElement>) {
     if (e.target === e.currentTarget) setOpen(false);
   }
 
   return (
-    <div className="relative min-h-screen" style={{ backgroundColor: palette.bg }}>
-      {/* hamburger button */}
-      <button
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        aria-controls="menu-drawer"
-        onClick={() => setOpen(true)}
-        className="fixed top-4 left-4 z-40 p-2 rounded-md focus:outline-none"
-        style={{ color: palette.border }}
-        aria-label="Open menu"
-      >
-        <HamburgerIcon size={32} />
-      </button>
+    <div className="min-h-screen w-full flex items-center justify-center px-6 py-10 relative"
+         style={{ backgroundColor: "#ffd9b3" }}>
 
-      {/* center placeholder */}
-      <div className="min-h-screen flex items-center justify-center">
-        <h1
-          className="text-2xl md:text-3xl font-semibold tracking-wide"
-          style={{ color: palette.border }}
-        >
-          (Family/POA) Dashboard is coming soon...
-        </h1>
+      {/* ===== Dashboard Card (centered) ===== */}
+      <div className="w-full max-w-5xl">
+        {/* Top bar inside the card */}
+        <div className="rounded-t-3xl px-6 py-5 flex items-center gap-4"
+             style={{ backgroundColor: palette.header, color: palette.white }}>
+          {/* Round hamburger triggers the drawer */}
+          <button
+            aria-label="Open menu"
+            onClick={() => setOpen(true)}
+            className="h-11 w-11 rounded-full bg-white flex items-center justify-center shrink-0"
+          >
+            <HamburgerIcon size={22} color={palette.header} />
+          </button>
+
+          {/* Title + small logo mark */}
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
+            {/* You can swap to a smaller mark if you have one */}
+            <Image
+              src="/logo-name.png"
+              alt="Scheduling of Care"
+              width={120}
+              height={32}
+              className="object-contain"
+              priority
+            />
+          </div>
+        </div>
+
+        {/* Framed content area */}
+        <div className="rounded-b-3xl overflow-hidden border-4"
+             style={{ borderColor: palette.border, backgroundColor: palette.cardBg }}>
+          {/* Notice banner */}
+          <div className="w-full border-b px-6 py-3 flex items-center gap-3"
+               style={{ backgroundColor: palette.banner, borderColor: "#e2b197" }}>
+            <BellIcon />
+            <p className="text-base text-[#4A0A0A]">
+              Select a client from list of clients under the menu options to view their tasks
+            </p>
+          </div>
+
+          {/* Empty body area */}
+          <div className="h-[420px]" />
+        </div>
       </div>
 
-      {/* backdrop */}
+      {/* ===== Drawer Backdrop ===== */}
       {open && (
         <div
           onClick={onBackdropClick}
@@ -61,9 +90,8 @@ export default function MenuPage() {
         />
       )}
 
-      {/* drawer */}
+      {/* ===== Drawer Panel ===== */}
       <div
-        id="menu-drawer"
         role="dialog"
         aria-modal="true"
         aria-label="Menu"
@@ -71,16 +99,14 @@ export default function MenuPage() {
           ${open ? "translate-x-0" : "-translate-x-full"}`}
         style={{
           backgroundColor: palette.panelBg,
-          borderRight: `3px solid ${palette.border}`,
+          borderRight: `3px solid ${palette.header}`,
         }}
       >
-        {/* header */}
-        <div
-          className="flex items-center justify-between px-4 py-3"
-          style={{ backgroundColor: palette.border, color: palette.white }}
-        >
+        {/* Drawer header */}
+        <div className="flex items-center justify-between px-4 py-3"
+             style={{ backgroundColor: palette.header, color: palette.white }}>
           <div className="flex items-center gap-3">
-            <HamburgerIcon size={24} color={palette.white} />
+            <HamburgerIcon size={22} color={palette.white} />
             <h2 className="text-lg font-semibold">Menu</h2>
           </div>
           <button
@@ -92,9 +118,9 @@ export default function MenuPage() {
           </button>
         </div>
 
-        {/* body */}
+        {/* Drawer body */}
         <nav className="flex h-[calc(100%-56px)] flex-col justify-between">
-          <ul className="px-2 py-3 space-y-2">
+          <ul className="px-3 py-4 space-y-2">
             <MenuItem href="/update_details" label="Update your details" />
             <MenuItem href="/request_of_change_page" label="Request to change a task" />
             <MenuItem href="/manage-access-code-page" label="Manage organisation access to client" />
@@ -105,7 +131,7 @@ export default function MenuPage() {
             <Link
               href="#"
               className="underline underline-offset-4 focus:outline-none rounded text-lg"
-              style={{ color: palette.border }}
+              style={{ color: palette.header }}
             >
               Sign out
             </Link>
@@ -116,7 +142,15 @@ export default function MenuPage() {
   );
 }
 
-function HamburgerIcon({ size = 24, color = "currentColor" }: { size?: number; color?: string }) {
+/* ================= Helpers ================= */
+
+function HamburgerIcon({
+  size = 24,
+  color = "currentColor",
+}: {
+  size?: number;
+  color?: string;
+}) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -128,18 +162,29 @@ function HamburgerIcon({ size = 24, color = "currentColor" }: { size?: number; c
       strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
+      aria-hidden="true"
     >
       <path d="M4 6h16M4 12h16M4 18h16" />
     </svg>
   );
 }
 
-type ItemProps = {
-  href: string;
-  label: string;
-};
+function BellIcon() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className="text-[#4A0A0A]"
+      aria-hidden="true"
+    >
+      <path d="M12 2a6 6 0 00-6 6v3.586l-1.707 1.707A1 1 0 005 15h14a1 1 0 00.707-1.707L18 11.586V8a6 6 0 00-6-6zm0 20a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
+    </svg>
+  );
+}
 
-function MenuItem({ href, label }: ItemProps) {
+function MenuItem({ href, label }: { href: string; label: string }) {
   return (
     <li>
       <Link
@@ -152,7 +197,7 @@ function MenuItem({ href, label }: ItemProps) {
           <span
             aria-hidden="true"
             className="inline-block h-3 w-3 rounded-full"
-            style={{ backgroundColor: palette.accent }}
+            style={{ backgroundColor: "#FF5C5C" }}
           />
           <div className="text-lg font-medium">{label}</div>
         </div>
