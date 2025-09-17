@@ -1,4 +1,6 @@
 // src/app/page.tsx
+import { redirect } from "next/navigation";
+// src/app/page.tsx
 "use client";
 
 import Image from "next/image";
@@ -6,6 +8,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 export default function Home() {
+  redirect("/reset_password_link");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [staySigned, setStaySigned] = useState(false);
