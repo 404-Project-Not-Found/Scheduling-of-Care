@@ -7,24 +7,23 @@
  *  - Define all the permission types -- Permission
  *  - Map the roles to the permissions granted -- RolePermission
  *  - Handle the hierarchy of the invite and deletion of access - InviteDeleteHierarchy
+ *  - A function which checks if the given role has the permission
  * 
  * For our implementation, Legal and Family have the same Permissions
  */
 
-export type Role = 'MANAGEMENT'|'CARER'|'FAMILY'|'LEGAL';
+export type Role = 'MANAGEMENT'|'CARER'|'FAMILY_LEGAL';
 
 export const Roles = {
     MANAGEMENT: 'MANAGEMENT',
     CARER: 'CARER',
-    FAMILY: 'FAMILY',
-    LEGAL: 'LEGAL'
+    FAMILY_LEGAL: 'FAMILY_LEGAL',
 } as const;
 
 export const InviteDeleteHierarchy: Record<Role, Role[]> = {
     MANAGEMENT: ['CARER'],
     CARER: [],
-    FAMILY: ["MANAGEMENT"],
-    LEGAL: ["MANAGEMENT"]
+    FAMILY_LEGAL: ["MANAGEMENT"],
 };
 
 
@@ -75,16 +74,14 @@ export const RolePermission: Record<Role, Permission[]> = {
         PERMISSIONS.BUDGET_READ, PERMISSIONS.BUDGET_COMMENT_READ, PERMISSIONS.BUDGET_COMMENT_EDIT,
         PERMISSIONS.CARE_READ, PERMISSIONS.CARE_RESOLVE, PERMISSIONS.CARE_EVIDENCE_READ, 
         PERMISSIONS.CARE_EVIDENCE_EDIT],
-    FAMILY: [
+    FAMILY_LEGAL: [
         PERMISSIONS.USER_READ, PERMISSIONS.USER_INVITE, PERMISSIONS.USER_DELETE ,PERMISSIONS.BUDGET_READ,
-        PERMISSIONS.BUDGET_COMMENT_READ, PERMISSIONS.CARE_READ,PERMISSIONS.CARE_EVIDENCE_READ, 
-        PERMISSIONS.CARE_COMMENT_READ, PERMISSIONS.NOTIF_READ, PERMISSIONS.NOTIF_EDIT, PERMISSIONS.NOTIF_SEND],
-    LEGAL: [
-        PERMISSIONS.USER_READ, PERMISSIONS.USER_INVITE, PERMISSIONS.USER_DELETE ,PERMISSIONS.BUDGET_READ, 
         PERMISSIONS.BUDGET_COMMENT_READ, PERMISSIONS.CARE_READ,PERMISSIONS.CARE_EVIDENCE_READ, 
         PERMISSIONS.CARE_COMMENT_READ, PERMISSIONS.NOTIF_READ, PERMISSIONS.NOTIF_EDIT, PERMISSIONS.NOTIF_SEND],
 };
 
-
-
+// Check if a specific role has the permission
+export function hasPermission(role: Role, permission: Permission) {
+    return RolePermission[role]?.includes(permission) ?? false;
+}
 

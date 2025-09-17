@@ -1,11 +1,15 @@
-// Connection helper for server
+
 import "server-only";
 import { MongoClient, Db} from "mongodb";
 
-const uri = process.env.MONGO_DB_URI;
-const dbName = process.env.MONGO_DB_NAME;
+const uri = process.env.MONGODB_URI;
+const dbName = process.env.MONGODB_NAME;
 
-// Ensure that uri and dbName is not empty
+const options = {
+    tls: true,
+    serverSelectionTimeoutMS: 5000
+}; // for MongoClient to add ssl, authSoruce, etc. if needed
+
 if(!uri) throw new Error("Missing MONGO_DB_URI in .env.local!!!");
 if(!dbName) throw new Error("Missing MONGO_DB_NAME in .env.local!!!");
 
@@ -16,13 +20,17 @@ declare global {
     var _mongoClientPromise: Promise<MongoClient> | undefined;
 }
 
-if(!global._mongoClientPromise) {
-    client = new MongoClient(uri);
-    global._mongoClientPromise = client.connect();
+if(process.env.NODE_ENV == "development") {
+    if(!global._mongoClientPromise) {
+        const client = new MongoClient(uri, options);
+        global._mongoClientPromise = client.connect();
+    }
+    clientPromise = global._mongoClientPromise;
 }
-
-clientPromise = global._mongoClientPromise;
-
+else {
+    const client = new MongoClient(uri, options);
+    clientPromise = client.connect();
+}
 export async function getDb() {
     const client = await clientPromise;
     return client.db(dbName);
