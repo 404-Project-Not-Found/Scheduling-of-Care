@@ -95,7 +95,7 @@ export default function MenuPage() {
         <nav className="flex h-[calc(100%-56px)] flex-col justify-between">
           <ul className="px-2 py-3 space-y-2">
             <MenuItem refLink={firstItemRef} href="/update_details" label="Update your details" />
-            <MenuItem href="#" label="Request to change a task" />
+            <MenuItem href="/request_of_change_page" label="Request to change a task" />  
             <MenuItem href="#" label="Manage organisation access to client" />
             <MenuItem href="#" label="List of clients" />
           </ul>
