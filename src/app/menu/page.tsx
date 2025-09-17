@@ -33,6 +33,7 @@ export default function MenuPage() {
 
   return (
     <div className="relative min-h-screen" style={{ backgroundColor: palette.bg }}>
+      {/* hamburger button */}
       <button
         aria-haspopup="dialog"
         aria-expanded={open}
@@ -45,7 +46,7 @@ export default function MenuPage() {
         <HamburgerIcon size={32} />
       </button>
 
-      {/* centered message */}
+      {/* center placeholder */}
       <div className="min-h-screen flex items-center justify-center">
         <h1
           className="text-2xl md:text-3xl font-semibold tracking-wide"
@@ -55,6 +56,7 @@ export default function MenuPage() {
         </h1>
       </div>
 
+      {/* backdrop */}
       {open && (
         <div
           onClick={onBackdropClick}
@@ -63,6 +65,7 @@ export default function MenuPage() {
         />
       )}
 
+      {/* drawer */}
       <div
         id="menu-drawer"
         role="dialog"
@@ -75,6 +78,7 @@ export default function MenuPage() {
           borderRight: `3px solid ${palette.border}`,
         }}
       >
+        {/* header */}
         <div
           className="flex items-center justify-between px-4 py-3"
           style={{ backgroundColor: palette.border, color: palette.white }}
@@ -92,12 +96,13 @@ export default function MenuPage() {
           </button>
         </div>
 
+        {/* body */}
         <nav className="flex h-[calc(100%-56px)] flex-col justify-between">
           <ul className="px-2 py-3 space-y-2">
             <MenuItem refLink={firstItemRef} href="/update_details" label="Update your details" />
-            <MenuItem href="/request_of_change_page" label="Request to change a task" />  
+            <MenuItem href="/request_of_change_page" label="Request to change a task" />
             <MenuItem href="/manage-access-code-page" label="Manage organisation access to client" />
-            <MenuItem href="/clients_list" label="List of clients" />
+            <MenuItem href="/clients_list" label="Manage your Client" />
           </ul>
 
           <div className="px-4 pb-6 flex justify-end pr-6">

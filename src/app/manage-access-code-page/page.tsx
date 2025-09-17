@@ -1,11 +1,11 @@
 // src/app/manage-access/page.tsx
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import Image from 'next/image';
-import { useRouter } from 'next/navigation'; // ← added
+import React, { useState } from "react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 
-type OrgStatus = 'active' | 'pending' | 'revoked';
+type OrgStatus = "active" | "pending" | "revoked";
 interface Organization {
   id: string;
   name: string;
@@ -13,41 +13,40 @@ interface Organization {
 }
 
 export default function ManageAccessPage() {
-  const router = useRouter(); // ← added
+  const router = useRouter();
 
   const [orgs, setOrgs] = useState<Organization[]>([
-    { id: '1', name: 'SunnyCare Facility', status: 'active' },
-    { id: '2', name: 'Haven Care Centre', status: 'pending' },
-    { id: '3', name: 'Rosehill Aged Care', status: 'revoked' },
-    { id: '4', name: 'Maple Leaf Aged Care', status: 'active' },
-    { id: '5', name: 'Cedar Grove Home', status: 'pending' },
-    { id: '6', name: 'Lakeside Care', status: 'active' },
-    { id: '7', name: 'Willow Creek Home', status: 'revoked' },
-    { id: '8', name: 'Pine Valley Facility', status: 'pending' },
-    { id: '9', name: 'Oakwood Seniors', status: 'active' },
+    { id: "1", name: "SunnyCare Facility", status: "active" },
+    { id: "2", name: "Haven Care Centre", status: "pending" },
+    { id: "3", name: "Rosehill Aged Care", status: "revoked" },
+    { id: "4", name: "Maple Leaf Aged Care", status: "active" },
+    { id: "5", name: "Cedar Grove Home", status: "pending" },
+    { id: "6", name: "Lakeside Care", status: "active" },
+    { id: "7", name: "Willow Creek Home", status: "revoked" },
+    { id: "8", name: "Pine Valley Facility", status: "pending" },
+    { id: "9", name: "Oakwood Seniors", status: "active" },
   ]);
 
-  /*functions for org actions */
+  // org actions
   function revokeOrg(id: string) {
-    setOrgs(prev => prev.map(o => (o.id === id ? { ...o, status: 'revoked' } : o)));
+    setOrgs((prev) => prev.map((o) => (o.id === id ? { ...o, status: "revoked" } : o)));
   }
-
   function approveOrg(id: string) {
-    setOrgs(prev => prev.map(o => (o.id === id ? { ...o, status: 'active' } : o)));
+    setOrgs((prev) => prev.map((o) => (o.id === id ? { ...o, status: "active" } : o)));
   }
-
   function removePending(id: string) {
-    setOrgs(prev => prev.map(o => (o.id === id ? { ...o, status: 'revoked' } : o)));
+    setOrgs((prev) => prev.map((o) => (o.id === id ? { ...o, status: "revoked" } : o)));
   }
 
   return (
-    <div className="h-screen w-full bg-[#ffd9b3] flex flex-col items-center justify-start p-8 relative">
-
-      {/*logo top-left */}
+    <div
+      className="h-screen w-full bg-[#ffd9b3] flex flex-col items-center justify-start px-8 pb-8 pt-28 md:pt-30 relative"
+    >
+      {/* logo top-left (outside the card) */}
       <div className="absolute top-8 left-8 w-64 h-32">
         <Image
           src="/logo-name.png"
-          alt="Logo"
+          alt="Scheduling of Care"
           width={256}
           height={128}
           className="object-contain"
@@ -55,50 +54,64 @@ export default function ManageAccessPage() {
         />
       </div>
 
-      <div className="w-full max-w-6xl bg-[#F7ECD9] rounded-2xl shadow-lg overflow-hidden mt-16">
-
-        {/*header */}
-        <div className="bg-[#4A0A0A] px-6 py-6 flex justify-center">
+      {/* card  */}
+      <div className="w-full max-w-3xl md:max-w-4xl bg-[#F7ECD9] rounded-2xl shadow-lg overflow-hidden mt-6">
+        {/* header */}
+        <div className="bg-[#4A0A0A] px-5 py-5 flex justify-center">
           <h1 className="text-3xl font-bold text-white text-center">Manage Access Codes</h1>
         </div>
 
-        {/*gap between brown header and privacy notice */}
-        <div className="h-4"></div>
+        {/* tiny gap */}
+        <div className="h-3" />
 
-        {/*privacy notice */}
-        <div className="bg-[#ff9999] px-6 py-2">
+        {/* privacy notice */}
+        <div className="bg-[#ff9999] px-5 py-2">
           <p className="text-base font-semibold text-black">
             Privacy Notice: This information is visible only to you and will not be shared with anyone.
           </p>
         </div>
 
-        {/*organisations list */}
-        <div className="p-8 bg-white m-6 rounded border shadow-sm max-h-[400px] overflow-y-auto text-black">
-          <Group title="Organisations with Access" items={orgs.filter(o => o.status === 'active')} onRevoke={revokeOrg} />
+        {/* organisations list */}
+        + <div className="p-5 bg-white mx-5 mt-5 mb-3 rounded border shadow-sm max-h-[320px] overflow-y-auto text-black">
+          <Group
+            title="Organisations with Access"
+            items={orgs.filter((o) => o.status === "active")}
+            onRevoke={revokeOrg}
+          />
           <hr className="my-4" />
-          <Group title="Organisations with Access Pending" items={orgs.filter(o => o.status === 'pending')} onApprove={approveOrg} onRemove={removePending} />
+          <Group
+            title="Organisations with Access Pending"
+            items={orgs.filter((o) => o.status === "pending")}
+            onApprove={approveOrg}
+            onRemove={removePending}
+          />
           <hr className="my-4" />
-          <Group title="Revoked Organisations" items={orgs.filter(o => o.status === 'revoked')} />
+          <Group
+            title="Revoked Organisations"
+            items={orgs.filter((o) => o.status === "revoked")}
+          />
         </div>
 
-        {/*save and Continue button in the center */}
-        <div className="flex justify-center p-8">
+        {/* Save & Return */}
+        + <div className="flex justify-center pt-2 pb-6">
           <button
-            className="bg-[#4A0A0A] text-white font-semibold px-8 py-4 rounded-md hover:bg-[#3a0808] transition-colors"
-            onClick={() => router.push('/menu')} // ← added: go back to menu
+            className="bg-[#4A0A0A] text-white font-semibold px-8 py-3 rounded-md hover:bg-[#3a0808] transition-colors"
+            onClick={() => router.push("/menu")}
           >
             Save &amp; Return
           </button>
         </div>
       </div>
 
-      {/*HELP BUTTON bottom-right */}
-      <div className="absolute bottom-8 right-8">
+      {/* help button bottom-right of screen */}
+      <div className="fixed bottom-6 right-6">
         <div className="relative">
           <div
             className="w-12 h-12 bg-[#ff9900] text-white rounded-full flex items-center justify-center font-bold text-xl cursor-pointer"
-            onMouseEnter={(e) => e.currentTarget.nextElementSibling?.classList.remove('hidden')}
-            onMouseLeave={(e) => e.currentTarget.nextElementSibling?.classList.add('hidden')}
+            onMouseEnter={(e) => e.currentTarget.nextElementSibling?.classList.remove("hidden")}
+            onMouseLeave={(e) => e.currentTarget.nextElementSibling?.classList.add("hidden")}
+            aria-label="Help"
+            title="Help"
           >
             ?
           </div>
@@ -107,7 +120,7 @@ export default function ManageAccessPage() {
             <ul className="list-disc pl-5 space-y-1">
               <li>View all organisations and their access status.</li>
               <li>Approve pending organisations or revoke access as needed.</li>
-              <li>Click &quot;Save &amp; Continue&quot; to confirm changes.</li>
+              <li>Click <b>Save &amp; Return</b> to confirm changes.</li>
             </ul>
           </div>
         </div>
@@ -116,7 +129,7 @@ export default function ManageAccessPage() {
   );
 }
 
-/*group component for orgs */
+/* group component for orgs */
 function Group({
   title,
   items,
@@ -138,24 +151,35 @@ function Group({
 
       <div className="space-y-2 text-base text-black">
         {items.length === 0 && <div className="text-slate-500">None</div>}
-        {items.map(item => (
+        {items.map((item) => (
           <div key={item.id} className="flex items-center justify-between">
             <div>{item.name}</div>
             <div className="flex items-center gap-3">
-              {item.status === 'active' && onRevoke && (
-                <button onClick={() => onRevoke(item.id)} className="text-base underline cursor-pointer">
+              {item.status === "active" && onRevoke && (
+                <button
+                  onClick={() => onRevoke(item.id)}
+                  className="text-base underline cursor-pointer"
+                >
                   Revoke
                 </button>
               )}
-              {item.status === 'pending' && (
+              {item.status === "pending" && (
                 <>
                   {onApprove && (
-                    <button onClick={() => onApprove(item.id)} className="text-base underline cursor-pointer">
+                    <button
+                      onClick={() => onApprove(item.id)}
+                      className="text-base underline cursor-pointer"
+                      title="Approve"
+                    >
                       ✔
                     </button>
                   )}
                   {onRemove && (
-                    <button onClick={() => onRemove(item.id)} className="text-base underline cursor-pointer">
+                    <button
+                      onClick={() => onRemove(item.id)}
+                      className="text-base underline cursor-pointer"
+                      title="Remove"
+                    >
                       ✖
                     </button>
                   )}

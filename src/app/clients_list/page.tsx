@@ -14,14 +14,20 @@ const palette = {
   white: "#ffffff",
 };
 
-const members = ["Jane Smith", "Harry Dong", "Jose Lin", "Kevin Wu", "Mickey Mouse"];
+// hardcoded members list for demo
+const members = [
+  { name: "Jane Smith", dob: "1943-09-16" },
+  { name: "Harry Dong", dob: "1950-01-01" },
+  { name: "Jose Lin", dob: "1955-05-12" },
+  { name: "Kevin Wu", dob: "1960-07-20" },
+  { name: "Mickey Mouse", dob: "1970-03-01" },
+];
 
 export default function FamilyPOAListPage() {
   const router = useRouter();
 
   const goBack = () => {
     router.back();
-    // fallback if there's no history
     setTimeout(() => router.push("/menu"), 0);
   };
 
@@ -72,7 +78,7 @@ export default function FamilyPOAListPage() {
 
           {/* scrollable list box */}
           <div
-            className="mx-auto rounded-2xl bg-white overflow-y-auto mb-12"
+            className="mx-auto rounded-2xl bg-white overflow-y-auto mb-8"
             style={{
               maxHeight: 380,
               border: `2px solid ${palette.border}55`,
@@ -80,19 +86,43 @@ export default function FamilyPOAListPage() {
           >
             {/* list with dividers between items */}
             <ul className="divide-y divide-black/10">
-              {members.map((name) => (
+              {members.map((m) => (
                 <li
-                  key={name}
+                  key={m.name}
                   className="flex items-center justify-between gap-6 px-8 py-5"
                   style={{ color: palette.text }}
                 >
-                  <span className="text-2xl">{name}</span>
-                  <Link href="/menu" className="underline text-2xl">
-                    View dashboard
-                  </Link>
+                  <span className="text-2xl">{m.name}</span>
+                  <div className="flex gap-6">
+                    {/* Edit profile 跳转到 client-profile */}
+                    <Link
+                      href={`/client-profile?name=${encodeURIComponent(m.name)}&dob=${m.dob}`}
+                      className="underline text-2xl"
+                    >
+                      Edit profile
+                    </Link>
+                    {/* View dashboard 跳转到 partial-dashboard */}
+                    <Link
+                      href={`/partial-dashboard?name=${encodeURIComponent(m.name)}`}
+                      className="underline text-2xl"
+                    >
+                      View dashboard
+                    </Link>
+                  </div>
                 </li>
               ))}
             </ul>
+          </div>
+
+          {/* Add new client button */}
+          <div className="flex justify-center">
+            <button
+              onClick={() => router.push("/client-profile?new=true")}
+              className="px-6 py-3 rounded-xl text-2xl font-semibold"
+              style={{ backgroundColor: palette.header, color: palette.white }}
+            >
+              + Add new client
+            </button>
           </div>
         </div>
 
