@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function ResetPasswordPage() {
   const [newPassword, setNewPassword] = useState("");
@@ -13,8 +13,10 @@ export default function ResetPasswordPage() {
   const [notificationType, setNotificationType] = useState<"success" | "error">("success");
   const router = useRouter();
   const [showHelp, setShowHelp] = useState(false);
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token");
 
-  const handleReset = (e: React.FormEvent) => {
+  const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPassword || !confirmPassword) {
       setNotification("Please fill in both fields.");
@@ -26,12 +28,41 @@ export default function ResetPasswordPage() {
       setNotificationType("error");
       return;
     }
-    setNotification("Password reset successfully!");
+    if(!token){
+      setNotification("Invalid reset link.");
+      setNotificationType("error");
+      return;
+    }
+    try{
+      const res = await fetch("/api/reset_password", {
+        method: "POST", 
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({token, newPassword})
+      });
+
+      const data = await res.json();
+      if(res.ok){
+        setNotification(data.message);
+        setNotificationType("success");
+        setNewPassword("");
+        setConfirmPassword("");
+      }
+      else{
+        setNotification(data.error);
+        setNotificationType("error");
+      }
+    }
+    catch(err){
+      console.error(err);
+      setNotification("Something went wrong.");
+      setNotificationType("error");
+    }
+    /* setNotification("Password reset successfully!");
     setNotificationType("success");
     setNewPassword("");
     setConfirmPassword("");
     setShowNew(false);
-    setShowConfirm(false);
+    setShowConfirm(false); */
   };
 
   useEffect(() => {

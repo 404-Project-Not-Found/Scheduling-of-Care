@@ -9,15 +9,31 @@ export default function ResetPasswordEmailPage() {
   const [submitted, setSubmitted] = useState<boolean>(false);
   const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !email.includes("@")) {
       alert("Please enter a valid email address.");
       return;
     }
-    // Replace with API call to request reset link
+
+    try{
+      const res = await fetch("/api/request_reset", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({email})
+      });
+
+      const data = await res.json();
+      console.log(data);
+      setSubmitted(true);
+    }
+    catch(err){
+      console.error(err);
+      alert("Something went wrong. Please try again.");
+    }
+    /* Replace with API call to request reset link
     console.log("Requesting reset link for:", email);
-    setSubmitted(true);
+    setSubmitted(true);*/
   };
 
   return (
