@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
 export default function RequestChangeFormPage() {
@@ -16,10 +17,6 @@ export default function RequestChangeFormPage() {
       setSubmitMessage('Please fill in all fields before submitting.');
       return;
     }
-
-    // TODO: call API if needed
-
-    // navigate to menu
     router.push('/menu');
   };
 
@@ -28,8 +25,6 @@ export default function RequestChangeFormPage() {
     setDetails('');
     setReason('');
     setSubmitMessage('');
-
-    // navigate to menu
     router.push('/menu');
   };
 
@@ -38,17 +33,32 @@ export default function RequestChangeFormPage() {
       className="min-h-screen flex items-center justify-center relative"
       style={{ backgroundColor: '#ffd9b3' }}
     >
+      {/* Top-left logo */}
+      <div className="absolute top-6 left-6">
+        <Image
+          src="/logo-name.png"
+          alt="Scheduling of Care"
+          width={220}
+          height={80}
+          className="object-contain"
+          priority
+        />
+      </div>
+
       {/* Card */}
       <div
-        className="w-full max-w-3xl border rounded-lg shadow-lg relative"
-        style={{ backgroundColor: '#fff4e6', minHeight: '600px' }}
+        className="w-full max-w-3xl rounded-3xl shadow-lg relative overflow-hidden"
+        style={{
+          backgroundColor: '#fff4e6',
+          minHeight: '480px',
+        }}
       >
         {/* Header */}
         <div
-          className="w-full rounded-t-lg p-4 flex justify-between items-center"
+          className="w-full p-4 flex items-center justify-center"
           style={{ backgroundColor: '#3d0000' }}
         >
-          <h1 className="text-xl font-bold text-white">
+          <h1 className="text-xl font-bold text-white text-center w-full">
             Request of Change Form
           </h1>
         </div>
@@ -65,7 +75,7 @@ export default function RequestChangeFormPage() {
                 setTaskName(e.target.value);
                 setSubmitMessage('');
               }}
-              className="w-full border rounded px-3 py-2"
+              className="w-full border rounded px-3 py-2 bg-white"
             />
           </div>
 
@@ -78,7 +88,7 @@ export default function RequestChangeFormPage() {
                 setDetails(e.target.value);
                 setSubmitMessage('');
               }}
-              className="w-full border rounded px-3 py-2 min-h-[120px]"
+              className="w-full border rounded px-3 py-2 min-h-[120px] bg-white"
             />
           </div>
 
@@ -91,7 +101,7 @@ export default function RequestChangeFormPage() {
                 setReason(e.target.value);
                 setSubmitMessage('');
               }}
-              className="w-full border rounded px-3 py-2 min-h-[100px]"
+              className="w-full border rounded px-3 py-2 min-h-[100px] bg-white"
             />
           </div>
 
@@ -99,21 +109,21 @@ export default function RequestChangeFormPage() {
           <div className="flex justify-end gap-4 mt-4">
             <button
               onClick={handleCancel}
-              className="px-4 py-2 border rounded hover:bg-gray-200"
               type="button"
+              className="px-5 py-2.5 border border-[#3d0000]/40 text-[#3d0000] rounded-full hover:bg-gray-200 transition"
             >
               Cancel
             </button>
             <button
               onClick={handleSubmit}
-              className="px-4 py-2 border rounded bg-orange-300 font-bold hover:bg-orange-400"
               type="button"
+              className="px-6 py-2.5 rounded-full bg-orange-300 font-bold text-[#3d0000] border border-orange-400 hover:bg-orange-400 transition shadow-sm"
             >
               Submit
             </button>
           </div>
 
-          {/* Validation message (won't show on successful submit because we navigate) */}
+          {/* Validation message */}
           {submitMessage && (
             <div className="text-blue-700 font-semibold mt-2">{submitMessage}</div>
           )}
@@ -127,7 +137,7 @@ export default function RequestChangeFormPage() {
             ?
           </button>
           <div className="absolute bottom-12 right-0 hidden w-64 max-w-[90vw] rounded bg-white border p-2 text-sm text-black group-hover:block shadow-lg">
-            Fill in the task name, describe the details of the change, and provide a reason for the request. 
+            Fill in the task name, describe the details of the change, and provide a reason for the request.
             Click <b>Submit</b> to send or <b>Cancel</b> to go back to the menu.
           </div>
         </div>

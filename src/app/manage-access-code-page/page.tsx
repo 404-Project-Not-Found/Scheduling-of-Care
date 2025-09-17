@@ -1,4 +1,3 @@
-// src/app/manage-access/page.tsx
 "use client";
 
 import React, { useState } from "react";
@@ -27,7 +26,6 @@ export default function ManageAccessPage() {
     { id: "9", name: "Oakwood Seniors", status: "active" },
   ]);
 
-  // org actions
   function revokeOrg(id: string) {
     setOrgs((prev) => prev.map((o) => (o.id === id ? { ...o, status: "revoked" } : o)));
   }
@@ -39,10 +37,7 @@ export default function ManageAccessPage() {
   }
 
   return (
-    <div
-      className="h-screen w-full bg-[#ffd9b3] flex flex-col items-center justify-start px-8 pb-8 pt-28 md:pt-30 relative"
-    >
-      {/* logo top-left (outside the card) */}
+    <div className="min-h-screen w-full bg-[#ffd9b3] relative">
       <div className="absolute top-8 left-8 w-64 h-32">
         <Image
           src="/logo-name.png"
@@ -54,57 +49,57 @@ export default function ManageAccessPage() {
         />
       </div>
 
-      {/* card  */}
-      <div className="w-full max-w-3xl md:max-w-4xl bg-[#F7ECD9] rounded-2xl shadow-lg overflow-hidden mt-6">
-        {/* header */}
-        <div className="bg-[#4A0A0A] px-5 py-5 flex justify-center">
-          <h1 className="text-3xl font-bold text-white text-center">Manage Access Codes</h1>
-        </div>
+      <div className="flex justify-center pt-38">
+        <div className="scale-90 origin-top w-full">
+          {/* card */}
+          <div className="w-full max-w-3xl md:max-w-4xl mx-auto bg-[#F7ECD9] rounded-2xl shadow-lg overflow-hidden">
+            {/* header */}
+            <div className="bg-[#4A0A0A] px-5 py-5 flex justify-center">
+              <h1 className="text-3xl font-bold text-white text-center">Manage Access Codes</h1>
+            </div>
 
-        {/* tiny gap */}
-        <div className="h-3" />
+            {/* tiny gap */}
+            <div className="h-3" />
 
-        {/* privacy notice */}
-        <div className="bg-[#ff9999] px-5 py-2">
-          <p className="text-base font-semibold text-black">
-            Privacy Notice: This information is visible only to you and will not be shared with anyone.
-          </p>
-        </div>
+            {/* privacy notice */}
+            <div className="px-5 py-2 bg-[#ff9999]/40">
+                <p className="text-base font-semibold text-black/90">
+                    Privacy Notice: This information is visible only to you and will not be shared with anyone.
+                </p>
+            </div>
 
-        {/* organisations list */}
-        + <div className="p-5 bg-white mx-5 mt-5 mb-3 rounded border shadow-sm max-h-[320px] overflow-y-auto text-black">
-          <Group
-            title="Organisations with Access"
-            items={orgs.filter((o) => o.status === "active")}
-            onRevoke={revokeOrg}
-          />
-          <hr className="my-4" />
-          <Group
-            title="Organisations with Access Pending"
-            items={orgs.filter((o) => o.status === "pending")}
-            onApprove={approveOrg}
-            onRemove={removePending}
-          />
-          <hr className="my-4" />
-          <Group
-            title="Revoked Organisations"
-            items={orgs.filter((o) => o.status === "revoked")}
-          />
-        </div>
+            {/* organisations list */}
+            <div className="p-5 bg-white mx-5 mt-5 mb-3 rounded border shadow-sm max-h-[320px] overflow-y-auto text-black">
+              <Group
+                title="Organisations with Access"
+                items={orgs.filter((o) => o.status === "active")}
+                onRevoke={revokeOrg}
+              />
+              <hr className="my-4" />
+              <Group
+                title="Organisations with Access Pending"
+                items={orgs.filter((o) => o.status === "pending")}
+                onApprove={approveOrg}
+                onRemove={removePending}
+              />
+              <hr className="my-4" />
+              <Group title="Revoked Organisations" items={orgs.filter((o) => o.status === "revoked")} />
+            </div>
 
-        {/* Save & Return */}
-        + <div className="flex justify-center pt-2 pb-6">
-          <button
-            className="bg-[#4A0A0A] text-white font-semibold px-8 py-3 rounded-md hover:bg-[#3a0808] transition-colors"
-            onClick={() => router.push("/menu")}
-          >
-            Save &amp; Return
-          </button>
+            {/* Save & Return */}
+            <div className="flex justify-center pt-2 pb-6">
+              <button
+                className="bg-[#4A0A0A] text-white font-semibold px-8 py-3 rounded-md hover:bg-[#3a0808] transition-colors"
+                onClick={() => router.push("/menu")}
+              >
+                Save &amp; Return
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* help button bottom-right of screen */}
-      <div className="fixed bottom-6 right-6">
+      <div className="fixed bottom-6 right-6 transform scale-90 origin-bottom-right">
         <div className="relative">
           <div
             className="w-12 h-12 bg-[#ff9900] text-white rounded-full flex items-center justify-center font-bold text-xl cursor-pointer"
@@ -120,7 +115,9 @@ export default function ManageAccessPage() {
             <ul className="list-disc pl-5 space-y-1">
               <li>View all organisations and their access status.</li>
               <li>Approve pending organisations or revoke access as needed.</li>
-              <li>Click <b>Save &amp; Return</b> to confirm changes.</li>
+              <li>
+                Click <b>Save &amp; Return</b> to confirm changes.
+              </li>
             </ul>
           </div>
         </div>
@@ -156,10 +153,7 @@ function Group({
             <div>{item.name}</div>
             <div className="flex items-center gap-3">
               {item.status === "active" && onRevoke && (
-                <button
-                  onClick={() => onRevoke(item.id)}
-                  className="text-base underline cursor-pointer"
-                >
+                <button onClick={() => onRevoke(item.id)} className="text-base underline cursor-pointer">
                   Revoke
                 </button>
               )}

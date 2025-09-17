@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 
 const palette = {
@@ -8,23 +8,19 @@ const palette = {
   panelBg: "#F7ECD9",
   border: "#3A0000",
   text: "#2b2b2b",
-  muted: "#666666",
   white: "#FFFFFF",
   accent: "#FF5C5C",
+  panelHover: "#EADBC4",
+  panelActive: "#E1D0B5",
 };
 
 export default function MenuPage() {
   const [open, setOpen] = useState(false);
-  const firstItemRef = useRef<HTMLAnchorElement | null>(null);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     if (open) document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [open]);
-
-  useEffect(() => {
-    if (open && firstItemRef.current) firstItemRef.current.focus();
   }, [open]);
 
   function onBackdropClick(e: React.MouseEvent<HTMLDivElement>) {
@@ -39,7 +35,7 @@ export default function MenuPage() {
         aria-expanded={open}
         aria-controls="menu-drawer"
         onClick={() => setOpen(true)}
-        className="fixed top-4 left-4 z-40 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2"
+        className="fixed top-4 left-4 z-40 p-2 rounded-md focus:outline-none"
         style={{ color: palette.border }}
         aria-label="Open menu"
       >
@@ -89,7 +85,7 @@ export default function MenuPage() {
           </div>
           <button
             onClick={() => setOpen(false)}
-            className="rounded px-2 py-1 text-lg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2"
+            className="rounded px-2 py-1 text-lg hover:opacity-90 focus:outline-none"
             aria-label="Close menu"
           >
             ✕
@@ -99,7 +95,7 @@ export default function MenuPage() {
         {/* body */}
         <nav className="flex h-[calc(100%-56px)] flex-col justify-between">
           <ul className="px-2 py-3 space-y-2">
-            <MenuItem refLink={firstItemRef} href="/update_details" label="Update your details" />
+            <MenuItem href="/update_details" label="Update your details" />
             <MenuItem href="/request_of_change_page" label="Request to change a task" />
             <MenuItem href="/manage-access-code-page" label="Manage organisation access to client" />
             <MenuItem href="/clients_list" label="Manage your Client" />
@@ -108,7 +104,7 @@ export default function MenuPage() {
           <div className="px-4 pb-6 flex justify-end pr-6">
             <Link
               href="#"
-              className="underline underline-offset-4 focus:outline-none focus:ring-2 rounded text-lg"
+              className="underline underline-offset-4 focus:outline-none rounded text-lg"
               style={{ color: palette.border }}
             >
               Sign out
@@ -141,16 +137,15 @@ function HamburgerIcon({ size = 24, color = "currentColor" }: { size?: number; c
 type ItemProps = {
   href: string;
   label: string;
-  refLink?: React.Ref<HTMLAnchorElement>;
 };
 
-function MenuItem({ href, label, refLink }: ItemProps) {
+function MenuItem({ href, label }: ItemProps) {
   return (
     <li>
       <Link
-        ref={refLink}
         href={href}
-        className="block rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-offset-2"
+        className="block rounded-xl px-4 py-3 transition-colors outline-none
+                   hover:bg-[#EADBC4] focus-visible:bg-[#EADBC4] active:bg-[#E1D0B5]"
         style={{ color: palette.text }}
       >
         <div className="flex items-center gap-3">

@@ -36,8 +36,8 @@ export default function FamilyPOAListPage() {
       className="min-h-screen relative flex items-center justify-center p-8"
       style={{ backgroundColor: palette.pageBg }}
     >
-      {/* logo outside the card (top-right of the screen) */}
-      <div className="absolute top-6 right-6">
+      {/* logo outside the card (top-left of the screen) */}
+      <div className="absolute top-6 left-6">
         <Image
           src="/logo-name.png"
           alt="Scheduling of Care"
@@ -48,93 +48,99 @@ export default function FamilyPOAListPage() {
         />
       </div>
 
-      {/* card */}
+      {/* scale wrapper — center origin so the card sits at true center */}
       <div
-        className="w-full max-w-4xl rounded-3xl shadow-lg overflow-hidden relative"
-        style={{ backgroundColor: palette.cardBg, border: `1px solid ${palette.border}` }}
+        className="w-full flex items-center justify-center"
+        style={{ transform: "scale(0.8)", transformOrigin: "center" }}
       >
-        {/* header bar with centered title and left back button */}
+        {/* card */}
         <div
-          className="w-full flex items-center justify-center px-6 py-5 relative"
-          style={{ backgroundColor: palette.header, color: palette.white }}
+          className="w-full max-w-4xl rounded-3xl shadow-lg overflow-hidden relative"
+          style={{ backgroundColor: palette.cardBg, border: `1px solid ${palette.border}` }}
         >
-          <button
-            onClick={goBack}
-            aria-label="Go back"
-            className="absolute left-4 top-1/2 -translate-y-1/2 rounded-md p-2 focus:outline-none focus:ring-2"
-            title="Back"
-            style={{ color: palette.white }}
-          >
-            <BackIcon />
-          </button>
-          <h1 className="text-3xl font-bold">Manage Your Clients</h1>
-        </div>
-
-        {/* content */}
-        <div className="px-8 pb-10 pt-6">
-          <p className="text-2xl mb-4" style={{ color: palette.text }}>
-            List of registered family members:
-          </p>
-
-          {/* scrollable list box */}
+          {/* header bar with centered title and left back button */}
           <div
-            className="mx-auto rounded-2xl bg-white overflow-y-auto mb-8"
-            style={{
-              maxHeight: 380,
-              border: `2px solid ${palette.border}55`,
-            }}
+            className="w-full flex items-center justify-center px-6 py-5 relative"
+            style={{ backgroundColor: palette.header, color: palette.white }}
           >
-            {/* list with dividers between items */}
-            <ul className="divide-y divide-black/10">
-              {members.map((m) => (
-                <li
-                  key={m.name}
-                  className="flex items-center justify-between gap-6 px-8 py-5"
-                  style={{ color: palette.text }}
-                >
-                  <span className="text-2xl">{m.name}</span>
-                  <div className="flex gap-6">
-                    {/* Edit profile 跳转到 client-profile */}
-                    <Link
-                      href={`/client-profile?name=${encodeURIComponent(m.name)}&dob=${m.dob}`}
-                      className="underline text-2xl"
-                    >
-                      Edit profile
-                    </Link>
-                    {/* View dashboard 跳转到 partial-dashboard */}
-                    <Link
-                      href={`/partial-dashboard?name=${encodeURIComponent(m.name)}`}
-                      className="underline text-2xl"
-                    >
-                      View dashboard
-                    </Link>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Add new client button */}
-          <div className="flex justify-center">
             <button
-              onClick={() => router.push("/client-profile?new=true")}
-              className="px-6 py-3 rounded-xl text-2xl font-semibold"
-              style={{ backgroundColor: palette.header, color: palette.white }}
+              onClick={goBack}
+              aria-label="Go back"
+              className="absolute left-4 top-1/2 -translate-y-1/2 rounded-md p-2 focus:outline-none focus:ring-2"
+              title="Back"
+              style={{ color: palette.white }}
             >
-              + Add new client
+              <BackIcon />
             </button>
+            <h1 className="text-3xl font-bold">Manage Your Clients</h1>
           </div>
-        </div>
 
-        {/* help button inside the card, slightly above the bottom-right */}
-        <button
-          className="absolute bottom-6 right-6 w-9 h-9 rounded-full text-white font-bold"
-          style={{ backgroundColor: palette.help }}
-          aria-label="Help"
-          title="Help"
-        >
-          ?
-        </button>
+          {/* content */}
+          <div className="px-8 pb-10 pt-6">
+            <p className="text-2xl mb-4" style={{ color: palette.text }}>
+              List of registered family members:
+            </p>
+
+            {/* scrollable list box */}
+            <div
+              className="mx-auto rounded-2xl bg-white overflow-y-auto mb-8"
+              style={{
+                maxHeight: 380,
+                border: `2px solid ${palette.border}55`,
+              }}
+            >
+              {/* list with dividers between items */}
+              <ul className="divide-y divide-black/10">
+                {members.map((m) => (
+                  <li
+                    key={m.name}
+                    className="flex items-center justify-between gap-6 px-8 py-5"
+                    style={{ color: palette.text }}
+                  >
+                    <span className="text-2xl">{m.name}</span>
+                    <div className="flex gap-6">
+                      {/* Edit profile -> client-profile */}
+                      <Link
+                        href={`/client-profile?name=${encodeURIComponent(m.name)}&dob=${m.dob}`}
+                        className="underline text-2xl"
+                      >
+                        Edit profile
+                      </Link>
+                      {/* View dashboard -> partial-dashboard */}
+                      <Link
+                        href={`/partial-dashboard?name=${encodeURIComponent(m.name)}`}
+                        className="underline text-2xl"
+                      >
+                        View dashboard
+                      </Link>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Add new client button */}
+            <div className="flex justify-center">
+              <button
+                onClick={() => router.push("/client-profile?new=true")}
+                className="px-6 py-3 rounded-xl text-2xl font-semibold"
+                style={{ backgroundColor: palette.header, color: palette.white }}
+              >
+                + Add new client
+              </button>
+            </div>
+          </div>
+
+          {/* help button inside the card, slightly above the bottom-right */}
+          <button
+            className="absolute bottom-6 right-6 w-9 h-9 rounded-full text-white font-bold"
+            style={{ backgroundColor: palette.help }}
+            aria-label="Help"
+            title="Help"
+          >
+            ?
+          </button>
+        </div>
       </div>
     </main>
   );
