@@ -1,4 +1,3 @@
-// src/app/task/edit/page.tsx
 "use client";
 
 import Image from "next/image";
@@ -12,6 +11,7 @@ type Task = {
   slug: string;
   status: string;
   category: string;
+  clientName?: string;
   deleted?: boolean;
 
   // legacy string fields
@@ -76,9 +76,16 @@ export default function EditTaskPage() {
   const [frequencyUnit, setFrequencyUnit] = useState<Unit>("day");
 
   // other fields
+  const [clientName, setClientName] = useState("John Smith"); // default filled value (not placeholder)
   const [status, setStatus] = useState("in progress");
   const [category, setCategory] = useState("Appointments");
   const [label, setLabel] = useState("Replace Toothbrush Head");
+
+  // status options for dropdown; if current status isn't in the list, include it as first option
+  const statusOptionsBase = ["in progress", "Completed", "Not started", "Paused", "Cancelled"];
+  const statusOptions = statusOptionsBase.includes(status)
+    ? statusOptionsBase
+    : [status, ...statusOptionsBase];
 
   useEffect(() => {
     const tasks = loadTasks();
@@ -86,6 +93,7 @@ export default function EditTaskPage() {
     if (!t) return;
 
     setLabel(t.label || label);
+    setClientName(t.clientName || clientName);
     setStatus(t.status || status);
     setCategory(t.category || category);
 
@@ -113,6 +121,7 @@ export default function EditTaskPage() {
       if (from) setDateFrom(from);
       if (to) setDateTo(to);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [taskSlug]);
 
   const displayTitle = useMemo(
@@ -129,6 +138,7 @@ export default function EditTaskPage() {
 
       tasks[idx] = {
         ...tasks[idx],
+        clientName: clientName.trim() || undefined,
         status,
         category,
         // structured fields
@@ -178,6 +188,15 @@ export default function EditTaskPage() {
         <h2 className="mt-4 text-2xl font-bold text-[#1c130f]">{displayTitle}</h2>
 
         <div className="mt-8 space-y-6">
+          {/* Client name */}
+          <Field label="Client name:">
+            <input
+              value={clientName}
+              onChange={(e) => setClientName(e.target.value)}
+              className="w-full rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black"
+            />
+          </Field>
+
           {/* Date range */}
           <Field label="Date range:">
             <div className="flex items-center gap-3">
@@ -222,15 +241,22 @@ export default function EditTaskPage() {
             </div>
           </Field>
 
+          {/* Status - dropdown */}
           <Field label="Status:">
-            <input
+            <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
               className="w-full rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black"
-              placeholder="e.g., Completed"
-            />
+            >
+              {statusOptions.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
           </Field>
 
+          {/* Category */}
           <Field label="Category:">
             <input
               value={category}
@@ -242,9 +268,9 @@ export default function EditTaskPage() {
         </div>
 
         <div className="mt-8 -mx-8 px-8 py-5 bg-rose-300/25 text-black border border-rose-300/50">
-            <span className="font-bold mr-1">IMPORTANT:</span>
-            Deleting the task or editing the frequency and dates will change the schedule of this care
-            item for the rest of the year. Be aware of any budget implications caused by this change. Make this change?
+          <span className="font-bold mr-1">IMPORTANT:</span>
+          Deleting the task or editing the frequency and dates will change the schedule of this care
+          item for the rest of the year. Be aware of any budget implications caused by this change. Make this change?
         </div>
 
         <div className="mt-8 flex items-center justify-between">
@@ -283,4 +309,3 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     </div>
   );
 }
-

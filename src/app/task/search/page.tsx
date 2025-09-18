@@ -54,7 +54,8 @@ export default function SearchTaskPage() {
     ensureSeed();
   }, []);
 
-  const allTasks = useMemo(loadTasks, [hasSearched]); // re-read after coming back
+  // re-read after coming back from add/edit
+  const allTasks = useMemo(loadTasks, [hasSearched]);
 
   const runSearch = () => {
     const q = query.trim().toLowerCase();
@@ -76,7 +77,7 @@ export default function SearchTaskPage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-[#F5CBA7] p-8">
-      {/* SCREEN top-left logo (outside the card) */}
+      {/* top-left logo */}
       <Image
         src="/logo-name.png"
         alt="Scheduling of Care"
@@ -89,9 +90,10 @@ export default function SearchTaskPage() {
       <div className="w-full max-w-4xl rounded-[22px] border border-[#6b3f2a] bg-[#F7ECD9] p-10 shadow">
         <h1 className="text-3xl font-extrabold text-[#1c130f] mb-8">Search tasks</h1>
 
+        {/* search box + button (same row) */}
         <div className="flex items-start gap-4">
-          {/* ONE continuous box: input + results */}
-          <div className="flex-1 rounded-2xl border border-[#7c5040] bg-white shadow-sm overflow-hidden">
+          {/* one continuous box: input + results */}
+          <div className="flex-1 rounded-2xl border border-[#7c5040] bg-white shadow-sm overflow-hidden flex flex-col">
             {/* input row */}
             <div className="px-5 py-4">
               <div className="flex items-center gap-3">
@@ -117,37 +119,50 @@ export default function SearchTaskPage() {
             {/* divider */}
             <div className="h-px w-full bg-[#7c5040]/40" />
 
-            {/* results */}
-            {hasSearched &&
-              (results.length > 0 ? (
-                <ul role="listbox" className="py-2">
-                  {results.map((r) => (
-                    <li key={r.slug}>
-                      <button
-                        role="option"
-                        onClick={() =>
-                          router.push(`/task/edit?task=${encodeURIComponent(r.slug)}`)
-                        }
-                        className="w-full text-left px-5 py-3 text-lg text-black hover:bg-gray-300 focus:bg-gray-300 focus:outline-none transition"
-                      >
-                        {r.label}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                query.trim() !== "" && (
-                  <div className="py-3 px-5 text-gray-500">No results found.</div>
-                )
-              ))}
+            {/* results list (restored) */}
+            <div className="flex-1">
+              {hasSearched &&
+                (results.length > 0 ? (
+                  <ul role="listbox" className="py-2">
+                    {results.map((r) => (
+                      <li key={r.slug}>
+                        <button
+                          role="option"
+                          aria-selected="false"
+                          onClick={() =>
+                            router.push(`/task/edit?task=${encodeURIComponent(r.slug)}`)
+                          }
+                          className="w-full text-left px-5 py-3 text-lg text-black hover:bg-gray-300 focus:bg-gray-300 focus:outline-none transition"
+                        >
+                          {r.label}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  query.trim() !== "" && (
+                    <div className="py-3 px-5 text-gray-500">No results found.</div>
+                  )
+                ))}
+            </div>
           </div>
 
-          {/* Search button aligned with input height */}
+          {/* Search button */}
           <button
             onClick={runSearch}
             className="h-[56px] px-6 rounded-2xl bg-[#F39C6B] hover:bg-[#ef8a50] text-[#1c130f] font-extrabold text-xl"
           >
             Search
+          </button>
+        </div>
+
+        {/* independent Add new task button below, aligned with search box left edge */}
+        <div className="mt-4">
+          <button
+            onClick={() => router.push("/task/add")}
+            className="h-[56px] px-6 rounded-2xl bg-[#F58CA8] hover:bg-[#e97995] text-black font-extrabold text-xl"
+          >
+            + Add new task
           </button>
         </div>
       </div>
