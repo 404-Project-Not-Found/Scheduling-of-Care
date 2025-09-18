@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import AssignCarerPage from "./AssignCarer";
+import AssignCarerPage from "./ManageCarer";
 
 
 export default function Page() {

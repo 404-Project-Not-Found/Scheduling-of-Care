@@ -22,7 +22,6 @@ function ensureSeed() {
       "carers",
       JSON.stringify([
         { id: "jasmine-cook", name: "Jasmine Cook", deleted: false, hasAccess: false },
-        { id: "john-smith",   name: "John Smith",   deleted: false, hasAccess: true  }, 
       ])
     );
     return;
@@ -34,6 +33,7 @@ function ensureSeed() {
     if (!byId.has("jasmine-cook")) {
       list.push({ id: "jasmine-cook", name: "Jasmine Cook", deleted: false, hasAccess: false });
     }
+    // (If you still want John Smith, keep the block below; otherwise remove it)
     if (!byId.has("john-smith")) {
       list.push({ id: "john-smith", name: "John Smith", deleted: false, hasAccess: true });
     } else {
@@ -77,7 +77,7 @@ export default function SearchCarerPage() {
   }, []);
 
   const runSearch = () => {
-    const source = loadCarers();           
+    const source = loadCarers();
     const q = query.trim().toLowerCase();
     const hits =
       q.length === 0
@@ -87,9 +87,9 @@ export default function SearchCarerPage() {
     setHasSearched(true);
   };
 
+  // ✅ Always route to /carer/manage with the selected carer id
   const pick = (c: Carer) => {
-    const path = c.hasAccess ? "/carer/revoke" : "/carer/assign";
-    router.push(`${path}?carer=${encodeURIComponent(c.id)}`);
+    router.push(`/carer/manage?carer=${encodeURIComponent(c.id)}`);
   };
 
   return (
@@ -123,7 +123,7 @@ export default function SearchCarerPage() {
                   <line x1="21" y1="21" x2="16.65" y2="16.65" />
                 </svg>
                 <input
-                  placeholder="Search for carer to assign"
+                  placeholder="Search for a carer"
                   value={query}
                   onChange={(e) => {
                     const v = e.target.value;
@@ -148,12 +148,10 @@ export default function SearchCarerPage() {
                   {results.map((c) => (
                     <li key={c.id}>
                       <button
-                        role="option"
                         onClick={() => pick(c)}
                         className="w-full text-left px-5 py-3 text-lg text-black hover:bg-gray-300 focus:bg-gray-300 focus:outline-none transition"
                       >
                         {c.name}
-                        {c.hasAccess}
                       </button>
                     </li>
                   ))}
