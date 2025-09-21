@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 type OrgStatus = "active" | "pending" | "revoked";
 interface Organization {
@@ -13,6 +13,8 @@ interface Organization {
 
 export default function ManageAccessPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const clientName = searchParams.get("name") || "Selected client";
 
   const [orgs, setOrgs] = useState<Organization[]>([
     { id: "1", name: "SunnyCare Facility", status: "active" },
@@ -38,6 +40,7 @@ export default function ManageAccessPage() {
 
   return (
     <div className="min-h-screen w-full bg-[#ffd9b3] relative">
+      {/* Logo on top-left */}
       <div className="absolute top-8 left-8 w-64 h-32">
         <Image
           src="/logo-name.png"
@@ -54,18 +57,23 @@ export default function ManageAccessPage() {
           {/* card */}
           <div className="w-full max-w-3xl md:max-w-4xl mx-auto bg-[#F7ECD9] rounded-2xl shadow-lg overflow-hidden">
             {/* header */}
-            <div className="bg-[#4A0A0A] px-5 py-5 flex justify-center">
-              <h1 className="text-3xl font-bold text-white text-center">Manage Access Codes</h1>
+            <div className="bg-[#4A0A0A] px-5 py-5 text-center">
+              <h1 className="text-3xl font-bold text-white">Manage Organisation Access</h1>
+            </div>
+
+            {/* client name */}
+            <div className="px-5 py-4 text-center text-2xl font-bold text-black">
+              Client:&nbsp;{clientName}
             </div>
 
             {/* tiny gap */}
-            <div className="h-3" />
+            <div className="h-1" />
 
             {/* privacy notice */}
             <div className="px-5 py-2 bg-[#ff9999]/40">
-                <p className="text-base font-semibold text-black/90">
-                    Privacy Notice: This information is visible only to you and will not be shared with anyone.
-                </p>
+              <p className="text-base font-semibold text-black/90">
+                Privacy Notice: This information is visible only to you and will not be shared with anyone.
+              </p>
             </div>
 
             {/* organisations list */}
@@ -83,7 +91,10 @@ export default function ManageAccessPage() {
                 onRemove={removePending}
               />
               <hr className="my-4" />
-              <Group title="Revoked Organisations" items={orgs.filter((o) => o.status === "revoked")} />
+              <Group
+                title="Revoked Organisations"
+                items={orgs.filter((o) => o.status === "revoked")}
+              />
             </div>
 
             {/* Save & Return */}
@@ -99,6 +110,7 @@ export default function ManageAccessPage() {
         </div>
       </div>
 
+      {/* Help bubble */}
       <div className="fixed bottom-6 right-6 transform scale-90 origin-bottom-right">
         <div className="relative">
           <div
@@ -126,7 +138,7 @@ export default function ManageAccessPage() {
   );
 }
 
-/* group component for orgs */
+/* reusable group component for orgs */
 function Group({
   title,
   items,
@@ -152,29 +164,33 @@ function Group({
           <div key={item.id} className="flex items-center justify-between">
             <div>{item.name}</div>
             <div className="flex items-center gap-3">
+              {/* Active orgs → Orange Revoke button */}
               {item.status === "active" && onRevoke && (
-                <button onClick={() => onRevoke(item.id)} className="text-base underline cursor-pointer">
+                <button
+                  onClick={() => onRevoke(item.id)}
+                  className="px-3 py-1 rounded text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 transition-colors"
+                >
                   Revoke
                 </button>
               )}
+
+              {/* Pending orgs → Green Approve / Red Reject */}
               {item.status === "pending" && (
                 <>
                   {onApprove && (
                     <button
                       onClick={() => onApprove(item.id)}
-                      className="text-base underline cursor-pointer"
-                      title="Approve"
+                      className="px-3 py-1 rounded text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition-colors"
                     >
-                      ✔
+                      Approve
                     </button>
                   )}
                   {onRemove && (
                     <button
                       onClick={() => onRemove(item.id)}
-                      className="text-base underline cursor-pointer"
-                      title="Remove"
+                      className="px-3 py-1 rounded text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-colors"
                     >
-                      ✖
+                      Reject
                     </button>
                   )}
                 </>

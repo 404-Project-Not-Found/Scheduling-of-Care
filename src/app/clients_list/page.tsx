@@ -12,6 +12,9 @@ const palette = {
   border: "#3A0000",
   help: "#ff9999",
   white: "#ffffff",
+  editGreen: "#4CAF50",   // green
+  dashOrange: "#FF9800",  // orange
+  organPink: "#E91E63",   // pink
 };
 
 // hardcoded members list for demo
@@ -33,7 +36,7 @@ export default function FamilyPOAListPage() {
       className="min-h-screen relative flex items-center justify-center p-8"
       style={{ backgroundColor: palette.pageBg }}
     >
-      {/* logo outside the card (top-left of the screen) */}
+      {/* logo */}
       <div className="absolute top-6 left-6">
         <Image
           src="/logo-name.png"
@@ -45,19 +48,19 @@ export default function FamilyPOAListPage() {
         />
       </div>
 
-      {/* scale wrapper — center origin so the card sits at true center */}
-      <div
-        className="w-full flex items-center justify-center"
-        style={{ transform: "scale(0.8)", transformOrigin: "center" }}
-      >
+      <div className="w-full flex items-center justify-center">
         {/* card */}
         <div
-          className="w-full max-w-4xl rounded-3xl shadow-lg overflow-hidden relative"
-          style={{ backgroundColor: palette.cardBg, border: `1px solid ${palette.border}` }}
+          className="w-full max-w-6xl rounded-3xl shadow-lg overflow-hidden relative"
+          style={{
+            backgroundColor: palette.cardBg,
+            border: `1px solid ${palette.border}`,
+            minHeight: 720,
+          }}
         >
-          {/* header bar with centered title and left back button */}
+          {/* header */}
           <div
-            className="w-full flex items-center justify-center px-6 py-5 relative"
+            className="w-full flex items-center justify-center px-8 py-6 relative"
             style={{ backgroundColor: palette.header, color: palette.white }}
           >
             <button
@@ -69,46 +72,57 @@ export default function FamilyPOAListPage() {
             >
               <BackIcon />
             </button>
-            <h1 className="text-3xl font-bold">Manage Your Clients</h1>
+            <h1 className="text-3xl md:text-4xl font-bold">Manage Your Clients</h1>
           </div>
 
           {/* content */}
-          <div className="px-8 pb-10 pt-6">
-            <p className="text-2xl mb-4" style={{ color: palette.text }}>
+          <div className="px-10 pb-12 pt-8">
+            <p className="text-2xl md:text-3xl mb-5" style={{ color: palette.text }}>
               List of registered family members:
             </p>
 
-            {/* scrollable list box */}
+            {/* list */}
             <div
-              className="mx-auto rounded-2xl bg-white overflow-y-auto mb-8"
+              className="mx-auto rounded-2xl bg-white overflow-y-auto mb-10"
               style={{
-                maxHeight: 380,
+                maxHeight: 520,
                 border: `2px solid ${palette.border}55`,
               }}
             >
-              {/* list with dividers between items */}
               <ul className="divide-y divide-black/10">
                 {members.map((m) => (
                   <li
                     key={m.name}
-                    className="flex items-center justify-between gap-6 px-8 py-5"
+                    className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 md:gap-6 px-8 py-5"
                     style={{ color: palette.text }}
                   >
                     <span className="text-2xl">{m.name}</span>
-                    <div className="flex gap-6">
-                      {/* Edit profile -> client-profile */}
+                    <div className="flex flex-wrap gap-4">
+                      {/* Edit profile → green */}
                       <Link
                         href={`/client-profile?name=${encodeURIComponent(m.name)}&dob=${m.dob}`}
-                        className="underline text-2xl"
+                        className="px-4 py-2 rounded-lg text-lg font-medium"
+                        style={{ backgroundColor: palette.editGreen, color: palette.white }}
                       >
                         Edit profile
                       </Link>
-                      {/* View dashboard -> partial-dashboard */}
+
+                      {/* View dashboard → orange */}
                       <Link
                         href={`/partial-dashboard?name=${encodeURIComponent(m.name)}`}
-                        className="underline text-2xl"
+                        className="px-4 py-2 rounded-lg text-lg font-medium"
+                        style={{ backgroundColor: palette.dashOrange, color: palette.white }}
                       >
                         View dashboard
+                      </Link>
+
+                      {/* Manage organisation access → pink (now passes both name + dob) */}
+                      <Link
+                        href={`/manage-access-code-page?name=${encodeURIComponent(m.name)}&dob=${m.dob}`}
+                        className="px-4 py-2 rounded-lg text-lg font-medium"
+                        style={{ backgroundColor: palette.organPink, color: palette.white }}
+                      >
+                        Manage organisation access
                       </Link>
                     </div>
                   </li>
@@ -116,11 +130,11 @@ export default function FamilyPOAListPage() {
               </ul>
             </div>
 
-            {/* Add new client button */}
+            {/* Add new client */}
             <div className="flex justify-center">
               <button
                 onClick={() => router.push("/client-profile?new=true")}
-                className="px-6 py-3 rounded-xl text-2xl font-semibold"
+                className="px-7 py-4 rounded-xl text-2xl font-semibold"
                 style={{ backgroundColor: palette.header, color: palette.white }}
               >
                 + Add new client
@@ -128,9 +142,9 @@ export default function FamilyPOAListPage() {
             </div>
           </div>
 
-          {/* help button inside the card, slightly above the bottom-right */}
+          {/* help button */}
           <button
-            className="absolute bottom-6 right-6 w-9 h-9 rounded-full text-white font-bold"
+            className="absolute bottom-6 right-6 w-10 h-10 rounded-full text-white font-bold"
             style={{ backgroundColor: palette.help }}
             aria-label="Help"
             title="Help"
