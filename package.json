@@ -12,6 +12,7 @@
     "@fullcalendar/common": "^5.11.5",
     "@fullcalendar/core": "^6.1.19",
     "@fullcalendar/daygrid": "^6.1.19",
+    "@fullcalendar/interaction": "^6.1.19",
     "@fullcalendar/react": "^6.1.19",
     "next": "15.5.2",
     "react": "19.1.0",

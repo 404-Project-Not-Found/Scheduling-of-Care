@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-
+import { TransactionProvider } from "@/context/TransactionContext"; // <- import context
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,9 +27,12 @@ export default function RootLayout({
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        style={{background: "#ffd9b3"}}
+        style={{ background: "#ffd9b3" }}
       >
-        {children}
+        {/* Wrap children in TransactionProvider */}
+        <TransactionProvider>
+          {children}
+        </TransactionProvider>
       </body>
     </html>
   );

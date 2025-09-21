@@ -35,12 +35,12 @@ export default function UpdateDetailsPage() {
         />
       </div>
 
-      {/* Card container (narrower width) */}
+      {/* Card container */}
       <div
         className="w-full max-w-xl md:max-w-2xl rounded-2xl shadow-lg overflow-hidden"
         style={{ backgroundColor: colors.cardBg }}
       >
-        {/* Top bar: centered title, dark brown background, white text */}
+        {/* Top bar */}
         <div
           className="w-full flex items-center justify-center px-6 py-5"
           style={{ backgroundColor: colors.header }}
@@ -50,7 +50,7 @@ export default function UpdateDetailsPage() {
           </h1>
         </div>
 
-        {/* Content area: generous spacing, white inputs */}
+        {/* Content area */}
         <div className="px-8 md:px-10 py-8 md:py-10 text-black">
           {/* Email */}
           <label className="block text-lg mb-2" style={{ color: colors.text }}>
@@ -94,7 +94,7 @@ export default function UpdateDetailsPage() {
             <button
               type="button"
               className="px-6 py-2.5 rounded-full border text-gray-700 hover:bg-gray-200"
-              onClick={() => router.push("/menu")}
+              onClick={() => router.push("/dashboard")}
             >
               Cancel
             </button>
@@ -103,7 +103,7 @@ export default function UpdateDetailsPage() {
               type="button"
               className="px-7 py-2.5 rounded-full font-semibold border"
               style={{ backgroundColor: colors.orange, borderColor: "#f08a00", color: colors.header }}
-              onClick={() => router.push("/menu")}
+              onClick={() => router.push("/dashboard")}
             >
               Save
             </button>

@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import dayGridPlugin from "@fullcalendar/daygrid";
-import interactionPlugin from "@fullcalendar/interaction"; 
+import interactionPlugin from "@fullcalendar/interaction";
 import "@/styles/fullcalendar.css";
 
 const FullCalendar = dynamic(() => import("@fullcalendar/react"), { ssr: false });
@@ -18,17 +18,21 @@ type CalendarPanelProps = {
   onDateClick: (date: string) => void;
 };
 
-// Helper to format Date object as YYYY-MM-DD in local time
-function formatDateToYMD(date: Date) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
+function toUTCDateString(date: string) {
+  const d = new Date(date + "T00:00:00"); // treat as local midnight
+  const yyyy = d.getUTCFullYear();
+  const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(d.getUTCDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
 }
 
 export default function CalendarPanel({ tasks, onDateClick }: CalendarPanelProps) {
-  const taskDatesSet = new Set(tasks.map((t) => t.nextDue));
-  const todayStr = formatDateToYMD(new Date());
+  // Normalize task dates to UTC string
+  const taskDatesSet = new Set(tasks.map((t) => toUTCDateString(t.nextDue)));
+
+  // Today in UTC
+  const today = new Date();
+  const todayStr = `${today.getUTCFullYear()}-${String(today.getUTCMonth() + 1).padStart(2, "0")}-${String(today.getUTCDate()).padStart(2, "0")}`;
 
   return (
     <FullCalendar
@@ -36,16 +40,17 @@ export default function CalendarPanel({ tasks, onDateClick }: CalendarPanelProps
       initialView="dayGridMonth"
       headerToolbar={{ left: "prev", center: "title", right: "next" }}
       height="auto"
-      events={[]} 
+      events={[]} // no text inside calendar
       dateClick={(info) => {
-        const clickedDate = formatDateToYMD(info.date);
-        if (taskDatesSet.has(clickedDate)) onDateClick(clickedDate);
+        const clicked = info.dateStr;
+        if (taskDatesSet.has(clicked)) onDateClick(clicked);
         else onDateClick("");
       }}
       dayCellClassNames={(info) => {
-        const dateStr = formatDateToYMD(info.date);
         const classes: string[] = [];
+        if (!info.isCurrentMonth) return classes;
 
+        const dateStr = info.dateStr;
         if (dateStr === todayStr) classes.push("fc-today-custom");
         if (taskDatesSet.has(dateStr)) classes.push("fc-task-day");
 
