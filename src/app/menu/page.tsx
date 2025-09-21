@@ -123,7 +123,7 @@ export default function MenuPage() {
           <ul className="px-3 py-4 space-y-2">
             <MenuItem href="/update_details" label="Update your details" />
             <MenuItem href="/request_of_change_page" label="Request to change a task" />
-            <MenuItem href="/manage-access-code-page" label="Manage organisation access to client" />
+            <MenuItem href="/create-access-code" label="Manage your access code" />
             <MenuItem href="/clients_list" label="Manage your Client" />
           </ul>
 
