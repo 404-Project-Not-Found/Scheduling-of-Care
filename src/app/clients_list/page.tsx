@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -77,7 +79,7 @@ export default function FamilyPOAListPage() {
                 {/* Add Back text next to the arrow */}
                 <span className="text-lg">Back</span>
               </button>
-              <h1 className="text-3xl md:text-4xl font-bold">Manage Your Clients</h1>
+              <h1 className="text-3xl md:text-4xl font-bold">Manage People with Special Needs</h1>
             </div>
 
             {/* content */}
@@ -123,7 +125,7 @@ export default function FamilyPOAListPage() {
 
                         {/* Manage organisation access → pink (now passes both name + dob) */}
                         <Link
-                          href={`/manage-access-code-page?name=${encodeURIComponent(m.name)}&dob=${m.dob}`}
+                          href={`/manage-organisation-access?name=${encodeURIComponent(m.name)}&dob=${m.dob}`}
                           className="px-4 py-2 rounded-lg text-lg font-medium"
                           style={{ backgroundColor: palette.organPink, color: palette.white }}
                         >
@@ -142,7 +144,7 @@ export default function FamilyPOAListPage() {
                   className="px-7 py-4 rounded-xl text-2xl font-semibold"
                   style={{ backgroundColor: palette.header, color: palette.white }}
                 >
-                  + Add new client
+                  + Add new person
                 </button>
               </div>
             </div>

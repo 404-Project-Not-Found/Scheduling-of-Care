@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import React, { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -7,9 +9,9 @@ import { useRouter } from "next/navigation";
 const colors = {
   pageBg: "#ffd9b3",
   cardBg: "#F7ECD9",
-  header: "#4A0A0A",
+  header: "#3A0000",
   text: "#2b2b2b",
-  orange: "#ff9900",
+  orange: "#F4A261",
 };
 
 export default function UpdateDetailsPage() {

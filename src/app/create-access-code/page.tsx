@@ -1,20 +1,24 @@
-// src/app/menu/page.tsx
 "use client";
+
+export const dynamic = "force-dynamic";
 
 import React, { useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation"; 
 
 const palette = {
   canvas: "#F7ECD9",     // Page background
   header: "#3A0000",     // Dark brown header bar
-  text: "#2b2b2b",       // Default text
+  text: "#2b2b2b",       // Default black text
   accent: "#ff9999",     // Info dot color
   btn: "#3A0000",        // Main button color
   inputBorder: "#602222",// Input border color
-  notice: "#ffcccc",     // Pink notice bar background
+  notice: "#F9C9B1",     // notice bar background
+  question: "#ff9900"    ,// Help bubble background
 };
 
 export default function AddFamilyMemberFullPage() {
+  const router = useRouter(); 
   const [code, setCode] = useState("");
   const [copied, setCopied] = useState<null | "ok" | "err">(null);
   const [showTip, setShowTip] = useState(false);
@@ -76,14 +80,14 @@ export default function AddFamilyMemberFullPage() {
         </button>
 
         {/* Page title centered */}
-        <h1 className="text-3xl font-bold">Add a new family member</h1>
+        <h1 className="text-3xl font-bold">Create new Access Code</h1>
       </div>
 
       {/* === Pink notice bar with instructions === */}
       <div className="w-full py-4 px-6" style={{ backgroundColor: palette.notice }}>
         <p className="text-base sm:text-lg md:text-xl font-semibold text-black leading-relaxed text-left">
-          To add a new person with special needs in this system, please generate an access code, copy it and email it to your family member’s care
-          organisation management team along with your family member’s name to allow organisation access to that person. 
+          IMPORTANT: To add a new person with special needs in this system, please generate an access code, copy it and email it to this person’s care
+          organisation management team along with the person’s name to allow organisation access to that person.
         </p>
       </div>
 
@@ -158,12 +162,12 @@ export default function AddFamilyMemberFullPage() {
       {/* === New bottom button === */}
       <div className="w-full flex justify-center mt-12 mb-20">
         <button
-            onClick={() => alert("Navigate to find client page")}
-            className="px-6 py-4 text-center rounded-xl text-base sm:text-lg md:text-xl font-semibold"
-            style={{ color: palette.header }}
+          onClick={() => router.push("/client-profile?new=true")} 
+          className="px-6 py-4 text-center rounded-xl text-base sm:text-lg md:text-xl"
+          style={{ color: palette.header }}
         >
-            Already have access for your family member, but not shown on the list of clients? <br />
-            <span className="underline">Find your client here</span>
+          Already have access code for someone you know (family member or client)? <br />
+          <span className="underline">Add the person to your list of people with special needs here</span>
         </button>
       </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -11,7 +11,26 @@ interface Organization {
   status: OrgStatus;
 }
 
+const palette = {
+  pageBg: "#ffd9b3", // page background
+  header: "#3A0000", // dark brown
+  banner: "#F9C9B1", // notice banner
+  panelBg: "#fdf4e7", // panel background
+};
+
+// Optional: keep dynamic rendering 
+export const dynamic = "force-dynamic";
+
+// ===== Outer page: wraps the inner component with <Suspense> to avoid build errors with useSearchParams =====
 export default function ManageAccessPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: 16 }}>Loading…</div>}>
+      <ManageAccessInner />
+    </Suspense>
+  );
+}
+
+function ManageAccessInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const clientName = searchParams.get("name") || "Selected client";
@@ -39,8 +58,8 @@ export default function ManageAccessPage() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-[#ffd9b3] relative">
-      {/* Logo on top-left */}
+    <div className="min-h-screen w-full relative" style={{ backgroundColor: palette.pageBg }}>
+      {/* Logo */}
       <div className="absolute top-8 left-8 w-64 h-32">
         <Image
           src="/logo-name.png"
@@ -52,32 +71,45 @@ export default function ManageAccessPage() {
         />
       </div>
 
-      <div className="flex justify-center pt-38">
-        <div className="scale-90 origin-top w-full">
-          {/* card */}
-          <div className="w-full max-w-3xl md:max-w-4xl mx-auto bg-[#F7ECD9] rounded-2xl shadow-lg overflow-hidden">
-            {/* header */}
-            <div className="bg-[#4A0A0A] px-5 py-5 text-center">
+      <div className="flex justify-center pt-20">
+        {/* Note: Tailwind does not have pt-25; use pt-20 or pt-24 */}
+        <div className="scale-100 origin-top w-full">
+          <div
+            className="w-full max-w-3xl md:max-w-4xl mx-auto rounded-2xl shadow-lg overflow-hidden"
+            style={{ backgroundColor: palette.panelBg }}
+          >
+            {/* Header */}
+            <div
+              className="px-5 py-5 flex items-center justify-center relative"
+              style={{ backgroundColor: palette.header }}
+            >
+              <button
+                onClick={() => router.push("/clients_list")}
+                className="absolute left-5 flex items-center gap-1 text-white hover:text-gray-200 transition"
+              >
+                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                  <path d="M15 18l-6-6 6-6" />
+                </svg>
+                <span className="font-medium">Back</span>
+              </button>
+
               <h1 className="text-3xl font-bold text-white">Manage Organisation Access</h1>
             </div>
 
-            {/* client name */}
+            {/* Client name */}
             <div className="px-5 py-4 text-center text-2xl font-bold text-black">
               Client:&nbsp;{clientName}
             </div>
 
-            {/* tiny gap */}
-            <div className="h-1" />
-
-            {/* privacy notice */}
-            <div className="px-5 py-2 bg-[#ff9999]/40">
+            {/* Privacy notice */}
+            <div className="px-5 py-2" style={{ backgroundColor: palette.banner }}>
               <p className="text-base font-semibold text-black/90">
-                Privacy Notice: This information is visible only to you and will not be shared with anyone.
+                Privacy Notice: This information is visible only to you, as the family member or power of attorney for this person, and will not be shared with anyone.
               </p>
             </div>
 
-            {/* organisations list */}
-            <div className="p-5 bg-white mx-5 mt-5 mb-3 rounded border shadow-sm max-h-[320px] overflow-y-auto text-black">
+            {/* Organisations list */}
+            <div className="p-5 mx-5 mt-5 mb-3 rounded border shadow-sm max-h-[320px] overflow-y-auto text-black bg-white">
               <Group
                 title="Organisations with Access"
                 items={orgs.filter((o) => o.status === "active")}
@@ -91,17 +123,15 @@ export default function ManageAccessPage() {
                 onRemove={removePending}
               />
               <hr className="my-4" />
-              <Group
-                title="Revoked Organisations"
-                items={orgs.filter((o) => o.status === "revoked")}
-              />
+              <Group title="Revoked Organisations" items={orgs.filter((o) => o.status === "revoked")} />
             </div>
 
             {/* Save & Return */}
             <div className="flex justify-center pt-2 pb-6">
               <button
-                className="bg-[#4A0A0A] text-white font-semibold px-8 py-3 rounded-md hover:bg-[#3a0808] transition-colors"
-                onClick={() => router.push("/menu")}
+                className="text-white font-semibold px-8 py-3 rounded-md hover:bg-[#3a0808] transition-colors"
+                style={{ backgroundColor: palette.header }}
+                onClick={() => router.push("/clients_list")}
               >
                 Save &amp; Return
               </button>
@@ -114,7 +144,8 @@ export default function ManageAccessPage() {
       <div className="fixed bottom-6 right-6 transform scale-90 origin-bottom-right">
         <div className="relative">
           <div
-            className="w-12 h-12 bg-[#ff9900] text-white rounded-full flex items-center justify-center font-bold text-xl cursor-pointer"
+            className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-xl cursor-pointer"
+            style={{ backgroundColor: "#ff9900", color: "#fff" }}
             onMouseEnter={(e) => e.currentTarget.nextElementSibling?.classList.remove("hidden")}
             onMouseLeave={(e) => e.currentTarget.nextElementSibling?.classList.add("hidden")}
             aria-label="Help"
@@ -138,7 +169,7 @@ export default function ManageAccessPage() {
   );
 }
 
-/* reusable group component for orgs */
+/* Reusable group component */
 function Group({
   title,
   items,
@@ -164,7 +195,6 @@ function Group({
           <div key={item.id} className="flex items-center justify-between">
             <div>{item.name}</div>
             <div className="flex items-center gap-3">
-              {/* Active orgs → Orange Revoke button */}
               {item.status === "active" && onRevoke && (
                 <button
                   onClick={() => onRevoke(item.id)}
@@ -173,8 +203,6 @@ function Group({
                   Revoke
                 </button>
               )}
-
-              {/* Pending orgs → Green Approve / Red Reject */}
               {item.status === "pending" && (
                 <>
                   {onApprove && (
@@ -202,3 +230,4 @@ function Group({
     </div>
   );
 }
+

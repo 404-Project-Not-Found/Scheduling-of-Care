@@ -1,17 +1,17 @@
-// src/app/menu/page.tsx
 "use client";
+
+export const dynamic = "force-dynamic";
 
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
+// ---- Color palette ----
 const palette = {
-  pageBg: "#ffd9b3",      // page background
-  cardBg: "#FAEBDC",     // dashboard inner background
-  header: "#4A0A0A",     // dark brown
-  banner: "#F9C9B1",     // notice banner
-  border: "#4A0A0A",     // card border
-  panelBg: "#F7ECD9",    // drawer background
+  pageBg: "#ffd9b3",   // page background
+  header: "#3A0000",   // dark brown
+  banner: "#F9C9B1",   // notice banner
+  panelBg: "#fdf4e7",  // panel background
   text: "#2b2b2b",
   white: "#FFFFFF",
 };
@@ -32,53 +32,61 @@ export default function MenuPage() {
   }
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center px-6 py-10 relative"
-         style={{ backgroundColor: "#ffd9b3" }}>
-
-      {/* ===== Dashboard Card (centered) ===== */}
-      <div className="w-full max-w-5xl">
-        {/* Top bar inside the card */}
-        <div className="rounded-t-3xl px-6 py-5 flex items-center gap-4"
-             style={{ backgroundColor: palette.header, color: palette.white }}>
+    <div
+      className="min-h-screen w-full flex items-center justify-center px-6 md:px-10 py-8 md:py-10 relative"
+      style={{ backgroundColor: palette.pageBg }}
+    >
+      {/* ===== Centered Card (same layout as partial dashboard) ===== */}
+      <div
+        className="w-full max-w-7xl rounded-2xl md:rounded-3xl overflow-hidden"
+        style={{
+          backgroundColor: palette.panelBg,
+          border: `6px solid ${palette.header}`,
+        }}
+      >
+        {/* Top bar inside the card (dark brown) */}
+        <div
+          className="w-full flex items-center justify-center px-8 py-5 relative"
+          style={{ backgroundColor: palette.header, color: palette.white }}
+        >
           {/* Round hamburger triggers the drawer */}
           <button
             aria-label="Open menu"
             onClick={() => setOpen(true)}
-            className="h-11 w-11 rounded-full bg-white flex items-center justify-center shrink-0"
+            className="absolute left-6 top-1/2 -translate-y-1/2 h-11 w-11 rounded-full bg-white flex items-center justify-center shrink-0"
+            title="Open menu"
           >
             <HamburgerIcon size={22} color={palette.header} />
           </button>
 
-          {/* Title + small logo mark */}
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
-            {/* You can swap to a smaller mark if you have one */}
+          {/* Title centered; small brand mark on the right if you like */}
+          <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
+
+          <div className="absolute right-6 top-1/2 -translate-y-1/2 hidden sm:block">
             <Image
               src="/logo-name.png"
               alt="Scheduling of Care"
-              width={120}
-              height={32}
+              width={140}
+              height={36}
               className="object-contain"
               priority
             />
           </div>
         </div>
 
-        {/* Framed content area */}
-        <div className="rounded-b-3xl overflow-hidden border-4"
-             style={{ borderColor: palette.border, backgroundColor: palette.cardBg }}>
-          {/* Notice banner */}
-          <div className="w-full border-b px-6 py-3 flex items-center gap-3"
-               style={{ backgroundColor: palette.banner, borderColor: "#e2b197" }}>
-            <BellIcon />
-            <p className="text-base text-[#4A0A0A]">
-              Select a client from list of clients under the menu options to view their tasks
-            </p>
-          </div>
-
-          {/* Empty body area */}
-          <div className="h-[420px]" />
+        {/* Notice banner */}
+        <div
+          className="w-full border-b px-6 md:px-8 py-4 flex items-center gap-3"
+          style={{ backgroundColor: palette.banner, borderColor: "#e2b197" }}
+        >
+          <BellIcon />
+          <p className="text-base md:text-lg" style={{ color: palette.header }}>
+            Select a client from the list of clients under the menu to view their tasks.
+          </p>
         </div>
+
+        {/* Main content area (empty for now, same height as partial) */}
+        <div className="p-6 md:p-10 min-h-[60vh]" />
       </div>
 
       {/* ===== Drawer Backdrop ===== */}
@@ -103,8 +111,10 @@ export default function MenuPage() {
         }}
       >
         {/* Drawer header */}
-        <div className="flex items-center justify-between px-4 py-3"
-             style={{ backgroundColor: palette.header, color: palette.white }}>
+        <div
+          className="flex items-center justify-between px-4 py-3"
+          style={{ backgroundColor: palette.header, color: palette.white }}
+        >
           <div className="flex items-center gap-3">
             <HamburgerIcon size={22} color={palette.white} />
             <h2 className="text-lg font-semibold">Menu</h2>
@@ -113,6 +123,7 @@ export default function MenuPage() {
             onClick={() => setOpen(false)}
             className="rounded px-2 py-1 text-lg hover:opacity-90 focus:outline-none"
             aria-label="Close menu"
+            title="Close"
           >
             ✕
           </button>
@@ -123,8 +134,8 @@ export default function MenuPage() {
           <ul className="px-3 py-4 space-y-2">
             <MenuItem href="/update_details" label="Update your details" />
             <MenuItem href="/request_of_change_page" label="Request to change a task" />
-            <MenuItem href="/create-access-code" label="Manage your access code" />
-            <MenuItem href="/clients_list" label="Manage your Client" />
+            <MenuItem href="/create-access-code" label="Create access code" />
+            <MenuItem href="/clients_list" label="Manage people with special needs" />
           </ul>
 
           <div className="px-4 pb-6 flex justify-end pr-6">
