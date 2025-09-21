@@ -1,8 +1,8 @@
 # COMP30022-IT-Project-Schedule-of-Care-Program
-Project for COMP30022 IT Project 2025 
 
-Link to project: Add web app link here 
+Project for COMP30022 IT Project 2025
 
+Link to project: Add web app link here
 
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
