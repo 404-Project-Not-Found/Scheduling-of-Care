@@ -23,15 +23,16 @@
     "mongoose": "^8.18.1",
     "next": "15.5.2",
     "next-auth": "^4.24.7",
+    "nodemailer": "^6.10.1",
     "react": "19.1.0",
     "react-dom": "19.1.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
-    "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "@types/next-auth": "^3.13.0",
     "@types/node": "^20.19.13",
+    "@types/nodemailer": "^7.0.1",
     "@types/react": "^19.1.12",
     "@types/react-dom": "^19",
     "@typescript-eslint/eslint-plugin": "^8.44.0",

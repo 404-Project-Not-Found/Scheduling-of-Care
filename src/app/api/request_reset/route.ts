@@ -1,11 +1,16 @@
-/* import { NextResponse } from 'next/server';
-import crypto from 'crypto';
+import { NextResponse } from 'next/server';
+/*import crypto from 'crypto';
 import { connectDB } from '@/lib/mongodb';
 import User from '@/models/User';
 import PasswordResetToken from '@/models/PasswordResetToken';
-import { sendResetEmail } from '@/lib/email';
+import { sendResetEmail } from '@/lib/email';*/
 
-export async function POST(req: Request) {
+// Temporarily disable route
+export async function POST() {
+  return NextResponse.json({ error: 'Temporarily disabled' }, { status: 503 });
+}
+
+/* export async function POST(req: Request) {
   await connectDB();
   try {
     const { email } = await req.json();
@@ -36,6 +41,7 @@ export async function POST(req: Request) {
     });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: 'Server error' }, { status: 500 }); 
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
-} */
+}
+*/
