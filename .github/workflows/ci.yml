@@ -8,14 +8,14 @@ on:
 
 jobs:
   lint_and_format:
-    name: Lint & Format check
+    name: Lint, Format & Test
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Use Node.jobs
+      - name: Use Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -28,3 +28,6 @@ jobs:
 
       - name: ESLint
         run: npm run lint
+
+      - name: Run tests
+        run: npm test
