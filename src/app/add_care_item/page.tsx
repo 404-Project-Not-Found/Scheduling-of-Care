@@ -35,23 +35,31 @@ export default function AddCareItemPage() {
     });
 
     try{
-      const res = await fetch("/api/add-care-items", {
+      const res = await fetch("/api/add_care_items", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, frequency, startDate, category, isYearly})
+        body: JSON.stringify({ name, frequency, startDate, category, isYearly}),
       });
-
-      const error = await res.json();
-      if(res.ok) {
-        setNotification(error.message);
-        setSubmitMessage('Care item submitted successfully!');
-        setName('');
-        setFrequency('');
-        setStartDate('');
-        setCategory('');
+      
+      const ct = res.headers.get("content-type") || "";
+      if(ct.includes("application/json")) {
+        const data = await res.json();
+        if(res.ok) {
+          setNotification(data.message);
+          setSubmitMessage('Care item submitted successfully!');
+          setName('');
+          setFrequency('');
+          setStartDate('');
+          setCategory('');
+        } else {
+          setNotification(data.error);
+          setSubmitMessage('An error has occured when submitting task, failed to add care item.');
+        }
       } else {
-        setNotification(error.error);
-        setSubmitMessage('An error has occured when submitting task, failed to add care item.')
+        const text = await res.text();
+        console.error(`Non-JSON response (${res.status}):`, text.slice(0, 200));
+        alert(`Request failed (${res.status}). See console for details.`);
+
       }
     } catch(err) {
       console.error(err);
