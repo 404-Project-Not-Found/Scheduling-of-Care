@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Image from 'next/image';
 
 type Client = {
   name: string;
@@ -243,10 +244,12 @@ function ClientProfilePageInner() {
                   }}
                 >
                   {avatarUrl ? (
-                    <img
+                    <Image
                       src={avatarUrl}
                       alt="Profile avatar"
-                      className="w-full h-full object-cover"
+                      width={120}
+                      height={120}
+                      className="object-cover rounded-full"
                     />
                   ) : (
                     <div className="text-gray-500">No Photo</div>
