@@ -4,10 +4,10 @@ import { useEffect, useState } from "react";
 import TasksList from "./TasksList";
 import { format } from "date-fns";
 
-const STATIC_TASKS = [
-  { id: "1", title: "Dental Appointment 9:00AM", nextDue: "22nd July 2025" },
-  { id: "2", title: "Replace Toothbrush Head", nextDue: "23rd July 2025" },
-];
+// const STATIC_TASKS = [
+//   { id: "1", title: "Dental Appointment 9:00AM", nextDue: "22nd July 2025" },
+//   { id: "2", title: "Replace Toothbrush Head", nextDue: "23rd July 2025" },
+// ];
 
 type CareItem = {
   id: string;
@@ -26,14 +26,12 @@ export default function TasksPanel() {
     setCareItems(stored);
   }, []);
 
-  const mergedTasks = [
-    ...STATIC_TASKS,
-    ...careItems.map((item) => ({
+  const mergedTasks = careItems.map((item) => ({
       id: item.id,
       title: item.name,
       nextDue: format(new Date(item.startDate), "do MMMM yyyy"),
-    })),
-  ];
+    }));
+
 
   return (
     <div className="h-full flex flex-col">
