@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import TasksList from "./TasksList";
+import { format } from "date-fns";
 
 const STATIC_TASKS = [
   { id: "1", title: "Dental Appointment 9:00AM", nextDue: "22nd July 2025" },
@@ -30,7 +31,7 @@ export default function TasksPanel() {
     ...careItems.map((item) => ({
       id: item.id,
       title: item.name,
-      nextDue: item.startDate,
+      nextDue: format(new Date(item.startDate), "do MMMM yyyy"),
     })),
   ];
 
