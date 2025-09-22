@@ -7,14 +7,15 @@ import { useState } from 'react';
 import { signIn, getSession } from 'next-auth/react';
 import { useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 
-export default function Home() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [staySigned, setStaySigned] = useState(false);
-  const [showPw, setShowPw] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
+function PrefillFromSearchParams({
+  setEmail,
+  setPassword,
+}: {
+  setEmail: (val: string) => void;
+  setPassword: (val: string) => void;
+}) {
   // Get email and password for successful sign up or user already exists
   const searchParams = useSearchParams();
 
@@ -28,7 +29,16 @@ export default function Home() {
     if (prefillPassword) {
       setPassword(prefillPassword);
     }
-  }, [searchParams]);
+  }, [searchParams, setEmail, setPassword]);
+  return null;
+}
+
+export default function Home() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [staySigned, setStaySigned] = useState(false);
+  const [showPw, setShowPw] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -93,6 +103,13 @@ export default function Home() {
 
   return (
     <div className="h-screen w-full bg-[#F3E9D9] text-zinc-900">
+      {/* Prefill email and password */}
+      <Suspense fallback={null}>
+        <PrefillFromSearchParams
+          setEmail={setEmail}
+          setPassword={setPassword}
+        />
+      </Suspense>
       <div className="grid grid-cols-1 lg:grid-cols-2 h-full w-full">
         {/* Left section */}
         <section className="bg-[#F3C8A5] relative flex flex-col h-full">
