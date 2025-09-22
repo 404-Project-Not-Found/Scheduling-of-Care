@@ -2,5 +2,5 @@
 import { redirect } from "next/navigation";
 
 export default function Home() {
-  redirect("/add_care_item");
+  redirect("/carer/search");
 }
