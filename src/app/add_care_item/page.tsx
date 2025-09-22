@@ -9,21 +9,23 @@ export default function AddCareItemPage() {
   const [category, setCategory] = useState('');
   const [notification, setNotification] = useState('');
   const [submitMessage, setSubmitMessage] = useState('');
+  const [isYearly, setIsYearly] = useState(false);
 
   const handleRepeatYearly = (isYearly: boolean) => {
     if (isYearly) {
+      setIsYearly(isYearly);
       setNotification('This care item will repeat yearly');
     } else {
       setNotification('');
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async(e: React.FormEvent) => {
+    e.preventDefault();
     if (!name || !frequency || !startDate || !category) {
       setSubmitMessage('Please fill in all fields before submitting.');
       return;
     }
-
     console.log({
       name,
       frequency,
@@ -32,12 +34,38 @@ export default function AddCareItemPage() {
       repeatYearly: notification ? true : false,
     });
 
+    try{
+      const res = await fetch("/api/add-care-items", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, frequency, startDate, category, isYearly})
+      });
+
+      const error = await res.json();
+      if(res.ok) {
+        setNotification(error.message);
+        setSubmitMessage('Care item submitted successfully!');
+        setName('');
+        setFrequency('');
+        setStartDate('');
+        setCategory('');
+      } else {
+        setNotification(error.error);
+        setSubmitMessage('An error has occured when submitting task, failed to add care item.')
+      }
+    } catch(err) {
+      console.error(err);
+      setNotification("Something went wrong");
+    }
+
+    /*
     setSubmitMessage('Care item submitted successfully!');
     setName('');
     setFrequency('');
     setStartDate('');
     setCategory('');
     setNotification('');
+    */
   };
 
   const handleCancel = () => {
