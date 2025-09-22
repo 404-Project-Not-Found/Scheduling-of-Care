@@ -81,8 +81,9 @@ export default function MenuPage() {
         >
           <BellIcon />
           <p className="text-base md:text-lg" style={{ color: palette.header }}>
-            Select a client from the list of clients under the menu to view
-            their tasks.
+            Select a person with special needs under manage people with special
+            needs to edit their profile, view their dashboard or manage
+            organisation access.
           </p>
         </div>
 

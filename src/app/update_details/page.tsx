@@ -20,6 +20,25 @@ export default function UpdateDetailsPage() {
   const [pwd, setPwd] = useState('');
   const [show, setShow] = useState(false);
 
+  const handleSave = async () => {
+    const res = await fetch('/api/user/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        password: pwd,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      alert('Your details have been successfully updated!');
+    } else {
+      alert(data.error || 'Update failed. Try again later.');
+    }
+  };
+
   return (
     <main
       className="min-h-screen w-full flex items-center justify-center px-6 py-12 relative"
@@ -112,7 +131,7 @@ export default function UpdateDetailsPage() {
                 borderColor: '#f08a00',
                 color: colors.header,
               }}
-              onClick={() => router.push('/menu')}
+              onClick={handleSave}
             >
               Save
             </button>
