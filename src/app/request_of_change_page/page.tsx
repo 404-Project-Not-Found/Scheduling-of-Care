@@ -34,7 +34,7 @@ export default function RequestChangeFormPage() {
       setSubmitMessage('Please fill in all fields before submitting.');
       return;
     }
-    router.push('/menu');
+    router.push('/menu/family');
   };
 
   const handleCancel = () => {
@@ -43,7 +43,7 @@ export default function RequestChangeFormPage() {
     setDetails('');
     setReason('');
     setSubmitMessage('');
-    router.push('/menu');
+    router.push('/menu/family');
   };
 
   return (

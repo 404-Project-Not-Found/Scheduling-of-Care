@@ -1,9 +1,4 @@
-import {
-  NextRequest,
-  NextResponse,
-  userAgent,
-  userAgentFromString,
-} from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import mongoose from 'mongoose';
 import { connectDB } from '@/lib/mongodb';
 import bcrypt from 'bcryptjs';
@@ -34,7 +29,7 @@ export async function POST(req: NextRequest) {
     // Ensure passwords match
     if (password !== confirm) {
       return NextResponse.json(
-        { error: 'Passwords do not match' },
+        { error: 'The passwords entered do not match. Please try again.' },
         { status: 400 }
       );
     }
@@ -52,6 +47,7 @@ export async function POST(req: NextRequest) {
     await connectDB();
 
     // Check if a user already exists under the email
+    const emailLower = email.toLowerCase();
     const userExists = await User.findOne({ email });
     if (userExists) {
       return NextResponse.json(
@@ -66,9 +62,9 @@ export async function POST(req: NextRequest) {
     // Insert new user info into the database
     const newUser = await User.create({
       fullName,
-      email,
+      email: emailLower,
       password: hashedPassword,
-      role,
+      role: role.toLowerCase(),
       createdAt: new Date(),
     });
 

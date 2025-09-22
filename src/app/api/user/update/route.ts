@@ -7,6 +7,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 export async function POST(req: NextRequest) {
   try {
+    // Retrieve the current session (user must be authenticated)
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
@@ -17,9 +18,18 @@ export async function POST(req: NextRequest) {
 
     await connectDB();
 
+    // Object to update email and/or password
     const updateData: { email?: string; password?: string } = {};
 
     if (email) {
+      const userExists = await User.findOne({ email: email.toLowerCase() });
+      // The email is already in use by user from another account
+      if (userExists && userExists._id.toString() !== session.user.id) {
+        return NextResponse.json(
+          { error: 'This email is already in use by another account.' },
+          { status: 400 }
+        );
+      }
       updateData.email = email.toLowerCase();
     }
 
@@ -27,17 +37,19 @@ export async function POST(req: NextRequest) {
       updateData.password = await bcrypt.hash(password, 10);
     }
 
-    // Update by email - not secure, just for demo until auth is added
+    // Update the user in the DB using their session ID
     const updateUser = await User.findByIdAndUpdate(
-      session.user.id,
+      session.user.id, // Ensures they can only update their own account
       updateData,
       { new: true }
     );
 
+    // User does not exist
     if (!updateUser) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
+    // Successfully updated
     return NextResponse.json({
       message: 'User details updated successfully',
     });

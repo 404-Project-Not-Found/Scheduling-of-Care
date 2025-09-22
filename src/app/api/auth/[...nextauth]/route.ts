@@ -5,34 +5,44 @@ import User from '@/models/User';
 import bcrypt from 'bcryptjs';
 
 export const authOptions: NextAuthOptions = {
+  // Configures authentication providers
   providers: [
     CredentialsProvider({
-      name: 'Credentials',
+      name: 'Credentials', // Display name for the provider
       credentials: {
-        email: { label: 'Email', type: 'text' },
-        password: { label: 'Password', type: 'password' },
+        email: { label: 'Email', type: 'text' }, // Field for user's email
+        password: { label: 'Password', type: 'password' }, // Field for user's password
       },
+      // Verifies user's credentials when they attempt to sign in
       async authorize(
         credentials: { email?: string; password?: string } | undefined
       ) {
+        // Ensures both email and password is provided
         if (!credentials?.email || !credentials?.password) {
           return null;
         }
 
         await connectDB();
 
+        // Looks up user by email
         const user = await User.findOne({ email: credentials.email });
         if (!user) {
-          return null;
+          throw new Error(
+            'This user does not exist. Please enter a valid email address.'
+          );
         }
 
+        // Compares provided password with hashed password in DB
         const isValid = await bcrypt.compare(
           credentials.password,
           user.password
         );
         if (!isValid) {
-          return null;
+          throw new Error(
+            'The password that you have entered is incorrect. Please try again.'
+          );
         }
+        // User credentials are valid, return user object
         return {
           id: user._id.toString(),
           email: user.email,
@@ -42,11 +52,14 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   ],
+  // Use JWT for session
   session: {
     strategy: 'jwt',
   },
   callbacks: {
+    // Called whenever JWT is created or updated
     async jwt({ token, user }) {
+      // Add user ID and role to token for role based access
       if (user) {
         token.id = user.id;
         token.role = user.role;
@@ -54,6 +67,7 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
+      // Include user ID and role in session
       if (token) {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
@@ -62,7 +76,7 @@ export const authOptions: NextAuthOptions = {
     },
   },
   pages: {
-    signIn: '/login',
+    signIn: '/',
   },
 };
 

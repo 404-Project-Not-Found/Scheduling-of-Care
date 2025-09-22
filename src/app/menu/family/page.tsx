@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { signOut } from 'next-auth/react';
 
 // ---- Color palette ----
 const palette = {
@@ -60,7 +61,9 @@ export default function MenuPage() {
           </button>
 
           {/* Title centered; small brand mark on the right if you like */}
-          <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">
+            Family/POA Dashboard
+          </h1>
 
           <div className="absolute right-6 top-1/2 -translate-y-1/2 hidden sm:block">
             <Image
@@ -81,9 +84,9 @@ export default function MenuPage() {
         >
           <BellIcon />
           <p className="text-base md:text-lg" style={{ color: palette.header }}>
-            Select a person with special needs under manage people with special
-            needs to edit their profile, view their dashboard or manage
-            organisation access.
+            Select a person with special needs under the menu option manage
+            people with special needs to edit their profile, view their care
+            items or manage organisation access.
           </p>
         </div>
 
@@ -147,13 +150,16 @@ export default function MenuPage() {
           </ul>
 
           <div className="px-4 pb-6 flex justify-end pr-6">
-            <Link
-              href="#"
+            <button
+              onClick={async () => {
+                await signOut({ redirect: false });
+                window.location.href = '/'; // redirect to login page
+              }}
               className="underline underline-offset-4 focus:outline-none rounded text-lg"
               style={{ color: palette.header }}
             >
               Sign out
-            </Link>
+            </button>
           </div>
         </nav>
       </div>

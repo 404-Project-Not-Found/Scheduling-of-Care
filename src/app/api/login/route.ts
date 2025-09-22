@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import mongoose from 'mongoose';
 import { connectDB } from '@/lib/mongodb';
 import bcrypt from 'bcryptjs';
+
 const userSchema = new mongoose.Schema({
   fullName: { type: String, required: true },
   email: { type: String, required: true },
@@ -10,6 +11,7 @@ const userSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
+// Use existing model if compiled, otherwise create a new one
 const User = mongoose.models.User || mongoose.model('User', userSchema);
 
 export async function POST(req: NextRequest) {
@@ -25,11 +27,6 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-
-    /* Connect to MongoDB
-        const client = await clientPromise;
-        const db = client.db("schedule-of-care");
-        const usersCollection = db.collection("users"); */
 
     // Find user by email
     const user = await User.findOne({ email });
@@ -60,7 +57,6 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     console.error(err);
-    // Generic server error response
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

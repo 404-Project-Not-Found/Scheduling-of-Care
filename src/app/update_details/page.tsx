@@ -19,8 +19,36 @@ export default function UpdateDetailsPage() {
   const [email, setEmail] = useState('');
   const [pwd, setPwd] = useState('');
   const [show, setShow] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
 
+  // Validates input and sends update request to API
   const handleSave = async () => {
+    setError('');
+    setSuccess(false);
+
+    // Validate email format if user entered a new email
+    if (email && (!email.includes('@') || !email.includes('.'))) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+
+    // Prepare request body with only the fields the user wants to update
+    const body: { email?: string; password?: string } = {};
+    if (email) {
+      body.email = email;
+    }
+    if (pwd) {
+      body.password = pwd;
+    }
+
+    // Ensures the user has enetered at least one field
+    if (!body.email && !body.password) {
+      setError('Please enter an email or password to update.');
+      return;
+    }
+
+    // Send POST request to update API
     const res = await fetch('/api/user/update', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -33,9 +61,18 @@ export default function UpdateDetailsPage() {
     const data = await res.json();
 
     if (res.ok) {
-      alert('Your details have been successfully updated!');
+      // Show success message and reset inputs
+      setSuccess(true);
+      setEmail('');
+      setPwd('');
+      setShow(false);
+
+      // Hide success message after 3 seconds
+      setTimeout(() => {
+        setSuccess(false);
+      }, 3000);
     } else {
-      alert(data.error || 'Update failed. Try again later.');
+      setError(data.error || 'Update failed. Try again later.');
     }
   };
 
@@ -71,6 +108,12 @@ export default function UpdateDetailsPage() {
           </h1>
         </div>
 
+        {success && (
+          <div className="text-green-700 bg-green-100 px-4 py-2 rounded mb-4">
+            Your details have been successfully updated!
+          </div>
+        )}
+
         {/* Content area: generous spacing, white inputs */}
         <div className="px-8 md:px-10 py-8 md:py-10 text-black">
           {/* Email */}
@@ -85,6 +128,12 @@ export default function UpdateDetailsPage() {
             style={{ borderColor: `${colors.header}55` }}
             placeholder="Enter new email"
           />
+
+          {error && (
+            <div className="text-red-700 bg-red-100 px-4 py-2 rounded mb-4">
+              {error}
+            </div>
+          )}
 
           {/* Password */}
           <label className="block text-lg mb-2" style={{ color: colors.text }}>
@@ -118,7 +167,7 @@ export default function UpdateDetailsPage() {
             <button
               type="button"
               className="px-6 py-2.5 rounded-full border text-gray-700 hover:bg-gray-200"
-              onClick={() => router.push('/menu')}
+              onClick={() => router.push('/menu/family')}
             >
               Cancel
             </button>

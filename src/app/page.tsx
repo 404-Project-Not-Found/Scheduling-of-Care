@@ -4,6 +4,9 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
+import { signIn, getSession } from 'next-auth/react';
+import { useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 export default function Home() {
   const [email, setEmail] = useState('');
@@ -11,6 +14,21 @@ export default function Home() {
   const [staySigned, setStaySigned] = useState(false);
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Get email and password for successful sign up or user already exists
+  const searchParams = useSearchParams();
+
+  // Prefill email and/or password if provided in the query string
+  useEffect(() => {
+    const prefillEmail = searchParams.get('email');
+    const prefillPassword = searchParams.get('password');
+    if (prefillEmail) {
+      setEmail(prefillEmail);
+    }
+    if (prefillPassword) {
+      setPassword(prefillPassword);
+    }
+  }, [searchParams]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -24,34 +42,42 @@ export default function Home() {
     }
 
     try {
-      // Send POST request to login API route
-      const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }), // Send login credentials
+      // Sign in with credentials provider
+      const res = await signIn('credentials', {
+        redirect: false, // Prevent automatic redirect
+        email,
+        password,
       });
 
-      const data = await res.json();
-
-      // Login failed
-      if (!res.ok) {
-        throw new Error(data.error || 'Login failed');
+      // Handle login failure
+      if (!res || !res.ok) {
+        setError(res?.error || 'Login failed');
+        return;
       }
 
-      console.log('logged in user:', data.user);
+      // Get current session after successful login
+      const session = await getSession();
+
+      // Ensures user role exists within the session
+      if (!session?.user?.role) {
+        setError('Could not determine user role');
+        return;
+      }
 
       // Redirect user based on role
-      switch (data.user.role) {
+      switch (session.user.role) {
         case 'carer':
-          window.location.href = '/dashboard/carer';
+          window.location.href = '/menu/carer';
           break;
         case 'management':
-          window.location.href = '/dashboard/management';
+          window.location.href = '/menu/management';
           break;
         case 'family':
-          window.location.href = '/dashboard/family';
+          window.location.href = '/menu/family';
+          break;
         default:
-          window.location.href = '/dashboard';
+          setError('Unknown role');
+          return;
       }
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -198,7 +224,7 @@ export default function Home() {
             <p className="mt-4 text-lg text-center">
               Don’t have an account?{' '}
               <Link
-                href="/signup"
+                href="/role"
                 className="underline underline-offset-4 font-semibold hover:opacity-80"
               >
                 Sign Up

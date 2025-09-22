@@ -115,7 +115,7 @@ function PartialDashboardInner() {
           </button>
 
           {/* Title */}
-          <h2 className="text-2xl md:text-3xl font-bold">Dashboard</h2>
+          <h2 className="text-2xl md:text-3xl font-bold">Client Dashboard</h2>
 
           {/* Profile quick access */}
           <div
