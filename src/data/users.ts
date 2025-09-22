@@ -11,6 +11,11 @@ export type User = {
     role: Role;
 }
 
+export async function findUserById(_id: String) {
+    const db = await getDb();
+    return db.collection<User>("users").findOne( { _id } );
+}
+
 export async function findUserByEmail(email: String) {
     const db = await getDb();
     return db.collection<User>("users").findOne( { email } );
