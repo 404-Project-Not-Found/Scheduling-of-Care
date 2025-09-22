@@ -1,9 +1,13 @@
+"use client";
+
+import { useState } from "react";
 import Image from "next/image";
 import CalendarPanel from "@/components/calendar/CalendarPanel";
 import TasksPanel from "@/components/tasks/TasksPanel";
-
+import SideMenu from "@/components/side-menu/SideMenu";
 
 export default function DashboardPage() {
+  const [menuOpen, setMenuOpen] = useState(false);
   return (
     <div className="min-h-screen">
       <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch px-6">
@@ -13,12 +17,14 @@ export default function DashboardPage() {
           <div className="bg-[#3d0000] text-white px-5 py-6 flex items-center justify-between">
             {/* Left side */}
             <div className="text-lg font-semibold flex items-center gap-3">
-              <span
+              <button
+                type="button"
+                onClick={() => setMenuOpen(!menuOpen)}
                 className="inline-flex items-center justify-center h-7 w-7 rounded-full bg-white/15"
-                aria-hidden
+                aria-label="Open menu"
               >
                 ≡
-              </span>
+              </button>
 
               <span>Dashboard</span>
               <Image
@@ -62,6 +68,8 @@ export default function DashboardPage() {
           </div>
         </section>
       </div>
+
+      <SideMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
     </div>
   );
 }
