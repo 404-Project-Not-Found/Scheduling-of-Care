@@ -1,37 +1,37 @@
-"use client";
+'use client';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
-import Image from "next/image";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import Image from 'next/image';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 const palette = {
-  pageBg: "#ffd9b3",
-  cardBg: "#F7ECD9",
-  header: "#3A0000",
-  text: "#2b2b2b",
-  border: "#3A0000",
-  help: "#ff9999",
-  white: "#ffffff",
-  editGreen: "#4CAF50",   // green
-  dashOrange: "#FF9800",  // orange
-  organPink: "#E91E63",   // pink
+  pageBg: '#ffd9b3',
+  cardBg: '#F7ECD9',
+  header: '#3A0000',
+  text: '#2b2b2b',
+  border: '#3A0000',
+  help: '#ff9999',
+  white: '#ffffff',
+  editGreen: '#4CAF50', // green
+  dashOrange: '#FF9800', // orange
+  organPink: '#E91E63', // pink
 };
 
 // hardcoded members list for demo
 const members = [
-  { name: "Jane Smith", dob: "1943-09-16" },
-  { name: "Harry Dong", dob: "1950-01-01" },
-  { name: "Jose Lin", dob: "1955-05-12" },
-  { name: "Kevin Wu", dob: "1960-07-20" },
-  { name: "Mickey Mouse", dob: "1970-03-01" },
+  { name: 'Jane Smith', dob: '1943-09-16' },
+  { name: 'Harry Dong', dob: '1950-01-01' },
+  { name: 'Jose Lin', dob: '1955-05-12' },
+  { name: 'Kevin Wu', dob: '1960-07-20' },
+  { name: 'Mickey Mouse', dob: '1970-03-01' },
 ];
 
 export default function FamilyPOAListPage() {
   const router = useRouter();
 
-  const goBack = () => router.replace("/menu");
+  const goBack = () => router.replace('/menu');
 
   return (
     <main
@@ -79,12 +79,17 @@ export default function FamilyPOAListPage() {
                 {/* Add Back text next to the arrow */}
                 <span className="text-lg">Back</span>
               </button>
-              <h1 className="text-3xl md:text-4xl font-bold">Manage People with Special Needs</h1>
+              <h1 className="text-3xl md:text-4xl font-bold">
+                Manage People with Special Needs
+              </h1>
             </div>
 
             {/* content */}
             <div className="px-10 pb-12 pt-8">
-              <p className="text-2xl md:text-3xl mb-5" style={{ color: palette.text }}>
+              <p
+                className="text-2xl md:text-3xl mb-5"
+                style={{ color: palette.text }}
+              >
                 List of registered family members:
               </p>
 
@@ -109,7 +114,10 @@ export default function FamilyPOAListPage() {
                         <Link
                           href={`/client-profile?name=${encodeURIComponent(m.name)}&dob=${m.dob}`}
                           className="px-4 py-2 rounded-lg text-lg font-medium"
-                          style={{ backgroundColor: palette.editGreen, color: palette.white }}
+                          style={{
+                            backgroundColor: palette.editGreen,
+                            color: palette.white,
+                          }}
                         >
                           Edit profile
                         </Link>
@@ -118,7 +126,10 @@ export default function FamilyPOAListPage() {
                         <Link
                           href={`/partial-dashboard?name=${encodeURIComponent(m.name)}`}
                           className="px-4 py-2 rounded-lg text-lg font-medium"
-                          style={{ backgroundColor: palette.dashOrange, color: palette.white }}
+                          style={{
+                            backgroundColor: palette.dashOrange,
+                            color: palette.white,
+                          }}
                         >
                           View dashboard
                         </Link>
@@ -127,7 +138,10 @@ export default function FamilyPOAListPage() {
                         <Link
                           href={`/manage-organisation-access?name=${encodeURIComponent(m.name)}&dob=${m.dob}`}
                           className="px-4 py-2 rounded-lg text-lg font-medium"
-                          style={{ backgroundColor: palette.organPink, color: palette.white }}
+                          style={{
+                            backgroundColor: palette.organPink,
+                            color: palette.white,
+                          }}
                         >
                           Manage organisation access
                         </Link>
@@ -140,9 +154,12 @@ export default function FamilyPOAListPage() {
               {/* Add new client */}
               <div className="flex justify-center">
                 <button
-                  onClick={() => router.push("/client-profile?new=true")}
+                  onClick={() => router.push('/client-profile?new=true')}
                   className="px-7 py-4 rounded-xl text-2xl font-semibold"
-                  style={{ backgroundColor: palette.header, color: palette.white }}
+                  style={{
+                    backgroundColor: palette.header,
+                    color: palette.white,
+                  }}
                 >
                   + Add new person
                 </button>

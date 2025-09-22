@@ -1,23 +1,23 @@
-"use client";
+'use client';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
-import React, { useState } from "react";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
+import React, { useState } from 'react';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 const colors = {
-  pageBg: "#ffd9b3",
-  cardBg: "#F7ECD9",
-  header: "#3A0000",
-  text: "#2b2b2b",
-  orange: "#F4A261",
+  pageBg: '#ffd9b3',
+  cardBg: '#F7ECD9',
+  header: '#3A0000',
+  text: '#2b2b2b',
+  orange: '#F4A261',
 };
 
 export default function UpdateDetailsPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [pwd, setPwd] = useState("");
+  const [email, setEmail] = useState('');
+  const [pwd, setPwd] = useState('');
   const [show, setShow] = useState(false);
 
   return (
@@ -72,7 +72,7 @@ export default function UpdateDetailsPage() {
             Change password:
           </label>
           <input
-            type={show ? "text" : "password"}
+            type={show ? 'text' : 'password'}
             value={pwd}
             onChange={(e) => setPwd(e.target.value)}
             className="w-full bg-white border-2 rounded-md px-4 py-3 focus:outline-none focus:ring-2"
@@ -81,7 +81,10 @@ export default function UpdateDetailsPage() {
           />
 
           {/* Show password toggle */}
-          <label className="mt-4 flex items-center gap-2 text-lg" style={{ color: colors.text }}>
+          <label
+            className="mt-4 flex items-center gap-2 text-lg"
+            style={{ color: colors.text }}
+          >
             <input
               type="checkbox"
               checked={show}
@@ -96,7 +99,7 @@ export default function UpdateDetailsPage() {
             <button
               type="button"
               className="px-6 py-2.5 rounded-full border text-gray-700 hover:bg-gray-200"
-              onClick={() => router.push("/menu")}
+              onClick={() => router.push('/menu')}
             >
               Cancel
             </button>
@@ -104,8 +107,12 @@ export default function UpdateDetailsPage() {
             <button
               type="button"
               className="px-7 py-2.5 rounded-full font-semibold border"
-              style={{ backgroundColor: colors.orange, borderColor: "#f08a00", color: colors.header }}
-              onClick={() => router.push("/menu")}
+              style={{
+                backgroundColor: colors.orange,
+                borderColor: '#f08a00',
+                color: colors.header,
+              }}
+              onClick={() => router.push('/menu')}
             >
               Save
             </button>

@@ -13,7 +13,9 @@ export default function TasksPanel() {
       </ul>
 
       <div className="mt-4 flex justify-end">
-        <button className="rounded-full px-4 py-2 bg-[#FFFFFF] text-black">Print</button>
+        <button className="rounded-full px-4 py-2 bg-[#FFFFFF] text-black">
+          Print
+        </button>
       </div>
     </div>
   );

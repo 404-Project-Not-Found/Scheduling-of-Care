@@ -1,31 +1,38 @@
-"use client";
+'use client';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
-import React, { useState, useEffect, useRef, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import React, { useState, useEffect, useRef, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
-type Client = { name: string; dob: string; accessCode?: string; notes?: string[] };
+type Client = {
+  name: string;
+  dob: string;
+  accessCode?: string;
+  notes?: string[];
+};
 
-const TEMP_AVATAR_KEY = "clientAvatar:__temp__";
+const TEMP_AVATAR_KEY = 'clientAvatar:__temp__';
 
 // ---- Color palette ----
 const palette = {
-  pageBg: "#ffd9b3",   // page background
-  header: "#3A0000",   // dark brown
-  banner: "#F9C9B1",   // notice banner
-  panelBg: "#fdf4e7",  // panel background 
-  notice: "#F9C9B1",   // notice bar background 
-  accent: "#ff9999",   // info dot 
-  question: "#ff9900", // help bubble 
-  button: "#F4A261",   // primary buttons
-  text: "#2b2b2b",    
-  white: "#FFFFFF",
+  pageBg: '#ffd9b3', // page background
+  header: '#3A0000', // dark brown
+  banner: '#F9C9B1', // notice banner
+  panelBg: '#fdf4e7', // panel background
+  notice: '#F9C9B1', // notice bar background
+  accent: '#ff9999', // info dot
+  question: '#ff9900', // help bubble
+  button: '#F4A261', // primary buttons
+  text: '#2b2b2b',
+  white: '#FFFFFF',
 };
 
 export default function ClientProfilePage() {
   return (
-    <Suspense fallback={<div style={{ padding: 24 }}>Loading client profile...</div>}>
+    <Suspense
+      fallback={<div style={{ padding: 24 }}>Loading client profile...</div>}
+    >
       <ClientProfilePageInner />
     </Suspense>
   );
@@ -34,26 +41,31 @@ export default function ClientProfilePage() {
 function ClientProfilePageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const isNew = searchParams.get("new") === "true";
+  const isNew = searchParams.get('new') === 'true';
 
-  const initNameFromQuery = searchParams.get("name") || "";
-  const initDobFromQuery = searchParams.get("dob") || "";
-  const initAccessFromQuery = searchParams.get("accessCode") || "";
+  const initNameFromQuery = searchParams.get('name') || '';
+  const initDobFromQuery = searchParams.get('dob') || '';
+  const initAccessFromQuery = searchParams.get('accessCode') || '';
 
-  const [name, setName] = useState<string>(isNew ? "" : initNameFromQuery || "");
-  const [dob, setDob] = useState<string>(isNew ? "" : initDobFromQuery || "");
-  const [accessCode, setAccessCode] = useState<string>(isNew ? "" : initAccessFromQuery || "");
-  const [avatarUrl, setAvatarUrl] = useState<string>("");
+  const [name, setName] = useState<string>(
+    isNew ? '' : initNameFromQuery || ''
+  );
+  const [dob, setDob] = useState<string>(isNew ? '' : initDobFromQuery || '');
+  const [accessCode, setAccessCode] = useState<string>(
+    isNew ? '' : initAccessFromQuery || ''
+  );
+  const [avatarUrl, setAvatarUrl] = useState<string>('');
 
   const prevNameRef = useRef<string>(name);
   const notesKey = `clientNotes:${name}`;
-  const [notesInput, setNotesInput] = useState<string>("");
+  const [notesInput, setNotesInput] = useState<string>('');
   const [savedNotes, setSavedNotes] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const loadNotesByName = (personName: string) => {
     const key = `clientNotes:${personName}`;
-    const stored = typeof window !== "undefined" ? localStorage.getItem(key) : null;
+    const stored =
+      typeof window !== 'undefined' ? localStorage.getItem(key) : null;
     if (!stored) return [];
     try {
       const parsed = JSON.parse(stored);
@@ -64,10 +76,10 @@ function ClientProfilePageInner() {
   };
 
   const loadAvatar = (personName: string) => {
-    if (typeof window === "undefined") return "";
+    if (typeof window === 'undefined') return '';
     const trimmed = personName.trim();
-    if (trimmed) return localStorage.getItem(`clientAvatar:${trimmed}`) || "";
-    return localStorage.getItem(TEMP_AVATAR_KEY) || "";
+    if (trimmed) return localStorage.getItem(`clientAvatar:${trimmed}`) || '';
+    return localStorage.getItem(TEMP_AVATAR_KEY) || '';
   };
 
   useEffect(() => {
@@ -77,7 +89,8 @@ function ClientProfilePageInner() {
 
   useEffect(() => {
     if (isNew) return;
-    const listRaw = typeof window !== "undefined" ? localStorage.getItem("clients") : null;
+    const listRaw =
+      typeof window !== 'undefined' ? localStorage.getItem('clients') : null;
     if (!listRaw) return;
     try {
       const list: Client[] = JSON.parse(listRaw);
@@ -89,12 +102,12 @@ function ClientProfilePageInner() {
 
   const saveProfile = () => {
     if (!name.trim() || !dob.trim() || !accessCode.trim()) {
-      alert("Please fill in Name, Date of Birth, and Access Code.");
+      alert('Please fill in Name, Date of Birth, and Access Code.');
       return false;
     }
 
     let clients: Client[] = [];
-    const raw = localStorage.getItem("clients");
+    const raw = localStorage.getItem('clients');
     if (raw) {
       try {
         clients = JSON.parse(raw);
@@ -132,7 +145,11 @@ function ClientProfilePageInner() {
 
     const upsert = (targetName: string) => {
       const idx = clients.findIndex((c) => c.name === targetName);
-      const payload: Client = { name, dob, accessCode: accessCode || undefined };
+      const payload: Client = {
+        name,
+        dob,
+        accessCode: accessCode || undefined,
+      };
       if (idx >= 0) clients[idx] = { ...clients[idx], ...payload };
       else clients.push(payload);
     };
@@ -141,18 +158,20 @@ function ClientProfilePageInner() {
     if (avatarUrl) localStorage.setItem(`clientAvatar:${name}`, avatarUrl);
 
     const current = loadNotesByName(name);
-    const updatedNotes = notesInput.trim() ? [...current, notesInput.trim()] : current;
+    const updatedNotes = notesInput.trim()
+      ? [...current, notesInput.trim()]
+      : current;
     localStorage.setItem(notesKey, JSON.stringify(updatedNotes));
     setSavedNotes(updatedNotes);
 
-    localStorage.setItem("clients", JSON.stringify(clients));
+    localStorage.setItem('clients', JSON.stringify(clients));
     return true;
   };
 
   const handleSaveAndReturn = () => {
     if (!saveProfile()) return;
-    setNotesInput("");
-    router.push("/clients_list");
+    setNotesInput('');
+    router.push('/clients_list');
   };
 
   const openFilePicker = () => fileInputRef.current?.click();
@@ -169,7 +188,7 @@ function ClientProfilePageInner() {
       } catch {}
     };
     reader.readAsDataURL(file);
-    e.target.value = "";
+    e.target.value = '';
   };
 
   return (
@@ -183,12 +202,19 @@ function ClientProfilePageInner() {
         style={{ backgroundColor: palette.header, color: palette.white }}
       >
         <button
-          onClick={() => router.push("/clients_list")}
+          onClick={() => router.push('/clients_list')}
           className="absolute left-4 top-1/2 -translate-y-1/2 rounded-md px-2 py-2 focus:outline-none focus:ring-2 focus:ring-white/60 flex items-center gap-2"
           title="Back"
           aria-label="Go back"
         >
-          <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+          <svg
+            width={22}
+            height={22}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
             <path d="M15 18l-6-6 6-6" />
           </svg>
           <span className="text-base">Back</span>
@@ -201,25 +227,46 @@ function ClientProfilePageInner() {
         <div className="w-full max-w-4xl">
           <div
             className="rounded-lg p-8 flex flex-col gap-6 relative pb-6 min-h-[460px] border"
-            style={{ backgroundColor: palette.white, borderColor: palette.header }}
+            style={{
+              backgroundColor: palette.white,
+              borderColor: palette.header,
+            }}
           >
             <div className="flex gap-6">
               {/* Avatar */}
               <div className="flex flex-col items-center gap-3">
-                <div className="w-[120px] h-[120px] rounded-full overflow-hidden border flex items-center justify-center"
-                     style={{ backgroundColor: "#e5e7eb", borderColor: palette.header }}>
+                <div
+                  className="w-[120px] h-[120px] rounded-full overflow-hidden border flex items-center justify-center"
+                  style={{
+                    backgroundColor: '#e5e7eb',
+                    borderColor: palette.header,
+                  }}
+                >
                   {avatarUrl ? (
-                    <img src={avatarUrl} alt="Profile avatar" className="w-full h-full object-cover" />
+                    <img
+                      src={avatarUrl}
+                      alt="Profile avatar"
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
                     <div className="text-gray-500">No Photo</div>
                   )}
                 </div>
 
-                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
                 <button
                   onClick={openFilePicker}
                   className="px-3 py-2 rounded-md text-sm font-medium hover:opacity-90 transition"
-                  style={{ backgroundColor: palette.header, color: palette.white }}
+                  style={{
+                    backgroundColor: palette.header,
+                    color: palette.white,
+                  }}
                   title="Upload profile photo"
                 >
                   Upload photo
@@ -235,13 +282,13 @@ function ClientProfilePageInner() {
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder={isNew ? "Enter name" : undefined}
+                    placeholder={isNew ? 'Enter name' : undefined}
                     className="flex-1 max-w-2xl p-2 rounded-md focus:outline-none focus:ring-2"
                     style={{
                       backgroundColor: palette.white,
                       border: `2px solid ${palette.header}`,
                       color: palette.text,
-                      boxShadow: "none",
+                      boxShadow: 'none',
                     }}
                   />
                 </label>
@@ -253,20 +300,26 @@ function ClientProfilePageInner() {
                     type="text"
                     value={dob}
                     onChange={(e) => setDob(e.target.value)}
-                    placeholder={isNew ? "e.g., 1943-09-16 or 16th September 1943" : undefined}
+                    placeholder={
+                      isNew
+                        ? 'e.g., 1943-09-16 or 16th September 1943'
+                        : undefined
+                    }
                     className="flex-1 max-w-2xl p-2 rounded-md focus:outline-none focus:ring-2"
                     style={{
                       backgroundColor: palette.white,
                       border: `2px solid ${palette.header}`,
                       color: palette.text,
-                      boxShadow: "none",
+                      boxShadow: 'none',
                     }}
                   />
                 </label>
 
                 {/* Access Code (required) */}
                 <label className="text-lg flex items-center gap-3">
-                  <span className="font-semibold whitespace-nowrap">Access Code:</span>
+                  <span className="font-semibold whitespace-nowrap">
+                    Access Code:
+                  </span>
                   <input
                     type="text"
                     value={accessCode}
@@ -278,7 +331,7 @@ function ClientProfilePageInner() {
                       backgroundColor: palette.white,
                       border: `2px solid ${palette.header}`,
                       color: palette.text,
-                      boxShadow: "none",
+                      boxShadow: 'none',
                     }}
                   />
                 </label>
@@ -286,10 +339,10 @@ function ClientProfilePageInner() {
                 {/* Helper line aligned with input left edge */}
                 <div className="ml-[8.5rem]">
                   <p className="text-sm">
-                    Don&apos;t have an access code?{" "}
+                    Don&apos;t have an access code?{' '}
                     <button
                       type="button"
-                      onClick={() => router.push("/create-access-code")}
+                      onClick={() => router.push('/create-access-code')}
                       className="underline underline-offset-2"
                       style={{ color: palette.header }}
                     >
@@ -316,12 +369,17 @@ function ClientProfilePageInner() {
                       <span className="whitespace-pre-line">{note}</span>
                       <button
                         onClick={() => {
-                          const updated = savedNotes.filter((_, i) => i !== idx);
-                          localStorage.setItem(notesKey, JSON.stringify(updated));
+                          const updated = savedNotes.filter(
+                            (_, i) => i !== idx
+                          );
+                          localStorage.setItem(
+                            notesKey,
+                            JSON.stringify(updated)
+                          );
                           setSavedNotes(updated);
                         }}
                         className="ml-4 font-bold hover:opacity-80 transition"
-                        style={{ color: "#b91c1c" }}
+                        style={{ color: '#b91c1c' }}
                       >
                         ✖
                       </button>
@@ -339,7 +397,7 @@ function ClientProfilePageInner() {
                     backgroundColor: palette.white,
                     border: `2px solid ${palette.header}`,
                     color: palette.text,
-                    boxShadow: "none",
+                    boxShadow: 'none',
                   }}
                 />
               </div>

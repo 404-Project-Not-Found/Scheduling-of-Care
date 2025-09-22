@@ -1,26 +1,28 @@
-"use client";
+'use client';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
-import React, { Suspense, useEffect, useState } from "react";
-import Image from "next/image";
-import { useRouter, useSearchParams } from "next/navigation";
+import React, { Suspense, useEffect, useState } from 'react';
+import Image from 'next/image';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 // ---- Color palette ----
 const palette = {
-  pageBg: "#ffd9b3",      // page background
-  cardBg: "#FAEBDC",      // dashboard inner background
-  header: "#3A0000",      // dark brown header
-  banner: "#F9C9B1",      // notice banner
-  border: "#3A0000",      // card border
-  panelBg: "#F7ECD9",     // drawer background (not used here yet)
-  text: "#2b2b2b",        // general text
-  white: "#FFFFFF",       // white
+  pageBg: '#ffd9b3', // page background
+  cardBg: '#FAEBDC', // dashboard inner background
+  header: '#3A0000', // dark brown header
+  banner: '#F9C9B1', // notice banner
+  border: '#3A0000', // card border
+  panelBg: '#F7ECD9', // drawer background (not used here yet)
+  text: '#2b2b2b', // general text
+  white: '#FFFFFF', // white
 };
 
 export default function PartialDashboardPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-xl">Loading dashboard...</div>}>
+    <Suspense
+      fallback={<div className="p-8 text-xl">Loading dashboard...</div>}
+    >
       <PartialDashboardInner />
     </Suspense>
   );
@@ -30,27 +32,27 @@ function PartialDashboardInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [name, setName] = useState<string>("");
-  const [dob, setDob] = useState<string>("");
+  const [name, setName] = useState<string>('');
+  const [dob, setDob] = useState<string>('');
 
   // ---- Load query params or localStorage fallback ----
   useEffect(() => {
-    const qName = searchParams.get("name");
-    const qDob = searchParams.get("dob") || "";
+    const qName = searchParams.get('name');
+    const qDob = searchParams.get('dob') || '';
 
     if (qName) {
       setName(qName);
       setDob(qDob);
       try {
-        localStorage.setItem("currentClientName", qName);
-        localStorage.setItem("currentClientDob", qDob);
+        localStorage.setItem('currentClientName', qName);
+        localStorage.setItem('currentClientDob', qDob);
       } catch {}
       return;
     }
 
     try {
-      const savedName = localStorage.getItem("currentClientName");
-      const savedDob = localStorage.getItem("currentClientDob") || "";
+      const savedName = localStorage.getItem('currentClientName');
+      const savedDob = localStorage.getItem('currentClientDob') || '';
       if (savedName) {
         setName(savedName);
         setDob(savedDob);
@@ -59,15 +61,15 @@ function PartialDashboardInner() {
     } catch {}
 
     // default: empty state
-    setName("");
-    setDob("");
+    setName('');
+    setDob('');
   }, [searchParams]);
 
   // ---- Navigate to client profile ----
   function handleProfileClick() {
     const q = new URLSearchParams();
-    if (name) q.set("name", name);
-    if (dob) q.set("dob", dob);
+    if (name) q.set('name', name);
+    if (dob) q.set('dob', dob);
     router.push(`/client-profile?${q.toString()}`);
   }
 
@@ -91,7 +93,7 @@ function PartialDashboardInner() {
         >
           {/* Back button */}
           <button
-            onClick={() => router.push("/clients_list")}
+            onClick={() => router.push('/clients_list')}
             className="absolute left-6 top-1/2 -translate-y-1/2 flex items-center gap-2 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-white/60"
             title="Back to client list"
             aria-label="Back"
@@ -121,7 +123,7 @@ function PartialDashboardInner() {
             onClick={handleProfileClick}
             title="View profile"
           >
-            <span className="text-lg md:text-xl">{name || "…"}</span>
+            <span className="text-lg md:text-xl">{name || '…'}</span>
             <div className="w-12 h-12 md:w-14 md:h-14 rounded-full overflow-hidden border">
               <Image
                 src="/default_profile.png"
@@ -138,14 +140,15 @@ function PartialDashboardInner() {
         {/* Banner */}
         <div
           className="px-6 md:px-8 py-5 md:py-6 border-b"
-          style={{ backgroundColor: palette.banner, borderColor: "#e2b197" }}
+          style={{ backgroundColor: palette.banner, borderColor: '#e2b197' }}
         >
           <p
             className="text-base md:text-lg leading-relaxed"
             style={{ color: palette.header }}
           >
-            This dashboard currently has partial functionality until the management completes
-            registration for your client. You will receive an email once it&apos;s done.
+            This dashboard currently has partial functionality until the
+            management completes registration for your client. You will receive
+            an email once it&apos;s done.
           </p>
         </div>
 

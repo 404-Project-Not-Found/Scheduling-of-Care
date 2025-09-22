@@ -1,33 +1,34 @@
-"use client";
+'use client';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
-import React, { useState } from "react";
-import Image from "next/image";
-import { useRouter } from "next/navigation"; 
+import React, { useState } from 'react';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 const palette = {
-  canvas: "#F7ECD9",     // Page background
-  header: "#3A0000",     // Dark brown header bar
-  text: "#2b2b2b",       // Default black text
-  accent: "#ff9999",     // Info dot color
-  btn: "#3A0000",        // Main button color
-  inputBorder: "#602222",// Input border color
-  notice: "#F9C9B1",     // notice bar background
-  question: "#ff9900"    ,// Help bubble background
+  canvas: '#F7ECD9', // Page background
+  header: '#3A0000', // Dark brown header bar
+  text: '#2b2b2b', // Default black text
+  accent: '#ff9999', // Info dot color
+  btn: '#3A0000', // Main button color
+  inputBorder: '#602222', // Input border color
+  notice: '#F9C9B1', // notice bar background
+  question: '#ff9900', // Help bubble background
 };
 
 export default function AddFamilyMemberFullPage() {
-  const router = useRouter(); 
-  const [code, setCode] = useState("");
-  const [copied, setCopied] = useState<null | "ok" | "err">(null);
+  const router = useRouter();
+  const [code, setCode] = useState('');
+  const [copied, setCopied] = useState<null | 'ok' | 'err'>(null);
   const [showTip, setShowTip] = useState(false);
 
   // Generate an 8-character random access code
   function generateCode() {
-    const CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Removed confusing chars
-    let out = "";
-    for (let i = 0; i < 8; i++) out += CHARS[Math.floor(Math.random() * CHARS.length)];
+    const CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Removed confusing chars
+    let out = '';
+    for (let i = 0; i < 8; i++)
+      out += CHARS[Math.floor(Math.random() * CHARS.length)];
     setCode(out);
     setCopied(null);
   }
@@ -36,16 +37,19 @@ export default function AddFamilyMemberFullPage() {
   async function copyCode() {
     try {
       await navigator.clipboard.writeText(code);
-      setCopied("ok");
+      setCopied('ok');
       setTimeout(() => setCopied(null), 1500);
     } catch {
-      setCopied("err");
+      setCopied('err');
       setTimeout(() => setCopied(null), 1500);
     }
   }
 
   return (
-    <div className="min-h-screen w-full flex flex-col" style={{ backgroundColor: palette.canvas }}>
+    <div
+      className="min-h-screen w-full flex flex-col"
+      style={{ backgroundColor: palette.canvas }}
+    >
       {/* === Top bar with logo (left side only) === */}
       <div className="px-6 py-4">
         <Image
@@ -61,7 +65,7 @@ export default function AddFamilyMemberFullPage() {
       {/* === Dark brown header bar with Back (left) and title (center) === */}
       <div
         className="w-full relative flex items-center justify-center py-4"
-        style={{ backgroundColor: palette.header, color: "white" }}
+        style={{ backgroundColor: palette.header, color: 'white' }}
       >
         {/* Back button on the far left */}
         <button
@@ -71,9 +75,16 @@ export default function AddFamilyMemberFullPage() {
           title="Back"
         >
           {/* SVG arrow */}
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6"
-               viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-               strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-6 w-6"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <path d="M15 18l-6-6 6-6" />
           </svg>
           <span className="text-lg">Back</span>
@@ -84,10 +95,15 @@ export default function AddFamilyMemberFullPage() {
       </div>
 
       {/* === Pink notice bar with instructions === */}
-      <div className="w-full py-4 px-6" style={{ backgroundColor: palette.notice }}>
+      <div
+        className="w-full py-4 px-6"
+        style={{ backgroundColor: palette.notice }}
+      >
         <p className="text-base sm:text-lg md:text-xl font-semibold text-black leading-relaxed text-left">
-          IMPORTANT: To add a new person with special needs in this system, please generate an access code, copy it and email it to this person’s care
-          organisation management team along with the person’s name to allow organisation access to that person.
+          IMPORTANT: To add a new person with special needs in this system,
+          please generate an access code, copy it and email it to this person’s
+          care organisation management team along with the person’s name to
+          allow organisation access to that person.
         </p>
       </div>
 
@@ -120,10 +136,14 @@ export default function AddFamilyMemberFullPage() {
             {showTip && (
               <div
                 className="absolute left-1/2 -translate-x-1/2 mt-2 w-64 text-sm p-3 rounded shadow-md z-10"
-                style={{ backgroundColor: "white", color: palette.text, border: "1px solid #e5e7eb" }}
+                style={{
+                  backgroundColor: 'white',
+                  color: palette.text,
+                  border: '1px solid #e5e7eb',
+                }}
               >
-                Share this access code with the care organisation. They will use it with the family
-                member’s name to create the client record.
+                Share this access code with the care organisation. They will use
+                it with the family member’s name to create the client record.
               </div>
             )}
           </div>
@@ -136,7 +156,7 @@ export default function AddFamilyMemberFullPage() {
             style={{
               borderColor: palette.inputBorder,
               color: palette.text,
-              background: "white",
+              background: 'white',
             }}
           />
 
@@ -152,8 +172,10 @@ export default function AddFamilyMemberFullPage() {
 
           {/* Copy feedback */}
           {copied && (
-            <span className={`text-sm ${copied === "ok" ? "text-green-700" : "text-red-600"}`}>
-              {copied === "ok" ? "Copied!" : "Copy failed"}
+            <span
+              className={`text-sm ${copied === 'ok' ? 'text-green-700' : 'text-red-600'}`}
+            >
+              {copied === 'ok' ? 'Copied!' : 'Copy failed'}
             </span>
           )}
         </div>
@@ -162,12 +184,15 @@ export default function AddFamilyMemberFullPage() {
       {/* === New bottom button === */}
       <div className="w-full flex justify-center mt-12 mb-20">
         <button
-          onClick={() => router.push("/client-profile?new=true")} 
+          onClick={() => router.push('/client-profile?new=true')}
           className="px-6 py-4 text-center rounded-xl text-base sm:text-lg md:text-xl"
           style={{ color: palette.header }}
         >
-          Already have access code for someone you know (family member or client)? <br />
-          <span className="underline">Add the person to your list of people with special needs here</span>
+          Already have access code for someone you know (family member or
+          client)? <br />
+          <span className="underline">
+            Add the person to your list of people with special needs here
+          </span>
         </button>
       </div>
 
@@ -184,7 +209,7 @@ function HelpBubble() {
     <div className="fixed bottom-6 right-6">
       <div
         className="w-10 h-10 rounded-full text-white font-bold text-xl flex items-center justify-center cursor-pointer select-none"
-        style={{ backgroundColor: "#ff9900" }}
+        style={{ backgroundColor: '#ff9900' }}
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}
         aria-label="Help"
@@ -196,9 +221,13 @@ function HelpBubble() {
         <div className="absolute bottom-12 right-0 w-80 bg-white border border-gray-300 p-4 rounded shadow-lg text-sm z-10">
           <h4 className="font-semibold mb-2">How to use this page</h4>
           <ul className="list-disc pl-5 space-y-1">
-            <li>Click <b>Generate Access Code</b> to create a new code.</li>
+            <li>
+              Click <b>Generate Access Code</b> to create a new code.
+            </li>
             <li>Share the code with the care organisation via email.</li>
-            <li>They will register the family member using the code and name.</li>
+            <li>
+              They will register the family member using the code and name.
+            </li>
           </ul>
         </div>
       )}

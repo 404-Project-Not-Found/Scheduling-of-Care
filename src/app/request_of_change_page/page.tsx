@@ -1,6 +1,6 @@
 'use client';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 import React, { useState } from 'react';
 import Image from 'next/image';
@@ -8,22 +8,22 @@ import { useRouter } from 'next/navigation';
 
 // ---- Color palette ----
 const palette = {
-  pageBg: "#ffd9b3",   // page background
-  header: "#3A0000",   // dark brown
-  banner: "#F9C9B1",   // notice banner
-  panelBg: "#fdf4e7",  // panel background
-  notice: "#F9C9B1",   // notice bar background
-  accent: "#ff9999",   // Info dot color
-  question: "#ff9900", // Help bubble background
-  button: "#F4A261",   // button background
-  text: "#2b2b2b",
-  white: "#FFFFFF",
+  pageBg: '#ffd9b3', // page background
+  header: '#3A0000', // dark brown
+  banner: '#F9C9B1', // notice banner
+  panelBg: '#fdf4e7', // panel background
+  notice: '#F9C9B1', // notice bar background
+  accent: '#ff9999', // Info dot color
+  question: '#ff9900', // Help bubble background
+  button: '#F4A261', // button background
+  text: '#2b2b2b',
+  white: '#FFFFFF',
 };
 
 export default function RequestChangeFormPage() {
   const router = useRouter();
 
-  const [clientName, setClientName] = useState(''); 
+  const [clientName, setClientName] = useState('');
   const [taskName, setTaskName] = useState('');
   const [details, setDetails] = useState('');
   const [reason, setReason] = useState('');
@@ -94,7 +94,10 @@ export default function RequestChangeFormPage() {
                 setSubmitMessage('');
               }}
               className="w-full border-1 rounded px-3 py-2"
-              style={{ backgroundColor: palette.white, borderColor: palette.header }}
+              style={{
+                backgroundColor: palette.white,
+                borderColor: palette.header,
+              }}
             />
           </div>
 
@@ -109,13 +112,18 @@ export default function RequestChangeFormPage() {
                 setSubmitMessage('');
               }}
               className="w-full border-1 rounded px-3 py-2"
-              style={{ backgroundColor: palette.white, borderColor: palette.header }}
+              style={{
+                backgroundColor: palette.white,
+                borderColor: palette.header,
+              }}
             />
           </div>
 
           {/* Details */}
           <div>
-            <label className="block mb-1 font-semibold">Details of change</label>
+            <label className="block mb-1 font-semibold">
+              Details of change
+            </label>
             <textarea
               value={details}
               onChange={(e) => {
@@ -123,13 +131,18 @@ export default function RequestChangeFormPage() {
                 setSubmitMessage('');
               }}
               className="w-full border-1 rounded px-3 py-2 min-h-[80px]"
-              style={{ backgroundColor: palette.white, borderColor: palette.header }}
+              style={{
+                backgroundColor: palette.white,
+                borderColor: palette.header,
+              }}
             />
           </div>
 
           {/* Reason */}
           <div>
-            <label className="block mb-1 font-semibold">Reason for request</label>
+            <label className="block mb-1 font-semibold">
+              Reason for request
+            </label>
             <textarea
               value={reason}
               onChange={(e) => {
@@ -137,7 +150,10 @@ export default function RequestChangeFormPage() {
                 setSubmitMessage('');
               }}
               className="w-full border-1 rounded px-3 py-2 min-h-[60px]"
-              style={{ backgroundColor: palette.white, borderColor: palette.header }}
+              style={{
+                backgroundColor: palette.white,
+                borderColor: palette.header,
+              }}
             />
           </div>
 
@@ -171,7 +187,7 @@ export default function RequestChangeFormPage() {
 
           {/* Validation message */}
           {submitMessage && (
-            <div className="font-semibold mt-2" style={{ color: "red" }}>
+            <div className="font-semibold mt-2" style={{ color: 'red' }}>
               {submitMessage}
             </div>
           )}
@@ -188,8 +204,9 @@ export default function RequestChangeFormPage() {
             ?
           </button>
           <div className="absolute bottom-12 right-0 hidden w-64 max-w-[90vw] rounded bg-white border p-2 text-sm text-black group-hover:block shadow-lg">
-            Fill in the client name, task name, describe the details of the change, and provide a reason for the request.
-            Click <b>Submit</b> to send or <b>Cancel</b> to go back to the menu.
+            Fill in the client name, task name, describe the details of the
+            change, and provide a reason for the request. Click <b>Submit</b> to
+            send or <b>Cancel</b> to go back to the menu.
           </div>
         </div>
       </div>

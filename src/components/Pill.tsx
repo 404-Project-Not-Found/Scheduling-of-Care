@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import Link from "next/link";
+import Link from 'next/link';
 
 type PillProps = {
   href: string;
@@ -8,7 +8,7 @@ type PillProps = {
   className?: string;
 };
 
-export default function Pill({ href, label, className = "" }: PillProps) {
+export default function Pill({ href, label, className = '' }: PillProps) {
   return (
     <Link
       href={href}

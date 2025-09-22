@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import React, { useState, Suspense } from "react";
-import Image from "next/image";
-import { useRouter, useSearchParams } from "next/navigation";
+import React, { useState, Suspense } from 'react';
+import Image from 'next/image';
+import { useRouter, useSearchParams } from 'next/navigation';
 
-type OrgStatus = "active" | "pending" | "revoked";
+type OrgStatus = 'active' | 'pending' | 'revoked';
 interface Organization {
   id: string;
   name: string;
@@ -12,14 +12,14 @@ interface Organization {
 }
 
 const palette = {
-  pageBg: "#ffd9b3", // page background
-  header: "#3A0000", // dark brown
-  banner: "#F9C9B1", // notice banner
-  panelBg: "#fdf4e7", // panel background
+  pageBg: '#ffd9b3', // page background
+  header: '#3A0000', // dark brown
+  banner: '#F9C9B1', // notice banner
+  panelBg: '#fdf4e7', // panel background
 };
 
-// Optional: keep dynamic rendering 
-export const dynamic = "force-dynamic";
+// Optional: keep dynamic rendering
+export const dynamic = 'force-dynamic';
 
 // ===== Outer page: wraps the inner component with <Suspense> to avoid build errors with useSearchParams =====
 export default function ManageAccessPage() {
@@ -33,32 +33,41 @@ export default function ManageAccessPage() {
 function ManageAccessInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const clientName = searchParams.get("name") || "Selected client";
+  const clientName = searchParams.get('name') || 'Selected client';
 
   const [orgs, setOrgs] = useState<Organization[]>([
-    { id: "1", name: "SunnyCare Facility", status: "active" },
-    { id: "2", name: "Haven Care Centre", status: "pending" },
-    { id: "3", name: "Rosehill Aged Care", status: "revoked" },
-    { id: "4", name: "Maple Leaf Aged Care", status: "active" },
-    { id: "5", name: "Cedar Grove Home", status: "pending" },
-    { id: "6", name: "Lakeside Care", status: "active" },
-    { id: "7", name: "Willow Creek Home", status: "revoked" },
-    { id: "8", name: "Pine Valley Facility", status: "pending" },
-    { id: "9", name: "Oakwood Seniors", status: "active" },
+    { id: '1', name: 'SunnyCare Facility', status: 'active' },
+    { id: '2', name: 'Haven Care Centre', status: 'pending' },
+    { id: '3', name: 'Rosehill Aged Care', status: 'revoked' },
+    { id: '4', name: 'Maple Leaf Aged Care', status: 'active' },
+    { id: '5', name: 'Cedar Grove Home', status: 'pending' },
+    { id: '6', name: 'Lakeside Care', status: 'active' },
+    { id: '7', name: 'Willow Creek Home', status: 'revoked' },
+    { id: '8', name: 'Pine Valley Facility', status: 'pending' },
+    { id: '9', name: 'Oakwood Seniors', status: 'active' },
   ]);
 
   function revokeOrg(id: string) {
-    setOrgs((prev) => prev.map((o) => (o.id === id ? { ...o, status: "revoked" } : o)));
+    setOrgs((prev) =>
+      prev.map((o) => (o.id === id ? { ...o, status: 'revoked' } : o))
+    );
   }
   function approveOrg(id: string) {
-    setOrgs((prev) => prev.map((o) => (o.id === id ? { ...o, status: "active" } : o)));
+    setOrgs((prev) =>
+      prev.map((o) => (o.id === id ? { ...o, status: 'active' } : o))
+    );
   }
   function removePending(id: string) {
-    setOrgs((prev) => prev.map((o) => (o.id === id ? { ...o, status: "revoked" } : o)));
+    setOrgs((prev) =>
+      prev.map((o) => (o.id === id ? { ...o, status: 'revoked' } : o))
+    );
   }
 
   return (
-    <div className="min-h-screen w-full relative" style={{ backgroundColor: palette.pageBg }}>
+    <div
+      className="min-h-screen w-full relative"
+      style={{ backgroundColor: palette.pageBg }}
+    >
       {/* Logo */}
       <div className="absolute top-8 left-8 w-64 h-32">
         <Image
@@ -84,16 +93,25 @@ function ManageAccessInner() {
               style={{ backgroundColor: palette.header }}
             >
               <button
-                onClick={() => router.push("/clients_list")}
+                onClick={() => router.push('/clients_list')}
                 className="absolute left-5 flex items-center gap-1 text-white hover:text-gray-200 transition"
               >
-                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                <svg
+                  width={20}
+                  height={20}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
                   <path d="M15 18l-6-6 6-6" />
                 </svg>
                 <span className="font-medium">Back</span>
               </button>
 
-              <h1 className="text-3xl font-bold text-white">Manage Organisation Access</h1>
+              <h1 className="text-3xl font-bold text-white">
+                Manage Organisation Access
+              </h1>
             </div>
 
             {/* Client name */}
@@ -102,9 +120,14 @@ function ManageAccessInner() {
             </div>
 
             {/* Privacy notice */}
-            <div className="px-5 py-2" style={{ backgroundColor: palette.banner }}>
+            <div
+              className="px-5 py-2"
+              style={{ backgroundColor: palette.banner }}
+            >
               <p className="text-base font-semibold text-black/90">
-                Privacy Notice: This information is visible only to you, as the family member or power of attorney for this person, and will not be shared with anyone.
+                Privacy Notice: This information is visible only to you, as the
+                family member or power of attorney for this person, and will not
+                be shared with anyone.
               </p>
             </div>
 
@@ -112,18 +135,21 @@ function ManageAccessInner() {
             <div className="p-5 mx-5 mt-5 mb-3 rounded border shadow-sm max-h-[320px] overflow-y-auto text-black bg-white">
               <Group
                 title="Organisations with Access"
-                items={orgs.filter((o) => o.status === "active")}
+                items={orgs.filter((o) => o.status === 'active')}
                 onRevoke={revokeOrg}
               />
               <hr className="my-4" />
               <Group
                 title="Organisations with Access Pending"
-                items={orgs.filter((o) => o.status === "pending")}
+                items={orgs.filter((o) => o.status === 'pending')}
                 onApprove={approveOrg}
                 onRemove={removePending}
               />
               <hr className="my-4" />
-              <Group title="Revoked Organisations" items={orgs.filter((o) => o.status === "revoked")} />
+              <Group
+                title="Revoked Organisations"
+                items={orgs.filter((o) => o.status === 'revoked')}
+              />
             </div>
 
             {/* Save & Return */}
@@ -131,7 +157,7 @@ function ManageAccessInner() {
               <button
                 className="text-white font-semibold px-8 py-3 rounded-md hover:bg-[#3a0808] transition-colors"
                 style={{ backgroundColor: palette.header }}
-                onClick={() => router.push("/clients_list")}
+                onClick={() => router.push('/clients_list')}
               >
                 Save &amp; Return
               </button>
@@ -145,9 +171,13 @@ function ManageAccessInner() {
         <div className="relative">
           <div
             className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-xl cursor-pointer"
-            style={{ backgroundColor: "#ff9900", color: "#fff" }}
-            onMouseEnter={(e) => e.currentTarget.nextElementSibling?.classList.remove("hidden")}
-            onMouseLeave={(e) => e.currentTarget.nextElementSibling?.classList.add("hidden")}
+            style={{ backgroundColor: '#ff9900', color: '#fff' }}
+            onMouseEnter={(e) =>
+              e.currentTarget.nextElementSibling?.classList.remove('hidden')
+            }
+            onMouseLeave={(e) =>
+              e.currentTarget.nextElementSibling?.classList.add('hidden')
+            }
             aria-label="Help"
             title="Help"
           >
@@ -195,7 +225,7 @@ function Group({
           <div key={item.id} className="flex items-center justify-between">
             <div>{item.name}</div>
             <div className="flex items-center gap-3">
-              {item.status === "active" && onRevoke && (
+              {item.status === 'active' && onRevoke && (
                 <button
                   onClick={() => onRevoke(item.id)}
                   className="px-3 py-1 rounded text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 transition-colors"
@@ -203,7 +233,7 @@ function Group({
                   Revoke
                 </button>
               )}
-              {item.status === "pending" && (
+              {item.status === 'pending' && (
                 <>
                   {onApprove && (
                     <button
@@ -230,4 +260,3 @@ function Group({
     </div>
   );
 }
-

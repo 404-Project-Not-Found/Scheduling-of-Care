@@ -1,19 +1,19 @@
-"use client";
+'use client';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
-import React, { useEffect, useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
+import React, { useEffect, useState } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
 
 // ---- Color palette ----
 const palette = {
-  pageBg: "#ffd9b3",   // page background
-  header: "#3A0000",   // dark brown
-  banner: "#F9C9B1",   // notice banner
-  panelBg: "#fdf4e7",  // panel background
-  text: "#2b2b2b",
-  white: "#FFFFFF",
+  pageBg: '#ffd9b3', // page background
+  header: '#3A0000', // dark brown
+  banner: '#F9C9B1', // notice banner
+  panelBg: '#fdf4e7', // panel background
+  text: '#2b2b2b',
+  white: '#FFFFFF',
 };
 
 export default function MenuPage() {
@@ -21,9 +21,9 @@ export default function MenuPage() {
 
   // Close drawer with ESC
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    if (open) document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    if (open) document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
   }, [open]);
 
   // Backdrop click to close
@@ -77,11 +77,12 @@ export default function MenuPage() {
         {/* Notice banner */}
         <div
           className="w-full border-b px-6 md:px-8 py-4 flex items-center gap-3"
-          style={{ backgroundColor: palette.banner, borderColor: "#e2b197" }}
+          style={{ backgroundColor: palette.banner, borderColor: '#e2b197' }}
         >
           <BellIcon />
           <p className="text-base md:text-lg" style={{ color: palette.header }}>
-            Select a client from the list of clients under the menu to view their tasks.
+            Select a client from the list of clients under the menu to view
+            their tasks.
           </p>
         </div>
 
@@ -104,7 +105,7 @@ export default function MenuPage() {
         aria-modal="true"
         aria-label="Menu"
         className={`fixed left-0 top-0 z-40 h-full w-[300px] max-w-[85vw] transform transition-transform duration-200 ease-out
-          ${open ? "translate-x-0" : "-translate-x-full"}`}
+          ${open ? 'translate-x-0' : '-translate-x-full'}`}
         style={{
           backgroundColor: palette.panelBg,
           borderRight: `3px solid ${palette.header}`,
@@ -133,9 +134,15 @@ export default function MenuPage() {
         <nav className="flex h-[calc(100%-56px)] flex-col justify-between">
           <ul className="px-3 py-4 space-y-2">
             <MenuItem href="/update_details" label="Update your details" />
-            <MenuItem href="/request_of_change_page" label="Request to change a task" />
+            <MenuItem
+              href="/request_of_change_page"
+              label="Request to change a task"
+            />
             <MenuItem href="/create-access-code" label="Create access code" />
-            <MenuItem href="/clients_list" label="Manage people with special needs" />
+            <MenuItem
+              href="/clients_list"
+              label="Manage people with special needs"
+            />
           </ul>
 
           <div className="px-4 pb-6 flex justify-end pr-6">
@@ -157,7 +164,7 @@ export default function MenuPage() {
 
 function HamburgerIcon({
   size = 24,
-  color = "currentColor",
+  color = 'currentColor',
 }: {
   size?: number;
   color?: string;
@@ -208,7 +215,7 @@ function MenuItem({ href, label }: { href: string; label: string }) {
           <span
             aria-hidden="true"
             className="inline-block h-3 w-3 rounded-full"
-            style={{ backgroundColor: "#FF5C5C" }}
+            style={{ backgroundColor: '#FF5C5C' }}
           />
           <div className="text-lg font-medium">{label}</div>
         </div>
