@@ -2,12 +2,18 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 
-export default function SignupPage() {
+function RoleResolver({ setRole }: { setRole: (role: string) => void }) {
   const searchParams = useSearchParams();
   const role = searchParams.get('role') || 'User';
+  setRole(role);
+  return null;
+}
+
+export default function SignupPage() {
+  const [role, setRole] = useState('User');
 
   // Maps roles to sign up page title names
   const roleDisplayMap: Record<string, string> = {
@@ -82,6 +88,10 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen w-full bg-[#F3E9D9] flex flex-col items-center justify-center px-4">
+      {/* Set role */}
+      <Suspense fallback={null}>
+        <RoleResolver setRole={setRole} />
+      </Suspense>
       {/* Top-left logo */}
       <div className="absolute left-8 top-8">
         <Image
