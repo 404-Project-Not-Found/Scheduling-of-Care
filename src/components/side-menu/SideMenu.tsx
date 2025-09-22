@@ -11,11 +11,14 @@ type SideMenuProps = {
 };
 
 const defaultItems: Item[] = [
-  { href: "/update-details", label: "Update your details" },
+  { href: "/update_details", label: "Update your details" },
+
   { href: "/dashboard/add-care-items", label: "Add Care Item" },
   { href: "/dashboard/edit-task", label: "Edit Task" },
+
   { href: "/dashboard/remove-task", label: "Remove Task" },
-  { href: "/dashboard/assign-carer", label: "Assign Carer" },
+  { href: "/carer/search", label: "Assign Carer" },
+
   { href: "/dashboard/register-client", label: "Register new client" },
   { href: "/dashboard/client-list", label: "List of clients" },
 ];
@@ -32,7 +35,11 @@ export default function SideMenu({
         aria-hidden
         onClick={onClose}
         className={`fixed inset-0 z-40 bg-black/40 transition-opacity
-          ${open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
+          ${
+            open
+              ? "opacity-100 pointer-events-auto"
+              : "opacity-0 pointer-events-none"
+          }`}
       />
 
       {/* Sliding drawer */}

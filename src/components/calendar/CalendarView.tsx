@@ -4,7 +4,9 @@ import dynamic from "next/dynamic";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import "@/styles/fullcalendar.css";
 
-const FullCalendar = dynamic(() => import("@fullcalendar/react"), { ssr: false });
+const FullCalendar = dynamic(() => import("@fullcalendar/react"), {
+  ssr: false,
+});
 
 type CalendarViewProps = {
   height?: number | "auto";

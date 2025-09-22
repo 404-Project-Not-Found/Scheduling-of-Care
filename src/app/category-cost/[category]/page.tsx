@@ -3,17 +3,25 @@
 import { useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import Badge from "@/components/Badge";
+import Badge from "@/components/ui/Badge";
 
 type Row = { item: string; category: string; allocated: number; spent: number };
 const allRows: Row[] = [
-  { item: "Dental Appointments", category: "Appointments", allocated: 600, spent: 636 },
-  { item: "Toothbrush Heads",   category: "Hygiene",      allocated: 30,  spent: 28  },
-  { item: "Socks",              category: "Clothing",     allocated: 176, spent: 36  },
+  {
+    item: "Dental Appointments",
+    category: "Appointments",
+    allocated: 600,
+    spent: 636,
+  },
+  { item: "Toothbrush Heads", category: "Hygiene", allocated: 30, spent: 28 },
+  { item: "Socks", category: "Clothing", allocated: 176, spent: 36 },
 ];
 
 const unslug = (s: string) =>
-  s.split("-").map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(" ");
+  s
+    .split("-")
+    .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+    .join(" ");
 
 type Tone = "green" | "yellow" | "red";
 const getStatus = (remaining: number): { tone: Tone; label: string } => {
@@ -29,7 +37,10 @@ export default function CategoryCostPage() {
   const year = "2025";
 
   const rows = useMemo(
-    () => allRows.filter((r) => r.category.toLowerCase() === categoryName.toLowerCase()),
+    () =>
+      allRows.filter(
+        (r) => r.category.toLowerCase() === categoryName.toLowerCase()
+      ),
     [categoryName]
   );
 
@@ -120,8 +131,14 @@ export default function CategoryCostPage() {
                       <td className="px-4 py-3">{r.item}</td>
                       <td className="px-4 py-3">${r.allocated}</td>
                       <td className="px-4 py-3">${r.spent}</td>
-                      <td className={`px-4 py-3 ${remaining < 0 ? "text-red-600" : ""}`}>
-                        {remaining < 0 ? `-$${Math.abs(remaining)}` : `$${remaining}`}
+                      <td
+                        className={`px-4 py-3 ${
+                          remaining < 0 ? "text-red-600" : ""
+                        }`}
+                      >
+                        {remaining < 0
+                          ? `-$${Math.abs(remaining)}`
+                          : `$${remaining}`}
                       </td>
                       <td>
                         <Badge tone={status.tone}>{status.label}</Badge>
@@ -132,7 +149,6 @@ export default function CategoryCostPage() {
               </tbody>
             </table>
           </div>
-
         </div>
       </div>
     </main>
