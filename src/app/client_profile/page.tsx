@@ -6,6 +6,7 @@ import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 
+// ----- Type definiton for a client record -----
 type Client = {
   _id?: string;
   name: string;
@@ -17,7 +18,7 @@ type Client = {
 
 // const TEMP_AVATAR_KEY = 'clientAvatar:__temp__';
 
-// ---- Color palette ----
+// ----- Color palette -----
 const palette = {
   pageBg: '#ffd9b3', // page background
   header: '#3A0000', // dark brown
@@ -31,6 +32,7 @@ const palette = {
   white: '#FFFFFF',
 };
 
+// ----- Wrapper with suspense fallback for loading state -----
 export default function ClientProfilePage() {
   return (
     <Suspense
@@ -45,20 +47,25 @@ function ClientProfilePageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // Query params: ?new=true means creating a new client
   const isNew = searchParams.get('new') === 'true';
   const clientId = searchParams.get('id') || undefined;
 
+  // ----- Form state variables -----
   const [name, setName] = useState<string>('');
   const [dob, setDob] = useState<string>('');
   const [accessCode, setAccessCode] = useState<string>('');
   const [avatarUrl, setAvatarUrl] = useState<string>('');
   const [notesInput, setNotesInput] = useState<string>('');
   const [savedNotes, setSavedNotes] = useState<string[]>([]);
+
+  // ----- Page state -----
   const [loading, setLoading] = useState<boolean>(!!clientId);
   const [error, setError] = useState<string>('');
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  // Fetch client data if editing exisiting profile
   useEffect(() => {
     if (!clientId) return;
 
@@ -70,6 +77,8 @@ function ClientProfilePageInner() {
           throw new Error('Failed to fetch client');
         }
         const client: Client = await res.json();
+
+        // Populate form fields with API response
         setName(client.name);
         setDob(client.dob);
         setAccessCode(client.accessCode || '');
@@ -85,30 +94,36 @@ function ClientProfilePageInner() {
     fetchClient();
   }, [clientId]);
 
+  // Loading page and error handling
   if (loading)
     return <div style={{ padding: 24 }}>Loading client profile...</div>;
   if (error) return <div style={{ padding: 24, color: 'red' }}>{error}</div>;
 
+  // Save or update client profile
   const saveProfile = async () => {
     if (!name.trim() || !dob.trim() || !accessCode.trim()) {
       alert('Please fill in Name, Date of Birth, and Access Code.');
       return false;
     }
 
+    // Merge new note (if any) with saved notes
     const allNotes = notesInput.trim()
       ? [...savedNotes, notesInput.trim()]
       : savedNotes;
 
+    // Request payload
     const payload = { name, dob, accessCode, avatarUrl, notes: allNotes };
 
     try {
       if (isNew) {
+        // Create new client record
         await fetch('/api/clients', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
       } else if (clientId) {
+        // Update existing client record
         await fetch(`/api/clients/${clientId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -116,7 +131,9 @@ function ClientProfilePageInner() {
         });
       }
 
+      // Update saved notes
       setSavedNotes(allNotes);
+      // Reset note input
       setNotesInput('');
 
       return true;
@@ -127,6 +144,7 @@ function ClientProfilePageInner() {
     }
   };
 
+  // Save profile and navigate back to clients list
   const handleSaveAndReturn = async () => {
     const success = await saveProfile();
     if (success) {
@@ -134,6 +152,7 @@ function ClientProfilePageInner() {
     }
   };
 
+  // Handles avatar upload
   const openFilePicker = () => fileInputRef.current?.click();
   const handleFileChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
     const file = e.target.files?.[0];

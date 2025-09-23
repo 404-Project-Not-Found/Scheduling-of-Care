@@ -1,18 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import mongoose from 'mongoose';
 import { connectDB } from '@/lib/mongodb';
 import bcrypt from 'bcryptjs';
-
-const userSchema = new mongoose.Schema({
-  fullName: { type: String, required: true },
-  email: { type: String, required: true },
-  password: { type: String, required: true },
-  role: { type: String, required: true },
-  createdAt: { type: Date, default: Date.now },
-});
-
-// Use existing model if compiled, otherwise create a new one
-const User = mongoose.models.User || mongoose.model('User', userSchema);
+import User from '@/models/User';
 
 export async function POST(req: NextRequest) {
   await connectDB();

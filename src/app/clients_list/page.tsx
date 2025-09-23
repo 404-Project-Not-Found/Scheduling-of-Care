@@ -7,6 +7,14 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+// ----- Type definiton for a client record -----
+type Client = {
+  _id: string;
+  name: string;
+  dob: string;
+};
+
+// ----- Color palette -----
 const palette = {
   pageBg: '#ffd9b3',
   cardBg: '#F7ECD9',
@@ -20,30 +28,16 @@ const palette = {
   organPink: '#E91E63', // pink
 };
 
-type Client = {
-  _id: string;
-  name: string;
-  dob: string;
-};
-
-/* hardcoded members list for demo
-const members = [
-  { name: 'Jane Smith', dob: '1943-09-16' },
-  { name: 'Harry Dong', dob: '1950-01-01' },
-  { name: 'Jose Lin', dob: '1955-05-12' },
-  { name: 'Kevin Wu', dob: '1960-07-20' },
-  { name: 'Mickey Mouse', dob: '1970-03-01' },
-];
-*/
-
 export default function FamilyPOAListPage() {
   const router = useRouter();
   const [clients, setClients] = useState<Client[]>([]);
 
+  // Fetches client list from API when the component first mounts
   useEffect(() => {
     async function fetchClients() {
       const res = await fetch('/api/clients');
       const data = await res.json();
+      // Saves client list to state so they can be displayed in the UI
       setClients(data);
     }
     fetchClients();

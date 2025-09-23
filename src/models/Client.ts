@@ -7,6 +7,7 @@ const ClientSchema = new Schema(
     accessCode: { type: String, required: true },
     avatarUrl: { type: String },
     notes: { type: [String], default: [] },
+    createdBy: { type: String, required: true },
   },
   { timestamps: true }
 );
