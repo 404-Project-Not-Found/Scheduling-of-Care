@@ -1,187 +1,187 @@
-// "use client";
+"use client";
 
-// import Link from "next/link";
-// import { useMemo, useState } from "react";
-// // import Badge from "@/components/Badge";
+import Link from "next/link";
+import { useMemo, useState } from "react";
+// import Badge from "@/components/Badge";
 
-// type Row = { item: string; category: string; allocated: number; spent: number };
-// const rows: Row[] = [
-//   {
-//     item: "Dental Appointments",
-//     category: "Appointments",
-//     allocated: 600,
-//     spent: 636,
-//   },
-//   { item: "Toothbrush Heads", category: "Hygiene", allocated: 30, spent: 28 },
-//   { item: "Socks", category: "Clothing", allocated: 176, spent: 36 },
-// ];
+type Row = { item: string; category: string; allocated: number; spent: number };
+const rows: Row[] = [
+  {
+    item: "Dental Appointments",
+    category: "Appointments",
+    allocated: 600,
+    spent: 636,
+  },
+  { item: "Toothbrush Heads", category: "Hygiene", allocated: 30, spent: 28 },
+  { item: "Socks", category: "Clothing", allocated: 176, spent: 36 },
+];
 
-// const slugify = (s: string) => s.trim().toLowerCase().replace(/\s+/g, "-");
+const slugify = (s: string) => s.trim().toLowerCase().replace(/\s+/g, "-");
 
-// type Tone = "green" | "yellow" | "red";
-// const getStatus = (remaining: number): { tone: Tone; label: string } => {
-//   if (remaining < 0) return { tone: "red", label: "Exceeded" };
-//   if (remaining <= 5) return { tone: "yellow", label: "Nearly Exceeded" };
-//   return { tone: "green", label: "Within Limit" };
-// };
+type Tone = "green" | "yellow" | "red";
+const getStatus = (remaining: number): { tone: Tone; label: string } => {
+  if (remaining < 0) return { tone: "red", label: "Exceeded" };
+  if (remaining <= 5) return { tone: "yellow", label: "Nearly Exceeded" };
+  return { tone: "green", label: "Within Limit" };
+};
 
-// export default function TotalCostPage() {
-//   const [q, setQ] = useState("");
-//   const [year, setYear] = useState("2025");
+export default function TotalCostPage() {
+  const [q, setQ] = useState("");
+  const [year, setYear] = useState("2025");
 
-//   const filtered = useMemo(() => {
-//     const t = q.trim().toLowerCase();
-//     if (!t) return rows;
-//     return rows.filter(
-//       (r) =>
-//         r.item.toLowerCase().includes(t) || r.category.toLowerCase().includes(t)
-//     );
-//   }, [q]);
+  const filtered = useMemo(() => {
+    const t = q.trim().toLowerCase();
+    if (!t) return rows;
+    return rows.filter(
+      (r) =>
+        r.item.toLowerCase().includes(t) || r.category.toLowerCase().includes(t)
+    );
+  }, [q]);
 
-//   const totals = useMemo(() => {
-//     const allocated = filtered.reduce((s, r) => s + r.allocated, 0);
-//     const spent = filtered.reduce((s, r) => s + r.spent, 0);
-//     return { allocated, spent, remaining: allocated - spent };
-//   }, [filtered]);
+  const totals = useMemo(() => {
+    const allocated = filtered.reduce((s, r) => s + r.allocated, 0);
+    const spent = filtered.reduce((s, r) => s + r.spent, 0);
+    return { allocated, spent, remaining: allocated - spent };
+  }, [filtered]);
 
-//   return (
-//     <main className="min-h-screen flex items-center justify-center bg-[#F8CBA6]">
-//       <div className="w-full max-w-6xl m-6 rounded-3xl border-4 border-[#3A0000] bg-[#FFF4E6] shadow-md overflow-hidden">
-//         {/* Top bar */}
-//         <div className="bg-[#3A0000] px-6 py-4 flex items-center justify-between">
-//           <h1 className="text-white text-2xl font-semibold">Budget Report</h1>
-//           <input
-//             value={q}
-//             onChange={(e) => setQ(e.target.value)}
-//             placeholder="Search"
-//             className="h-9 rounded-full bg-white text-black px-4 border"
-//           />
-//         </div>
+  return (
+    <main className="min-h-screen flex items-center justify-center bg-[#F8CBA6]">
+      <div className="w-full max-w-6xl m-6 rounded-3xl border-4 border-[#3A0000] bg-[#FFF4E6] shadow-md overflow-hidden">
+        {/* Top bar */}
+        <div className="bg-[#3A0000] px-6 py-4 flex items-center justify-between">
+          <h1 className="text-white text-2xl font-semibold">Budget Report</h1>
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search"
+            className="h-9 rounded-full bg-white text-black px-4 border"
+          />
+        </div>
 
-//         {/* Alert banner */}
-//         <div className="w-full bg-[#fde7e4] border-y border-[#f5c2c2] px-6 py-3">
-//           <p className="text-[#9b2c2c] font-semibold">
-//             WARNING: Dental Checkup budget exceeded by <b>$36</b>
-//           </p>
-//         </div>
+        {/* Alert banner */}
+        <div className="w-full bg-[#fde7e4] border-y border-[#f5c2c2] px-6 py-3">
+          <p className="text-[#9b2c2c] font-semibold">
+            WARNING: Dental Checkup budget exceeded by <b>$36</b>
+          </p>
+        </div>
 
-//         {/* Body */}
-//         <div className="px-6 py-6">
-//           {/* Year selector */}
-//           <div className="mb-4 flex items-center gap-2 px-2">
-//             <span className="font-semibold text-[#000]">Select year:</span>
-//             <select
-//               value={year}
-//               onChange={(e) => setYear(e.target.value)}
-//               className="rounded-md bg-white text-black text-sm px-3 py-1 border"
-//             >
-//               <option value="2025">2025</option>
-//               <option value="2024">2024</option>
-//               <option value="2023">2023</option>
-//             </select>
-//             <button
-//               type="button"
-//               aria-label="Help"
-//               className="h-6 w-6 rounded-full bg-[#E37E72] text-white text-xs"
-//             >
-//               ?
-//             </button>
-//           </div>
+        {/* Body */}
+        <div className="px-6 py-6">
+          {/* Year selector */}
+          <div className="mb-4 flex items-center gap-2 px-2">
+            <span className="font-semibold text-[#000]">Select year:</span>
+            <select
+              value={year}
+              onChange={(e) => setYear(e.target.value)}
+              className="rounded-md bg-white text-black text-sm px-3 py-1 border"
+            >
+              <option value="2025">2025</option>
+              <option value="2024">2024</option>
+              <option value="2023">2023</option>
+            </select>
+            <button
+              type="button"
+              aria-label="Help"
+              className="h-6 w-6 rounded-full bg-[#E37E72] text-white text-xs"
+            >
+              ?
+            </button>
+          </div>
 
-//           {/* Overview tiles */}
-//           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-black text-center">
-//             <div className="rounded-2xl border px-6 py-4 bg-[#F8CBA6] flex flex-col items-center justify-center">
-//               <div className="text-2xl font-bold">
-//                 ${totals.allocated.toLocaleString()}
-//               </div>
-//               <div className="text-sm">Annual Budget</div>
-//             </div>
+          {/* Overview tiles */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-black text-center">
+            <div className="rounded-2xl border px-6 py-4 bg-[#F8CBA6] flex flex-col items-center justify-center">
+              <div className="text-2xl font-bold">
+                ${totals.allocated.toLocaleString()}
+              </div>
+              <div className="text-sm">Annual Budget</div>
+            </div>
 
-//             <div className="rounded-2xl border px-6 py-4 bg-white flex flex-col items-center justify-center">
-//               <div className="text-2xl font-bold">
-//                 ${totals.spent.toLocaleString()}
-//               </div>
-//               <div className="text-sm">Spent to Date</div>
-//             </div>
+            <div className="rounded-2xl border px-6 py-4 bg-white flex flex-col items-center justify-center">
+              <div className="text-2xl font-bold">
+                ${totals.spent.toLocaleString()}
+              </div>
+              <div className="text-sm">Spent to Date</div>
+            </div>
 
-//             <div className="rounded-2xl border px-6 py-4 bg-white flex flex-col items-center justify-center">
-//               <div
-//                 className={`text-2xl font-bold ${
-//                   totals.remaining < 0 ? "text-red-600" : "text-green-600"
-//                 }`}
-//               >
-//                 {totals.remaining < 0
-//                   ? `-$${Math.abs(totals.remaining).toLocaleString()}`
-//                   : `$${totals.remaining.toLocaleString()}`}
-//               </div>
-//               <div className="text-sm">Remaining Balance</div>
-//             </div>
-//           </div>
+            <div className="rounded-2xl border px-6 py-4 bg-white flex flex-col items-center justify-center">
+              <div
+                className={`text-2xl font-bold ${
+                  totals.remaining < 0 ? "text-red-600" : "text-green-600"
+                }`}
+              >
+                {totals.remaining < 0
+                  ? `-$${Math.abs(totals.remaining).toLocaleString()}`
+                  : `$${totals.remaining.toLocaleString()}`}
+              </div>
+              <div className="text-sm">Remaining Balance</div>
+            </div>
+          </div>
 
-//           {/* Table */}
-//           <div className="rounded-2xl border border-[#3A0000] bg-white text-black overflow-hidden">
-//             <div className="px-4 py-3 bg-[#F4A6A0] flex items-center justify-between">
-//               <div className="font-semibold">Overspent Items: 1</div>
-//               <div className="text-sm text-black">Year: {year}</div>
-//             </div>
+          {/* Table */}
+          <div className="rounded-2xl border border-[#3A0000] bg-white text-black overflow-hidden">
+            <div className="px-4 py-3 bg-[#F4A6A0] flex items-center justify-between">
+              <div className="font-semibold">Overspent Items: 1</div>
+              <div className="text-sm text-black">Year: {year}</div>
+            </div>
 
-//             <table className="w-full text-left text-sm">
-//               <thead className="bg-[#3A0000] text-white">
-//                 <tr>
-//                   <th className="px-4 py-3">Categories</th>
-//                   <th className="px-4 py-3">Allocated Budget</th>
-//                   <th className="px-4 py-3">Amount Spent</th>
-//                   <th className="px-4 py-3">Remaining</th>
-//                   <th className="px-4 py-3">Status</th>
-//                 </tr>
-//               </thead>
-//               <tbody>
-//                 {filtered.map((r, i) => {
-//                   const remaining = r.allocated - r.spent;
-//                   const status = getStatus(remaining);
+            <table className="w-full text-left text-sm">
+              <thead className="bg-[#3A0000] text-white">
+                <tr>
+                  <th className="px-4 py-3">Categories</th>
+                  <th className="px-4 py-3">Allocated Budget</th>
+                  <th className="px-4 py-3">Amount Spent</th>
+                  <th className="px-4 py-3">Remaining</th>
+                  <th className="px-4 py-3">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((r, i) => {
+                  const remaining = r.allocated - r.spent;
+                  const status = getStatus(remaining);
 
-//                   return (
-//                     <tr key={i} className="border-t border-[#3A0000]/20">
-//                       <td className="px-4 py-3">
-//                         <Link
-//                           href={`/category-cost/${slugify(r.category)}`}
-//                           className="font-bold text-black underline"
-//                         >
-//                           {r.category}
-//                         </Link>
-//                       </td>
-//                       <td className="px-4 py-3">${r.allocated}</td>
-//                       <td className="px-4 py-3">${r.spent}</td>
-//                       <td
-//                         className={`px-4 py-3 ${
-//                           remaining < 0 ? "text-red-600" : ""
-//                         }`}
-//                       >
-//                         {remaining < 0
-//                           ? `-$${Math.abs(remaining)}`
-//                           : `$${remaining}`}
-//                       </td>
-//                       <td>
-//                         {/* <Badge tone={status.tone}>{status.label}</Badge> */}
-//                       </td>
-//                     </tr>
-//                   );
-//                 })}
-//               </tbody>
-//             </table>
-//           </div>
+                  return (
+                    <tr key={i} className="border-t border-[#3A0000]/20">
+                      <td className="px-4 py-3">
+                        <Link
+                          href={`/category-cost/${slugify(r.category)}`}
+                          className="font-bold text-black underline"
+                        >
+                          {r.category}
+                        </Link>
+                      </td>
+                      <td className="px-4 py-3">${r.allocated}</td>
+                      <td className="px-4 py-3">${r.spent}</td>
+                      <td
+                        className={`px-4 py-3 ${
+                          remaining < 0 ? "text-red-600" : ""
+                        }`}
+                      >
+                        {remaining < 0
+                          ? `-$${Math.abs(remaining)}`
+                          : `$${remaining}`}
+                      </td>
+                      <td>
+                        {/* <Badge tone={status.tone}>{status.label}</Badge> */}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
 
-//           {/* Actions */}
-//           <div className="mt-6 flex justify-end gap-3">
-//             <button className="px-5 rounded-full bg-white text-black border">
-//               Export CSV
-//             </button>
-//             <button className="h-10 px-5 rounded-full bg-[#3A0000] text-white">
-//               Print
-//             </button>
-//           </div>
-//         </div>
-//       </div>
-//     </main>
-//   );
-// }
+          {/* Actions */}
+          <div className="mt-6 flex justify-end gap-3">
+            <button className="px-5 rounded-full bg-white text-black border">
+              Export CSV
+            </button>
+            <button className="h-10 px-5 rounded-full bg-[#3A0000] text-white">
+              Print
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}

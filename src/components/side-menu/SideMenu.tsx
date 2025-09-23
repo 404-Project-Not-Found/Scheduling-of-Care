@@ -11,7 +11,7 @@ type SideMenuProps = {
 };
 
 const defaultItems: Item[] = [
-  { href: "/update_details", label: "Update your details" },
+  { href: "/dashboard/update-details", label: "Update your details" },
 
   { href: "/dashboard/add-care-items", label: "Add Care Item" },
   { href: "/dashboard/edit-task", label: "Edit Task" },
