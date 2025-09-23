@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useTransactions } from "@/context/TransactionContext";
 
 const colors = {
   pageBg: "#ffd9b3",
@@ -14,9 +13,28 @@ const colors = {
   help: "#ed5f4f",
 };
 
+// Hardcoded transactions
+const transactions = [
+  {
+    id: "t1",
+    type: "Dental Expense",
+    date: "2025-09-15",
+    madeBy: "Florence",
+    receipt: "receipt1.pdf",
+    items: ["Dental Appointment"],
+  },
+  {
+    id: "t2",
+    type: "Care Supplies",
+    date: "2025-09-18",
+    madeBy: "Florence",
+    receipt: "toothbrush.png",
+    items: ["Replace Toothbrush Head"],
+  },
+];
+
 export default function TransactionHistoryPage() {
   const router = useRouter();
-  const { transactions } = useTransactions();
   const [search, setSearch] = useState("");
 
   const filtered = transactions.filter(
@@ -32,7 +50,7 @@ export default function TransactionHistoryPage() {
       className="min-h-screen w-full flex flex-col items-center justify-start px-6 py-12 relative"
       style={{ backgroundColor: colors.pageBg }}
     >
-      {/* Top-left logo */}
+      {/* Logo */}
       <div className="absolute top-6 left-6">
         <Image
           src="/logo-name.png"
@@ -44,7 +62,7 @@ export default function TransactionHistoryPage() {
         />
       </div>
 
-      {/* Back to Dashboard Button */}
+      {/* Back button */}
       <div className="w-full max-w-6xl mb-6 flex justify-start">
         <button
           className="px-6 py-2 rounded-full font-medium border hover:bg-gray-800"
@@ -69,13 +87,12 @@ export default function TransactionHistoryPage() {
 
           <div className="flex items-center gap-3">
             <button
-              className="px-4 py-2 rounded-lg font-medium"
-              style={{ backgroundColor: colors.orange, color: colors.text }}
-              onClick={() => router.push("/add_transaction")}
-            >
-              Add new transaction
+                className="px-4 py-2 rounded-lg font-medium"
+                style={{ backgroundColor: colors.orange, color: colors.text }}
+                onClick={() => router.push("/add_transaction")}
+                >
+                Add new transaction
             </button>
-
             <input
               type="text"
               placeholder="Search"
@@ -99,15 +116,32 @@ export default function TransactionHistoryPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((t, i) => (
-                <tr key={i} className="border-t">
+              {filtered.map((t) => (
+                <tr key={t.id} className="border-t">
                   <td className="py-3">{t.type}</td>
                   <td className="py-3">{t.date}</td>
                   <td className="py-3">{t.madeBy}</td>
                   <td className="py-3">{t.receipt}</td>
                   <td className="py-3">
                     {t.items.map((item, idx) => (
-                      <div key={idx}>{item}</div>
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between gap-2"
+                      >
+                        <span>{item}</span>
+                        <button
+                          className="px-2 py-1 text-xs bg-[#3d0000] text-white rounded"
+                          onClick={() =>
+                            router.push(
+                              `/dashboard?addedFile=${encodeURIComponent(
+                                t.receipt
+                              )}`
+                            )
+                          }
+                        >
+                          Add to Task
+                        </button>
+                      </div>
                     ))}
                   </td>
                 </tr>
@@ -117,7 +151,7 @@ export default function TransactionHistoryPage() {
         </div>
       </div>
 
-      {/* Help Button - fixed to bottom right of screen */}
+      {/* Help Button */}
       <div className="fixed bottom-6 right-6 z-50">
         <div className="relative group">
           <button
@@ -128,7 +162,7 @@ export default function TransactionHistoryPage() {
           </button>
           <div className="absolute hidden group-hover:block bg-white text-black text-sm p-3 rounded shadow w-72 bottom-full mb-4 right-0">
             <p>• Use the search box to filter transactions by type, date, carer, or items.</p>
-            <p>• Click &quot;Add new transaction&quot; to record a new transaction.</p>
+            <p>• Transactions are linked to tasks and receipts automatically.</p>
             <p>• Click &quot;Back to Dashboard&quot; to return to the main dashboard page.</p>
           </div>
         </div>

@@ -1,72 +1,78 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import CalendarPanel from "@/components/dashboard/CalendarPanel";
 import TasksPanel from "@/components/tasks/TasksPanel";
 import { MenuDrawer } from "@/app/menu/page";
 import { Task } from "./types";
 
+// Wrap the page in Suspense
 export default function DashboardPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-gray-500">Loading dashboard...</div>}>
+      <DashboardContent />
+    </Suspense>
+  );
+}
+
+function DashboardContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const addedFile = searchParams.get("addedFile");
+
   const [open, setOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string>("");
-  const [tasks, setTasks] = useState<Task[]>([
-    {
-      id: "1",
-      title: "Dental Appointment",
-      frequency: "Monthly",
-      lastDone: "2025-09-15",
-      nextDue: "2025-10-01",
-      status: "Pending",
-      comments: [],
-      files: [],
-    },
-    {
-      id: "2",
-      title: "Replace Toothbrush Head",
-      frequency: "Every 3 months",
-      lastDone: "2025-07-13",
-      nextDue: "2025-10-13",
-      status: "Pending",
-      comments: [],
-      files: [],
-    },
-    {
-      id: "3",
-      title: "Submit Report",
-      frequency: "Weekly",
-      lastDone: "2025-09-18",
-      nextDue: "2025-09-25",
-      status: "Due",
-      comments: [],
-      files: [],
-    },
-  ]);
+
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isAddingComment, setIsAddingComment] = useState(false);
   const [newComment, setNewComment] = useState("");
 
+  const [showHelp, setShowHelp] = useState(false); // help tooltip visibility
+
+  // Close menu on Escape
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     if (open) document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [open]);
 
-  const filteredTasks =
-    selectedDate === ""
-      ? tasks
-      : tasks.filter((t) => t.nextDue === selectedDate);
+  // Load tasks from localStorage (or defaults)
+  useEffect(() => {
+    const stored = localStorage.getItem("tasks");
+    if (stored) {
+      setTasks(JSON.parse(stored));
+    } else {
+      setTasks([
+        { id: "1", title: "Dental Appointment", frequency: "Monthly", lastDone: "2025-09-15", nextDue: "2025-10-01", status: "Pending", comments: [], files: [] },
+        { id: "2", title: "Replace Toothbrush Head", frequency: "Every 3 months", lastDone: "2025-07-13", nextDue: "2025-10-13", status: "Pending", comments: [], files: [] },
+        { id: "3", title: "Submit Report", frequency: "Weekly", lastDone: "2025-09-18", nextDue: "2025-09-25", status: "Due", comments: [], files: [] },
+      ]);
+    }
+  }, []);
+
+  // Persist tasks
+  useEffect(() => {
+    if (tasks.length > 0) localStorage.setItem("tasks", JSON.stringify(tasks));
+  }, [tasks]);
+
+  // Add file via ?addedFile query param
+  const hasAddedFile = useRef(false);
+  useEffect(() => {
+    if (addedFile && selectedTask && !hasAddedFile.current) {
+      addFile(selectedTask.id, addedFile);
+      hasAddedFile.current = true;
+    }
+  }, [addedFile, selectedTask]);
+
+  const filteredTasks = selectedDate === "" ? tasks : tasks.filter((t) => t.nextDue === selectedDate);
 
   const addComment = (taskId: string, comment: string) => {
     setTasks((prev) =>
-      prev.map((t) =>
-        t.id === taskId
-          ? { ...t, comments: [...(t.comments || []), comment] }
-          : t
-      )
+      prev.map((t) => (t.id === taskId ? { ...t, comments: [...(t.comments || []), comment] } : t))
     );
     setSelectedTask((prev) =>
       prev ? { ...prev, comments: [...(prev.comments || []), comment] } : prev
@@ -77,19 +83,59 @@ export default function DashboardPage() {
 
   const addFile = (taskId: string, fileName: string) => {
     setTasks((prev) =>
-      prev.map((t) =>
-        t.id === taskId
-          ? { ...t, files: [...(t.files || []), fileName] }
-          : t
-      )
+      prev.map((t) => (t.id === taskId ? { ...t, files: [...(t.files || []), fileName] } : t))
     );
     setSelectedTask((prev) =>
       prev ? { ...prev, files: [...(prev.files || []), fileName] } : prev
     );
   };
 
+  const getStatusBadgeClasses = (status: string | undefined) => {
+    switch (status?.toLowerCase()) {
+      case "due": return "bg-red-500 text-white";
+      case "pending": return "bg-orange-400 text-white";
+      case "completed": return "bg-green-500 text-white";
+      default: return "bg-gray-300 text-black";
+    }
+  };
+
+  // Dashboard instructions for help tooltip
+  const instructions = [
+    "Click the ≡ button to open the menu.",
+    "Calendar: Click a date to filter tasks due on that day.",
+    "Tasks Panel: Click a task to view details.",
+    "Mark a task as done using the 'Mark as done' button.",
+    "Add comments using 'Add comment'.",
+    "Upload files with 'Upload File'.",
+    "Use the transactions link to view or add receipts.",
+  ];
+
   return (
     <div className="min-h-screen relative">
+
+      {/* Help Button */}
+      <div
+        className="fixed bottom-8 right-8 z-50 flex flex-col items-end"
+        onMouseEnter={() => setShowHelp(true)}
+        onMouseLeave={() => setShowHelp(false)}
+      >
+        <div className="relative">
+          <div className="h-12 w-12 rounded-full bg-red-600 text-white flex items-center justify-center text-2xl font-bold cursor-pointer">
+            ?
+          </div>
+          {showHelp && (
+            <div className="absolute bottom-14 right-0 w-72 p-4 bg-white border border-gray-400 rounded shadow-lg text-black text-sm">
+              <h3 className="font-bold mb-2">Dashboard Instructions</h3>
+              <ul className="list-disc list-inside space-y-1">
+                {instructions.map((instr, idx) => (
+                  <li key={idx}>{instr}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-10 items-stretch px-20 mt-10">
         {/* LEFT: Calendar */}
         <section className="flex flex-col rounded-2xl overflow-hidden bg-[#F7ECD9] border border-black/10">
@@ -155,21 +201,13 @@ export default function DashboardPage() {
               </div>
 
               <div className="p-5 text-black flex flex-col gap-3 flex-1">
-                <p>
-                  <span className="font-bold">Frequency:</span>{" "}
-                  {selectedTask.frequency}
-                </p>
-                <p>
-                  <span className="font-bold">Last Done:</span>{" "}
-                  {selectedTask.lastDone}
-                </p>
-                <p>
-                  <span className="font-bold">Next Due:</span>{" "}
-                  {selectedTask.nextDue}
-                </p>
-                <p>
-                  <span className="font-bold">Status:</span>{" "}
-                  {selectedTask.status}
+                <p><span className="font-bold">Frequency:</span> {selectedTask.frequency}</p>
+                <p><span className="font-bold">Last Done:</span> {selectedTask.lastDone}</p>
+                <p><span className="font-bold">Next Due:</span> {selectedTask.nextDue}</p>
+                <p><span className="font-bold">Status:</span>{" "}
+                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusBadgeClasses(selectedTask.status)}`}>
+                    {selectedTask.status}
+                  </span>
                 </p>
 
                 {/* Comments Section */}
@@ -177,31 +215,17 @@ export default function DashboardPage() {
                   <h3 className="font-bold text-lg mb-2">Comments:</h3>
                   {selectedTask.comments && selectedTask.comments.length > 0 ? (
                     <ul className="list-disc pl-5 space-y-1">
-                      {selectedTask.comments.map((c, idx) => (
-                        <li key={idx} className="text-black">
-                          {c}
-                        </li>
-                      ))}
+                      {selectedTask.comments.map((c, idx) => (<li key={idx}>{c}</li>))}
                     </ul>
-                  ) : (
-                    <p className="text-black italic">No comments yet.</p>
-                  )}
+                  ) : (<p className="italic">No comments yet.</p>)}
                 </div>
 
                 {/* Files Section */}
                 <div className="mt-4">
                   <h3 className="font-bold text-lg mb-2">Files:</h3>
                   {selectedTask.files && selectedTask.files.length > 0 ? (
-                    <ul className="list-disc pl-5 space-y-1">
-                      {selectedTask.files.map((f, idx) => (
-                        <li key={idx} className="text-black">
-                          {f}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-black italic">No files uploaded yet.</p>
-                  )}
+                    <ul className="list-disc pl-5 space-y-1">{selectedTask.files.map((f, idx) => <li key={idx}>{f}</li>)}</ul>
+                  ) : (<p className="italic">No files uploaded yet.</p>)}
                 </div>
 
                 {/* Add Comment Box */}
@@ -214,69 +238,31 @@ export default function DashboardPage() {
                       onChange={(e) => setNewComment(e.target.value)}
                     />
                     <div className="flex justify-end gap-2 mt-2">
-                      <button
-                        className="px-3 py-1 border rounded bg-gray-200 text-black"
-                        onClick={() => {
-                          setIsAddingComment(false);
-                          setNewComment("");
-                        }}
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        className="px-3 py-1 border rounded bg-[#3d0000] text-white"
-                        onClick={() => {
-                          if (newComment.trim()) {
-                            addComment(selectedTask.id, newComment.trim());
-                          }
-                        }}
-                      >
-                        Save
-                      </button>
+                      <button className="px-3 py-1 border rounded bg-gray-200 text-black"
+                        onClick={() => { setIsAddingComment(false); setNewComment(""); }}>Cancel</button>
+                      <button className="px-3 py-1 border rounded bg-[#3d0000] text-white"
+                        onClick={() => { if (newComment.trim()) addComment(selectedTask.id, newComment.trim()); }}>Save</button>
                     </div>
                   </div>
                 )}
 
                 {/* Action buttons row */}
                 <div className="flex gap-3 mt-auto flex-wrap">
-                  <button
-                    className="px-4 py-2 border rounded bg-white text-black"
-                    onClick={() =>
-                      setSelectedTask({ ...selectedTask, status: "Completed" })
-                    }
-                  >
+                  <button className="px-4 py-2 border rounded bg-white text-black"
+                    onClick={() => { if (selectedTask) { setTasks(prev => prev.map(t => t.id === selectedTask.id ? { ...t, status: "Completed" } : t)); setSelectedTask({ ...selectedTask, status: "Completed" }); } }}>
                     Mark as done
                   </button>
+                  <button className="px-4 py-2 border rounded bg-white text-black" onClick={() => setIsAddingComment(true)}>Add comment</button>
 
-                  <button
-                    className="px-4 py-2 border rounded bg-white text-black"
-                    onClick={() => setIsAddingComment(true)}
-                  >
-                    Add comment
-                  </button>
-
-                  {/* Upload File */}
                   <label className="px-4 py-2 border rounded bg-white text-black cursor-pointer">
                     Upload File
-                    <input
-                      type="file"
-                      className="hidden"
-                      onChange={(e) => {
-                        if (e.target.files?.length && selectedTask) {
-                          const file = e.target.files[0];
-                          addFile(selectedTask.id, file.name);
-                        }
-                      }}
-                    />
+                    <input type="file" className="hidden" onChange={(e) => { if (e.target.files?.length && selectedTask) addFile(selectedTask.id, e.target.files[0].name); }} />
                   </label>
 
-                  {/* Upload Receipt → Navigate to /add_transaction */}
-                  <button
-                    className="px-4 py-2 border rounded bg-white text-black"
-                    onClick={() => router.push("/add_transaction")}
-                  >
-                    Upload Receipt
-                  </button>
+                  <div className="mt-2 text-black text-sm">
+                    Need to add a receipt/view receipts? Go to{" "}
+                    <span className="underline cursor-pointer text-blue-600 hover:text-blue-800" onClick={() => router.push("/transaction_history")}>transactions</span>
+                  </div>
                 </div>
               </div>
             </div>

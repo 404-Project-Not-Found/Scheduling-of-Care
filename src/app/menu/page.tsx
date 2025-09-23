@@ -65,7 +65,6 @@ export function MenuDrawer({ open, onClose }: { open: boolean; onClose: () => vo
           <ul className="px-3 py-4 space-y-2">
             <MenuItem href="/update_details" label="Update your details" />
             <MenuItem href="/total-cost" label="Budget Report" />
-            <MenuItem href="/request-log" label="Request Log" />
             <MenuItem href="/transaction_history" label="View Transactions" />
           </ul>
 
@@ -84,14 +83,12 @@ export function MenuDrawer({ open, onClose }: { open: boolean; onClose: () => vo
   );
 }
 
-/* ================= Page Route ================= */
 export default function MenuPage() {
   const [open, setOpen] = React.useState(true);
 
   return <MenuDrawer open={open} onClose={() => setOpen(false)} />;
 }
 
-/* ================= Helpers ================= */
 function HamburgerIcon({ size = 24, color = "currentColor" }: { size?: number; color?: string }) {
   return (
     <svg
