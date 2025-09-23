@@ -62,6 +62,7 @@ function ClientProfilePageInner() {
   // ----- Page state -----
   const [loading, setLoading] = useState<boolean>(!!clientId);
   const [error, setError] = useState<string>('');
+  const [formError, setFormError] = useState<string>('');
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -102,14 +103,46 @@ function ClientProfilePageInner() {
   // Save or update client profile
   const saveProfile = async () => {
     if (!name.trim() || !dob.trim() || !accessCode.trim()) {
-      alert('Please fill in Name, Date of Birth, and Access Code.');
+      setFormError(
+        'Please fill in Name, Date of Birth, and Access Code to continue.'
+      );
       return false;
     }
+
+    // Clear error if valid
+    setFormError('');
 
     // Merge new note (if any) with saved notes
     const allNotes = notesInput.trim()
       ? [...savedNotes, notesInput.trim()]
       : savedNotes;
+
+    if (isNew) {
+      try {
+        const res = await fetch(
+          `/api/clients/check?accessCode=${encodeURIComponent(accessCode)}`
+        );
+        if (!res.ok) throw new Error('Check request failed');
+
+        const data = await res.json();
+
+        if (data.exists && data.client) {
+          const proceed = window.confirm(
+            `A client named "${data.client.name}" already exists with this access code. \nDo you want to add this client?`
+          );
+
+          if (!proceed) return false;
+
+          setName(data.client.name);
+          setDob(data.client.dob || '');
+          setSavedNotes(data.client.notes || []);
+          setAvatarUrl(data.client.avatarUrl || '');
+        }
+      } catch (err) {
+        console.error('Error checking client:', err);
+        setFormError('Failed to check access code. Please try again.');
+      }
+    }
 
     // Request payload
     const payload = { name, dob, accessCode, avatarUrl, notes: allNotes };
@@ -194,7 +227,9 @@ function ClientProfilePageInner() {
           </svg>
           <span className="text-base">Back</span>
         </button>
-        <h2 className="text-2xl font-bold">Client Profile</h2>
+        <h2 className="text-2xl font-bold">
+          {isNew ? 'Add New Person' : 'Edit Profile'}
+        </h2>
       </div>
 
       {/* Centered white card */}
@@ -252,6 +287,13 @@ function ClientProfilePageInner() {
 
               {/* Editable profile fields */}
               <div className="flex flex-col gap-3 w-full">
+                {/* Show inline error message if form validation fails */}
+                {formError && (
+                  <div className="mb-4 p-2 rounded-md bg-red-100 border border-red-400 text-red-700">
+                    {formError}
+                  </div>
+                )}
+
                 {/* Name */}
                 <label className="text-lg flex items-center gap-3">
                   <span className="font-semibold">Name:</span>
@@ -380,7 +422,7 @@ function ClientProfilePageInner() {
               className="px-8 py-3 rounded-lg text-lg hover:opacity-90 transition"
               style={{ backgroundColor: palette.header, color: palette.white }}
             >
-              Save and Return
+              Save
             </button>
           </div>
         </div>

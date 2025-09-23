@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
@@ -21,6 +21,26 @@ export default function UpdateDetailsPage() {
   const [show, setShow] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [formError, setFormError] = useState<string>('');
+
+  useEffect(() => {
+    async function fetchUser() {
+      try {
+        const res = await fetch('/api/user/profile');
+        if (!res.ok) {
+          throw new Error('Failed to load profile');
+        }
+        const data = await res.json();
+
+        if (data.email) {
+          setEmail(data.email);
+        }
+      } catch (err) {
+        console.error('Error fetching user:', err);
+      }
+    }
+    fetchUser();
+  }, []);
 
   // Validates input and sends update request to API
   const handleSave = async () => {
@@ -29,7 +49,7 @@ export default function UpdateDetailsPage() {
 
     // Validate email format if user entered a new email
     if (email && (!email.includes('@') || !email.includes('.'))) {
-      setError('Please enter a valid email address.');
+      setFormError('Please enter a valid email address.');
       return;
     }
 
@@ -44,9 +64,12 @@ export default function UpdateDetailsPage() {
 
     // Ensures the user has enetered at least one field
     if (!body.email && !body.password) {
-      setError('Please enter an email or password to update.');
+      setFormError('Please enter an email or password to update.');
       return;
     }
+
+    // Clear error if valid
+    setFormError('');
 
     // Send POST request to update API
     const res = await fetch('/api/user/update', {
@@ -116,6 +139,12 @@ export default function UpdateDetailsPage() {
 
         {/* Content area: generous spacing, white inputs */}
         <div className="px-8 md:px-10 py-8 md:py-10 text-black">
+          {/* Show inline error message if form validation fails */}
+          {formError && (
+            <div className="mb-4 p-2 rounded-md bg-red-100 border border-red-400 text-red-700">
+              {formError}
+            </div>
+          )}
           {/* Email */}
           <label className="block text-lg mb-2" style={{ color: colors.text }}>
             Change email:

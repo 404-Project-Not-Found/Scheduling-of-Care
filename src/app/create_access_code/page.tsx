@@ -102,7 +102,18 @@ export default function AddFamilyMemberFullPage() {
         <p className="text-base sm:text-lg md:text-xl font-semibold text-black leading-relaxed text-left">
           IMPORTANT: To add a new person with special needs in this system,
           please generate an access code, copy it and paste it in the access
-          code field when filling out the Add New Person form.
+          code field when filling out{' '}
+          <button
+            type="button"
+            onClick={() => router.push('/client_profile?new=true')}
+            className="underline font-bold"
+            style={{ color: palette.header }}
+          >
+            Add New Person.
+          </button>{' '}
+          After you&apos;ve added the person, to add the person&apos;s acoount
+          to an organisation, please email the access code and the person&apos;s
+          name to the person&apos;s care management team.
         </p>
       </div>
 
