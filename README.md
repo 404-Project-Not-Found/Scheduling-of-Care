@@ -31,15 +31,15 @@
         </li>
         <li><a href="#deployment">Deployment</a></li>
         <li><a href=#testing>Testing</a></li>
-        <li><a href="#members">Team Members</a></li>
+        <li><a href="#team-members">Team Members</a></li>
         <li><a href="#license">License</a></li>
         <li><a href="#links">Links</a></li>
     </ol>
 </details>
 
 
-<!-- ABOUT THE PROJECT -->
-# About the Project
+<!-- Content -->
+## About the Project
 
 ### Features
 <details>
@@ -90,7 +90,7 @@
     <li><strong>Deployment</strong>: <a href="https://vercel.com/resources">Vercel</a></li>
 </ul>
 
-# Getting Started
+## Getting Started
 ### Prerequisites
 Before running the app, ensure that you have the following:
 <ul>
@@ -126,7 +126,7 @@ Open <a href="http://localhost:3000">http://localhost:3000</a> on your browser t
 
 </br>
 
-# Deployment
+## Deployment
 Once deployment, do the following:
 <ol>
     <li>Push code to GitHub</li>
@@ -138,11 +138,11 @@ For more information, you can read the <a href="https://nextjs.org/docs/app/gett
 
 </br>
 
-# Testing
+## Testing
 To be added
 
 
-# Team Members
+## Team Members
 <a href="https://github.com/dpalexander21">
 <img style="border-radius: 50%;" src="https://avatars.githubusercontent.com/u/201690137?v=4" width="50px">
 </a>
@@ -160,12 +160,12 @@ To be added
 </a>
 
 
-# License
+## License
 
 Schedule for Care is licensed under the MIT license. See <a href="LICENSE">LICENSE</a> for details.
 
 
-# Links
+## Links
 <ul>
     <li><a href="">Website</a> -- TBA</li>
     <li><a href="https://team404projectnotfound.atlassian.net/wiki/spaces/09ace67881cc434bab85e12ce5e340a7/overview">Documentation: Confluence</a> -- Requires permission to view</li>
