@@ -1,12 +1,13 @@
 "use client";
 
+import { use } from "react";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import CalendarPanel from "@/components/calendar/CalendarPanel";
 import TasksPanel from "@/components/tasks/TasksPanel";
 import SideMenu from "@/components/side-menu/SideMenu";
 
-type PageProps = { params: { id: string } };
+type PageProps = { params: Promise<{ id: string }> };
 
 type Client = {
   _id: string;
@@ -16,6 +17,8 @@ type Client = {
 };
 
 export default function ClientDashboardPage({ params }: PageProps) {
+  const { id } = use(params);
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [client, setClient] = useState<Client | null>(null);
   const [loading, setLoading] = useState(true);
@@ -25,7 +28,7 @@ export default function ClientDashboardPage({ params }: PageProps) {
     let alive = true;
     (async () => {
       try {
-        const res = await fetch(`/api/clients/${params.id}`, {
+        const res = await fetch(`/api/clients/${id}`, {
           cache: "no-store",
         });
         if (!res.ok) throw new Error(`Failed to load client (${res.status})`);
@@ -40,7 +43,7 @@ export default function ClientDashboardPage({ params }: PageProps) {
     return () => {
       alive = false;
     };
-  }, [params.id]);
+  }, [id]);
 
   return (
     <div className="min-h-screen">
