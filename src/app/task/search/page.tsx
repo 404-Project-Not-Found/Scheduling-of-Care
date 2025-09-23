@@ -22,11 +22,6 @@ export default function SearchTaskPage() {
   const [hasSearched, setHasSearched] = useState(false);
   const router = useRouter();
 
-  useEffect(() => {
-    setResults([]);
-    setHasSearched(false);
-  });
-
   const runSearch = async () => {
     const q = query.trim().toLowerCase();
     if(!q) {
