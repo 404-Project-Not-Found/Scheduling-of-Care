@@ -75,46 +75,56 @@ export default function AddTaskPage() {
 
   const statusOptions = ["in progress", "Completed", "Not started", "Paused", "Cancelled"];
 
-  const onCreate = () => {
+  const onCreate = async () => {
     const name = label.trim();
     if (!name) {
       alert("Please enter the task name.");
       return;
     }
-    const tasks = loadTasks();
-
-    const base = slugify(name) || "task";
-    let slug = base;
-    let i = 2;
-    while (tasks.some((t) => t.slug === slug)) {
-      slug = `${base}-${i++}`;
+    if(!status.trim() || !category.trim()) {
+      alert("Please fill status and category");
+      return;
     }
-
+    if(dateFrom && dateTo && dateTo < dateFrom) {
+      alert("End date must be on/after the start date");
+      return;
+    }
+    
     const countNum = parseInt(frequencyCountStr, 10);
     const hasFrequency = Number.isFinite(countNum) && countNum > 0;
-    const frequencyDays = hasFrequency ? toDays(countNum, frequencyUnit) : undefined;
-    const legacyStr = hasFrequency
-      ? `${countNum} ${frequencyUnit}${countNum > 1 ? "s" : ""}`
-      : undefined;
 
-    const newTask: Task = {
-      clientName: clientName.trim() || undefined,
-      label: name,
-      slug,
+    const payload: Partial<Task>= {
+      label:name,
       status: status.trim(),
       category: category.trim(),
+      clientName: clientName.trim() || undefined,
       frequencyCount: hasFrequency ? countNum : undefined,
-      frequencyUnit: hasFrequency ? frequencyUnit : undefined,
-      frequencyDays,
+      frequencyUnit: hasFrequency ? frequencyUnit: undefined,
       dateFrom: dateFrom || undefined,
       dateTo: dateTo || undefined,
-      frequency: legacyStr,
+      frequency: hasFrequency ? `${countNum} ${frequencyUnit}${countNum > 1 ? "s" : ""}` : undefined,
       lastDone: dateFrom && dateTo ? `${dateFrom} to ${dateTo}` : "",
       deleted: false,
     };
 
-    saveTasks([...(tasks || []), newTask]);
-    router.push("/task/search");
+    try {
+      const res = await fetch("/api/tasks", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(payload),
+      });
+
+      if(!res.ok) {
+        const msg = await res.json().catch(() => ({}));
+        alert(`Adding task failed: ${msg?.error || res.statusText}`);
+        return;
+      }
+
+      router.push("/task/search");
+    } catch(e: any) {
+      alert(`Network error: ${e?.message || e}`);
+    }
+    
   };
 
   return (
