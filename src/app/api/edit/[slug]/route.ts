@@ -30,5 +30,5 @@ export async function GET(_: Request, {params}:{params: {slug: string}}) {
         computed = {nextDueISO: next, upcomingDueDates: upcoming, exactSpanDaysFromStart: spanDays};
     }
 
-    return NextResponse.json({...task, _computed: computed});
+    return NextResponse.json({ ...task, _computed: computed });
 }
