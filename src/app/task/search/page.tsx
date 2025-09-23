@@ -15,34 +15,6 @@ type Task = {
   deleted?: boolean;
 };
 
-// seed once if empty
-function ensureSeed() {
-  if (typeof window === "undefined") return;
-  const raw = localStorage.getItem("tasks");
-  if (!raw) {
-    const seed: Task[] = [
-      {
-        label: "Replace Toothbrush Head",
-        slug: "replace-toothbrush-head",
-        frequency: "every 3 months",
-        lastDone: "23rd April 2025",
-        status: "Completed",
-        category: "Appointments",
-        deleted: false,
-      },
-    ];
-    localStorage.setItem("tasks", JSON.stringify(seed));
-  }
-}
-
-function loadTasks(): Task[] {
-  if (typeof window === "undefined") return [];
-  try {
-    return JSON.parse(localStorage.getItem("tasks") || "[]") as Task[];
-  } catch {
-    return [];
-  }
-}
 
 export default function SearchTaskPage() {
   const [query, setQuery] = useState("");
@@ -51,20 +23,28 @@ export default function SearchTaskPage() {
   const router = useRouter();
 
   useEffect(() => {
-    ensureSeed();
-  }, []);
+    setResults([]);
+    setHasSearched(false);
+  });
 
-  // re-read after coming back from add/edit
-  const allTasks = useMemo(loadTasks, [hasSearched]);
-
-  const runSearch = () => {
+  const runSearch = async () => {
     const q = query.trim().toLowerCase();
-    const hits =
-      q.length === 0
-        ? []
-        : allTasks.filter((t) => !t.deleted && t.label.toLowerCase().includes(q));
-    setResults(hits);
-    setHasSearched(true);
+    if(!q) {
+      setResults([]);
+      setHasSearched(false);
+      return;
+    }
+    try{
+      const res = await fetch(`/api/tasks?q=${encodeURIComponent(q)}`, { cache: "no-store" });
+      if(!res.ok) throw new Error(await res.text());
+      const tasks = (await res.json() as Task[]);
+      setResults(tasks.filter(t=>!t.deleted));
+      setHasSearched(true);
+    } catch(e) {
+      console.error(e);
+      setResults([]);
+      setHasSearched(true);
+    }
   };
 
   const handleChange = (v: string) => {

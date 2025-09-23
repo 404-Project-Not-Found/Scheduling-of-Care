@@ -52,6 +52,7 @@ const unitToDays: Record<Unit, number> = {
   year: 365,  // simple approximation
 };
 
+/*
 function toDays(count: number, unit: Unit) {
   return Math.max(1, Math.floor(count || 1)) * unitToDays[unit];
 }
@@ -64,6 +65,7 @@ function parseLegacyFrequency(freq?: string): { count: number; unit: Unit } | nu
   const u = m[2].replace(/s$/, "") as Unit;
   return { count: n, unit: u };
 }
+  */
 
 export default function EditTaskPage() {
   const router = useRouter();
@@ -91,7 +93,7 @@ export default function EditTaskPage() {
   useEffect(() => {
     if(!taskSlug) return;
     (async() => {
-      const res = await fetch(`/api/edit/${encodeURIComponent(taskSlug)}`, {cache: "no-store"});
+      const res = await fetch(`/api/tasks/${encodeURIComponent(taskSlug)}`, {cache: "no-store"});
       if(!res.ok) {
         router.push("task/search");
         return;
@@ -119,41 +121,40 @@ export default function EditTaskPage() {
     [label, taskSlug]
   );
 
-  const onDone = () => {
-    const tasks = loadTasks();
-    const idx = tasks.findIndex((x) => x.slug === taskSlug);
-    if (idx >= 0) {
-      const days = toDays(frequencyCount, frequencyUnit);
-      const legacyStr = `${frequencyCount} ${frequencyUnit}${frequencyCount > 1 ? "s" : ""}`;
+  const onDone = async () => {
+    const payload: Partial<Task> = {
+      clientName: clientName.trim() || undefined,
+      status,
+      category,
+      frequencyCount: Math.max(1, frequencyCount),
+      frequencyUnit,
+      dateFrom: dateFrom || undefined,
+      dateTo: dateTo || undefined,
+      frequency: `${frequencyCount} ${frequencyUnit}${frequencyCount > 1 ? "s" : ""}`,
+      lastDone: dateFrom && dateTo ? `${dateFrom} to ${dateTo}` : "",
+      deleted: false,
+    };
 
-      tasks[idx] = {
-        ...tasks[idx],
-        clientName: clientName.trim() || undefined,
-        status,
-        category,
-        // structured fields
-        frequencyCount: Math.max(1, frequencyCount),
-        frequencyUnit,
-        frequencyDays: days,
-        dateFrom,
-        dateTo,
-        // legacy fields for compatibility
-        frequency: legacyStr,
-        lastDone: dateFrom && dateTo ? `${dateFrom} to ${dateTo}` : tasks[idx].lastDone || "",
-        deleted: false,
-      };
+    const res = await fetch(`/api/tasks/${encodeURIComponent(taskSlug)}`,{
+      method: "PUT",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(payload),
+    });
 
-      saveTasks(tasks);
+    if(!res.ok) {
+      const msg = await res.json().catch(() => ({}));
+      alert(`Update failed: ${msg?.error || res.statusText}`);
+      return;
     }
-    router.push("/task/search");
+    router.push("/task/search")
   };
 
-  const onRemove = () => {
-    const tasks = loadTasks();
-    const idx = tasks.findIndex((x) => x.slug === taskSlug);
-    if (idx >= 0) {
-      tasks[idx].deleted = true;
-      saveTasks(tasks);
+  const onRemove = async () => {
+    const res = await fetch(`/api/tasks/${encodeURIComponent(taskSlug)}`, { method: "DELETE" });
+    if(!res.ok) {
+      const msg = await res.json().catch(() => ({}));
+      alert(`Delete failed: ${msg?.error || res.statusText}`);
+      return;
     }
     router.push("/task/search");
   };
