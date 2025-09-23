@@ -28,7 +28,6 @@ export default function TransactionHistoryPage() {
       t.items.some((i) => i.toLowerCase().includes(search.toLowerCase()))
   );
 
-  // Instructions for the help tooltip
   const instructions = [
     "Use the search box to filter transactions by type, date, carer, or items.",
     "Click 'Add new transaction' to record a new purchase or refund.",
@@ -42,18 +41,6 @@ export default function TransactionHistoryPage() {
       className="min-h-screen w-full flex flex-col items-center justify-start px-6 py-12 relative"
       style={{ backgroundColor: colors.pageBg }}
     >
-      {/* Logo */}
-      <div className="absolute top-4 left-4">
-        <Image
-          src="/logo-name.png"
-          alt="Scheduling of Care"
-          width={160}   // smaller default
-          height={60}
-          className="object-contain w-32 sm:w-40 md:w-44 lg:w-56"
-          priority
-        />
-      </div>
-
       {/* Card */}
       <div
         className="w-full max-w-6xl rounded-2xl shadow-lg overflow-hidden relative"
@@ -64,7 +51,20 @@ export default function TransactionHistoryPage() {
           className="flex items-center justify-between px-8 py-6"
           style={{ backgroundColor: colors.header }}
         >
-          <h1 className="text-2xl font-bold text-white">Transaction History</h1>
+          {/* Title with Logo */}
+          <div className="flex items-center gap-3">
+            <Image
+              src="/logo.png"
+              alt="Scheduling of Care"
+              width={40}
+              height={40}
+              className="object-contain"
+              priority
+            />
+            <h1 className="text-2xl font-bold text-white">
+              Transaction History
+            </h1>
+          </div>
 
           <div className="flex items-center gap-3">
             <button
