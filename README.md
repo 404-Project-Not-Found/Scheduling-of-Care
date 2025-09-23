@@ -2,7 +2,7 @@
 
 <div align="center">
     <a href="https://github.com/404-Project-Not-Found/Schedule-of-Care-Program">
-        <img src="images/Logos.png" alt="Logo" width="100" height="100">
+        <img src="images/logo-name.png" alt="Logo" width="100" height="100">
     </a>
     <h1 align="center">Schedule of Care</h1>
     <p align="left">
