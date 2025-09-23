@@ -29,6 +29,7 @@ on:
     paths:
       - 'frontend/**'
       - 'backend/**'
+      - '.github/workflows/**'
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -39,49 +40,44 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # ---------- Detect (skip jobs if folders don’t exist) ----------
+  detect:
+    name: Detect project layout
+    runs-on: ubuntu-latest
+    outputs:
+      has_frontend: ${{ steps.chk.outputs.frontend }}
+      has_backend:  ${{ steps.chk.outputs.backend }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: chk
+        run: |
+          fe=false; [ -f frontend/package.json ] && fe=true
+          be=false; [ -f backend/package.json ] && be=true
+          echo "frontend=$fe" >> "$GITHUB_OUTPUT"
+          echo "backend=$be"  >> "$GITHUB_OUTPUT"
+
   # ---------- Frontend ----------
   frontend:
     name: Frontend · Lint / Test / Build
     runs-on: ubuntu-latest
-
+    needs: detect
+    if: ${{ needs.detect.outputs.has_frontend == 'true' }}
     defaults:
       run:
-        working-directory: ./frontend  # change if frontend code lives elsewhere
-
+        working-directory: ./frontend
     steps:
-      # Checkout the repository
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      # Setup Node.js environment (v20) and cache npm dependencies
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
           cache-dependency-path: ./frontend/package-lock.json
-
-      # Install dependencies from package-lock.json
-      - name: Install dependencies
-        run: npm ci
-
-      # Run Prettier formatting check
-      - name: Prettier check
-        run: npm run format:check
-
-      # Run ESLint static code analysis
-      - name: ESLint
-        run: npm run lint
-
-      # Run frontend unit tests (Jest, Vitest, etc.)
-      - name: Unit tests
-        run: npm test --if-present
-
-      # Run Next.js build to ensure production build passes
-      - name: Build
-        run: npm run build
-
-      # Optionally upload build artifacts (for inspection or deployment)
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm test --if-present
+      - run: npm run build
+      # Optionally upload frontend build artifacts
       - name: Upload build artifact (optional)
         if: success()
         uses: actions/upload-artifact@v4
@@ -96,45 +92,32 @@ jobs:
   backend:
     name: Backend · Lint / Test
     runs-on: ubuntu-latest
-    needs: frontend   # backend runs after frontend passes
-
+    needs: [detect, frontend]
+    if: ${{ needs.detect.outputs.has_backend == 'true' }}
     defaults:
       run:
-        working-directory: ./backend   # change if backend code lives elsewhere
-
+        working-directory: ./backend
     steps:
-      # Checkout the repository
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      # Setup Node.js environment (same as frontend, v20)
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
           cache-dependency-path: ./backend/package-lock.json
-
-      # Install backend dependencies (e.g., Express/Next.js API routes + Mongoose)
-      - name: Install dependencies
-        run: npm ci
-
-      # Run ESLint for backend code
-      - name: ESLint
-        run: npm run lint
-
-      # Run backend unit tests (Jest, Mocha, etc.)
-      - name: Unit tests
-        run: npm test --if-present
-
-      # Build backend if build script is defined (optional for API routes)
-      - name: Build backend
-        run: npm run build --if-present
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test --if-present
+      - run: npm run build --if-present
 
   # ---------- Summary ----------
   summarize:
     name: Summary
     runs-on: ubuntu-latest
-    needs: [frontend, backend]
+    needs: [detect, frontend, backend]
+    if: always()
     steps:
-      - run: echo "Frontend & Backend checks completed successfully!"
+      - run: |
+          echo "has_frontend: ${{ needs.detect.outputs.has_frontend }}"
+          echo "has_backend:  ${{ needs.detect.outputs.has_backend }}"
+          echo "frontend result: ${{ needs.frontend.result || 'skipped' }}"
+          echo "backend result:  ${{ needs.backend.result  || 'skipped' }}"
