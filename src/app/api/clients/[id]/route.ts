@@ -4,11 +4,12 @@ import Client from '@/models/Client';
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await context.params;
     await connectDB();
-    const client = await Client.findById(params.id).lean();
+    const client = await Client.findById(id).lean();
     if (!client) {
       return NextResponse.json({ error: 'Client not found' }, { status: 404 });
     }
@@ -24,11 +25,12 @@ export async function GET(
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await context.params;
   await connectDB();
   const data = await req.json();
-  const updated = await Client.findByIdAndUpdate(params.id, data, {
+  const updated = await Client.findByIdAndUpdate(id, data, {
     new: true,
   });
   return NextResponse.json(updated);
@@ -36,9 +38,10 @@ export async function PUT(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await context.params;
   await connectDB();
-  await Client.findByIdAndDelete(params.id);
+  await Client.findByIdAndDelete(id);
   return NextResponse.json({ success: true });
 }
