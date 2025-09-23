@@ -91,7 +91,7 @@ export default function AddFamilyMemberFullPage() {
         </button>
 
         {/* Page title centered */}
-        <h1 className="text-3xl font-bold">Create new Access Code</h1>
+        <h1 className="text-3xl font-bold">Create a New Access Code</h1>
       </div>
 
       {/* === Pink notice bar with instructions === */}
@@ -101,9 +101,8 @@ export default function AddFamilyMemberFullPage() {
       >
         <p className="text-base sm:text-lg md:text-xl font-semibold text-black leading-relaxed text-left">
           IMPORTANT: To add a new person with special needs in this system,
-          please generate an access code, copy it and email it to this person’s
-          care organisation management team along with the person’s name to
-          allow organisation access to that person.
+          please generate an access code, copy it and paste it in the access
+          code field when filling out the Add New Person form.
         </p>
       </div>
 
@@ -184,14 +183,14 @@ export default function AddFamilyMemberFullPage() {
       {/* === New bottom button === */}
       <div className="w-full flex justify-center mt-12 mb-20">
         <button
-          onClick={() => router.push('/client-profile?new=true')}
+          onClick={() => router.push('/client_profile?new=true')}
           className="px-6 py-4 text-center rounded-xl text-base sm:text-lg md:text-xl"
           style={{ color: palette.header }}
         >
-          Already have access code for someone you know (family member or
+          Already have an access code for someone you know (family member or
           client)? <br />
           <span className="underline">
-            Add the person to your list of people with special needs here
+            Add the person to your list of people here
           </span>
         </button>
       </div>

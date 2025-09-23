@@ -142,7 +142,7 @@ export default function MenuPage() {
               href="/request_of_change_page"
               label="Request to change a task"
             />
-            <MenuItem href="/create-access-code" label="Create access code" />
+            <MenuItem href="/create_access_code" label="Create access code" />
             <MenuItem
               href="/clients_list"
               label="Manage people with special needs"

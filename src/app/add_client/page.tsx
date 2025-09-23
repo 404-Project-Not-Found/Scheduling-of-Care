@@ -7,13 +7,15 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 
 type Client = {
+  _id?: string;
   name: string;
   dob: string;
   accessCode?: string;
   notes?: string[];
+  avatarUrl?: string;
 };
 
-const TEMP_AVATAR_KEY = 'clientAvatar:__temp__';
+// const TEMP_AVATAR_KEY = 'clientAvatar:__temp__';
 
 // ---- Color palette ----
 const palette = {
@@ -42,137 +44,94 @@ export default function ClientProfilePage() {
 function ClientProfilePageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
+
   const isNew = searchParams.get('new') === 'true';
+  const clientId = searchParams.get('id') || undefined;
 
-  const initNameFromQuery = searchParams.get('name') || '';
-  const initDobFromQuery = searchParams.get('dob') || '';
-  const initAccessFromQuery = searchParams.get('accessCode') || '';
-
-  const [name, setName] = useState<string>(
-    isNew ? '' : initNameFromQuery || ''
-  );
-  const [dob, setDob] = useState<string>(isNew ? '' : initDobFromQuery || '');
-  const [accessCode, setAccessCode] = useState<string>(
-    isNew ? '' : initAccessFromQuery || ''
-  );
+  const [name, setName] = useState<string>('');
+  const [dob, setDob] = useState<string>('');
+  const [accessCode, setAccessCode] = useState<string>('');
   const [avatarUrl, setAvatarUrl] = useState<string>('');
-
-  const prevNameRef = useRef<string>(name);
-  const notesKey = `clientNotes:${name}`;
   const [notesInput, setNotesInput] = useState<string>('');
   const [savedNotes, setSavedNotes] = useState<string[]>([]);
+  const [loading, setLoading] = useState<boolean>(!!clientId);
+  const [error, setError] = useState<string>('');
+
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const loadNotesByName = (personName: string) => {
-    const key = `clientNotes:${personName}`;
-    const stored =
-      typeof window !== 'undefined' ? localStorage.getItem(key) : null;
-    if (!stored) return [];
-    try {
-      const parsed = JSON.parse(stored);
-      return Array.isArray(parsed) ? parsed : [stored];
-    } catch {
-      return [stored];
-    }
-  };
-
-  const loadAvatar = (personName: string) => {
-    if (typeof window === 'undefined') return '';
-    const trimmed = personName.trim();
-    if (trimmed) return localStorage.getItem(`clientAvatar:${trimmed}`) || '';
-    return localStorage.getItem(TEMP_AVATAR_KEY) || '';
-  };
-
   useEffect(() => {
-    setSavedNotes(loadNotesByName(name));
-    setAvatarUrl(loadAvatar(name));
-  }, [name]);
+    if (!clientId) return;
 
-  useEffect(() => {
-    if (isNew) return;
-    const listRaw =
-      typeof window !== 'undefined' ? localStorage.getItem('clients') : null;
-    if (!listRaw) return;
-    try {
-      const list: Client[] = JSON.parse(listRaw);
-      const found = list.find((c) => c.name === name);
-      if (!dob && found?.dob) setDob(found.dob);
-      if (!accessCode && found?.accessCode) setAccessCode(found.accessCode);
-    } catch {}
-  }, [isNew, name, dob, accessCode]);
+    const fetchClient = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/clients/${clientId}`);
+        if (!res.ok) {
+          throw new Error('Failed to fetch client');
+        }
+        const client: Client = await res.json();
+        setName(client.name);
+        setDob(client.dob);
+        setAccessCode(client.accessCode || '');
+        setSavedNotes(client.notes || []);
+        setAvatarUrl(client.avatarUrl || '');
+      } catch (err) {
+        console.error(err);
+        setError('Failed to load client data.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchClient();
+  }, [clientId]);
 
-  const saveProfile = () => {
+  if (loading)
+    return <div style={{ padding: 24 }}>Loading client profile...</div>;
+  if (error) return <div style={{ padding: 24, color: 'red' }}>{error}</div>;
+
+  const saveProfile = async () => {
     if (!name.trim() || !dob.trim() || !accessCode.trim()) {
       alert('Please fill in Name, Date of Birth, and Access Code.');
       return false;
     }
 
-    let clients: Client[] = [];
-    const raw = localStorage.getItem('clients');
-    if (raw) {
-      try {
-        clients = JSON.parse(raw);
-      } catch {}
-    }
+    const allNotes = notesInput.trim()
+      ? [...savedNotes, notesInput.trim()]
+      : savedNotes;
 
-    // migrate notes & avatar when renaming
-    const oldName = prevNameRef.current;
-    if (oldName && oldName !== name) {
-      const oldNotesKey = `clientNotes:${oldName}`;
-      const newNotesKey = `clientNotes:${name}`;
-      const existingOldNotes = localStorage.getItem(oldNotesKey);
-      if (existingOldNotes && !localStorage.getItem(newNotesKey)) {
-        localStorage.setItem(newNotesKey, existingOldNotes);
-        localStorage.removeItem(oldNotesKey);
+    const payload = { name, dob, accessCode, avatarUrl, notes: allNotes };
+
+    try {
+      if (isNew) {
+        await fetch('/api/clients', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      } else if (clientId) {
+        await fetch(`/api/clients/${clientId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
       }
-      const oldAvatarKey = `clientAvatar:${oldName}`;
-      const newAvatarKey = `clientAvatar:${name}`;
-      const oldAvatar = localStorage.getItem(oldAvatarKey);
-      if (oldAvatar && !localStorage.getItem(newAvatarKey)) {
-        localStorage.setItem(newAvatarKey, oldAvatar);
-        localStorage.removeItem(oldAvatarKey);
-      }
-      prevNameRef.current = name;
+
+      setSavedNotes(allNotes);
+      setNotesInput('');
+
+      return true;
+    } catch (err) {
+      console.error('Failed to save profile:', err);
+      alert('An error occurred while saving profile. Please try again.');
+      return false;
     }
-
-    // move temp avatar into named slot on save
-    if (!localStorage.getItem(`clientAvatar:${name}`)) {
-      const temp = localStorage.getItem(TEMP_AVATAR_KEY);
-      if (temp) {
-        localStorage.setItem(`clientAvatar:${name}`, temp);
-        localStorage.removeItem(TEMP_AVATAR_KEY);
-      }
-    }
-
-    const upsert = (targetName: string) => {
-      const idx = clients.findIndex((c) => c.name === targetName);
-      const payload: Client = {
-        name,
-        dob,
-        accessCode: accessCode || undefined,
-      };
-      if (idx >= 0) clients[idx] = { ...clients[idx], ...payload };
-      else clients.push(payload);
-    };
-    upsert(name);
-
-    if (avatarUrl) localStorage.setItem(`clientAvatar:${name}`, avatarUrl);
-
-    const current = loadNotesByName(name);
-    const updatedNotes = notesInput.trim()
-      ? [...current, notesInput.trim()]
-      : current;
-    localStorage.setItem(notesKey, JSON.stringify(updatedNotes));
-    setSavedNotes(updatedNotes);
-
-    localStorage.setItem('clients', JSON.stringify(clients));
-    return true;
   };
 
-  const handleSaveAndReturn = () => {
-    if (!saveProfile()) return;
-    setNotesInput('');
-    router.push('/clients_list');
+  const handleSaveAndReturn = async () => {
+    const success = await saveProfile();
+    if (success) {
+      router.push('/clients_list');
+    }
   };
 
   const openFilePicker = () => fileInputRef.current?.click();
@@ -183,10 +142,6 @@ function ClientProfilePageInner() {
     reader.onload = () => {
       const dataUrl = reader.result as string;
       setAvatarUrl(dataUrl);
-      const key = name.trim() ? `clientAvatar:${name.trim()}` : TEMP_AVATAR_KEY;
-      try {
-        localStorage.setItem(key, dataUrl);
-      } catch {}
     };
     reader.readAsDataURL(file);
     e.target.value = '';
@@ -220,7 +175,7 @@ function ClientProfilePageInner() {
           </svg>
           <span className="text-base">Back</span>
         </button>
-        <h2 className="text-2xl font-bold">Client Profile</h2>
+        <h2 className="text-2xl font-bold">Add New Person</h2>
       </div>
 
       {/* Centered white card */}
@@ -303,11 +258,7 @@ function ClientProfilePageInner() {
                     type="text"
                     value={dob}
                     onChange={(e) => setDob(e.target.value)}
-                    placeholder={
-                      isNew
-                        ? 'e.g., 1943-09-16 or 16th September 1943'
-                        : undefined
-                    }
+                    placeholder={isNew ? 'e.g., 19/09/1943' : undefined}
                     className="flex-1 max-w-2xl p-2 rounded-md focus:outline-none focus:ring-2"
                     style={{
                       backgroundColor: palette.white,
@@ -345,7 +296,7 @@ function ClientProfilePageInner() {
                     Don&apos;t have an access code?{' '}
                     <button
                       type="button"
-                      onClick={() => router.push('/create-access-code')}
+                      onClick={() => router.push('/create_access_code')}
                       className="underline underline-offset-2"
                       style={{ color: palette.header }}
                     >
@@ -374,10 +325,6 @@ function ClientProfilePageInner() {
                         onClick={() => {
                           const updated = savedNotes.filter(
                             (_, i) => i !== idx
-                          );
-                          localStorage.setItem(
-                            notesKey,
-                            JSON.stringify(updated)
                           );
                           setSavedNotes(updated);
                         }}

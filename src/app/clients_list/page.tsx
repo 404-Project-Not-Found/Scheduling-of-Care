@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 const palette = {
   pageBg: '#ffd9b3',
@@ -19,7 +20,13 @@ const palette = {
   organPink: '#E91E63', // pink
 };
 
-// hardcoded members list for demo
+type Client = {
+  _id: string;
+  name: string;
+  dob: string;
+};
+
+/* hardcoded members list for demo
 const members = [
   { name: 'Jane Smith', dob: '1943-09-16' },
   { name: 'Harry Dong', dob: '1950-01-01' },
@@ -27,9 +34,20 @@ const members = [
   { name: 'Kevin Wu', dob: '1960-07-20' },
   { name: 'Mickey Mouse', dob: '1970-03-01' },
 ];
+*/
 
 export default function FamilyPOAListPage() {
   const router = useRouter();
+  const [clients, setClients] = useState<Client[]>([]);
+
+  useEffect(() => {
+    async function fetchClients() {
+      const res = await fetch('/api/clients');
+      const data = await res.json();
+      setClients(data);
+    }
+    fetchClients();
+  }, []);
 
   const goBack = () => router.replace('/menu/family');
 
@@ -102,9 +120,9 @@ export default function FamilyPOAListPage() {
                 }}
               >
                 <ul className="divide-y divide-black/10">
-                  {members.map((m) => (
+                  {clients.map((m) => (
                     <li
-                      key={m.name}
+                      key={m._id}
                       className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 md:gap-6 px-8 py-5"
                       style={{ color: palette.text }}
                     >
@@ -112,7 +130,7 @@ export default function FamilyPOAListPage() {
                       <div className="flex flex-wrap gap-4">
                         {/* Edit profile → green */}
                         <Link
-                          href={`/client-profile?name=${encodeURIComponent(m.name)}&dob=${m.dob}`}
+                          href={`/client_profile?id=${m._id}`}
                           className="px-4 py-2 rounded-lg text-lg font-medium"
                           style={{
                             backgroundColor: palette.editGreen,
@@ -124,7 +142,7 @@ export default function FamilyPOAListPage() {
 
                         {/* View dashboard → orange */}
                         <Link
-                          href={`/partial-dashboard?name=${encodeURIComponent(m.name)}`}
+                          href={`/partial_dashboard?name=${encodeURIComponent(m.name)}`}
                           className="px-4 py-2 rounded-lg text-lg font-medium"
                           style={{
                             backgroundColor: palette.dashOrange,
@@ -136,7 +154,7 @@ export default function FamilyPOAListPage() {
 
                         {/* Manage organisation access → pink (now passes both name + dob) */}
                         <Link
-                          href={`/manage-organisation-access?name=${encodeURIComponent(m.name)}&dob=${m.dob}`}
+                          href={`/manage_organisation_access?id=${m._id}`}
                           className="px-4 py-2 rounded-lg text-lg font-medium"
                           style={{
                             backgroundColor: palette.organPink,
@@ -154,7 +172,7 @@ export default function FamilyPOAListPage() {
               {/* Add new client */}
               <div className="flex justify-center">
                 <button
-                  onClick={() => router.push('/client-profile?new=true')}
+                  onClick={() => router.push('/client_profile?new=true')}
                   className="px-7 py-4 rounded-xl text-2xl font-semibold"
                   style={{
                     backgroundColor: palette.header,
