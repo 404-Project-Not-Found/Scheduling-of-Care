@@ -84,19 +84,55 @@
     <li><strong>Framework</strong>: <a href="https://nextjs.org/docs">Next.Js</a></li>
     <li><strong>Frontend</strong>: <a href="https://react.dev/learn">React</a></li>
     <li><strong>Backend</strong>: <a href="https://www.typescriptlang.org/docs/">Typescript</a>, <a href="https://www.mongodb.com/">Mongodb</a>, <a href="https://next-auth.js.org/getting-started/introduction">Auth.js(NextAuth)</a></li>
-    <li><strong>Testing</strong>: </li>
+    <li><strong>Testing</strong>: to be added</li>
     <li><strong>CI</strong>:<a href="https://docs.github.com/en/actions/get-started/understand-github-actions">Github actions</a></li>
     <li><strong>Deployment</strong>: <a href="https://vercel.com/resources">Vercel</a></li>
 </ul>
-
-
 </br>
 
 # Getting Started
+### Prerequisites
+Before running the app, ensure that you have the following:
+<ul>
+    <li>Node.js</li>
+    <li>Package manager - pnpm or npm or yarn</li>
+    <li><a href="https://www.mongodb.com/cloud/atlas/register">MongoDB Atlas account</a>(or local MongoDB)</li>
+    <li>Vercel Account(If going to deploy, no installation required locally but need to create account)</li>
+</ul>
 
+### Installation
+If local development do the following:
+<ol>
+    <li>Clone this repository</li>
+    <pre><code>git clone https://github.com/404-Project-Not-Found/Schedule-of-Care-Program.git
+cd Schedule-of-Care-Program</code></pre>
+    <li>Install dependencies</li>
+    <pre><code>pnpm install
+# or 
+npm install 
+#or 
+yarn install</code></pre>
+    <li>Set up environment variables</li>
+    create a <code>.env.local</code> file in the root with the following as example:
+    <pre><code>MONGODB_URI="your-mongodb-connection"</code></pre>
+    <li>Run the development server</li>
+    <pre><code>pnpm dev
+#or
+npm run dev
+#or
+yarn dev</code></pre>
+</ol>
+Open <a href="http://localhost:3000">http://localhost:3000</a> on your browser to view the result
 </br>
 
 # Deployment
+Once deployment, do the following:
+<ol>
+    <li>Push code to GitHub</li>
+    <li>Connect the repo to Vercel</li>
+    <li>Add the <code>MONGODB_URI</code> to environment variables in Vercel</li>
+    <li>Vercel will then auto-build and deploys each push to the default branch</li>
+</ol>
 
 </br>
 
@@ -109,8 +145,7 @@
 </br>
 
 # Links
-
-
+To be added
 
 
 
