@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, ReactNode } from "react";
 
 // Transaction type
 export interface Transaction {
+  id: string; // ✅ unique ID for each transaction
   type: string;
   date: string;
   madeBy: string;
@@ -14,7 +15,7 @@ export interface Transaction {
 // Context interface
 interface TransactionContextType {
   transactions: Transaction[];
-  addTransaction: (t: Transaction) => void;
+  addTransaction: (t: Omit<Transaction, "id">) => void; // ✅ omit id
 }
 
 // Create context
@@ -26,6 +27,7 @@ const TransactionContext = createContext<TransactionContextType | undefined>(
 export function TransactionProvider({ children }: { children: ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>([
     {
+      id: "1",
       type: "Purchase",
       date: "23/09/2025",
       madeBy: "Jess Brown (Carer)",
@@ -33,16 +35,21 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
       items: ["Toothbrush replacement", "Socks", "Shirts"],
     },
     {
+      id: "2",
       type: "Refund",
-      date: "18/10/25",
+      date: "18/10/2025",
       madeBy: "Jess Brown (Carer)",
       receipt: "[Link to receipt]",
       items: ["Socks"],
     },
   ]);
 
-  const addTransaction = (t: Transaction) => {
-    setTransactions((prev) => [...prev, t]);
+  const addTransaction = (t: Omit<Transaction, "id">) => {
+    const newTransaction: Transaction = {
+      id: Date.now().toString(), // ✅ generate unique ID
+      ...t,
+    };
+    setTransactions((prev) => [...prev, newTransaction]);
   };
 
   return (

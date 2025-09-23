@@ -11,6 +11,7 @@ const colors = {
   header: "#3d0000",
   text: "#000000",
   orange: "#f6a56f",
+  help: "#ed5f4f",
 };
 
 export default function AddTransactionPage() {
@@ -22,10 +23,11 @@ export default function AddTransactionPage() {
   const [carer, setCarer] = useState("");
   const [items, setItems] = useState("");
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [showHelp, setShowHelp] = useState(false);
 
   const handleSubmit = () => {
-    if (!receiptFile) {
-      alert("Please upload a receipt before submitting.");
+    if (!type || !date || !carer || !items || !receiptFile) {
+      alert("Please fill in all fields and upload a receipt.");
       return;
     }
 
@@ -33,17 +35,29 @@ export default function AddTransactionPage() {
       type,
       date,
       madeBy: carer,
-      receipt: receiptFile.name, // store file name (or handle actual upload)
+      receipt: receiptFile.name, // store file name
       items: items.split(",").map((i) => i.trim()),
     });
+
     router.push("/transaction_history");
   };
+
+  const instructions = [
+    "Enter the transaction type (e.g., Purchase or Refund).",
+    "Select the date the transaction occurred.",
+    "Enter the carer's name who made the transaction.",
+    "List associated care items, separated by commas.",
+    "Upload a receipt (image or PDF) for the transaction.",
+    "Click 'Submit' to save the transaction.",
+    "Click 'Cancel' to return to Transaction History without saving.",
+  ];
 
   return (
     <main
       className="min-h-screen w-full flex items-center justify-center px-6 py-12 relative"
       style={{ backgroundColor: colors.pageBg }}
     >
+      {/* Logo */}
       <div className="absolute top-6 left-6">
         <Image
           src="/logo-name.png"
@@ -55,10 +69,12 @@ export default function AddTransactionPage() {
         />
       </div>
 
+      {/* Card */}
       <div
         className="w-full max-w-2xl rounded-2xl shadow-lg overflow-hidden"
         style={{ backgroundColor: colors.cardBg }}
       >
+        {/* Header */}
         <div
           className="w-full flex items-center justify-center px-6 py-4"
           style={{ backgroundColor: colors.header }}
@@ -66,16 +82,17 @@ export default function AddTransactionPage() {
           <h1 className="text-2xl font-bold text-white">Add New Transaction</h1>
         </div>
 
+        {/* Form */}
         <div className="px-8 py-8 space-y-5 text-black">
           <input
             type="text"
-            placeholder="Type"
+            placeholder="Type (e.g. Purchase or Refund)"
             value={type}
             onChange={(e) => setType(e.target.value)}
             className="w-full border rounded-md px-4 py-3"
           />
           <input
-            type="text"
+            type="date"
             placeholder="Date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
@@ -96,7 +113,7 @@ export default function AddTransactionPage() {
             className="w-full border rounded-md px-4 py-3"
           />
 
-          {/* Upload Receipt Section */}
+          {/* Upload Receipt */}
           <div className="flex flex-col gap-2">
             <label className="font-semibold">Upload Receipt:</label>
             <input
@@ -110,10 +127,13 @@ export default function AddTransactionPage() {
               className="border rounded-md px-3 py-2"
             />
             {receiptFile && (
-              <span className="text-sm text-gray-700">Selected file: {receiptFile.name}</span>
+              <span className="text-sm text-gray-700">
+                Selected file: {receiptFile.name}
+              </span>
             )}
           </div>
 
+          {/* Buttons */}
           <div className="flex items-center justify-end gap-6 mt-4">
             <button
               type="button"
@@ -126,7 +146,11 @@ export default function AddTransactionPage() {
             <button
               type="button"
               className="px-7 py-2.5 rounded-full font-semibold border"
-              style={{ backgroundColor: "white", borderColor: "#ccc", color: colors.header }}
+              style={{
+                backgroundColor: "white",
+                borderColor: "#ccc",
+                color: colors.header,
+              }}
               onClick={handleSubmit}
             >
               Submit
@@ -135,6 +159,33 @@ export default function AddTransactionPage() {
         </div>
 
         <div className="h-4" />
+      </div>
+
+      {/* Help Button */}
+      <div
+        className="fixed bottom-6 right-6 z-50"
+        onMouseEnter={() => setShowHelp(true)}
+        onMouseLeave={() => setShowHelp(false)}
+      >
+        <div className="relative">
+          <button
+            className="w-10 h-10 rounded-full text-white font-bold text-lg"
+            style={{ backgroundColor: colors.help }}
+          >
+            ?
+          </button>
+
+          {showHelp && (
+            <div className="absolute bottom-14 right-0 w-80 p-4 bg-white border border-gray-400 rounded shadow-lg text-black text-sm">
+              <h3 className="font-bold mb-2">Add Transaction Help</h3>
+              <ul className="list-disc list-inside space-y-1">
+                {instructions.map((instr, idx) => (
+                  <li key={idx}>{instr}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
       </div>
     </main>
   );

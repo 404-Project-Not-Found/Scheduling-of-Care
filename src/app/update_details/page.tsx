@@ -17,6 +17,15 @@ export default function UpdateDetailsPage() {
   const [email, setEmail] = useState("");
   const [pwd, setPwd] = useState("");
   const [show, setShow] = useState(false);
+  const [showHelp, setShowHelp] = useState(false); // tooltip visibility
+
+  const instructions = [
+    "Change your email using the 'Change email' field.",
+    "Change your password using the 'Change password' field.",
+    "Use the 'Show password' checkbox to view your password.",
+    "Click 'Cancel' to go back to the dashboard without saving.",
+    "Click 'Save' to update your details and return to the dashboard.",
+  ];
 
   return (
     <main
@@ -111,6 +120,33 @@ export default function UpdateDetailsPage() {
         </div>
 
         <div className="h-4" />
+      </div>
+
+      {/* Help Button */}
+      <div
+        className="fixed bottom-8 right-8 z-50"
+        onMouseEnter={() => setShowHelp(true)}
+        onMouseLeave={() => setShowHelp(false)}
+      >
+        <div className="relative group">
+          <button
+            className="w-10 h-10 rounded-full text-white font-bold text-lg"
+            style={{ backgroundColor: "#ed5f4f" }}
+          >
+            ?
+          </button>
+
+          {showHelp && (
+            <div className="absolute bottom-14 right-0 w-80 p-4 bg-white border border-gray-400 rounded shadow-lg text-black text-sm">
+              <h3 className="font-bold mb-2">Update Details Help</h3>
+              <ul className="list-disc list-inside space-y-1">
+                {instructions.map((instr, idx) => (
+                  <li key={idx}>{instr}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
       </div>
     </main>
   );

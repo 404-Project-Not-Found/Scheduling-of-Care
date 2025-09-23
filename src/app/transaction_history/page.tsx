@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useTransactions } from "@/context/TransactionContext";
 
 const colors = {
   pageBg: "#ffd9b3",
@@ -13,29 +14,11 @@ const colors = {
   help: "#ed5f4f",
 };
 
-// Hardcoded transactions
-const transactions = [
-  {
-    id: "t1",
-    type: "Dental Expense",
-    date: "2025-09-15",
-    madeBy: "Florence",
-    receipt: "receipt1.pdf",
-    items: ["Dental Appointment"],
-  },
-  {
-    id: "t2",
-    type: "Care Supplies",
-    date: "2025-09-18",
-    madeBy: "Florence",
-    receipt: "toothbrush.png",
-    items: ["Replace Toothbrush Head"],
-  },
-];
-
 export default function TransactionHistoryPage() {
   const router = useRouter();
+  const { transactions } = useTransactions();
   const [search, setSearch] = useState("");
+  const [showHelp, setShowHelp] = useState(false); // help tooltip
 
   const filtered = transactions.filter(
     (t) =>
@@ -44,6 +27,15 @@ export default function TransactionHistoryPage() {
       t.madeBy.toLowerCase().includes(search.toLowerCase()) ||
       t.items.some((i) => i.toLowerCase().includes(search.toLowerCase()))
   );
+
+  // Instructions for the help tooltip
+  const instructions = [
+    "Use the search box to filter transactions by type, date, carer, or items.",
+    "Click 'Add new transaction' to record a new purchase or refund.",
+    "Use 'Add to Task' to link receipts/items to tasks in the dashboard.",
+    "The Back to Dashboard button returns you to the main dashboard page.",
+    "Transactions are displayed in a table showing type, date, made by, receipt, and associated care items.",
+  ];
 
   return (
     <main
@@ -62,17 +54,6 @@ export default function TransactionHistoryPage() {
         />
       </div>
 
-      {/* Back button */}
-      <div className="w-full max-w-6xl mb-6 flex justify-start">
-        <button
-          className="px-6 py-2 rounded-full font-medium border hover:bg-gray-800"
-          style={{ backgroundColor: "black", color: "white" }}
-          onClick={() => router.push("/dashboard")}
-        >
-          Back to Dashboard
-        </button>
-      </div>
-
       {/* Card */}
       <div
         className="w-full max-w-6xl rounded-2xl shadow-lg overflow-hidden relative"
@@ -87,11 +68,11 @@ export default function TransactionHistoryPage() {
 
           <div className="flex items-center gap-3">
             <button
-                className="px-4 py-2 rounded-lg font-medium"
-                style={{ backgroundColor: colors.orange, color: colors.text }}
-                onClick={() => router.push("/add_transaction")}
-                >
-                Add new transaction
+              className="px-4 py-2 rounded-lg font-medium"
+              style={{ backgroundColor: colors.orange, color: colors.text }}
+              onClick={() => router.push("/add_transaction")}
+            >
+              Add new transaction
             </button>
             <input
               type="text"
@@ -123,26 +104,28 @@ export default function TransactionHistoryPage() {
                   <td className="py-3">{t.madeBy}</td>
                   <td className="py-3">{t.receipt}</td>
                   <td className="py-3">
-                    {t.items.map((item, idx) => (
-                      <div
-                        key={idx}
-                        className="flex items-center justify-between gap-2"
-                      >
-                        <span>{item}</span>
-                        <button
-                          className="px-2 py-1 text-xs bg-[#3d0000] text-white rounded"
-                          onClick={() =>
-                            router.push(
-                              `/dashboard?addedFile=${encodeURIComponent(
-                                t.receipt
-                              )}`
-                            )
-                          }
+                    <div className="flex flex-col gap-2">
+                      {t.items.map((item, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between gap-2"
                         >
-                          Add to Task
-                        </button>
-                      </div>
-                    ))}
+                          <span>{item}</span>
+                          <button
+                            className="px-2 py-1 text-xs bg-[#3d0000] text-white rounded"
+                            onClick={() =>
+                              router.push(
+                                `/dashboard?addedFile=${encodeURIComponent(
+                                  t.receipt
+                                )}`
+                              )
+                            }
+                          >
+                            Add to Task
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -152,20 +135,41 @@ export default function TransactionHistoryPage() {
       </div>
 
       {/* Help Button */}
-      <div className="fixed bottom-6 right-6 z-50">
-        <div className="relative group">
+      <div
+        className="fixed bottom-6 right-6 z-50"
+        onMouseEnter={() => setShowHelp(true)}
+        onMouseLeave={() => setShowHelp(false)}
+      >
+        <div className="relative">
           <button
             className="w-10 h-10 rounded-full text-white font-bold text-lg"
             style={{ backgroundColor: colors.help }}
           >
             ?
           </button>
-          <div className="absolute hidden group-hover:block bg-white text-black text-sm p-3 rounded shadow w-72 bottom-full mb-4 right-0">
-            <p>• Use the search box to filter transactions by type, date, carer, or items.</p>
-            <p>• Transactions are linked to tasks and receipts automatically.</p>
-            <p>• Click &quot;Back to Dashboard&quot; to return to the main dashboard page.</p>
-          </div>
+
+          {showHelp && (
+            <div className="absolute bottom-14 right-0 w-80 p-4 bg-white border border-gray-400 rounded shadow-lg text-black text-sm">
+              <h3 className="font-bold mb-2">Transaction History Help</h3>
+              <ul className="list-disc list-inside space-y-1">
+                {instructions.map((instr, idx) => (
+                  <li key={idx}>{instr}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
+      </div>
+
+      {/* Back to Dashboard Button */}
+      <div className="fixed bottom-16 left-6 z-50">
+        <button
+          className="px-6 py-2 rounded-lg font-medium"
+          style={{ backgroundColor: colors.orange, color: colors.text }}
+          onClick={() => router.push("/dashboard")}
+        >
+          Back to Dashboard
+        </button>
       </div>
     </main>
   );
