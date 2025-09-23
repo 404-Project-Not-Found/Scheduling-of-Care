@@ -35,10 +35,6 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
-concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   # ---------- Detect (skip jobs if folders don’t exist) ----------
   detect:
@@ -121,3 +117,4 @@ jobs:
           echo "has_backend:  ${{ needs.detect.outputs.has_backend }}"
           echo "frontend result: ${{ needs.frontend.result || 'skipped' }}"
           echo "backend result:  ${{ needs.backend.result  || 'skipped' }}"
+
