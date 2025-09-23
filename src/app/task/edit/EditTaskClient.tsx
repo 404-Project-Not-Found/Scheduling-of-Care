@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { use, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 type Unit = "day" | "week" | "month" | "year";
@@ -25,6 +25,7 @@ type Task = {
   dateFrom?: string;           // YYYY-MM-DD
   dateTo?: string;             // YYYY-MM-DD
 };
+
 
 function humanize(slug: string) {
   return slug.replace(/-/g, " ").replace(/\b\w/g, (s) => s.toUpperCase());
@@ -88,40 +89,29 @@ export default function EditTaskPage() {
     : [status, ...statusOptionsBase];
 
   useEffect(() => {
-    const tasks = loadTasks();
-    const t = tasks.find((x) => x.slug === taskSlug);
-    if (!t) return;
-
-    setLabel(t.label || label);
-    setClientName(t.clientName || clientName);
-    setStatus(t.status || status);
-    setCategory(t.category || category);
-
-    // prefer structured frequency
-    if (typeof t.frequencyCount === "number" && t.frequencyUnit) {
-      setFrequencyCount(Math.max(1, t.frequencyCount));
-      setFrequencyUnit(t.frequencyUnit);
-    } else {
-      // fallback to legacy string like "90 days"
-      const parsed = parseLegacyFrequency(t.frequency);
-      if (parsed) {
-        setFrequencyCount(parsed.count);
-        setFrequencyUnit(parsed.unit);
-      } else if (t.frequencyDays) {
-        // crude back-conversion if only days were stored
-        setFrequencyCount(Math.max(1, t.frequencyDays));
-        setFrequencyUnit("day");
+    if(!taskSlug) return;
+    (async() => {
+      const res = await fetch(`/api/edit/${encodeURIComponent(taskSlug)}`, {cache: "no-store"});
+      if(!res.ok) {
+        router.push("task/search");
+        return;
       }
-    }
+      const t = await res.json();
 
-    if (t.dateFrom) setDateFrom(t.dateFrom);
-    if (t.dateTo) setDateTo(t.dateTo);
-    if (!t.dateFrom && !t.dateTo && t.lastDone?.includes(" to ")) {
-      const [from, to] = t.lastDone.split(" to ").map((s) => s.trim());
-      if (from) setDateFrom(from);
-      if (to) setDateTo(to);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+      setLabel(t.label || "");
+      setClientName(t.clientName);
+      setStatus(t.status || "");
+      setCategory(t.category || "");
+
+      if(typeof t.frequencyCount === "number" && t.frequencyUnit) {
+        setFrequencyCount(Math.max(1, t.frequencyCount));
+        setFrequencyUnit(t.frequencyUnit);
+      }
+      if(t.dateFrom) setDateFrom(t.dateFrom);
+      if(t.dateTo) setDateTo(t.dateTo);
+
+      console.log("Next due:", t._computed.nextDueISO);
+    })();  
   }, [taskSlug]);
 
   const displayTitle = useMemo(
