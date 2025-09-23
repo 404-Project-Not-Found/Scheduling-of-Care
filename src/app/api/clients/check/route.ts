@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import Client from '@/models/Client';
 
+/**
+ * Checks whether a client with the inputted access code exists
+ * @param req
+ * @returns existence flag and client details
+ */
 export async function GET(req: NextRequest) {
   try {
     const url = new URL(req.url);
@@ -16,6 +21,7 @@ export async function GET(req: NextRequest) {
 
     await connectDB();
 
+    // Query MongoDB for a client with the given access code
     const existingClient = await Client.findOne({ accessCode });
 
     return NextResponse.json({

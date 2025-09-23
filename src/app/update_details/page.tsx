@@ -23,6 +23,7 @@ export default function UpdateDetailsPage() {
   const [success, setSuccess] = useState(false);
   const [formError, setFormError] = useState<string>('');
 
+  // Fetches user email to display in UI
   useEffect(() => {
     async function fetchUser() {
       try {

@@ -11,6 +11,10 @@ interface IUser {
   fullName: string;
 }
 
+/**
+ * Gets the logged in user's details
+ * @returns user's details
+ */
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
@@ -24,6 +28,7 @@ export async function GET() {
     return NextResponse.json({ error: 'User does not exist' }, { status: 404 });
   }
 
+  // Returns the user's email, role, and full name as JSON
   return NextResponse.json({
     email: user.email,
     role: user.role,

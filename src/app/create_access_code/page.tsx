@@ -111,7 +111,7 @@ export default function AddFamilyMemberFullPage() {
           >
             Add New Person.
           </button>{' '}
-          After you&apos;ve added the person, to add the person&apos;s acoount
+          After you&apos;ve added the person, to add the person&apos;s account
           to an organisation, please email the access code and the person&apos;s
           name to the person&apos;s care management team.
         </p>

@@ -64,6 +64,14 @@ function ClientProfilePageInner() {
   const [error, setError] = useState<string>('');
   const [formError, setFormError] = useState<string>('');
 
+  const [existingClientMessage, setExistingClientMessage] = useState<null | {
+    name: string;
+    dob?: string;
+    notes?: string[];
+    avatarUrl?: string;
+  }>(null);
+  const [acceptedExistingClient, setAcceptedExistingClient] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Fetch client data if editing exisiting profile
@@ -117,7 +125,8 @@ function ClientProfilePageInner() {
       ? [...savedNotes, notesInput.trim()]
       : savedNotes;
 
-    if (isNew) {
+    // Checks if a client with the user inputted access code already exists
+    if (isNew && !acceptedExistingClient) {
       try {
         const res = await fetch(
           `/api/clients/check?accessCode=${encodeURIComponent(accessCode)}`
@@ -127,16 +136,8 @@ function ClientProfilePageInner() {
         const data = await res.json();
 
         if (data.exists && data.client) {
-          const proceed = window.confirm(
-            `A client named "${data.client.name}" already exists with this access code. \nDo you want to add this client?`
-          );
-
-          if (!proceed) return false;
-
-          setName(data.client.name);
-          setDob(data.client.dob || '');
-          setSavedNotes(data.client.notes || []);
-          setAvatarUrl(data.client.avatarUrl || '');
+          setExistingClientMessage(data.client);
+          return false;
         }
       } catch (err) {
         console.error('Error checking client:', err);
@@ -291,6 +292,34 @@ function ClientProfilePageInner() {
                 {formError && (
                   <div className="mb-4 p-2 rounded-md bg-red-100 border border-red-400 text-red-700">
                     {formError}
+                  </div>
+                )}
+
+                {existingClientMessage && (
+                  <div className="mb-4 p-3 rounded-md bg-[#fdf4e7] border border-[#fdf4e7]-400">
+                    A client named &quot;<b>{existingClientMessage.name}</b>
+                    &quot; already exists with this access code.
+                    <div className="mt-2">
+                      <button
+                        className="px-3 py-1 rounded bg-[#fdf4e7]-200 hover:bg-[#DFC9A9] text-sm font-semibold"
+                        onClick={() => {
+                          setName(existingClientMessage.name);
+                          setDob(existingClientMessage.dob || '');
+                          setSavedNotes(existingClientMessage.notes || []);
+                          setAvatarUrl(existingClientMessage.avatarUrl || '');
+                          setExistingClientMessage(null);
+                          setAcceptedExistingClient(true);
+                        }}
+                      >
+                        Add this client
+                      </button>
+                      <button
+                        className="ml-2 px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 text-sm font-semibold"
+                        onClick={() => setExistingClientMessage(null)}
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   </div>
                 )}
 
