@@ -129,6 +129,7 @@ export default function SearchTaskPage() {
 
           {/* Search button */}
           <button
+            type="button"
             onClick={runSearch}
             className="h-[56px] px-6 rounded-2xl bg-[#F39C6B] hover:bg-[#ef8a50] text-[#1c130f] font-extrabold text-xl"
           >
@@ -139,6 +140,7 @@ export default function SearchTaskPage() {
         {/* independent Add new task button below, aligned with search box left edge */}
         <div className="mt-4">
           <button
+            type="button"
             onClick={() => router.push("/task/add")}
             className="h-[56px] px-6 rounded-2xl bg-[#F58CA8] hover:bg-[#e97995] text-black font-extrabold text-xl"
           >
