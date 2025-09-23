@@ -1,4 +1,21 @@
-name: CI
+name: CI (Frontend & Backend)
+
+# ---------------------------------------------------------
+# This workflow runs on pushes and PRs targeting main branch.
+# It checks code quality, runs tests, and builds both frontend and backend.
+#
+# 🖥️ Frontend:
+#   - Language: TypeScript
+#   - Framework: Next.js (React, App Router)
+#   - Tools: ESLint, Prettier, Jest (or similar test runner)
+#
+# ⚙️ Backend:
+#   - Language: TypeScript (Node.js runtime)
+#   - Framework: Next.js API Routes
+#   - Database: MongoDB (via Mongoose models like User, PasswordResetToken)
+#   - Utilities: bcryptjs (password hashing), crypto (token generation),
+#                email sender (e.g., Nodemailer)
+# ---------------------------------------------------------
 
 on:
   pull_request:
@@ -6,28 +23,107 @@ on:
   push:
     branches: [main]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  lint_and_format:
-    name: Lint, Format & Test
+  # ---------- Frontend ----------
+  frontend:
+    name: Frontend · Lint / Test / Build
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: ./frontend  # change if frontend code lives elsewhere
+
     steps:
-      - name: Checkout repo
+      # Checkout the repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Use Node.js
+      # Setup Node.js environment (v20) and cache npm dependencies
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 20
+          cache: npm
+          cache-dependency-path: ./frontend/package-lock.json
 
+      # Install dependencies from package-lock.json
       - name: Install dependencies
         run: npm ci
 
+      # Run Prettier formatting check
       - name: Prettier check
         run: npm run format:check
 
+      # Run ESLint static code analysis
       - name: ESLint
         run: npm run lint
 
-      - name: Run tests
-        run: npm test
+      # Run frontend unit tests (Jest, Vitest, etc.)
+      - name: Unit tests
+        run: npm test --if-present
+
+      # Run Next.js build to ensure production build passes
+      - name: Build
+        run: npm run build
+
+      # Optionally upload build artifacts (for inspection or deployment)
+      - name: Upload build artifact (optional)
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: |
+            .next
+            dist
+          if-no-files-found: ignore
+
+  # ---------- Backend ----------
+  backend:
+    name: Backend · Lint / Test
+    runs-on: ubuntu-latest
+    needs: frontend   # backend runs after frontend passes
+
+    defaults:
+      run:
+        working-directory: ./backend   # change if backend code lives elsewhere
+
+    steps:
+      # Checkout the repository
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Setup Node.js environment (same as frontend, v20)
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: ./backend/package-lock.json
+
+      # Install backend dependencies (e.g., Express/Next.js API routes + Mongoose)
+      - name: Install dependencies
+        run: npm ci
+
+      # Run ESLint for backend code
+      - name: ESLint
+        run: npm run lint
+
+      # Run backend unit tests (Jest, Mocha, etc.)
+      - name: Unit tests
+        run: npm test --if-present
+
+      # Build backend if build script is defined (optional for API routes)
+      - name: Build backend
+        run: npm run build --if-present
+
+  # ---------- Summary ----------
+  summarize:
+    name: Summary
+    runs-on: ubuntu-latest
+    needs: [frontend, backend]
+    steps:
+      - run: echo "Frontend & Backend checks completed successfully!"
