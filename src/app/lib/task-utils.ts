@@ -1,5 +1,5 @@
 import {NextResponse} from "next/server";
-import type {Unit} from "@/app/models/task";
+import type {Unit} from "@/models/task";
 import { parseLegacyFrequency } from "./legacy";
 
 // Days in a day and a week always same unlike a month and a year

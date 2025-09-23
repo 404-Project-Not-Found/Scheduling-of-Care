@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import {connectDB} from "@/app/lib/mongodb";
-import Task, {type TaskDoc} from "@/app/models/task";
+import Task, {type TaskDoc} from "@/models/task";
 import {normaliseTaskPayLoad, errorJson} from "@/app/lib/task-utils";
 
 export const runtime = "nodejs";

@@ -12,7 +12,7 @@ export interface TaskDoc extends mongoose.Document {
 
     // legacy string field
     frequency?: string;
-    lastDone?: Date;
+    lastDone?: String;
 
     // structured field
     frequencyDays?: number;     // normalised to days
@@ -27,7 +27,7 @@ export interface TaskDoc extends mongoose.Document {
 
 const TaskSchema = new Schema<TaskDoc> ({
     label: {type: String, required: true, trim: true},
-    slug: {type: String, required: true, unique: true, index: true, lowercare: true},
+    slug: {type: String, required: true, unique: true, index: true, lowercase: true},
     status: {type: String, required: true, trim: true},
     category: {type: String, required: true, trim: true},
     clientName: {type: String, trim: true},

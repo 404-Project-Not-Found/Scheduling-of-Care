@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import {connectDB} from "@/app/lib/mongodb";
-import Task from "@/app/models/task";
+import Task from "@/models/task";
 
 
 export const runtime = "nodejs";
