@@ -39,6 +39,7 @@ export default function Home() {
   const [staySigned, setStaySigned] = useState(false);
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -51,6 +52,8 @@ export default function Home() {
       return;
     }
 
+    setLoading(true); // start loading
+
     try {
       // Sign in with credentials provider
       const res = await signIn('credentials', {
@@ -62,6 +65,7 @@ export default function Home() {
       // Handle login failure
       if (!res || !res.ok) {
         setError(res?.error || 'Login failed');
+        setLoading(false); // stop loading
         return;
       }
 
@@ -71,6 +75,7 @@ export default function Home() {
       // Ensures user role exists within the session
       if (!session?.user?.role) {
         setError('Could not determine user role');
+        setLoading(false);
         return;
       }
 
@@ -87,6 +92,7 @@ export default function Home() {
           break;
         default:
           setError('Unknown role');
+          setLoading(false);
           return;
       }
     } catch (err: unknown) {
@@ -95,10 +101,22 @@ export default function Home() {
       } else {
         setError('An unexepected error occurred');
       }
+      setLoading(false);
     }
 
     // Fake auth: always show error for now (no backend yet).
     // setError("Incorrect email address or password, please try again.");
+  }
+
+  // Loading screen while signIn and getSession calls run
+  if (loading) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center bg-[#F3E9D9] text-zinc-900">
+        <div className="text-center">
+          <h2 className="text-4xl font-extrabold mb-4">Logging in...</h2>
+        </div>
+      </div>
+    );
   }
 
   return (
