@@ -4,9 +4,9 @@
     <a href="https://github.com/404-Project-Not-Found/Schedule-of-Care-Program">
         <img src="images/logo-name.png" alt="Logo" width="147.6" height="65.4">
     </a>
-    <h1 align="center">Schedule of Care</h1>
+    <h1 align="center">Scheduling of Care</h1>
     <p align="left">
-        Schedule of Care is a tool to assist the people who care and manage the care of people with special needs. It places responsibilities, updates and schedule into one application, making it easier to ensure tasks are documented and responsive to change.
+        Scheduling of Care is a tool to assist the people who care and manage the care of people with special needs. It places responsibilities, updates and schedule into one application, making it easier to ensure tasks are documented and responsive to change.
     </p>
 </div>
 
@@ -162,7 +162,7 @@ To be added
 
 ## License
 
-Schedule for Care is licensed under the MIT license. See <a href="LICENSE">LICENSE</a> for details.
+Scheduling for Care is licensed under the MIT license. See <a href="LICENSE">LICENSE</a> for details.
 
 
 ## Links
