@@ -2,7 +2,7 @@
 
 <div align="center">
     <a href="https://github.com/404-Project-Not-Found/Schedule-of-Care-Program">
-        <img src="images/Logos.png" alt="Logo" width="80" height="80">
+        <img src="images/Logos.png" alt="Logo" width="100" height="100">
     </a>
     <h1 align="center">Schedule of Care</h1>
     <p align="left">
@@ -23,10 +23,10 @@
             </ul>
         </li>
         <li>
-            <a href=#get-started>Getting Started</a>
+            <a href=#getting-started>Getting Started</a>
             <ul>
-                <li><a href="prerequisites">Prerequisites</a></li>
-                <li><a href="installation">Installation</a></li>
+                <li><a href="#prerequisites">Prerequisites</a></li>
+                <li><a href="#installation">Installation</a></li>
             </ul>
         </li>
         <li><a href="#deployment">Deployment</a></li>
