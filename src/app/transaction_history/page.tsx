@@ -43,13 +43,13 @@ export default function TransactionHistoryPage() {
       style={{ backgroundColor: colors.pageBg }}
     >
       {/* Logo */}
-      <div className="absolute top-6 left-6">
+      <div className="absolute top-4 left-4">
         <Image
           src="/logo-name.png"
           alt="Scheduling of Care"
-          width={220}
-          height={80}
-          className="object-contain"
+          width={160}   // smaller default
+          height={60}
+          className="object-contain w-32 sm:w-40 md:w-44 lg:w-56"
           priority
         />
       </div>

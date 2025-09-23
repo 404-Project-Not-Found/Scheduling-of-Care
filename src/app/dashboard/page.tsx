@@ -114,32 +114,47 @@ function DashboardContent() {
     <div className="min-h-screen relative">
 
     {/* Help Button */}
-    <div className="fixed bottom-8 right-8 z-50">
-      <div className="relative group">
+      <div className="fixed bottom-8 right-8 z-50">
         <button
-          className="w-10 h-10 rounded-full text-white font-bold text-lg"
+          className="w-10 h-10 rounded-full text-white font-bold text-lg relative peer"
           style={{ backgroundColor: "#ed5f4f" }}
         >
           ?
         </button>
 
         {/* Tooltip */}
-        <div className="absolute bottom-14 right-0 w-80 p-4 bg-white border border-gray-400 rounded shadow-lg text-black text-sm opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="absolute bottom-14 right-0 w-80 p-4 bg-white border border-gray-400 rounded shadow-lg text-black text-sm opacity-0 peer-hover:opacity-100 transition-opacity pointer-events-none">
           <h3 className="font-bold mb-2">Dashboard Help</h3>
           <ul className="list-disc list-inside space-y-1">
-            <li>Click the <span className="font-bold">≡</span> button to open menu options.</li>
-            <li>Menu options allow you to update user details, view cost report page, and access transaction history.</li>
-            <li>Click a <span className="text-blue-600 font-semibold">highlighted date in blue</span> on the calendar to see tasks due that day.</li>
-            <li>The <span className="text-red-500 font-semibold">red highlighted day</span> shows the current day.</li>
+            <li>
+              Click the <span className="font-bold">≡</span> button to open menu options.
+            </li>
+            <li>
+              Menu options allow you to update user details, view cost report page,
+              and access transaction history.
+            </li>
+            <li>
+              Click a <span className="text-blue-600 font-semibold">highlighted date in blue</span> on the calendar to see tasks due that day.
+            </li>
+            <li>
+              The <span className="text-red-500 font-semibold">red highlighted day</span> shows the current day.
+            </li>
             <li>Click a task in the right panel to view its details.</li>
-            <li>Use <span className="font-bold">Mark as done</span> to complete a task.</li>
-            <li>Use <span className="font-bold">Add comment</span> to leave notes on a task.</li>
-            <li>Use <span className="font-bold">Upload File</span> to attach files to tasks.</li>
-            <li>Click <span className="font-bold underline text-blue-600 cursor-pointer">transactions</span> to view or add receipts.</li>
+            <li>
+              Use <span className="font-bold">Mark as done</span> to complete a task.
+            </li>
+            <li>
+              Use <span className="font-bold">Add comment</span> to leave notes on a task.
+            </li>
+            <li>
+              Use <span className="font-bold">Upload File</span> to attach files to tasks.
+            </li>
+            <li>
+              Click <span className="font-bold underline text-blue-600 cursor-pointer">transactions</span> to view or add receipts.
+            </li>
           </ul>
         </div>
       </div>
-    </div>
 
       <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-10 items-stretch px-20 mt-10">
         {/* LEFT: Calendar */}
