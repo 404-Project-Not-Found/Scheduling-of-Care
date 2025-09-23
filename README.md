@@ -36,7 +36,7 @@
         <li><a href="#links">Links</a></li>
     </ol>
 </details>
-</br>
+
 
 <!-- ABOUT THE PROJECT -->
 # About the Project
@@ -89,7 +89,6 @@
     <li><strong>CI</strong>:<a href="https://docs.github.com/en/actions/get-started/understand-github-actions">Github actions</a></li>
     <li><strong>Deployment</strong>: <a href="https://vercel.com/resources">Vercel</a></li>
 </ul>
-</br>
 
 # Getting Started
 ### Prerequisites
@@ -142,7 +141,6 @@ For more information, you can read the <a href="https://nextjs.org/docs/app/gett
 # Testing
 To be added
 
-</br>
 
 # Team Members
 <a href="https://github.com/dpalexander21">
@@ -161,15 +159,11 @@ To be added
 <img style="border-radius: 50%;" src="https://avatars.githubusercontent.com/u/136954712?v=4" width="50px">
 </a>
 
-</br>
-
-</br>
 
 # License
 
 Schedule for Care is licensed under the MIT license. See <a href="LICENSE">LICENSE</a> for details.
 
-</br>
 
 # Links
 <ul>
