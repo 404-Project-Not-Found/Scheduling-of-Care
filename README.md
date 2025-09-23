@@ -169,5 +169,5 @@ Schedule for Care is licensed under the MIT license. See <a href="LICENSE">LICEN
 <ul>
     <li><a href="">Website</a> -- TBA</li>
     <li><a href="https://team404projectnotfound.atlassian.net/wiki/spaces/09ace67881cc434bab85e12ce5e340a7/overview">Documentation: Confluence</a> -- Requires permission to view</li>
-    <li><a href="https://github.com/404-Project-Not-Found">Source Code</a></li>
+    <li><a href="https://github.com/404-Project-Not-Found/Schedule-of-Care-Program">Source Code</a></li>
 </ul>
