@@ -71,8 +71,20 @@ function ClientProfilePageInner() {
     avatarUrl?: string;
   }>(null);
   const [acceptedExistingClient, setAcceptedExistingClient] = useState(false);
+  const [clients, setClients] = useState<Client[]>([]);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Fetches client list from API
+  useEffect(() => {
+    async function fetchClients() {
+      const res = await fetch('/api/clients');
+      const data = await res.json();
+      // Saves client list to state so they can be displayed in the UI
+      setClients(data);
+    }
+    fetchClients();
+  }, []);
 
   // Fetch client data if editing exisiting profile
   useEffect(() => {
@@ -114,6 +126,13 @@ function ClientProfilePageInner() {
       setFormError(
         'Please fill in Name, Date of Birth, and Access Code to continue.'
       );
+      return false;
+    }
+
+    // Checks for duplicate in local client list
+    const isDuplicate = clients.some((c) => c.accessCode == accessCode.trim());
+    if (isDuplicate && isNew) {
+      setFormError('This client already exists in your list.');
       return false;
     }
 

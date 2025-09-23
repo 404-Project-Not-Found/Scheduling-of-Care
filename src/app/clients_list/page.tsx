@@ -32,7 +32,7 @@ export default function FamilyPOAListPage() {
   const router = useRouter();
   const [clients, setClients] = useState<Client[]>([]);
 
-  // Fetches client list from API when the component first mounts
+  // Fetches client list from API
   useEffect(() => {
     async function fetchClients() {
       const res = await fetch('/api/clients');
