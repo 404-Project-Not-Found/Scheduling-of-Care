@@ -45,4 +45,4 @@ const TaskSchema = new Schema<TaskDoc> ({
     dateTo: {type: String},
 }, {timestamps: true});
 
-export default models.Task || model<TaskDoc>("Task", TaskSchema);
+export default models.Task|| model<TaskDoc>("task", TaskSchema);
