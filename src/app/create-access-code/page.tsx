@@ -181,7 +181,7 @@ export default function AddFamilyMemberFullPage() {
         </div>
       </section>
 
-      {/* === New bottom button === */}
+      {/* === bottom button === */}
       <div className="w-full flex justify-center mt-12 mb-20">
         <button
           onClick={() => router.push('/client-profile?new=true')}
