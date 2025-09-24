@@ -6,6 +6,16 @@ import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 
+// ===== Demo IDs & mapping (match your family list) =====
+const FULL_DASH_ID = 'hardcoded-full-1'; // Mary
+const PARTIAL_DASH_ID = 'hardcoded-partial-1'; // John
+const DEMO_NAME_DOB_BY_ID: Record<string, { name: string; dob: string }> = {
+  [FULL_DASH_ID]: { name: 'Mary Hong', dob: '2019-12-19' },
+  [PARTIAL_DASH_ID]: { name: 'John Smith', dob: '2018-03-05' },
+};
+const isDemoId = (id?: string | null) =>
+  !!id && (id === FULL_DASH_ID || id === PARTIAL_DASH_ID);
+
 // ----- Types -----
 type Client = {
   _id?: string;
@@ -38,7 +48,7 @@ function dashboardPathByRole(role: Role): string {
     case 'management':
       return '/menu/management';
     case 'family':
-      // We never return this for family; we resolve family separately by source (partial/full).
+      // resolved separately for family
       return '/menu/family';
     default:
       return '/carer_dashboard';
@@ -104,7 +114,7 @@ function ClientProfilePageInner() {
 
   // ----- Form state -----
   const [name, setName] = useState<string>('');
-  const [dob, setDob] = useState<string>(''); // free text (keeps backend logic untouched)
+  const [dob, setDob] = useState<string>(''); // free text
   const [accessCode, setAccessCode] = useState<string>('');
   const [avatarUrl, setAvatarUrl] = useState<string>('');
   const [notesInput, setNotesInput] = useState<string>('');
@@ -127,11 +137,6 @@ function ClientProfilePageInner() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // ----- Smart "Back" -----
-  /**
-   * If role=carer -> main carer dashboard.
-   * If role=family -> partial or full dashboard depending on source/localStorage.
-   * Else -> default by role mapping.
-   */
   const goBackToDashboard = () => {
     const role = getActiveRole();
     if (role === 'family') {
@@ -141,8 +146,32 @@ function ClientProfilePageInner() {
     router.push(dashboardPathByRole(role));
   };
 
+  // ===== Prefill from localStorage / demo map (BEFORE any backend fetch) =====
+  useEffect(() => {
+    try {
+      // Highest priority: value written by list/partial/full pages
+      const lsName = localStorage.getItem('currentClientName') || '';
+      const lsDob = localStorage.getItem('currentClientDob') || '';
+
+      if (lsName) setName((prev) => prev || lsName);
+      if (lsDob) setDob((prev) => prev || lsDob);
+
+      const activeId = localStorage.getItem('activeClientId');
+      // Family demo fallback by id
+      if (isDemoId(activeId) && (!lsName || !lsDob)) {
+        const demo = DEMO_NAME_DOB_BY_ID[activeId as string];
+        if (demo) {
+          if (!lsName) setName((prev) => prev || demo.name);
+          if (!lsDob) setDob((prev) => prev || demo.dob);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
   // ----- Data fetching -----
-  // Fetch all clients (for duplicate check / list sync)
+  // Fetch all clients (for duplicate check / list sync) — keep backend flow
   useEffect(() => {
     async function fetchClients() {
       try {
@@ -158,13 +187,25 @@ function ClientProfilePageInner() {
 
   // Fetch client data if editing an existing profile
   useEffect(() => {
-    if (!clientId) return;
+    // If this is family demo user clicking from full/partial and id是demo，直接用本地数据，不打后端
+    if (isDemoId(clientId) && getActiveRole() === 'family') {
+      // 我们已经在上面的 prefill 里把 name/dob 兜底了，这里只需要结束 loading
+      setLoading(false);
+      return;
+    }
+
+    if (!clientId) {
+      setLoading(false);
+      return;
+    }
 
     const fetchClient = async () => {
       setLoading(true);
       try {
         const res = await fetch(`/api/clients/${clientId}`);
-        if (!res.ok) throw new Error('Failed to fetch client');
+        if (!res.ok) {
+          throw new Error('Failed to fetch client');
+        }
         const client: Client = await res.json();
 
         setName(client.name);
@@ -205,6 +246,18 @@ function ClientProfilePageInner() {
     const allNotes = notesInput.trim()
       ? [...savedNotes, notesInput.trim()]
       : savedNotes;
+
+    // === Family demo: do not hit backend when editing demo entries ===
+    if (getActiveRole() === 'family' && (isDemoId(clientId) || !clientId)) {
+      try {
+        // Best-effort persist to localStorage so family sees their edits immediately
+        localStorage.setItem('currentClientName', name);
+        localStorage.setItem('currentClientDob', dob);
+      } catch {}
+      setSavedNotes(allNotes);
+      setNotesInput('');
+      return true;
+    }
 
     // For new clients, confirm with backend if access code already exists
     if (isNew && !acceptedExistingClient) {

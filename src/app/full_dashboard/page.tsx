@@ -14,6 +14,32 @@ const MenuDrawer = dynamic(
   { ssr: false }
 );
 
+// ---- Demo client ids used by the family list hardcode ----
+const FULL_DASH_ID = 'hardcoded-full-1'; // Mary Hong
+const PARTIAL_DASH_ID = 'hardcoded-partial-1'; // John Smith
+
+// Fallback map in case currentClientName wasn't set for some reason
+const NAME_BY_ID: Record<string, string> = {
+  [FULL_DASH_ID]: 'Mary Hong',
+  [PARTIAL_DASH_ID]: 'John Smith',
+};
+
+// Utility: read/write "viewer role" (carer | family | management)
+type Role = 'carer' | 'family' | 'management';
+
+function getInitialRole(searchParams: URLSearchParams): Role {
+  const viewer = searchParams.get('viewer');
+  if (viewer === 'family') return 'family';
+
+  if (typeof window !== 'undefined') {
+    const stored =
+      (localStorage.getItem('activeRole') as Role | null) ?? undefined;
+    if (stored === 'family' || stored === 'management' || stored === 'carer')
+      return stored;
+  }
+  return 'carer';
+}
+
 // Page wrapper with Suspense
 export default function DashboardPage() {
   return (
@@ -25,30 +51,12 @@ export default function DashboardPage() {
   );
 }
 
-// Utility: read/write "viewer role" (carer | family | management)
-type Role = 'carer' | 'family' | 'management';
-
-function getInitialRole(searchParams: URLSearchParams): Role {
-  // If caller explicitly passes ?viewer=family, treat this session as "family viewer"
-  const viewer = searchParams.get('viewer');
-  if (viewer === 'family') return 'family';
-
-  // Otherwise fall back to localStorage (if any), then default to 'carer'
-  if (typeof window !== 'undefined') {
-    const stored =
-      (localStorage.getItem('activeRole') as Role | null) ?? undefined;
-    if (stored === 'family' || stored === 'management' || stored === 'carer')
-      return stored;
-  }
-  return 'carer';
-}
-
 function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const addedFile = searchParams.get('addedFile');
 
-  // Viewer role (mock): 'carer' by default; becomes 'family' if query contains viewer=family
+  // Role (mock)
   const [role, setRole] = useState<Role>(() => getInitialRole(searchParams));
 
   const [open, setOpen] = useState(false);
@@ -59,80 +67,107 @@ function DashboardContent() {
   const [isAddingComment, setIsAddingComment] = useState(false);
   const [newComment, setNewComment] = useState('');
 
+  // Who is the dashboard for?
   const [activeClientId, setActiveClientId] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState<string>('');
 
-  // Persist "viewer" flags when landing with ?viewer=family, so other pages can read it.
+  // Persist role if viewer=family and mark lastDashboard=full for family back-routing
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
     const viewer = searchParams.get('viewer');
     if (viewer === 'family') {
       localStorage.setItem('activeRole', 'family');
-      localStorage.setItem('viewer', 'family'); // optional hint for other UIs
+      localStorage.setItem('viewer', 'family');
+      localStorage.setItem('lastDashboard', 'full'); // important for "Back" on other pages
       setRole('family');
     } else {
-      // If nothing specified, at least store current role (default 'carer')
       localStorage.setItem('activeRole', role);
     }
   }, [searchParams, role]);
 
-  // Close menu with Escape
+  // Close drawer with Escape
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
     if (open) document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [open]);
 
-  // Read active client id (who we are working with) from localStorage
+  // Resolve which client and display name we show (match partial logic)
   useEffect(() => {
-    const cid = localStorage.getItem('activeClientId');
+    const cid =
+      typeof window !== 'undefined'
+        ? localStorage.getItem('activeClientId')
+        : null;
     setActiveClientId(cid);
+
+    // Priority:
+    // 1) currentClientName (set by family list page before navigating)
+    // 2) fallback by known demo id → name
+    let name = '';
+    try {
+      name = localStorage.getItem('currentClientName') || '';
+    } catch {}
+
+    if (!name && cid) {
+      name = NAME_BY_ID[cid] || '';
+    }
+
+    setDisplayName(name);
   }, []);
 
-  // Load tasks from localStorage (or seed defaults on first visit)
+  // Load tasks from localStorage (or seed defaults)
   useEffect(() => {
     const stored = localStorage.getItem('tasks');
     if (stored) {
-      setTasks(JSON.parse(stored));
-    } else {
-      setTasks([
-        {
-          id: '1',
-          title: 'Dental Appointment',
-          frequency: 'Monthly',
-          lastDone: '2025-09-15',
-          nextDue: '2025-10-01',
-          status: 'Pending',
-          comments: [],
-          files: [],
-        },
-        {
-          id: '2',
-          title: 'Replace Toothbrush Head',
-          frequency: 'Every 3 months',
-          lastDone: '2025-07-13',
-          nextDue: '2025-10-13',
-          status: 'Pending',
-          comments: [],
-          files: [],
-        },
-        {
-          id: '3',
-          title: 'Submit Report',
-          frequency: 'Weekly',
-          lastDone: '2025-09-18',
-          nextDue: '2025-09-25',
-          status: 'Due',
-          comments: [],
-          files: [],
-        },
-      ]);
+      try {
+        setTasks(JSON.parse(stored));
+        return;
+      } catch {
+        // fall through to defaults
+      }
     }
+    setTasks([
+      {
+        id: '1',
+        title: 'Dental Appointment',
+        frequency: 'Monthly',
+        lastDone: '2025-09-15',
+        nextDue: '2025-10-01',
+        status: 'Pending',
+        comments: [],
+        files: [],
+      },
+      {
+        id: '2',
+        title: 'Replace Toothbrush Head',
+        frequency: 'Every 3 months',
+        lastDone: '2025-07-13',
+        nextDue: '2025-10-13',
+        status: 'Pending',
+        comments: [],
+        files: [],
+      },
+      {
+        id: '3',
+        title: 'Submit Report',
+        frequency: 'Weekly',
+        lastDone: '2025-09-18',
+        nextDue: '2025-09-25',
+        status: 'Due',
+        comments: [],
+        files: [],
+      },
+    ]);
   }, []);
 
   // Persist tasks on change
   useEffect(() => {
-    if (tasks.length > 0) localStorage.setItem('tasks', JSON.stringify(tasks));
+    if (tasks.length > 0) {
+      try {
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+      } catch {}
+    }
   }, [tasks]);
 
   // Handle file injection via ?addedFile=...
@@ -144,7 +179,7 @@ function DashboardContent() {
     }
   }, [addedFile, selectedTask]);
 
-  // Derived list by date filter
+  // Filtered list by date
   const filteredTasks = selectedDate
     ? tasks.filter((t) => t.nextDue === selectedDate)
     : tasks;
@@ -189,9 +224,22 @@ function DashboardContent() {
     }
   };
 
+  // Navigate to Edit Profile for THIS client (never to another dashboard)
+  const goEditProfile = () => {
+    // keep role so Edit Profile can route back correctly
+    localStorage.setItem('activeRole', role);
+    if (activeClientId) {
+      router.push(
+        `/client_profile?new=false&id=${activeClientId}&from=full_dashboard`
+      );
+    } else {
+      router.push('/client_profile?new=true&from=full_dashboard');
+    }
+  };
+
   return (
     <div className="min-h-screen relative">
-      {/* Floating help button with hover tooltip */}
+      {/* Help button with hover tooltip */}
       <div className="fixed bottom-8 right-8 z-50">
         <button
           className="w-10 h-10 rounded-full text-white font-bold text-lg relative peer"
@@ -250,9 +298,9 @@ function DashboardContent() {
               />
             </div>
 
-            {/* Right header cluster: viewer name + avatar + "viewing as" badge */}
+            {/* Right: dynamic name + viewer badge + avatar → edit profile */}
             <div className="flex items-center gap-3">
-              <span>Florence Edwards</span>
+              <span>{displayName || '—'}</span>
 
               {role === 'family' && (
                 <span className="px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
@@ -260,38 +308,18 @@ function DashboardContent() {
                 </span>
               )}
 
-              {/* Avatar → Edit Profile (preserve viewer role) */}
               <div
                 role="button"
                 tabIndex={0}
-                onClick={() => {
-                  // Persist the current role so edit page can route back properly
-                  localStorage.setItem('activeRole', role);
-                  if (activeClientId) {
-                    router.push(
-                      `/client_profile?new=false&id=${activeClientId}`
-                    );
-                  } else {
-                    router.push('/client_profile?new=true');
-                  }
-                }}
+                onClick={goEditProfile}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    localStorage.setItem('activeRole', role);
-                    if (activeClientId) {
-                      router.push(
-                        `/client_profile?new=false&id=${activeClientId}`
-                      );
-                    } else {
-                      router.push('/client_profile?new=true');
-                    }
-                  }
+                  if (e.key === 'Enter' || e.key === ' ') goEditProfile();
                 }}
                 className="h-10 w-10 rounded-full bg-gray-300 border border-white flex items-center justify-center text-sm font-semibold text-gray-700 cursor-pointer hover:opacity-80"
                 title="Edit profile"
                 aria-label="Edit profile"
               >
-                F
+                {(displayName && displayName[0]) || '•'}
               </div>
             </div>
           </div>
@@ -304,8 +332,8 @@ function DashboardContent() {
           </div>
         </section>
 
-        {/* RIGHT: Task Panel */}
-        <section className="flex flex-col rounded-2xl overflow-hidden bg-[#F7ECD9] border border-black/10">
+        {/* RIGHT: Task Panel (relative so the family back button can anchor bottom-right) */}
+        <section className="relative flex flex-col rounded-2xl overflow-hidden bg-[#F7ECD9] border border-black/10">
           {!selectedTask ? (
             <>
               <div className="bg-[#3d0000] text-white px-5 py-6">
@@ -335,6 +363,18 @@ function DashboardContent() {
               isAddingComment={isAddingComment}
               setIsAddingComment={setIsAddingComment}
             />
+          )}
+
+          {/* ▼▼ Only for family: Back to client list (bottom-right of the Tasks panel) ▼▼ */}
+          {role === 'family' && (
+            <button
+              onClick={() => router.push('/clients_list')}
+              className="absolute bottom-4 right-4 px-4 py-2 rounded-lg bg-orange-400 text-black font-semibold shadow-md hover:bg-orange-500"
+              aria-label="Back to Client List"
+              title="Back to Client List"
+            >
+              Back to Client List
+            </button>
           )}
         </section>
       </div>
