@@ -1,7 +1,8 @@
 'use client';
 
+import React, { Suspense, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Badge from '@/components/Badge';
 
 type Row = { item: string; category: string; allocated: number; spent: number };
@@ -25,7 +26,58 @@ const getStatus = (remaining: number): { tone: Tone; label: string } => {
   return { tone: 'green', label: 'Within Limit' };
 };
 
+// -------- Role helpers (frontend-only; does NOT touch backend) --------
+type Role = 'carer' | 'family' | 'management';
+
+function getActiveRole(): Role {
+  if (typeof window === 'undefined') return 'carer';
+  const r =
+    (localStorage.getItem('activeRole') as Role | null) ||
+    (sessionStorage.getItem('mockRole') as Role | null) ||
+    'carer';
+  return (['carer', 'family', 'management'] as const).includes(r as Role)
+    ? (r as Role)
+    : 'carer';
+}
+
+/** Decide where FAMILY should go back to.
+ * Priority:
+ *   1) URL ?from=full_dashboard|partial_dashboard (optional)
+ *   2) localStorage.lastDashboard: 'full' -> /full_dashboard?viewer=family, else /partial_dashboard
+ *   3) default: /partial_dashboard
+ */
+function resolveFamilyBackPath(searchParams: {
+  get: (k: string) => string | null;
+}): string {
+  const from = searchParams.get('from');
+  if (from === 'full_dashboard') return '/full_dashboard?viewer=family';
+  if (from === 'partial_dashboard') return '/partial_dashboard';
+
+  if (typeof window !== 'undefined') {
+    const last = localStorage.getItem('lastDashboard'); // 'full' | 'partial'
+    if (last === 'full') return '/full_dashboard?viewer=family';
+    if (last === 'partial') return '/partial_dashboard';
+  }
+  return '/partial_dashboard';
+}
+
+// ---------- Suspense wrapper page ----------
 export default function TotalCostPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="p-6 text-gray-600">Loading budget report...</div>
+      }
+    >
+      <TotalCostInner />
+    </Suspense>
+  );
+}
+
+function TotalCostInner() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [q, setQ] = useState('');
   const [year, setYear] = useState('2025');
 
@@ -43,6 +95,18 @@ export default function TotalCostPage() {
     const spent = filtered.reduce((s, r) => s + r.spent, 0);
     return { allocated, spent, remaining: allocated - spent };
   }, [filtered]);
+
+  // Back button handler (role-aware)
+  const handleBack = () => {
+    const role = getActiveRole();
+    if (role === 'family') {
+      router.push(resolveFamilyBackPath(searchParams));
+    } else if (role === 'management') {
+      router.push('/menu/management');
+    } else {
+      router.push('/carer_dashboard');
+    }
+  };
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-[#F8CBA6] relative">
@@ -106,9 +170,7 @@ export default function TotalCostPage() {
 
             <div className="rounded-2xl border px-6 py-4 bg-white flex flex-col items-center justify-center">
               <div
-                className={`text-2xl font-bold ${
-                  totals.remaining < 0 ? 'text-red-600' : 'text-green-600'
-                }`}
+                className={`text-2xl font-bold ${totals.remaining < 0 ? 'text-red-600' : 'text-green-600'}`}
               >
                 {totals.remaining < 0
                   ? `-$${Math.abs(totals.remaining).toLocaleString()}`
@@ -139,7 +201,6 @@ export default function TotalCostPage() {
                 {filtered.map((r, i) => {
                   const remaining = r.allocated - r.spent;
                   const status = getStatus(remaining);
-
                   return (
                     <tr key={i} className="border-t border-[#3A0000]/20">
                       <td className="px-4 py-3">
@@ -181,13 +242,13 @@ export default function TotalCostPage() {
         </div>
       </div>
 
-      {/* Back to Dashboard Button */}
-      <Link
-        href="/carer_dashboard"
+      {/* Back to Dashboard Button (role-aware) */}
+      <button
+        onClick={handleBack}
         className="fixed bottom-6 left-6 px-5 py-2 rounded-lg bg-orange-400 text-black font-semibold shadow-md hover:bg-orange-500"
       >
         ← Back to Dashboard
-      </Link>
+      </button>
     </main>
   );
 }

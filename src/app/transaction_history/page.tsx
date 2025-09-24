@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { Suspense, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTransactions } from '@/context/TransactionContext';
@@ -28,27 +28,44 @@ function getActiveRole(): Role {
     : 'carer';
 }
 
-// For FAMILY viewers, decide where to go back.
-// Priority: ?from=full|partial -> localStorage.lastDashboard -> partial
-function resolveFamilyReturnPath(searchParams: URLSearchParams): string {
-  const from = searchParams.get('from'); // optional hint when navigating in
+/** FAMILY back path resolver
+ * Priority:
+ *  1) URL ?from=full|partial
+ *  2) localStorage.lastDashboard ('full' | 'partial')
+ *  3) default: /partial_dashboard
+ */
+function resolveFamilyReturnPath(sp: {
+  get: (k: string) => string | null;
+}): string {
+  const from = sp.get('from');
   if (from === 'full') return '/full_dashboard?viewer=family';
   if (from === 'partial') return '/partial_dashboard';
 
   if (typeof window !== 'undefined') {
-    const last = localStorage.getItem('lastDashboard'); // 'full' | 'partial'
+    const last = localStorage.getItem('lastDashboard');
     if (last === 'full') return '/full_dashboard?viewer=family';
     if (last === 'partial') return '/partial_dashboard';
   }
   return '/partial_dashboard';
 }
 
+/* ================= Page (Suspense wrapper) ================= */
 export default function TransactionHistoryPage() {
+  return (
+    <Suspense
+      fallback={<div className="p-6 text-gray-600">Loading transactions…</div>}
+    >
+      <TransactionHistoryInner />
+    </Suspense>
+  );
+}
+
+/* ================= Inner (uses useSearchParams) ================= */
+function TransactionHistoryInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { transactions } = useTransactions();
 
-  // detect viewer role once (memoized)
   const role = useMemo<Role>(() => getActiveRole(), []);
   const isFamily = role === 'family';
 
@@ -67,7 +84,6 @@ export default function TransactionHistoryPage() {
     'Use the search box to filter transactions by type, date, carer, or items.',
     ...(isFamily
       ? [
-          // family-only wording (read-only)
           'This page is read-only for family accounts.',
           'Use Back to Dashboard to return to the selected person’s dashboard.',
         ]
@@ -90,10 +106,9 @@ export default function TransactionHistoryPage() {
     }
   };
 
-  // Add-to-task handler (disabled/hidden for family)
+  // Add-to-task handler (hidden for family)
   const handleAddToTask = (receiptFileName: string) => {
-    if (isFamily) return; // no-op in family (button hidden anyway)
-    // Carer goes to their dashboard and attaches file
+    if (isFamily) return;
     router.push(
       `/carer_dashboard?addedFile=${encodeURIComponent(receiptFileName)}`
     );

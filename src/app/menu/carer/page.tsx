@@ -15,9 +15,11 @@ const palette = {
 export function MenuDrawer({
   open,
   onClose,
+  viewer, // optional: 'carer' | 'family' | 'management' (caller may pass this in)
 }: {
   open: boolean;
   onClose: () => void;
+  viewer?: 'carer' | 'family' | 'management';
 }) {
   // Close drawer with ESC
   useEffect(() => {
@@ -29,6 +31,12 @@ export function MenuDrawer({
   function onBackdropClick(e: React.MouseEvent<HTMLDivElement>) {
     if (e.target === e.currentTarget) onClose();
   }
+
+  // Detect "family" viewer even if prop not provided (fallback to frontend mock role)
+  const isFamilyViewer =
+    viewer === 'family' ||
+    (typeof window !== 'undefined' &&
+      (localStorage.getItem('activeRole') || '').toLowerCase() === 'family');
 
   return (
     <>
@@ -70,9 +78,24 @@ export function MenuDrawer({
 
         <nav className="flex h-[calc(100%-56px)] flex-col justify-between">
           <ul className="px-3 py-4 space-y-2">
+            {/* Existing items */}
             <MenuItem href="/update_details" label="Update your details" />
             <MenuItem href="/total-cost" label="Budget Report" />
             <MenuItem href="/transaction_history" label="View Transactions" />
+
+            {/* Extra entries only for FAMILY viewer on full dashboard */}
+            {isFamilyViewer && (
+              <>
+                <MenuItem
+                  href="/clients_list"
+                  label="Manage people with special needs"
+                />
+                <MenuItem
+                  href="/request_of_change_page"
+                  label="Request to change a task"
+                />
+              </>
+            )}
           </ul>
 
           <div className="px-4 pb-6 flex justify-end pr-6">
@@ -96,7 +119,6 @@ export function MenuDrawer({
 
 export default function MenuPage() {
   const [open, setOpen] = React.useState(true);
-
   return <MenuDrawer open={open} onClose={() => setOpen(false)} />;
 }
 
