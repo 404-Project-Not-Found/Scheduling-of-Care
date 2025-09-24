@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useTransactions } from '@/context/TransactionContext';
 
 const colors = {
@@ -14,11 +14,46 @@ const colors = {
   help: '#ed5f4f',
 };
 
+// ---- role helpers (frontend mock only) ----
+type Role = 'carer' | 'family' | 'management';
+
+function getActiveRole(): Role {
+  if (typeof window === 'undefined') return 'carer';
+  const r =
+    (localStorage.getItem('activeRole') as Role | null) ||
+    (sessionStorage.getItem('mockRole') as Role | null) ||
+    'carer';
+  return (['carer', 'family', 'management'] as const).includes(r as Role)
+    ? (r as Role)
+    : 'carer';
+}
+
+// For FAMILY viewers, decide where to go back.
+// Priority: ?from=full|partial -> localStorage.lastDashboard -> partial
+function resolveFamilyReturnPath(searchParams: URLSearchParams): string {
+  const from = searchParams.get('from'); // optional hint when navigating in
+  if (from === 'full') return '/full_dashboard?viewer=family';
+  if (from === 'partial') return '/partial_dashboard';
+
+  if (typeof window !== 'undefined') {
+    const last = localStorage.getItem('lastDashboard'); // 'full' | 'partial'
+    if (last === 'full') return '/full_dashboard?viewer=family';
+    if (last === 'partial') return '/partial_dashboard';
+  }
+  return '/partial_dashboard';
+}
+
 export default function TransactionHistoryPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { transactions } = useTransactions();
+
+  // detect viewer role once (memoized)
+  const role = useMemo<Role>(() => getActiveRole(), []);
+  const isFamily = role === 'family';
+
   const [search, setSearch] = useState('');
-  const [showHelp, setShowHelp] = useState(false); // help tooltip
+  const [showHelp, setShowHelp] = useState(false);
 
   const filtered = transactions.filter(
     (t) =>
@@ -30,11 +65,39 @@ export default function TransactionHistoryPage() {
 
   const instructions = [
     'Use the search box to filter transactions by type, date, carer, or items.',
-    "Click 'Add new transaction' to record a new purchase or refund.",
-    "Use 'Add to Task' to link receipts/items to tasks in the dashboard.",
-    'The Back to Dashboard button returns you to the main dashboard page.',
+    ...(isFamily
+      ? [
+          // family-only wording (read-only)
+          'This page is read-only for family accounts.',
+          'Use Back to Dashboard to return to the selected person’s dashboard.',
+        ]
+      : [
+          "Click 'Add new transaction' to record a new purchase or refund.",
+          "Use 'Add to Task' to link receipts/items to tasks in the dashboard.",
+          'The Back to Dashboard button returns you to the main dashboard page.',
+        ]),
     'Transactions are displayed in a table showing type, date, made by, receipt, and associated care items.',
   ];
+
+  // Back button handler
+  const handleBack = () => {
+    if (isFamily) {
+      router.push(resolveFamilyReturnPath(searchParams));
+    } else if (role === 'management') {
+      router.push('/menu/management');
+    } else {
+      router.push('/carer_dashboard');
+    }
+  };
+
+  // Add-to-task handler (disabled/hidden for family)
+  const handleAddToTask = (receiptFileName: string) => {
+    if (isFamily) return; // no-op in family (button hidden anyway)
+    // Carer goes to their dashboard and attaches file
+    router.push(
+      `/carer_dashboard?addedFile=${encodeURIComponent(receiptFileName)}`
+    );
+  };
 
   return (
     <main
@@ -67,13 +130,17 @@ export default function TransactionHistoryPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <button
-              className="px-4 py-2 rounded-lg font-medium"
-              style={{ backgroundColor: colors.orange, color: colors.text }}
-              onClick={() => router.push('/add_transaction')}
-            >
-              Add new transaction
-            </button>
+            {/* Hide "Add new transaction" for family */}
+            {!isFamily && (
+              <button
+                className="px-4 py-2 rounded-lg font-medium"
+                style={{ backgroundColor: colors.orange, color: colors.text }}
+                onClick={() => router.push('/add_transaction')}
+              >
+                Add new transaction
+              </button>
+            )}
+
             <input
               type="text"
               placeholder="Search"
@@ -111,24 +178,29 @@ export default function TransactionHistoryPage() {
                           className="flex items-center justify-between gap-2"
                         >
                           <span>{item}</span>
-                          <button
-                            className="px-2 py-1 text-xs bg-[#3d0000] text-white rounded"
-                            onClick={() =>
-                              router.push(
-                                `/dashboard?addedFile=${encodeURIComponent(
-                                  t.receipt
-                                )}`
-                              )
-                            }
-                          >
-                            Add to Task
-                          </button>
+
+                          {/* Hide Add-to-Task for family (read-only) */}
+                          {!isFamily && (
+                            <button
+                              className="px-2 py-1 text-xs bg-[#3d0000] text-white rounded"
+                              onClick={() => handleAddToTask(t.receipt)}
+                            >
+                              Add to Task
+                            </button>
+                          )}
                         </div>
                       ))}
                     </div>
                   </td>
                 </tr>
               ))}
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="py-10 text-center text-gray-600">
+                    No transactions match your search.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -166,7 +238,7 @@ export default function TransactionHistoryPage() {
         <button
           className="px-6 py-2 rounded-lg font-medium"
           style={{ backgroundColor: colors.orange, color: colors.text }}
-          onClick={() => router.push('/carer_dashboard')}
+          onClick={handleBack}
         >
           Back to Dashboard
         </button>
