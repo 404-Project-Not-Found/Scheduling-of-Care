@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import {connectDB} from "@/app/lib/mongodb";
-import Task from "@/models/task";
+import Task, { TaskDoc } from "@/models/task";
 
 
 export const runtime = "nodejs";
@@ -15,7 +15,7 @@ function slugify(s: string) {
         .replace(/^-+|-+$/g, "");
 }
 
-async function ensureUniqueSlug(base: String) {
+async function ensureUniqueSlug(base: string) {
     let slug = base || "task";
     let i = 2;
     while(await Task.exists({slug})) {
@@ -40,7 +40,7 @@ export async function GET(req: Request) {
     const includeDeleted = (searchParams.get("includeDeleted") || "false").toLowerCase() === "true";
     const limit = Math.min(parseInt(searchParams.get("limit") || "20", 10) || 20, 100);
 
-    const filter: any = {};
+    const filter: Record<string, unknown> = {};
     if(!includeDeleted) filter.deleted = {$ne: true};
     if(status) filter.status = status;
     if(category) filter.category = category;
@@ -65,7 +65,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
     await connectDB();
 
-    let body: any;
+    let body: ;
     try {
         body = await req.json();
     } catch {

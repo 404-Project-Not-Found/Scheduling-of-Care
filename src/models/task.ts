@@ -12,7 +12,7 @@ export interface TaskDoc extends mongoose.Document {
 
     // legacy string field
     frequency?: string;
-    lastDone?: String;
+    lastDone?: string;
 
     // structured field
     frequencyDays?: number;     // normalised to days

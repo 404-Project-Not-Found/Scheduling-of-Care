@@ -42,7 +42,7 @@ export function normaliseTaskPayLoad(body: any) {
     return {...body, frequencyCount, frequencyUnit, frequencyDays, frequency, lastDone};
 }
 
-export function errorJson(message: String, status=400) {
+export function errorJson(message: string, status=400) {
     return NextResponse.json({error: message}, {status});
 }
 

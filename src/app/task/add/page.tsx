@@ -27,6 +27,7 @@ type Task = {
   dateTo?: string;
 };
 
+/*
 function saveTasks(tasks: Task[]) {
   if (typeof window === "undefined") return;
   localStorage.setItem("tasks", JSON.stringify(tasks));
@@ -39,6 +40,7 @@ function loadTasks(): Task[] {
     return [];
   }
 }
+  */
 
 const unitToDays: Record<Unit, number> = {
   day: 1,

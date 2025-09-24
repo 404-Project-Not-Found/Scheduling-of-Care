@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { use, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 type Unit = "day" | "week" | "month" | "year";
@@ -30,7 +30,7 @@ type Task = {
 function humanize(slug: string) {
   return slug.replace(/-/g, " ").replace(/\b\w/g, (s) => s.toUpperCase());
 }
-
+/*
 function loadTasks(): Task[] {
   if (typeof window === "undefined") return [];
   try {
@@ -43,14 +43,16 @@ function saveTasks(tasks: Task[]) {
   if (typeof window === "undefined") return;
   localStorage.setItem("tasks", JSON.stringify(tasks));
 }
-
+*/
 // ---- frequency helpers ----
+/*
 const unitToDays: Record<Unit, number> = {
   day: 1,
   week: 7,
   month: 30,  // simple approximation
   year: 365,  // simple approximation
 };
+*/
 
 /*
 function toDays(count: number, unit: Unit) {
@@ -112,7 +114,7 @@ export default function EditTaskPage() {
       if(t.dateFrom) setDateFrom(t.dateFrom);
       if(t.dateTo) setDateTo(t.dateTo);
 
-      console.log("Next due:", t._computed.nextDueISO);
+      //console.log("Next due:", t._computed.nextDueISO);
     })();  
   }, [taskSlug]);
 
