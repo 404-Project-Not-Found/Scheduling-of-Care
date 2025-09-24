@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { signOut } from 'next-auth/react';
+import { mockSignOut } from '@/lib/mockSignout';
 
 /** Shared palette (borderless, full-width header/banner) */
 const palette = {
@@ -141,11 +142,28 @@ export default function MenuPage() {
           </ul>
 
           <div className="px-4 pb-6 flex justify-end pr-6">
-            {/* Keep backend sign-out logic via next-auth */}
+            {/* Hybrid sign-out: mock mode → clear storage & redirect; else → next-auth signOut */}
             <button
-              onClick={async () => {
-                await signOut({ redirect: false });
-                window.location.href = '/'; // redirect to login page
+              onClick={async (e) => {
+                e.preventDefault();
+
+                const isMock =
+                  typeof window !== 'undefined' &&
+                  !!sessionStorage.getItem('mockRole');
+
+                if (isMock) {
+                  // Frontend mock sign-out
+                  mockSignOut();
+                } else {
+                  // Backend next-auth sign-out
+                  try {
+                    await signOut({ redirect: false });
+                  } catch (err) {
+                    console.error('Backend sign-out error:', err);
+                  } finally {
+                    window.location.href = '/'; // redirect to login page
+                  }
+                }
               }}
               className="underline underline-offset-4 focus:outline-none rounded text-lg"
               style={{ color: palette.header }}

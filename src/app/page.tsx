@@ -1,4 +1,3 @@
-// src/app/page.tsx
 'use client';
 
 import Image from 'next/image';
@@ -53,8 +52,8 @@ export default function Home() {
     }
 
     // Frontend test-only mock path (no API/MongoDB):
-    // If email === family@email.com AND password === family,
-    // go straight to family dashboard without calling signIn/getSession.
+
+    // Case 1: Family mock account
     const emailTrimmed = email.trim().toLowerCase();
     if (emailTrimmed === 'family@email.com' && password === 'family') {
       if (staySigned) {
@@ -62,9 +61,20 @@ export default function Home() {
       } else {
         localStorage.removeItem('rememberMe');
       }
-      // Optional marker so other pages can show a demo banner if desired
       sessionStorage.setItem('mockRole', 'family');
       window.location.href = '/menu/family';
+      return;
+    }
+
+    // Case 2: Carer mock account
+    if (emailTrimmed === 'carer@email.com' && password === 'carer') {
+      if (staySigned) {
+        localStorage.setItem('rememberMe', '1');
+      } else {
+        localStorage.removeItem('rememberMe');
+      }
+      sessionStorage.setItem('mockRole', 'carer');
+      window.location.href = '/carer_dashboard';
       return;
     }
 
