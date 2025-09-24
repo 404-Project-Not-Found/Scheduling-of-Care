@@ -52,6 +52,22 @@ export default function Home() {
       return;
     }
 
+    // Frontend test-only mock path (no API/MongoDB):
+    // If email === family@email.com AND password === family,
+    // go straight to family dashboard without calling signIn/getSession.
+    const emailTrimmed = email.trim().toLowerCase();
+    if (emailTrimmed === 'family@email.com' && password === 'family') {
+      if (staySigned) {
+        localStorage.setItem('rememberMe', '1');
+      } else {
+        localStorage.removeItem('rememberMe');
+      }
+      // Optional marker so other pages can show a demo banner if desired
+      sessionStorage.setItem('mockRole', 'family');
+      window.location.href = '/menu/family';
+      return;
+    }
+
     setLoading(true); // start loading
 
     try {

@@ -10,7 +10,6 @@
     </p>
 </div>
 
-
 <!-- TABLE OF CONTENTS -->
 <details>
     <summary><Strong>Table of Contents</strong></summary>
@@ -37,11 +36,12 @@
     </ol>
 </details>
 
-
 <!-- Content -->
+
 ## About the Project
 
 ### Features
+
 <details>
     <summary>Roles and Permissions for User</summary>
     <ul>
@@ -81,6 +81,7 @@
 </details>
 
 ### Tech Stack and Resources
+
 <ul>
     <li><strong>Framework</strong>: <a href="https://nextjs.org/docs">Next.Js</a></li>
     <li><strong>Frontend</strong>: <a href="https://react.dev/learn">React</a></li>
@@ -91,8 +92,11 @@
 </ul>
 
 ## Getting Started
+
 ### Prerequisites
+
 Before running the app, ensure that you have the following:
+
 <ul>
     <li>Node.js</li>
     <li>Package manager - pnpm or npm or yarn</li>
@@ -101,7 +105,9 @@ Before running the app, ensure that you have the following:
 </ul>
 
 ### Installation
+
 If local development do the following:
+
 <ol>
     <li>Clone this repository</li>
     <pre><code>git clone https://github.com/404-Project-Not-Found/Schedule-of-Care-Program.git
@@ -127,7 +133,9 @@ Open <a href="http://localhost:3000">http://localhost:3000</a> on your browser t
 </br>
 
 ## Deployment
+
 Once deployment, do the following:
+
 <ol>
     <li>Push code to GitHub</li>
     <li>Connect the repo to Vercel</li>
@@ -139,10 +147,11 @@ For more information, you can read the <a href="https://nextjs.org/docs/app/gett
 </br>
 
 ## Testing
+
 To be added
 
-
 ## Team Members
+
 <a href="https://github.com/dpalexander21">
 <img style="border-radius: 50%;" src="https://avatars.githubusercontent.com/u/201690137?v=4" width="50px">
 </a>
@@ -159,13 +168,12 @@ To be added
 <img style="border-radius: 50%;" src="https://avatars.githubusercontent.com/u/136954712?v=4" width="50px">
 </a>
 
-
 ## License
 
 Scheduling for Care is licensed under the MIT license. See <a href="LICENSE">LICENSE</a> for details.
 
-
 ## Links
+
 <ul>
     <li><a href="">Website</a> -- TBA</li>
     <li><a href="https://team404projectnotfound.atlassian.net/wiki/spaces/09ace67881cc434bab85e12ce5e340a7/overview">Documentation: Confluence</a> -- Requires permission to view</li>

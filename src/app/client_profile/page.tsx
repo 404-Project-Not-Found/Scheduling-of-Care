@@ -5,8 +5,9 @@ export const dynamic = 'force-dynamic';
 import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
+import AddAccessCodePanel from '../create_access_code/AddAccessCodePanel';
 
-// ----- Type definiton for a client record -----
+// ----- Type definition for a client record -----
 type Client = {
   _id?: string;
   name: string;
@@ -16,18 +17,16 @@ type Client = {
   avatarUrl?: string;
 };
 
-// const TEMP_AVATAR_KEY = 'clientAvatar:__temp__';
-
 // ----- Color palette -----
 const palette = {
-  pageBg: '#ffd9b3', // page background
-  header: '#3A0000', // dark brown
-  banner: '#F9C9B1', // notice banner
-  panelBg: '#fdf4e7', // panel background
-  notice: '#F9C9B1', // notice bar background
-  accent: '#ff9999', // info dot
-  question: '#ff9900', // help bubble
-  button: '#F4A261', // primary buttons
+  pageBg: '#ffd9b3',
+  header: '#3A0000',
+  banner: '#F9C9B1',
+  panelBg: '#fdf4e7',
+  notice: '#F9C9B1',
+  accent: '#ff9999',
+  question: '#ff9900',
+  button: '#F4A261',
   text: '#2b2b2b',
   white: '#FFFFFF',
 };
@@ -56,6 +55,9 @@ function ClientProfilePageInner() {
   const [dob, setDob] = useState<string>('');
   const [accessCode, setAccessCode] = useState<string>('');
   const [avatarUrl, setAvatarUrl] = useState<string>('');
+  const [showAccessCodePanel, setShowAccessCodePanel] = useState(false);
+
+  // Notes state
   const [notesInput, setNotesInput] = useState<string>('');
   const [savedNotes, setSavedNotes] = useState<string[]>([]);
 
@@ -75,18 +77,22 @@ function ClientProfilePageInner() {
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Fetches client list from API
+  // Fetch all clients (for duplicate check / list sync)
   useEffect(() => {
     async function fetchClients() {
-      const res = await fetch('/api/clients');
-      const data = await res.json();
-      // Saves client list to state so they can be displayed in the UI
-      setClients(data);
+      try {
+        const res = await fetch('/api/clients');
+        const data = await res.json();
+        setClients(data);
+      } catch (e) {
+        // Non-blocking; just log
+        console.warn('Failed to fetch clients list:', e);
+      }
     }
     fetchClients();
   }, []);
 
-  // Fetch client data if editing exisiting profile
+  // Fetch single client if editing existing profile
   useEffect(() => {
     if (!clientId) return;
 
@@ -99,7 +105,6 @@ function ClientProfilePageInner() {
         }
         const client: Client = await res.json();
 
-        // Populate form fields with API response
         setName(client.name);
         setDob(client.dob);
         setAccessCode(client.accessCode || '');
@@ -120,7 +125,7 @@ function ClientProfilePageInner() {
     return <div style={{ padding: 24 }}>Loading client profile...</div>;
   if (error) return <div style={{ padding: 24, color: 'red' }}>{error}</div>;
 
-  // Save or update client profile
+  // Save or update client profile (backend-first)
   const saveProfile = async () => {
     if (!name.trim() || !dob.trim() || !accessCode.trim()) {
       setFormError(
@@ -129,8 +134,8 @@ function ClientProfilePageInner() {
       return false;
     }
 
-    // Checks for duplicate in local client list
-    const isDuplicate = clients.some((c) => c.accessCode == accessCode.trim());
+    // Checks for duplicate in local fetched client list when creating new
+    const isDuplicate = clients.some((c) => c.accessCode === accessCode.trim());
     if (isDuplicate && isNew) {
       setFormError('This client already exists in your list.');
       return false;
@@ -144,7 +149,7 @@ function ClientProfilePageInner() {
       ? [...savedNotes, notesInput.trim()]
       : savedNotes;
 
-    // Checks if a client with the user inputted access code already exists
+    // If creating new and not yet accepted existing, check with backend
     if (isNew && !acceptedExistingClient) {
       try {
         const res = await fetch(
@@ -161,32 +166,40 @@ function ClientProfilePageInner() {
       } catch (err) {
         console.error('Error checking client:', err);
         setFormError('Failed to check access code. Please try again.');
+        return false;
       }
     }
 
     // Request payload
-    const payload = { name, dob, accessCode, avatarUrl, notes: allNotes };
+    const payload: Client = {
+      name,
+      dob,
+      accessCode,
+      avatarUrl,
+      notes: allNotes,
+    };
 
     try {
       if (isNew) {
         // Create new client record
-        await fetch('/api/clients', {
+        const res = await fetch('/api/clients', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
+        if (!res.ok) throw new Error('Create request failed');
       } else if (clientId) {
         // Update existing client record
-        await fetch(`/api/clients/${clientId}`, {
+        const res = await fetch(`/api/clients/${clientId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
+        if (!res.ok) throw new Error('Update request failed');
       }
 
-      // Update saved notes
+      // Update saved notes + reset input
       setSavedNotes(allNotes);
-      // Reset note input
       setNotesInput('');
 
       return true;
@@ -307,20 +320,21 @@ function ClientProfilePageInner() {
 
               {/* Editable profile fields */}
               <div className="flex flex-col gap-3 w-full">
-                {/* Show inline error message if form validation fails */}
+                {/* Inline form error */}
                 {formError && (
                   <div className="mb-4 p-2 rounded-md bg-red-100 border border-red-400 text-red-700">
                     {formError}
                   </div>
                 )}
 
+                {/* Existing client notice (from backend check) */}
                 {existingClientMessage && (
-                  <div className="mb-4 p-3 rounded-md bg-[#fdf4e7] border border-[#fdf4e7]-400">
+                  <div className="mb-4 p-3 rounded-md bg-[#fdf4e7] border border-[#DFC9A9]">
                     A client named &quot;<b>{existingClientMessage.name}</b>
                     &quot; already exists with this access code.
                     <div className="mt-2">
                       <button
-                        className="px-3 py-1 rounded bg-[#fdf4e7]-200 hover:bg-[#DFC9A9] text-sm font-semibold"
+                        className="px-3 py-1 rounded bg-[#DFC9A9] hover:bg-[#d1b38d] text-sm font-semibold"
                         onClick={() => {
                           setName(existingClientMessage.name);
                           setDob(existingClientMessage.dob || '');
@@ -360,14 +374,13 @@ function ClientProfilePageInner() {
                   />
                 </label>
 
-                {/* DOB */}
+                {/* DOB (use native calendar picker) */}
                 <label className="text-lg flex items-center gap-3">
                   <span className="font-semibold">Date of Birth:</span>
                   <input
-                    type="text"
-                    value={dob}
+                    type="date"
+                    value={dob || ''} // expects "YYYY-MM-DD" or ""
                     onChange={(e) => setDob(e.target.value)}
-                    placeholder={isNew ? 'e.g., 19/09/1943' : undefined}
                     className="flex-1 max-w-2xl p-2 rounded-md focus:outline-none focus:ring-2"
                     style={{
                       backgroundColor: palette.white,
@@ -405,7 +418,7 @@ function ClientProfilePageInner() {
                     Don&apos;t have an access code?{' '}
                     <button
                       type="button"
-                      onClick={() => router.push('/create_access_code')}
+                      onClick={() => setShowAccessCodePanel(true)} // open drawer instead of navigation
                       className="underline underline-offset-2"
                       style={{ color: palette.header }}
                     >
@@ -474,6 +487,27 @@ function ClientProfilePageInner() {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* ===== Backdrop + Right Drawer ===== */}
+      {/* Backdrop */}
+      <div
+        className={`fixed inset-0 z-40 bg-black/30 transition-opacity duration-300 ${
+          showAccessCodePanel ? 'opacity-100' : 'pointer-events-none opacity-0'
+        }`}
+        onClick={() => setShowAccessCodePanel(false)}
+        aria-hidden="true"
+      />
+      {/* Drawer Panel */}
+      <div
+        className={`fixed right-0 top-0 z-50 h-full w-full sm:w-1/2 bg-white shadow-xl transform transition-transform duration-300 ${
+          showAccessCodePanel ? 'translate-x-0' : 'translate-x-full'
+        }`}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Create access code panel"
+      >
+        <AddAccessCodePanel onClose={() => setShowAccessCodePanel(false)} />
       </div>
     </div>
   );

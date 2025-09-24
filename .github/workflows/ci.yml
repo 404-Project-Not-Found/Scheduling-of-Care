@@ -42,7 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       has_frontend: ${{ steps.chk.outputs.frontend }}
-      has_backend:  ${{ steps.chk.outputs.backend }}
+      has_backend: ${{ steps.chk.outputs.backend }}
     steps:
       - uses: actions/checkout@v4
       - id: chk
@@ -117,4 +117,3 @@ jobs:
           echo "has_backend:  ${{ needs.detect.outputs.has_backend }}"
           echo "frontend result: ${{ needs.frontend.result || 'skipped' }}"
           echo "backend result:  ${{ needs.backend.result  || 'skipped' }}"
-
