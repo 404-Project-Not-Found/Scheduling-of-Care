@@ -2,12 +2,17 @@
 
 import { Suspense, useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import CalendarPanel from '@/components/dashboard/CalendarPanel';
 import TasksPanel from '@/components/tasks/TasksPanel';
-import { MenuDrawer } from '@/app/menu/carer/page';
+import dynamic from 'next/dynamic';
 import { Task } from './types';
+
+// 动态导入，避免把 page 当组件直接 SSR
+const MenuDrawer = dynamic(
+  () => import('@/app/menu/carer/page').then((m) => m.MenuDrawer),
+  { ssr: false }
+);
 
 // Wrap the page in Suspense
 export default function DashboardPage() {
@@ -33,7 +38,7 @@ function DashboardContent() {
   const [isAddingComment, setIsAddingComment] = useState(false);
   const [newComment, setNewComment] = useState('');
 
-  const [showHelp, setShowHelp] = useState(false); // help tooltip visibility
+  const [activeClientId, setActiveClientId] = useState<string | null>(null);
 
   // Close menu on Escape
   useEffect(() => {
@@ -41,6 +46,12 @@ function DashboardContent() {
     if (open) document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [open]);
+
+  // 读取 activeClientId
+  useEffect(() => {
+    const cid = localStorage.getItem('activeClientId');
+    setActiveClientId(cid);
+  }, []);
 
   // Load tasks from localStorage (or defaults)
   useEffect(() => {
@@ -141,17 +152,6 @@ function DashboardContent() {
     }
   };
 
-  // Dashboard instructions for help tooltip
-  const instructions = [
-    'Click the ≡ button to open the menu.',
-    'Calendar: Click a date to filter tasks due on that day.',
-    'Tasks Panel: Click a task to view details.',
-    "Mark a task as done using the 'Mark as done' button.",
-    "Add comments using 'Add comment'.",
-    "Upload files with 'Upload File'.",
-    'Use the transactions link to view or add receipts.',
-  ];
-
   return (
     <div className="min-h-screen relative">
       {/* Help Button */}
@@ -159,6 +159,7 @@ function DashboardContent() {
         <button
           className="w-10 h-10 rounded-full text-white font-bold text-lg relative peer"
           style={{ backgroundColor: '#ed5f4f' }}
+          aria-label="Open dashboard help"
         >
           ?
         </button>
@@ -172,42 +173,20 @@ function DashboardContent() {
               options.
             </li>
             <li>
-              Menu options allow you to update user details, view cost report
-              page, and access transaction history.
+              Calendar: click a highlighted blue date to view tasks due that
+              day.
+            </li>
+            <li>The red highlighted day is today.</li>
+            <li>
+              Click a task to view details, add comments, upload files, or mark
+              as done.
             </li>
             <li>
-              Click a{' '}
-              <span className="text-blue-600 font-semibold">
-                highlighted date in blue
-              </span>{' '}
-              on the calendar to see tasks due that day.
-            </li>
-            <li>
-              The{' '}
-              <span className="text-red-500 font-semibold">
-                red highlighted day
-              </span>{' '}
-              shows the current day.
-            </li>
-            <li>Click a task in the right panel to view its details.</li>
-            <li>
-              Use <span className="font-bold">Mark as done</span> to complete a
-              task.
-            </li>
-            <li>
-              Use <span className="font-bold">Add comment</span> to leave notes
-              on a task.
-            </li>
-            <li>
-              Use <span className="font-bold">Upload File</span> to attach files
-              to tasks.
-            </li>
-            <li>
-              Click{' '}
-              <span className="font-bold underline text-blue-600 cursor-pointer">
+              Go to{' '}
+              <span className="font-bold underline text-blue-600">
                 transactions
               </span>{' '}
-              to view or add receipts.
+              to manage receipts.
             </li>
           </ul>
         </div>
@@ -236,11 +215,37 @@ function DashboardContent() {
             </div>
             <div className="flex items-center gap-3">
               <span>Florence Edwards</span>
-              <Link href="/client-profile">
-                <div className="h-10 w-10 rounded-full bg-gray-300 border border-white flex items-center justify-center text-sm font-semibold text-gray-700 cursor-pointer hover:opacity-80">
-                  F
-                </div>
-              </Link>
+
+              {/* Avatar → Edit Profile */}
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => {
+                  if (activeClientId) {
+                    router.push(
+                      `/client_profile?new=false&id=${activeClientId}`
+                    );
+                  } else {
+                    router.push('/client_profile?new=true');
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    if (activeClientId) {
+                      router.push(
+                        `/client_profile?new=false&id=${activeClientId}`
+                      );
+                    } else {
+                      router.push('/client_profile?new=true');
+                    }
+                  }
+                }}
+                className="h-10 w-10 rounded-full bg-gray-300 border border-white flex items-center justify-center text-sm font-semibold text-gray-700 cursor-pointer hover:opacity-80"
+                title="Edit profile"
+                aria-label="Edit profile"
+              >
+                F
+              </div>
             </div>
           </div>
           <div className="p-5 flex-1 relative">
@@ -260,163 +265,197 @@ function DashboardContent() {
               </div>
               <div className="p-5 flex-1">
                 <TasksPanel
-                  tasks={filteredTasks}
+                  tasks={
+                    selectedDate
+                      ? tasks.filter((t) => t.nextDue === selectedDate)
+                      : tasks
+                  }
                   onTaskClick={(task: Task) => setSelectedTask(task)}
                 />
               </div>
             </>
           ) : (
-            <div className="flex flex-col h-full">
-              <div className="bg-[#3d0000] text-white px-5 py-4 flex items-center">
-                <button
-                  onClick={() => setSelectedTask(null)}
-                  className="mr-4 text-xl font-bold"
-                >
-                  ←
-                </button>
-                <h2 className="text-xl font-bold">{selectedTask.title}</h2>
-              </div>
-
-              <div className="p-5 text-black flex flex-col gap-3 flex-1">
-                <p>
-                  <span className="font-bold">Frequency:</span>{' '}
-                  {selectedTask.frequency}
-                </p>
-                <p>
-                  <span className="font-bold">Last Done:</span>{' '}
-                  {selectedTask.lastDone}
-                </p>
-                <p>
-                  <span className="font-bold">Next Due:</span>{' '}
-                  {selectedTask.nextDue}
-                </p>
-                <p>
-                  <span className="font-bold">Status:</span>{' '}
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusBadgeClasses(selectedTask.status)}`}
-                  >
-                    {selectedTask.status}
-                  </span>
-                </p>
-
-                {/* Comments Section */}
-                <div className="mt-4">
-                  <h3 className="font-bold text-lg mb-2">Comments:</h3>
-                  {selectedTask.comments && selectedTask.comments.length > 0 ? (
-                    <ul className="list-disc pl-5 space-y-1">
-                      {selectedTask.comments.map((c, idx) => (
-                        <li key={idx}>{c}</li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="italic">No comments yet.</p>
-                  )}
-                </div>
-
-                {/* Files Section */}
-                <div className="mt-4">
-                  <h3 className="font-bold text-lg mb-2">Files:</h3>
-                  {selectedTask.files && selectedTask.files.length > 0 ? (
-                    <ul className="list-disc pl-5 space-y-1">
-                      {selectedTask.files.map((f, idx) => (
-                        <li key={idx}>{f}</li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="italic">No files uploaded yet.</p>
-                  )}
-                </div>
-
-                {/* Add Comment Box */}
-                {isAddingComment && (
-                  <div className="mt-3 p-3 border rounded bg-white">
-                    <textarea
-                      className="w-full border rounded p-2 text-black"
-                      placeholder="Write your comment..."
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                    />
-                    <div className="flex justify-end gap-2 mt-2">
-                      <button
-                        className="px-3 py-1 border rounded bg-gray-200 text-black"
-                        onClick={() => {
-                          setIsAddingComment(false);
-                          setNewComment('');
-                        }}
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        className="px-3 py-1 border rounded bg-[#3d0000] text-white"
-                        onClick={() => {
-                          if (newComment.trim())
-                            addComment(selectedTask.id, newComment.trim());
-                        }}
-                      >
-                        Save
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Action buttons row */}
-                <div className="flex gap-3 mt-auto flex-wrap">
-                  <button
-                    className="px-4 py-2 border rounded bg-white text-black"
-                    onClick={() => {
-                      if (selectedTask) {
-                        setTasks((prev) =>
-                          prev.map((t) =>
-                            t.id === selectedTask.id
-                              ? { ...t, status: 'Completed' }
-                              : t
-                          )
-                        );
-                        setSelectedTask({
-                          ...selectedTask,
-                          status: 'Completed',
-                        });
-                      }
-                    }}
-                  >
-                    Mark as done
-                  </button>
-                  <button
-                    className="px-4 py-2 border rounded bg-white text-black"
-                    onClick={() => setIsAddingComment(true)}
-                  >
-                    Add comment
-                  </button>
-
-                  <label className="px-4 py-2 border rounded bg-white text-black cursor-pointer">
-                    Upload File
-                    <input
-                      type="file"
-                      className="hidden"
-                      onChange={(e) => {
-                        if (e.target.files?.length && selectedTask)
-                          addFile(selectedTask.id, e.target.files[0].name);
-                      }}
-                    />
-                  </label>
-
-                  <div className="mt-2 text-black text-sm">
-                    Need to add a receipt/view receipts? Go to{' '}
-                    <span
-                      className="underline cursor-pointer text-blue-600 hover:text-blue-800"
-                      onClick={() => router.push('/transaction_history')}
-                    >
-                      transactions
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <TaskDetail
+              task={selectedTask}
+              setTasks={setTasks}
+              setSelectedTask={setSelectedTask}
+              addComment={addComment}
+              addFile={addFile}
+              getStatusBadgeClasses={getStatusBadgeClasses}
+              newComment={newComment}
+              setNewComment={setNewComment}
+              isAddingComment={isAddingComment}
+              setIsAddingComment={setIsAddingComment}
+            />
           )}
         </section>
       </div>
 
       <MenuDrawer open={open} onClose={() => setOpen(false)} />
+    </div>
+  );
+}
+
+function TaskDetail({
+  task,
+  setTasks,
+  setSelectedTask,
+  addComment,
+  addFile,
+  getStatusBadgeClasses,
+  newComment,
+  setNewComment,
+  isAddingComment,
+  setIsAddingComment,
+}: {
+  task: Task;
+  setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
+  setSelectedTask: React.Dispatch<React.SetStateAction<Task | null>>;
+  addComment: (taskId: string, comment: string) => void;
+  addFile: (taskId: string, fileName: string) => void;
+  getStatusBadgeClasses: (status: string | undefined) => string;
+  newComment: string;
+  setNewComment: (v: string) => void;
+  isAddingComment: boolean;
+  setIsAddingComment: (v: boolean) => void;
+}) {
+  return (
+    <div className="flex flex-col h-full">
+      <div className="bg-[#3d0000] text-white px-5 py-4 flex items-center">
+        <button
+          onClick={() => setSelectedTask(null)}
+          className="mr-4 text-xl font-bold"
+          aria-label="Back to tasks"
+        >
+          ←
+        </button>
+        <h2 className="text-xl font-bold">{task.title}</h2>
+      </div>
+
+      <div className="p-5 text-black flex flex-col gap-3 flex-1">
+        <p>
+          <span className="font-bold">Frequency:</span> {task.frequency}
+        </p>
+        <p>
+          <span className="font-bold">Last Done:</span> {task.lastDone}
+        </p>
+        <p>
+          <span className="font-bold">Next Due:</span> {task.nextDue}
+        </p>
+        <p>
+          <span className="font-bold">Status:</span>{' '}
+          <span
+            className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusBadgeClasses(task.status)}`}
+          >
+            {task.status}
+          </span>
+        </p>
+
+        {/* Comments Section */}
+        <div className="mt-4">
+          <h3 className="font-bold text-lg mb-2">Comments:</h3>
+          {task.comments && task.comments.length > 0 ? (
+            <ul className="list-disc pl-5 space-y-1">
+              {task.comments.map((c, idx) => (
+                <li key={idx}>{c}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="italic">No comments yet.</p>
+          )}
+        </div>
+
+        {/* Files Section */}
+        <div className="mt-4">
+          <h3 className="font-bold text-lg mb-2">Files:</h3>
+          {task.files && task.files.length > 0 ? (
+            <ul className="list-disc pl-5 space-y-1">
+              {task.files.map((f, idx) => (
+                <li key={idx}>{f}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="italic">No files uploaded yet.</p>
+          )}
+        </div>
+
+        {/* Add Comment Box */}
+        {isAddingComment && (
+          <div className="mt-3 p-3 border rounded bg-white">
+            <textarea
+              className="w-full border rounded p-2 text-black"
+              placeholder="Write your comment..."
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+            />
+            <div className="flex justify-end gap-2 mt-2">
+              <button
+                className="px-3 py-1 border rounded bg-gray-200 text-black"
+                onClick={() => {
+                  setIsAddingComment(false);
+                  setNewComment('');
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-3 py-1 border rounded bg-[#3d0000] text-white"
+                onClick={() => {
+                  if (newComment.trim()) addComment(task.id, newComment.trim());
+                }}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Action buttons row */}
+        <div className="flex gap-3 mt-auto flex-wrap">
+          <button
+            className="px-4 py-2 border rounded bg-white text-black"
+            onClick={() => {
+              setTasks((prev) =>
+                prev.map((t) =>
+                  t.id === task.id ? { ...t, status: 'Completed' } : t
+                )
+              );
+              // 局部状态同步
+              // setSelectedTask({ ...task, status: 'Completed' }); // 可选：若需要立即更新右侧视图
+            }}
+          >
+            Mark as done
+          </button>
+          <button
+            className="px-4 py-2 border rounded bg-white text-black"
+            onClick={() => setIsAddingComment(true)}
+          >
+            Add comment
+          </button>
+
+          <label className="px-4 py-2 border rounded bg-white text-black cursor-pointer">
+            Upload File
+            <input
+              type="file"
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files?.length)
+                  addFile(task.id, e.target.files[0].name);
+              }}
+            />
+          </label>
+
+          <div className="mt-2 text-black text-sm">
+            Need to add a receipt/view receipts? Go to{' '}
+            <span
+              className="underline cursor-pointer text-blue-600 hover:text-blue-800"
+              onClick={() => (window.location.href = '/transaction_history')}
+            >
+              transactions
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -6,7 +6,7 @@ import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 
-// ----- Type definiton for a client record -----
+// ----- Type definition for a client record -----
 type Client = {
   _id?: string;
   name: string;
@@ -16,18 +16,44 @@ type Client = {
   avatarUrl?: string;
 };
 
-// const TEMP_AVATAR_KEY = 'clientAvatar:__temp__';
+// ----- Role & routing helpers -----
+type Role = 'carer' | 'family' | 'management';
+
+function getActiveRole(): Role {
+  // 优先 localStorage，其次 sessionStorage 的 mockRole，最后默认 carer
+  if (typeof window === 'undefined') return 'carer';
+  const r =
+    (localStorage.getItem('activeRole') as Role | null) ||
+    (sessionStorage.getItem('mockRole') as Role | null) ||
+    'carer';
+  return (['carer', 'family', 'management'] as Role[]).includes(r)
+    ? r
+    : 'carer';
+}
+
+function dashboardPathByRole(role: Role): string {
+  switch (role) {
+    case 'carer':
+      return '/carer_dashboard';
+    case 'management':
+      return '/menu/management';
+    case 'family':
+      return '/menu/family';
+    default:
+      return '/carer_dashboard';
+  }
+}
 
 // ----- Color palette -----
 const palette = {
-  pageBg: '#ffd9b3', // page background
-  header: '#3A0000', // dark brown
-  banner: '#F9C9B1', // notice banner
-  panelBg: '#fdf4e7', // panel background
-  notice: '#F9C9B1', // notice bar background
-  accent: '#ff9999', // info dot
-  question: '#ff9900', // help bubble
-  button: '#F4A261', // primary buttons
+  pageBg: '#ffd9b3',
+  header: '#3A0000',
+  banner: '#F9C9B1',
+  panelBg: '#fdf4e7',
+  notice: '#F9C9B1',
+  accent: '#ff9999',
+  question: '#ff9900',
+  button: '#F4A261',
   text: '#2b2b2b',
   white: '#FFFFFF',
 };
@@ -53,7 +79,7 @@ function ClientProfilePageInner() {
 
   // ----- Form state variables -----
   const [name, setName] = useState<string>('');
-  const [dob, setDob] = useState<string>('');
+  const [dob, setDob] = useState<string>(''); // 你当前用文本输入，保持不改后端逻辑
   const [accessCode, setAccessCode] = useState<string>('');
   const [avatarUrl, setAvatarUrl] = useState<string>('');
   const [notesInput, setNotesInput] = useState<string>('');
@@ -75,18 +101,28 @@ function ClientProfilePageInner() {
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Fetches client list from API
+  // 统一的“返回到对应面板”函数（carer 优先）
+  const goBackToDashboard = () => {
+    const role = getActiveRole();
+    router.push(dashboardPathByRole(role));
+  };
+
+  // Fetch all clients (for duplicate check / list sync)
   useEffect(() => {
     async function fetchClients() {
-      const res = await fetch('/api/clients');
-      const data = await res.json();
-      // Saves client list to state so they can be displayed in the UI
-      setClients(data);
+      try {
+        const res = await fetch('/api/clients');
+        const data: Client[] = await res.json();
+        setClients(data);
+      } catch (e: unknown) {
+        // 非阻塞
+        console.warn('Failed to fetch clients list:', e);
+      }
     }
     fetchClients();
   }, []);
 
-  // Fetch client data if editing exisiting profile
+  // Fetch client data if editing existing profile
   useEffect(() => {
     if (!clientId) return;
 
@@ -99,14 +135,14 @@ function ClientProfilePageInner() {
         }
         const client: Client = await res.json();
 
-        // Populate form fields with API response
         setName(client.name);
         setDob(client.dob);
         setAccessCode(client.accessCode || '');
         setSavedNotes(client.notes || []);
         setAvatarUrl(client.avatarUrl || '');
-      } catch (err) {
-        console.error(err);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error('Error fetching client:', msg);
         setError('Failed to load client data.');
       } finally {
         setLoading(false);
@@ -121,7 +157,7 @@ function ClientProfilePageInner() {
   if (error) return <div style={{ padding: 24, color: 'red' }}>{error}</div>;
 
   // Save or update client profile
-  const saveProfile = async () => {
+  const saveProfile = async (): Promise<boolean> => {
     if (!name.trim() || !dob.trim() || !accessCode.trim()) {
       setFormError(
         'Please fill in Name, Date of Birth, and Access Code to continue.'
@@ -130,13 +166,12 @@ function ClientProfilePageInner() {
     }
 
     // Checks for duplicate in local client list
-    const isDuplicate = clients.some((c) => c.accessCode == accessCode.trim());
+    const isDuplicate = clients.some((c) => c.accessCode === accessCode.trim());
     if (isDuplicate && isNew) {
       setFormError('This client already exists in your list.');
       return false;
     }
 
-    // Clear error if valid
     setFormError('');
 
     // Merge new note (if any) with saved notes
@@ -144,64 +179,70 @@ function ClientProfilePageInner() {
       ? [...savedNotes, notesInput.trim()]
       : savedNotes;
 
-    // Checks if a client with the user inputted access code already exists
+    // Check with backend if new
     if (isNew && !acceptedExistingClient) {
       try {
         const res = await fetch(
           `/api/clients/check?accessCode=${encodeURIComponent(accessCode)}`
         );
         if (!res.ok) throw new Error('Check request failed');
-
-        const data = await res.json();
+        const data: { exists: boolean; client?: Client } = await res.json();
 
         if (data.exists && data.client) {
           setExistingClientMessage(data.client);
           return false;
         }
-      } catch (err) {
-        console.error('Error checking client:', err);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error('Error checking client:', msg);
         setFormError('Failed to check access code. Please try again.');
+        return false;
       }
     }
 
     // Request payload
-    const payload = { name, dob, accessCode, avatarUrl, notes: allNotes };
+    const payload: Client = {
+      name,
+      dob,
+      accessCode,
+      avatarUrl,
+      notes: allNotes,
+    };
 
     try {
       if (isNew) {
-        // Create new client record
-        await fetch('/api/clients', {
+        const res = await fetch('/api/clients', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
+        if (!res.ok) throw new Error('Create request failed');
       } else if (clientId) {
-        // Update existing client record
-        await fetch(`/api/clients/${clientId}`, {
+        const res = await fetch(`/api/clients/${clientId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
+        if (!res.ok) throw new Error('Update request failed');
       }
 
-      // Update saved notes
       setSavedNotes(allNotes);
-      // Reset note input
       setNotesInput('');
 
       return true;
-    } catch (err) {
-      console.error('Failed to save profile:', err);
-      alert('An error occurred while saving profile. Please try again.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('Failed to save profile:', msg);
+      alert(`An error occurred while saving profile. ${msg}`);
       return false;
     }
   };
 
-  // Save profile and navigate back to clients list
+  // Save profile and navigate back to dashboard (by role)
   const handleSaveAndReturn = async () => {
     const success = await saveProfile();
     if (success) {
-      router.push('/clients_list');
+      goBackToDashboard();
     }
   };
 
@@ -230,7 +271,7 @@ function ClientProfilePageInner() {
         style={{ backgroundColor: palette.header, color: palette.white }}
       >
         <button
-          onClick={() => router.push('/clients_list')}
+          onClick={goBackToDashboard}
           className="absolute left-4 top-1/2 -translate-y-1/2 rounded-md px-2 py-2 focus:outline-none focus:ring-2 focus:ring-white/60 flex items-center gap-2"
           title="Back"
           aria-label="Go back"
@@ -307,20 +348,21 @@ function ClientProfilePageInner() {
 
               {/* Editable profile fields */}
               <div className="flex flex-col gap-3 w-full">
-                {/* Show inline error message if form validation fails */}
+                {/* Inline form error */}
                 {formError && (
                   <div className="mb-4 p-2 rounded-md bg-red-100 border border-red-400 text-red-700">
                     {formError}
                   </div>
                 )}
 
+                {/* Existing client notice */}
                 {existingClientMessage && (
-                  <div className="mb-4 p-3 rounded-md bg-[#fdf4e7] border border-[#fdf4e7]-400">
+                  <div className="mb-4 p-3 rounded-md bg-[#fdf4e7] border border-[#DFC9A9]">
                     A client named &quot;<b>{existingClientMessage.name}</b>
                     &quot; already exists with this access code.
                     <div className="mt-2">
                       <button
-                        className="px-3 py-1 rounded bg-[#fdf4e7]-200 hover:bg-[#DFC9A9] text-sm font-semibold"
+                        className="px-3 py-1 rounded bg-[#DFC9A9] hover:bg-[#d1b38d] text-sm font-semibold"
                         onClick={() => {
                           setName(existingClientMessage.name);
                           setDob(existingClientMessage.dob || '');
@@ -360,14 +402,16 @@ function ClientProfilePageInner() {
                   />
                 </label>
 
-                {/* DOB */}
+                {/* DOB（保留你当前的自由文本输入） */}
                 <label className="text-lg flex items-center gap-3">
                   <span className="font-semibold">Date of Birth:</span>
                   <input
                     type="text"
                     value={dob}
                     onChange={(e) => setDob(e.target.value)}
-                    placeholder={isNew ? 'e.g., 19/09/1943' : undefined}
+                    placeholder={
+                      isNew ? 'e.g., 19/09/1943 or 1943-09-19' : undefined
+                    }
                     className="flex-1 max-w-2xl p-2 rounded-md focus:outline-none focus:ring-2"
                     style={{
                       backgroundColor: palette.white,
