@@ -1,6 +1,6 @@
 'use client';
 
-import { Task } from '@/app/carer_dashboard/types'; // import from types
+import { Task } from '@/app/full_dashboard/types'; // import from types
 
 type TasksPanelProps = {
   tasks: Task[];

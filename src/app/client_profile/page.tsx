@@ -6,7 +6,7 @@ import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 
-// ----- Type definition for a client record -----
+// ----- Types -----
 type Client = {
   _id?: string;
   name: string;
@@ -16,11 +16,11 @@ type Client = {
   avatarUrl?: string;
 };
 
-// ----- Role & routing helpers -----
 type Role = 'carer' | 'family' | 'management';
 
+// ----- Role helpers -----
 function getActiveRole(): Role {
-  // 优先 localStorage，其次 sessionStorage 的 mockRole，最后默认 carer
+  // Frontend mock priority: localStorage.activeRole -> sessionStorage.mockRole -> 'carer'
   if (typeof window === 'undefined') return 'carer';
   const r =
     (localStorage.getItem('activeRole') as Role | null) ||
@@ -34,17 +34,42 @@ function getActiveRole(): Role {
 function dashboardPathByRole(role: Role): string {
   switch (role) {
     case 'carer':
-      return '/carer_dashboard';
+      return '/full_dashboard';
     case 'management':
       return '/menu/management';
     case 'family':
+      // We never return this for family; we resolve family separately by source (partial/full).
       return '/menu/family';
     default:
       return '/carer_dashboard';
   }
 }
 
-// ----- Color palette -----
+// ----- Family return resolver -----
+/**
+ * Decide where a FAMILY user should go back to:
+ * 1) Prefer URL param `from`:
+ *    - 'partial_dashboard' -> /partial_dashboard
+ *    - 'full_dashboard'    -> /full_dashboard?viewer=family
+ * 2) Fallback to localStorage.lastDashboard:
+ *    - 'full'              -> /full_dashboard?viewer=family
+ *    - 'partial' or others -> /partial_dashboard
+ * 3) Final fallback -> /partial_dashboard
+ */
+function resolveFamilyReturnPath(searchParams: URLSearchParams): string {
+  const from = searchParams.get('from');
+  if (from === 'partial_dashboard') return '/partial_dashboard';
+  if (from === 'full_dashboard') return '/full_dashboard?viewer=family';
+
+  if (typeof window !== 'undefined') {
+    const last = localStorage.getItem('lastDashboard'); // 'partial' | 'full'
+    if (last === 'full') return '/full_dashboard?viewer=family';
+    if (last === 'partial') return '/partial_dashboard';
+  }
+  return '/partial_dashboard';
+}
+
+// ----- UI palette -----
 const palette = {
   pageBg: '#ffd9b3',
   header: '#3A0000',
@@ -58,7 +83,7 @@ const palette = {
   white: '#FFFFFF',
 };
 
-// ----- Wrapper with suspense fallback for loading state -----
+// ----- Page (Suspense wrapper) -----
 export default function ClientProfilePage() {
   return (
     <Suspense
@@ -73,13 +98,13 @@ function ClientProfilePageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Query params: ?new=true means creating a new client
+  // Query flags
   const isNew = searchParams.get('new') === 'true';
   const clientId = searchParams.get('id') || undefined;
 
-  // ----- Form state variables -----
+  // ----- Form state -----
   const [name, setName] = useState<string>('');
-  const [dob, setDob] = useState<string>(''); // 你当前用文本输入，保持不改后端逻辑
+  const [dob, setDob] = useState<string>(''); // free text (keeps backend logic untouched)
   const [accessCode, setAccessCode] = useState<string>('');
   const [avatarUrl, setAvatarUrl] = useState<string>('');
   const [notesInput, setNotesInput] = useState<string>('');
@@ -101,12 +126,22 @@ function ClientProfilePageInner() {
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // 统一的“返回到对应面板”函数（carer 优先）
+  // ----- Smart "Back" -----
+  /**
+   * If role=carer -> main carer dashboard.
+   * If role=family -> partial or full dashboard depending on source/localStorage.
+   * Else -> default by role mapping.
+   */
   const goBackToDashboard = () => {
     const role = getActiveRole();
+    if (role === 'family') {
+      router.push(resolveFamilyReturnPath(searchParams));
+      return;
+    }
     router.push(dashboardPathByRole(role));
   };
 
+  // ----- Data fetching -----
   // Fetch all clients (for duplicate check / list sync)
   useEffect(() => {
     async function fetchClients() {
@@ -115,14 +150,13 @@ function ClientProfilePageInner() {
         const data: Client[] = await res.json();
         setClients(data);
       } catch (e: unknown) {
-        // 非阻塞
         console.warn('Failed to fetch clients list:', e);
       }
     }
     fetchClients();
   }, []);
 
-  // Fetch client data if editing existing profile
+  // Fetch client data if editing an existing profile
   useEffect(() => {
     if (!clientId) return;
 
@@ -130,9 +164,7 @@ function ClientProfilePageInner() {
       setLoading(true);
       try {
         const res = await fetch(`/api/clients/${clientId}`);
-        if (!res.ok) {
-          throw new Error('Failed to fetch client');
-        }
+        if (!res.ok) throw new Error('Failed to fetch client');
         const client: Client = await res.json();
 
         setName(client.name);
@@ -151,12 +183,7 @@ function ClientProfilePageInner() {
     fetchClient();
   }, [clientId]);
 
-  // Loading page and error handling
-  if (loading)
-    return <div style={{ padding: 24 }}>Loading client profile...</div>;
-  if (error) return <div style={{ padding: 24, color: 'red' }}>{error}</div>;
-
-  // Save or update client profile
+  // ----- Save -----
   const saveProfile = async (): Promise<boolean> => {
     if (!name.trim() || !dob.trim() || !accessCode.trim()) {
       setFormError(
@@ -165,7 +192,7 @@ function ClientProfilePageInner() {
       return false;
     }
 
-    // Checks for duplicate in local client list
+    // Duplicate check when creating new
     const isDuplicate = clients.some((c) => c.accessCode === accessCode.trim());
     if (isDuplicate && isNew) {
       setFormError('This client already exists in your list.');
@@ -179,7 +206,7 @@ function ClientProfilePageInner() {
       ? [...savedNotes, notesInput.trim()]
       : savedNotes;
 
-    // Check with backend if new
+    // For new clients, confirm with backend if access code already exists
     if (isNew && !acceptedExistingClient) {
       try {
         const res = await fetch(
@@ -200,7 +227,7 @@ function ClientProfilePageInner() {
       }
     }
 
-    // Request payload
+    // Request payload; keep backend contract intact
     const payload: Client = {
       name,
       dob,
@@ -238,7 +265,7 @@ function ClientProfilePageInner() {
     }
   };
 
-  // Save profile and navigate back to dashboard (by role)
+  // Save and go back using the smart return logic
   const handleSaveAndReturn = async () => {
     const success = await saveProfile();
     if (success) {
@@ -246,7 +273,7 @@ function ClientProfilePageInner() {
     }
   };
 
-  // Handles avatar upload
+  // ----- Avatar upload -----
   const openFilePicker = () => fileInputRef.current?.click();
   const handleFileChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
     const file = e.target.files?.[0];
@@ -259,6 +286,11 @@ function ClientProfilePageInner() {
     reader.readAsDataURL(file);
     e.target.value = '';
   };
+
+  // ----- Render -----
+  if (loading)
+    return <div style={{ padding: 24 }}>Loading client profile...</div>;
+  if (error) return <div style={{ padding: 24, color: 'red' }}>{error}</div>;
 
   return (
     <div
@@ -293,7 +325,7 @@ function ClientProfilePageInner() {
         </h2>
       </div>
 
-      {/* Centered white card */}
+      {/* Center card */}
       <div className="flex-1 w-full flex items-center justify-center px-6 py-8">
         <div className="w-full max-w-4xl">
           <div
@@ -346,16 +378,16 @@ function ClientProfilePageInner() {
                 </button>
               </div>
 
-              {/* Editable profile fields */}
+              {/* Editable fields */}
               <div className="flex flex-col gap-3 w-full">
-                {/* Inline form error */}
+                {/* Form error */}
                 {formError && (
                   <div className="mb-4 p-2 rounded-md bg-red-100 border border-red-400 text-red-700">
                     {formError}
                   </div>
                 )}
 
-                {/* Existing client notice */}
+                {/* Existing client notice from /api/clients/check */}
                 {existingClientMessage && (
                   <div className="mb-4 p-3 rounded-md bg-[#fdf4e7] border border-[#DFC9A9]">
                     A client named &quot;<b>{existingClientMessage.name}</b>
@@ -402,7 +434,7 @@ function ClientProfilePageInner() {
                   />
                 </label>
 
-                {/* DOB（保留你当前的自由文本输入） */}
+                {/* DOB (free text) */}
                 <label className="text-lg flex items-center gap-3">
                   <span className="font-semibold">Date of Birth:</span>
                   <input
@@ -443,7 +475,7 @@ function ClientProfilePageInner() {
                   />
                 </label>
 
-                {/* Helper line aligned with input left edge */}
+                {/* Helper line */}
                 <div className="ml-[8.5rem]">
                   <p className="text-sm">
                     Don&apos;t have an access code?{' '}

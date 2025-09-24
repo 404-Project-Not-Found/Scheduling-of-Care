@@ -74,7 +74,7 @@ export default function Home() {
         localStorage.removeItem('rememberMe');
       }
       sessionStorage.setItem('mockRole', 'carer');
-      window.location.href = '/carer_dashboard';
+      window.location.href = '/full_dashboard';
       return;
     }
 

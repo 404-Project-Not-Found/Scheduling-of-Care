@@ -66,7 +66,7 @@ function PartialDashboardInner() {
     const q = new URLSearchParams();
     if (name) q.set('name', name);
     if (dob) q.set('dob', dob);
-    router.push(`/client-profile?${q.toString()}`);
+    router.push(`/client_profile?${q.toString()}`);
   }
 
   return (
@@ -134,9 +134,10 @@ function PartialDashboardInner() {
           className="text-base md:text-lg leading-relaxed"
           style={{ color: palette.header }}
         >
-          Select a person with special needs under manage people with special
-          needs to edit their profile, view their dashboard or manage
-          organisation access.
+          This dashboard currently have partial access until the management
+          complete the registeriation process for your person with special
+          needs. You will received the email once is done and all the task of
+          this person will be shown on this page.
         </p>
       </div>
 

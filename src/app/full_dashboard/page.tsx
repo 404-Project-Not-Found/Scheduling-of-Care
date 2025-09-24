@@ -8,13 +8,13 @@ import TasksPanel from '@/components/tasks/TasksPanel';
 import dynamic from 'next/dynamic';
 import { Task } from './types';
 
-// 动态导入，避免把 page 当组件直接 SSR
+// Dynamically import the MenuDrawer to avoid SSR issues for this page component
 const MenuDrawer = dynamic(
   () => import('@/app/menu/carer/page').then((m) => m.MenuDrawer),
   { ssr: false }
 );
 
-// Wrap the page in Suspense
+// Page wrapper with Suspense
 export default function DashboardPage() {
   return (
     <Suspense
@@ -25,10 +25,31 @@ export default function DashboardPage() {
   );
 }
 
+// Utility: read/write "viewer role" (carer | family | management)
+type Role = 'carer' | 'family' | 'management';
+
+function getInitialRole(searchParams: URLSearchParams): Role {
+  // If caller explicitly passes ?viewer=family, treat this session as "family viewer"
+  const viewer = searchParams.get('viewer');
+  if (viewer === 'family') return 'family';
+
+  // Otherwise fall back to localStorage (if any), then default to 'carer'
+  if (typeof window !== 'undefined') {
+    const stored =
+      (localStorage.getItem('activeRole') as Role | null) ?? undefined;
+    if (stored === 'family' || stored === 'management' || stored === 'carer')
+      return stored;
+  }
+  return 'carer';
+}
+
 function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const addedFile = searchParams.get('addedFile');
+
+  // Viewer role (mock): 'carer' by default; becomes 'family' if query contains viewer=family
+  const [role, setRole] = useState<Role>(() => getInitialRole(searchParams));
 
   const [open, setOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string>('');
@@ -40,20 +61,35 @@ function DashboardContent() {
 
   const [activeClientId, setActiveClientId] = useState<string | null>(null);
 
-  // Close menu on Escape
+  // Persist "viewer" flags when landing with ?viewer=family, so other pages can read it.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const viewer = searchParams.get('viewer');
+    if (viewer === 'family') {
+      localStorage.setItem('activeRole', 'family');
+      localStorage.setItem('viewer', 'family'); // optional hint for other UIs
+      setRole('family');
+    } else {
+      // If nothing specified, at least store current role (default 'carer')
+      localStorage.setItem('activeRole', role);
+    }
+  }, [searchParams, role]);
+
+  // Close menu with Escape
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
     if (open) document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [open]);
 
-  // 读取 activeClientId
+  // Read active client id (who we are working with) from localStorage
   useEffect(() => {
     const cid = localStorage.getItem('activeClientId');
     setActiveClientId(cid);
   }, []);
 
-  // Load tasks from localStorage (or defaults)
+  // Load tasks from localStorage (or seed defaults on first visit)
   useEffect(() => {
     const stored = localStorage.getItem('tasks');
     if (stored) {
@@ -94,12 +130,12 @@ function DashboardContent() {
     }
   }, []);
 
-  // Persist tasks
+  // Persist tasks on change
   useEffect(() => {
     if (tasks.length > 0) localStorage.setItem('tasks', JSON.stringify(tasks));
   }, [tasks]);
 
-  // Add file via ?addedFile query param
+  // Handle file injection via ?addedFile=...
   const hasAddedFile = useRef(false);
   useEffect(() => {
     if (addedFile && selectedTask && !hasAddedFile.current) {
@@ -108,11 +144,12 @@ function DashboardContent() {
     }
   }, [addedFile, selectedTask]);
 
-  const filteredTasks =
-    selectedDate === ''
-      ? tasks
-      : tasks.filter((t) => t.nextDue === selectedDate);
+  // Derived list by date filter
+  const filteredTasks = selectedDate
+    ? tasks.filter((t) => t.nextDue === selectedDate)
+    : tasks;
 
+  // Mutators
   const addComment = (taskId: string, comment: string) => {
     setTasks((prev) =>
       prev.map((t) =>
@@ -154,7 +191,7 @@ function DashboardContent() {
 
   return (
     <div className="min-h-screen relative">
-      {/* Help Button */}
+      {/* Floating help button with hover tooltip */}
       <div className="fixed bottom-8 right-8 z-50">
         <button
           className="w-10 h-10 rounded-full text-white font-bold text-lg relative peer"
@@ -164,7 +201,6 @@ function DashboardContent() {
           ?
         </button>
 
-        {/* Tooltip */}
         <div className="absolute bottom-14 right-0 w-80 p-4 bg-white border border-gray-400 rounded shadow-lg text-black text-sm opacity-0 peer-hover:opacity-100 transition-opacity pointer-events-none">
           <h3 className="font-bold mb-2">Dashboard Help</h3>
           <ul className="list-disc list-inside space-y-1">
@@ -213,14 +249,24 @@ function DashboardContent() {
                 className="object-contain"
               />
             </div>
+
+            {/* Right header cluster: viewer name + avatar + "viewing as" badge */}
             <div className="flex items-center gap-3">
               <span>Florence Edwards</span>
 
-              {/* Avatar → Edit Profile */}
+              {role === 'family' && (
+                <span className="px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+                  Viewing as Family
+                </span>
+              )}
+
+              {/* Avatar → Edit Profile (preserve viewer role) */}
               <div
                 role="button"
                 tabIndex={0}
                 onClick={() => {
+                  // Persist the current role so edit page can route back properly
+                  localStorage.setItem('activeRole', role);
                   if (activeClientId) {
                     router.push(
                       `/client_profile?new=false&id=${activeClientId}`
@@ -231,6 +277,7 @@ function DashboardContent() {
                 }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
+                    localStorage.setItem('activeRole', role);
                     if (activeClientId) {
                       router.push(
                         `/client_profile?new=false&id=${activeClientId}`
@@ -248,6 +295,7 @@ function DashboardContent() {
               </div>
             </div>
           </div>
+
           <div className="p-5 flex-1 relative">
             <CalendarPanel
               tasks={tasks}
@@ -351,7 +399,7 @@ function TaskDetail({
           </span>
         </p>
 
-        {/* Comments Section */}
+        {/* Comments */}
         <div className="mt-4">
           <h3 className="font-bold text-lg mb-2">Comments:</h3>
           {task.comments && task.comments.length > 0 ? (
@@ -365,7 +413,7 @@ function TaskDetail({
           )}
         </div>
 
-        {/* Files Section */}
+        {/* Files */}
         <div className="mt-4">
           <h3 className="font-bold text-lg mb-2">Files:</h3>
           {task.files && task.files.length > 0 ? (
@@ -410,7 +458,7 @@ function TaskDetail({
           </div>
         )}
 
-        {/* Action buttons row */}
+        {/* Action buttons */}
         <div className="flex gap-3 mt-auto flex-wrap">
           <button
             className="px-4 py-2 border rounded bg-white text-black"
@@ -420,8 +468,6 @@ function TaskDetail({
                   t.id === task.id ? { ...t, status: 'Completed' } : t
                 )
               );
-              // 局部状态同步
-              // setSelectedTask({ ...task, status: 'Completed' }); // 可选：若需要立即更新右侧视图
             }}
           >
             Mark as done
