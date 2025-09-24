@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
+import AddAccessCodePanel from '../create-access-code/AddAccessCodePanel';
 
 type Client = {
   name: string;
@@ -15,16 +16,15 @@ type Client = {
 
 const TEMP_AVATAR_KEY = 'clientAvatar:__temp__';
 
-// ---- Color palette ----
 const palette = {
-  pageBg: '#ffd9b3', // page background
-  header: '#3A0000', // dark brown
-  banner: '#F9C9B1', // notice banner
-  panelBg: '#fdf4e7', // panel background
-  notice: '#F9C9B1', // notice bar background
-  accent: '#ff9999', // info dot
-  question: '#ff9900', // help bubble
-  button: '#F4A261', // primary buttons
+  pageBg: '#ffd9b3',
+  header: '#3A0000',
+  banner: '#F9C9B1',
+  panelBg: '#fdf4e7',
+  notice: '#F9C9B1',
+  accent: '#ff9999',
+  question: '#ff9900',
+  button: '#F4A261',
   text: '#2b2b2b',
   white: '#FFFFFF',
 };
@@ -56,6 +56,7 @@ function ClientProfilePageInner() {
     isNew ? '' : initAccessFromQuery || ''
   );
   const [avatarUrl, setAvatarUrl] = useState<string>('');
+  const [showAccessCodePanel, setShowAccessCodePanel] = useState(false);
 
   const prevNameRef = useRef<string>(name);
   const notesKey = `clientNotes:${name}`;
@@ -106,7 +107,6 @@ function ClientProfilePageInner() {
       alert('Please fill in Name, Date of Birth, and Access Code.');
       return false;
     }
-
     let clients: Client[] = [];
     const raw = localStorage.getItem('clients');
     if (raw) {
@@ -345,7 +345,7 @@ function ClientProfilePageInner() {
                     Don&apos;t have an access code?{' '}
                     <button
                       type="button"
-                      onClick={() => router.push('/create-access-code')}
+                      onClick={() => setShowAccessCodePanel(true)} // open drawer instead of navigation
                       className="underline underline-offset-2"
                       style={{ color: palette.header }}
                     >
@@ -418,6 +418,24 @@ function ClientProfilePageInner() {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* ===== Backdrop + Right Drawer ===== */}
+      {/* Backdrop */}
+      <div
+        className={`fixed inset-0 z-40 bg-black/30 transition-opacity duration-300 ${showAccessCodePanel ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
+        onClick={() => setShowAccessCodePanel(false)}
+        aria-hidden="true"
+      />
+      {/* Drawer Panel */}
+      <div
+        className={`fixed right-0 top-0 z-50 h-full w-full sm:w-1/2 bg-white shadow-xl transform transition-transform duration-300
+          ${showAccessCodePanel ? 'translate-x-0' : 'translate-x-full'}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Create access code panel"
+      >
+        <AddAccessCodePanel onClose={() => setShowAccessCodePanel(false)} />
       </div>
     </div>
   );
