@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import Badge from '@/components/Badge';
+import Badge from '@/components/ui/Badge';
 
 type Row = { item: string; category: string; allocated: number; spent: number };
 const allRows: Row[] = [
