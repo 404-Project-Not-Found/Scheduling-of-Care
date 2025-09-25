@@ -24,7 +24,10 @@ type sideMenuProps = {
 // Family menu options
 const defaultMenuItems: Item[] = [
   { href: '/update_details', label: 'Update your details' },
-  { href: '/family_clients_list', label: 'Manage people with special needs' },
+  {
+    href: '/family_dashboard/family_clients_list',
+    label: 'Manage people with special needs',
+  },
   { href: '/request_of_change_page', label: 'Request to change a task' },
 ];
 
