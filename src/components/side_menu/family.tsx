@@ -21,6 +21,7 @@ type sideMenuProps = {
   items?: Item[];
 };
 
+// Family menu options
 const defaultMenuItems: Item[] = [
   { href: '/update_details', label: 'Update your details' },
   { href: '/family_clients_list', label: 'Manage people with special needs' },
@@ -85,14 +86,7 @@ export default function FamilySideMenu({
         <nav className="flex h-[calc(100%-72px)] flex-col justify-between">
           <nav className="p-2 space-y-1">
             {items.map((it) => (
-              <Link
-                key={it.href}
-                href={it.href}
-                onClick={onBackdropClick}
-                className="block px-4 py-3 rounded-lg hover:bg-black/10"
-              >
-                {it.label}
-              </Link>
+              <MenuItem key={it.href} href={it.href} label={it.label} />
             ))}
           </nav>
           <div className="px-4 pb-6 flex justify-end pr-6">
