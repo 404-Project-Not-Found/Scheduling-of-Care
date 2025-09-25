@@ -21,7 +21,10 @@ const getStatusColor = (status: string) => {
   }
 };
 
-export default function TasksPanel({ tasks, onTaskClick }: TasksPanelProps) {
+export default function TasksPanel({
+  tasks = [],
+  onTaskClick,
+}: TasksPanelProps) {
   const sortedTasks = [...tasks].sort(
     (a, b) => new Date(a.nextDue).getTime() - new Date(b.nextDue).getTime()
   );

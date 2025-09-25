@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
 
 type Client = {
   _id: string;
@@ -21,7 +21,7 @@ function getErrorMessage(err: unknown) {
 }
 
 export default function ClientListPage() {
-  const [q, setQ] = useState("");
+  const [q, setQ] = useState('');
   const [loading, setLoading] = useState(true);
   const [clients, setClients] = useState<Client[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +31,7 @@ export default function ClientListPage() {
 
     (async () => {
       try {
-        const res = await fetch("/api/clients", { cache: "no-store" });
+        const res = await fetch('/api/clients', { cache: 'no-store' });
         if (!res.ok) throw new Error(`Failed to load clients (${res.status})`);
         const data = (await res.json()) as Client[];
         if (alive) setClients(data);
@@ -132,7 +132,7 @@ export default function ClientListPage() {
             Register new client
           </Link>
           <Link
-            href="/dashboard"
+            href="/empty_dashboard"
             className="px-4 py-2 bg-gray-300 text-black rounded"
           >
             Back to dashboard

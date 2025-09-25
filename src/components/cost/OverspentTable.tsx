@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import Badge from "@/components/ui/Badge";
+import Badge from '@/components/ui/Badge';
 
 export type CostRow = {
   id: string;
@@ -8,14 +8,13 @@ export type CostRow = {
   category: string;
   allocated: number;
   spent: number;
-  status: "Exceeded" | "Nearly Exceeded" | "Within Limit";
+  status: 'Exceeded' | 'Nearly Exceeded' | 'Within Limit';
 };
 
 type Props = {
   items: CostRow[];
   year: string;
 };
-
 
 export default function OverspentTable({ items, year }: Props) {
   return (
@@ -26,7 +25,6 @@ export default function OverspentTable({ items, year }: Props) {
         <div className="text-sm">Year: {year}</div>
       </div>
 
-     
       <div className="overflow-x-auto">
         <table className="min-w-[900px] w-full text-left text-sm">
           <thead className="text-gray-600">
@@ -44,8 +42,11 @@ export default function OverspentTable({ items, year }: Props) {
             {items.map((r) => {
               const rem = r.allocated - r.spent;
               const tone =
-                r.status === "Exceeded" ? "red" :
-                r.status === "Nearly Exceeded" ? "yellow" : "green";
+                r.status === 'Exceeded'
+                  ? 'red'
+                  : r.status === 'Nearly Exceeded'
+                    ? 'yellow'
+                    : 'green';
 
               return (
                 <tr key={r.id}>
@@ -53,7 +54,7 @@ export default function OverspentTable({ items, year }: Props) {
                   <td className="px-4 py-3">{r.category}</td>
                   <td className="px-4 py-3">${r.allocated}</td>
                   <td className="px-4 py-3">${r.spent}</td>
-                  <td className={`px-4 py-3 ${rem < 0 ? "text-red-600" : ""}`}>
+                  <td className={`px-4 py-3 ${rem < 0 ? 'text-red-600' : ''}`}>
                     {rem < 0 ? `-$${Math.abs(rem)}` : `$${rem}`}
                   </td>
                   <td className="px-4 py-3">

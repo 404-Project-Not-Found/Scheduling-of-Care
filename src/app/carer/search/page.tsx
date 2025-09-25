@@ -1,69 +1,93 @@
 // src/app/carer/search/page.tsx
-"use client";
+'use client';
 
-import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import Image from 'next/image';
+import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 // Type definition for a Carer record
 type Carer = {
   id: string;
   name: string;
-  deleted?: boolean;   // soft-delete flag
+  deleted?: boolean; // soft-delete flag
   hasAccess?: boolean; // whether this carer has client access
 };
 
 // ---- seed data in localStorage ----
 function ensureSeed() {
-  if (typeof window === "undefined") return;
+  if (typeof window === 'undefined') return;
 
-  const raw = localStorage.getItem("carers");
+  const raw = localStorage.getItem('carers');
 
   // If no carers stored yet, seed with initial list
   if (!raw) {
     const seed: Carer[] = [
-      { id: "jasmine-cook", name: "Jasmine Cook", deleted: false, hasAccess: false },
-      { id: "john-smith", name: "John Smith", deleted: false, hasAccess: true },
+      {
+        id: 'jasmine-cook',
+        name: 'Jasmine Cook',
+        deleted: false,
+        hasAccess: false,
+      },
+      { id: 'john-smith', name: 'John Smith', deleted: false, hasAccess: true },
     ];
-    localStorage.setItem("carers", JSON.stringify(seed));
+    localStorage.setItem('carers', JSON.stringify(seed));
     return;
   }
 
   try {
-    // Parse existing carers 
+    // Parse existing carers
     const list: Carer[] = JSON.parse(raw) as Carer[];
     const byId = new Map<string, Carer>(list.map((c) => [c.id, c]));
 
     const upsert = (c: Carer) => {
       if (!byId.has(c.id)) list.push(c);
     };
-    upsert({ id: "jasmine-cook", name: "Jasmine Cook", deleted: false, hasAccess: false });
-    upsert({ id: "john-smith", name: "John Smith", deleted: false, hasAccess: true });
-
+    upsert({
+      id: 'jasmine-cook',
+      name: 'Jasmine Cook',
+      deleted: false,
+      hasAccess: false,
+    });
+    upsert({
+      id: 'john-smith',
+      name: 'John Smith',
+      deleted: false,
+      hasAccess: true,
+    });
 
     for (const c of list) {
-      if (typeof c.deleted !== "boolean") c.deleted = false;
-      if (typeof c.hasAccess !== "boolean") c.hasAccess = false;
+      if (typeof c.deleted !== 'boolean') c.deleted = false;
+      if (typeof c.hasAccess !== 'boolean') c.hasAccess = false;
     }
 
-    localStorage.setItem("carers", JSON.stringify(list));
+    localStorage.setItem('carers', JSON.stringify(list));
   } catch {
     // Fallback if parsing fails → reset with default seed
     localStorage.setItem(
-      "carers",
+      'carers',
       JSON.stringify([
-        { id: "jasmine-cook", name: "Jasmine Cook", deleted: false, hasAccess: false },
-        { id: "john-smith", name: "John Smith", deleted: false, hasAccess: true },
-      ]),
+        {
+          id: 'jasmine-cook',
+          name: 'Jasmine Cook',
+          deleted: false,
+          hasAccess: false,
+        },
+        {
+          id: 'john-smith',
+          name: 'John Smith',
+          deleted: false,
+          hasAccess: true,
+        },
+      ])
     );
   }
 }
 
 // Load all carers from localStorage
 function loadCarers(): Carer[] {
-  if (typeof window === "undefined") return [];
+  if (typeof window === 'undefined') return [];
   try {
-    return JSON.parse(localStorage.getItem("carers") || "[]") as Carer[];
+    return JSON.parse(localStorage.getItem('carers') || '[]') as Carer[];
   } catch {
     return [];
   }
@@ -73,7 +97,7 @@ export default function SearchCarerPage() {
   const router = useRouter();
 
   // --- Local component state ---
-  const [query, setQuery] = useState("");          // search input
+  const [query, setQuery] = useState(''); // search input
   const [results, setResults] = useState<Carer[]>([]); // matched carers
   const [hasSearched, setHasSearched] = useState(false);
 
@@ -91,7 +115,9 @@ export default function SearchCarerPage() {
     const hits =
       q.length === 0
         ? []
-        : allCarers.filter((c) => !c.deleted && c.name.toLowerCase().includes(q));
+        : allCarers.filter(
+            (c) => !c.deleted && c.name.toLowerCase().includes(q)
+          );
     setResults(hits);
     setHasSearched(true);
   };
@@ -99,7 +125,7 @@ export default function SearchCarerPage() {
   // Handle input change and reset results if input is cleared
   const handleChange = (v: string) => {
     setQuery(v);
-    if (v.trim() === "") {
+    if (v.trim() === '') {
       setResults([]);
       setHasSearched(false);
     }
@@ -119,7 +145,9 @@ export default function SearchCarerPage() {
 
       {/* Main search card */}
       <div className="w-full max-w-4xl rounded-[22px] border border-[#6b3f2a] bg-[#F7ECD9] p-10 shadow">
-        <h1 className="text-3xl font-extrabold text-[#1c130f] mb-8">Search carers</h1>
+        <h1 className="text-3xl font-extrabold text-[#1c130f] mb-8">
+          Search carers
+        </h1>
 
         {/* Search input + button row */}
         <div className="flex items-start gap-4">
@@ -144,7 +172,7 @@ export default function SearchCarerPage() {
                   value={query}
                   onChange={(e) => handleChange(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") runSearch(); // Press Enter to search
+                    if (e.key === 'Enter') runSearch(); // Press Enter to search
                   }}
                   className="w-full text-xl outline-none placeholder:text-[#333]/70 text-black"
                 />
@@ -165,7 +193,9 @@ export default function SearchCarerPage() {
                           role="option"
                           aria-selected="false"
                           onClick={() =>
-                            router.push(`/carer/manage?carer=${encodeURIComponent(c.id)}`)
+                            router.push(
+                              `/carer/manage?carer=${encodeURIComponent(c.id)}`
+                            )
                           }
                           className="w-full text-left px-5 py-3 text-lg text-black hover:bg-gray-300 focus:bg-gray-300 focus:outline-none transition"
                         >
@@ -175,8 +205,10 @@ export default function SearchCarerPage() {
                     ))}
                   </ul>
                 ) : (
-                  query.trim() !== "" && (
-                    <div className="py-3 px-5 text-gray-500">No results found.</div>
+                  query.trim() !== '' && (
+                    <div className="py-3 px-5 text-gray-500">
+                      No results found.
+                    </div>
                   )
                 ))}
             </div>

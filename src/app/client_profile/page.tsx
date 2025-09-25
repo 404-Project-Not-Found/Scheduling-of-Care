@@ -46,12 +46,11 @@ function dashboardPathByRole(role: Role): string {
     case 'carer':
       return '/full_dashboard';
     case 'management':
-      return '/menu/management';
+      return '/empty_dashboard';
     case 'family':
-      // resolved separately for family
-      return '/menu/family';
+      return '/empty_dashboard';
     default:
-      return '/carer_dashboard';
+      return '/full_dashboard';
   }
 }
 

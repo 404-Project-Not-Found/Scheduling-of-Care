@@ -80,7 +80,7 @@ export function MenuDrawer({
           <ul className="px-3 py-4 space-y-2">
             {/* Existing items */}
             <MenuItem href="/update_details" label="Update your details" />
-            <MenuItem href="/total-cost" label="Budget Report" />
+            <MenuItem href="/budget_report" label="Budget Report" />
             <MenuItem href="/transaction_history" label="View Transactions" />
 
             {/* Extra entries only for FAMILY viewer on full dashboard */}

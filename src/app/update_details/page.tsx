@@ -32,12 +32,7 @@ function BackHrefResolver({
         : null;
 
     const role: Role | null = fromQuery ?? stored;
-    const href =
-      role === 'carer'
-        ? '/carer_dashboard'
-        : role === 'management'
-          ? '/menu/management'
-          : '/menu/family';
+    const href = role === 'carer' ? '/full_dashboard' : '/empty_dashboard';
 
     setBackHref(href);
   }, [search, setBackHref]);

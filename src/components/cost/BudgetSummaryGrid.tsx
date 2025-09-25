@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import Budget from "./BudgetCard"
+import Budget from './BudgetCard';
 type Props = {
   summary: {
     totalAnnualBudget: number | string;
@@ -10,7 +10,7 @@ type Props = {
 };
 
 function format(v: number | string) {
-  return typeof v === "number" ? `$${v.toLocaleString()}` : v;
+  return typeof v === 'number' ? `$${v.toLocaleString()}` : v;
 }
 
 export default function BudgetSummaryGrid({ summary }: Props) {
@@ -19,7 +19,11 @@ export default function BudgetSummaryGrid({ summary }: Props) {
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 text-black">
       <Budget title="Total Annual Budget" value={format(totalAnnualBudget)} />
       <Budget title="Spent to Date" value={format(spentToDate)} />
-      <Budget title="Remaining Balance" value={format(remainingBalance)} positive />
+      <Budget
+        title="Remaining Balance"
+        value={format(remainingBalance)}
+        positive
+      />
     </div>
   );
 }

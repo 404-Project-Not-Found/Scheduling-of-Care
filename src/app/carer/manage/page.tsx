@@ -1,6 +1,5 @@
-import { Suspense } from "react";
-import AssignCarerPage from "./ManageCarer";
-
+import { Suspense } from 'react';
+import AssignCarerPage from './ManageCarer';
 
 export default function Page() {
   return (

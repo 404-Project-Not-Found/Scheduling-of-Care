@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
-import React, { useEffect, useMemo, useState } from "react";
-import Image from "next/image";
-import { useRouter, useSearchParams } from "next/navigation";
+import React, { useEffect, useMemo, useState } from 'react';
+import Image from 'next/image';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 type Carer = { id: string; name: string };
 type Client = { id: string; name: string };
 
 // ---------- localStorage helpers ----------
 function loadJSON<T>(key: string, fallback: T): T {
-  if (typeof window === "undefined") return fallback;
+  if (typeof window === 'undefined') return fallback;
   try {
     const raw = localStorage.getItem(key);
     return raw ? (JSON.parse(raw) as T) : fallback;
@@ -20,37 +20,37 @@ function loadJSON<T>(key: string, fallback: T): T {
   }
 }
 function saveJSON<T>(key: string, value: T) {
-  if (typeof window === "undefined") return;
+  if (typeof window === 'undefined') return;
   localStorage.setItem(key, JSON.stringify(value));
 }
 
 function loadCarers(): Carer[] {
-  return loadJSON<Carer[]>("carers", []);
+  return loadJSON<Carer[]>('carers', []);
 }
 function loadCarerAccess(): Record<string, string[]> {
-  return loadJSON<Record<string, string[]>>("carerAccess", {});
+  return loadJSON<Record<string, string[]>>('carerAccess', {});
 }
 
 // ---------- mock database ----------
 const hardcodedClients: Client[] = [
-  { id: "c1", name: "Jane Smith" },
-  { id: "c2", name: "Harry Dong" },
-  { id: "c3", name: "Jose Lin" },
-  { id: "c4", name: "Kevin Wu" },
-  { id: "c5", name: "Mickey Mouse" },
+  { id: 'c1', name: 'Jane Smith' },
+  { id: 'c2', name: 'Harry Dong' },
+  { id: 'c3', name: 'Jose Lin' },
+  { id: 'c4', name: 'Kevin Wu' },
+  { id: 'c5', name: 'Mickey Mouse' },
 ];
 
 export default function AssignCarerPage() {
   const router = useRouter();
   const params = useSearchParams();
-  const carerId = params.get("carer") ?? "";
+  const carerId = params.get('carer') ?? '';
 
   const [mounted, setMounted] = useState(false);
   const [carers, setCarers] = useState<Carer[]>([]);
   const [accessMap, setAccessMap] = useState<Record<string, string[]>>({});
 
   // search & select (multiple selection)
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState('');
   const [hasSearched, setHasSearched] = useState(false); // whether to show dropdown
   const [selectedClients, setSelectedClients] = useState<Client[]>([]);
 
@@ -63,7 +63,7 @@ export default function AssignCarerPage() {
   const assignedClientIds = accessMap[carerId] ?? [];
 
   const carerName = useMemo(
-    () => carers.find((c) => c.id === carerId)?.name ?? "Selected carer",
+    () => carers.find((c) => c.id === carerId)?.name ?? 'Selected carer',
     [carers, carerId]
   );
 
@@ -102,7 +102,7 @@ export default function AssignCarerPage() {
     setSelectedClients((prev) =>
       prev.some((p) => p.id === client.id) ? prev : [...prev, client]
     );
-    setQuery("");
+    setQuery('');
     setHasSearched(false);
   };
 
@@ -120,10 +120,10 @@ export default function AssignCarerPage() {
     if (newIds.length > 0) {
       next[carerId] = [...current, ...newIds];
       setAccessMap(next);
-      saveJSON("carerAccess", next);
+      saveJSON('carerAccess', next);
     }
     setSelectedClients([]);
-    setQuery("");
+    setQuery('');
     setHasSearched(false);
   };
 
@@ -131,7 +131,7 @@ export default function AssignCarerPage() {
     const next = { ...accessMap };
     next[carerId] = (next[carerId] ?? []).filter((id) => id !== clientId);
     setAccessMap(next);
-    saveJSON("carerAccess", next);
+    saveJSON('carerAccess', next);
   };
 
   if (!mounted) {
@@ -216,7 +216,7 @@ export default function AssignCarerPage() {
                     type="text"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && triggerSearch()}
+                    onKeyDown={(e) => e.key === 'Enter' && triggerSearch()}
                     placeholder="Search clients..."
                     className="w-full px-3 py-2 text-lg outline-none"
                     aria-label="Search clients"
@@ -300,13 +300,13 @@ export default function AssignCarerPage() {
           {/* footer buttons */}
           <div className="flex items-center justify-end gap-3">
             <button
-              onClick={() => router.push("/carer/search")}
+              onClick={() => router.push('/carer/search')}
               className="text-xl font-medium hover:opacity-80"
             >
               Cancel
             </button>
             <button
-              onClick={() => router.push("/carer/search")}
+              onClick={() => router.push('/carer/search')}
               className="rounded-full bg-[#F39C6B] hover:bg-[#ef8a50] text-xl font-extrabold px-8 py-2 shadow text-[#1c130f]"
             >
               Save

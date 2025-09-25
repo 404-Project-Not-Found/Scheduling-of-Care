@@ -62,7 +62,7 @@ export default function FamilyPOAListPage() {
     })();
   }, []);
 
-  const goBack = () => router.replace('/menu/family');
+  const goBack = () => router.replace('/empty_dashboard');
 
   // Open full (carer) dashboard as family, for the selected client
   function openFullDashboardAsFamily(client: Client) {

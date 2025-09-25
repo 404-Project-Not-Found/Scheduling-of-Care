@@ -3,7 +3,7 @@
 import React, { Suspense, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Badge from '@/components/Badge';
+import Badge from '@/components/Budgets';
 
 type Row = { item: string; category: string; allocated: number; spent: number };
 const rows: Row[] = [
@@ -102,9 +102,9 @@ function TotalCostInner() {
     if (role === 'family') {
       router.push(resolveFamilyBackPath(searchParams));
     } else if (role === 'management') {
-      router.push('/menu/management');
+      router.push('/full_dashboard');
     } else {
-      router.push('/carer_dashboard');
+      router.push('/full_dashboard');
     }
   };
 

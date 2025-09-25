@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 type Client = {
   id: string;
@@ -10,15 +10,15 @@ type Client = {
 };
 
 export default function RegisterClientPage() {
-  const [fullName, setFullName] = useState("");
-  const [accessCode, setAccessCode] = useState("");
+  const [fullName, setFullName] = useState('');
+  const [accessCode, setAccessCode] = useState('');
   const router = useRouter();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     const stored: Client[] = JSON.parse(
-      localStorage.getItem("clients") || "[]"
+      localStorage.getItem('clients') || '[]'
     );
 
     const newClient: Client = {
@@ -27,12 +27,12 @@ export default function RegisterClientPage() {
       accessCode,
     };
 
-    localStorage.setItem("clients", JSON.stringify([...stored, newClient]));
+    localStorage.setItem('clients', JSON.stringify([...stored, newClient]));
 
-    setFullName("");
-    setAccessCode("");
+    setFullName('');
+    setAccessCode('');
 
-    router.push("/dashboard");
+    router.push('/empty_dashboard');
   };
 
   return (
@@ -69,7 +69,7 @@ export default function RegisterClientPage() {
           <div className="flex justify-end gap-3 pt-2">
             <button
               type="button"
-              onClick={() => router.push("/dashboard")}
+              onClick={() => router.push('/empty_dashboard')}
               className="px-4 py-2 rounded-md border hover:bg-gray-100"
             >
               Cancel

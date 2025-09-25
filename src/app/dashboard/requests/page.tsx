@@ -1,36 +1,36 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useMemo, useState } from "react";
+import Link from 'next/link';
+import { useMemo, useState } from 'react';
 import RequestsTable, {
   type RequestRow,
-} from "@/components/requests/RequestsTable";
-import RequestsHeader from "@/components/requests/RequestHeader";
-import AlertStrip from "@/components/requests/AlertStrip";
+} from '@/components/requests/RequestsTable';
+import RequestsHeader from '@/components/requests/RequestHeader';
+import AlertStrip from '@/components/requests/AlertStrip';
 
 const REQUESTS: RequestRow[] = [
   {
-    id: "1",
-    task: "Replace Toothbrush Head",
-    change: "Change frequency to every 2 months",
-    requestedBy: "John (Family)",
-    dateRequested: "28 June 2025",
-    status: "Pending",
-    resolutionDate: "—",
+    id: '1',
+    task: 'Replace Toothbrush Head',
+    change: 'Change frequency to every 2 months',
+    requestedBy: 'John (Family)',
+    dateRequested: '28 June 2025',
+    status: 'Pending',
+    resolutionDate: '—',
   },
   {
-    id: "2",
-    task: "Dental Appointments",
-    change: "Add an oral cancer screening appointment on the 6 June 2025",
-    requestedBy: "Mary (POA)",
-    dateRequested: "19th May 2025",
-    status: "Approved",
-    resolutionDate: "25 May 2025",
+    id: '2',
+    task: 'Dental Appointments',
+    change: 'Add an oral cancer screening appointment on the 6 June 2025',
+    requestedBy: 'Mary (POA)',
+    dateRequested: '19th May 2025',
+    status: 'Approved',
+    resolutionDate: '25 May 2025',
   },
 ];
 
 export default function RequestsPage() {
-  const [q, setQ] = useState("");
+  const [q, setQ] = useState('');
 
   const filtered = useMemo(() => {
     const t = q.trim().toLowerCase();
@@ -40,7 +40,7 @@ export default function RequestsPage() {
     );
   }, [q]);
 
-  const alertMsg = "You requested a change on the 28 June 2025";
+  const alertMsg = 'You requested a change on the 28 June 2025';
 
   return (
     <main>

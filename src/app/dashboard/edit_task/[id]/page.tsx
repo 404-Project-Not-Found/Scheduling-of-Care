@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 
-type Unit = "day" | "week" | "month" | "year";
+type Unit = 'day' | 'week' | 'month' | 'year';
 
 type CareItem = {
   id: string;
@@ -20,13 +20,13 @@ export default function EditTaskDetailPage() {
   const router = useRouter();
 
   const [item, setItem] = useState<CareItem | null>(null);
-  const [status, setStatus] = useState<"Pending" | "Completed">("Pending");
-  const isStatic = useMemo(() => String(id).startsWith("static-"), [id]);
+  const [status, setStatus] = useState<'Pending' | 'Completed'>('Pending');
+  const isStatic = useMemo(() => String(id).startsWith('static-'), [id]);
 
   useEffect(() => {
     if (isStatic) return;
     const stored: CareItem[] = JSON.parse(
-      localStorage.getItem("careItems") || "[]"
+      localStorage.getItem('careItems') || '[]'
     );
     const found = stored.find((x) => x.id === id) || null;
     setItem(found);
@@ -45,14 +45,14 @@ export default function EditTaskDetailPage() {
 
   const onSave = () => {
     const list: CareItem[] = JSON.parse(
-      localStorage.getItem("careItems") || "[]"
+      localStorage.getItem('careItems') || '[]'
     );
     const idx = list.findIndex((x) => x.id === item.id);
     if (idx >= 0) {
       list[idx] = item;
-      localStorage.setItem("careItems", JSON.stringify(list));
+      localStorage.setItem('careItems', JSON.stringify(list));
     }
-    router.push("/dashboard");
+    router.push('/dashboard');
   };
 
   return (
@@ -78,16 +78,16 @@ export default function EditTaskDetailPage() {
                 min={1}
                 value={item.frequencyValue ?? 1}
                 onChange={(e) =>
-                  setField("frequencyValue", Number(e.target.value))
+                  setField('frequencyValue', Number(e.target.value))
                 }
                 className="w-24 px-3 py-2 border rounded-md"
               />
               <select
-                value={item.frequencyUnit ?? "month"}
+                value={item.frequencyUnit ?? 'month'}
                 onChange={(e) =>
                   setField(
-                    "frequencyUnit",
-                    e.target.value as CareItem["frequencyUnit"]
+                    'frequencyUnit',
+                    e.target.value as CareItem['frequencyUnit']
                   )
                 }
                 className="px-3 py-2 border rounded-md"
@@ -105,8 +105,8 @@ export default function EditTaskDetailPage() {
             <label className="block mb-1 font-medium">Last done:</label>
             <input
               type="date"
-              value={item.startDate ? item.startDate.slice(0, 10) : ""}
-              onChange={(e) => setField("startDate", e.target.value)}
+              value={item.startDate ? item.startDate.slice(0, 10) : ''}
+              onChange={(e) => setField('startDate', e.target.value)}
               className="w-full px-3 py-2 border rounded-md"
             />
           </div>
@@ -129,8 +129,8 @@ export default function EditTaskDetailPage() {
             <label className="block mb-1 font-medium">Category:</label>
             <input
               type="text"
-              value={item.category ?? ""}
-              onChange={(e) => setField("category", e.target.value)}
+              value={item.category ?? ''}
+              onChange={(e) => setField('category', e.target.value)}
               className="w-full px-3 py-2 border rounded-md"
             />
           </div>
@@ -146,7 +146,7 @@ export default function EditTaskDetailPage() {
           <div className="flex justify-end gap-3 pt-2">
             <button
               className="px-4 py-2 rounded-md border hover:bg-gray-100"
-              onClick={() => router.push("/dashboard/edit-task")}
+              onClick={() => router.push('/dashboard/edit-task')}
             >
               Cancel
             </button>

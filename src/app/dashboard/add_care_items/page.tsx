@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
-type Unit = "day" | "week" | "month" | "year";
+type Unit = 'day' | 'week' | 'month' | 'year';
 
 export default function AddCareItemPage() {
-  const [name, setName] = useState("");
+  const [name, setName] = useState('');
   const [frequencyValue, setFrequencyValue] = useState<number>(1);
-  const [frequencyUnit, setFrequencyUnit] = useState<Unit>("month");
-  const [startDate, setStartDate] = useState("");
-  const [category, setCategory] = useState("");
+  const [frequencyUnit, setFrequencyUnit] = useState<Unit>('month');
+  const [startDate, setStartDate] = useState('');
+  const [category, setCategory] = useState('');
   const [repeatYearly, setRepeatYearly] = useState(false);
 
   const router = useRouter();
@@ -18,7 +18,7 @@ export default function AddCareItemPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const existing = JSON.parse(localStorage.getItem("careItems") || "[]");
+    const existing = JSON.parse(localStorage.getItem('careItems') || '[]');
     const newItem = {
       id: Date.now().toString(),
       name,
@@ -28,10 +28,10 @@ export default function AddCareItemPage() {
       category,
       repeatYearly,
     };
-    localStorage.setItem("careItems", JSON.stringify([...existing, newItem]));
+    localStorage.setItem('careItems', JSON.stringify([...existing, newItem]));
 
     // Redirect back to dashboard
-    router.push("/dashboard");
+    router.push('/empty_dashboard');
   };
 
   return (
@@ -107,14 +107,14 @@ export default function AddCareItemPage() {
             <div className="flex gap-3">
               <button
                 type="button"
-                className={`px-4 py-2 rounded-md border ${repeatYearly ? "bg-[#3d0000] text-white" : "bg-gray-100"}`}
+                className={`px-4 py-2 rounded-md border ${repeatYearly ? 'bg-[#3d0000] text-white' : 'bg-gray-100'}`}
                 onClick={() => setRepeatYearly(true)}
               >
                 Yes
               </button>
               <button
                 type="button"
-                className={`px-4 py-2 rounded-md border ${!repeatYearly ? "bg-[#3d0000] text-white" : "bg-gray-100"}`}
+                className={`px-4 py-2 rounded-md border ${!repeatYearly ? 'bg-[#3d0000] text-white' : 'bg-gray-100'}`}
                 onClick={() => setRepeatYearly(false)}
               >
                 No
@@ -126,7 +126,7 @@ export default function AddCareItemPage() {
             <button
               type="button"
               className="px-4 py-2 rounded-md border border-gray-300 hover:bg-gray-100"
-              onClick={() => router.push("/dashboard")}
+              onClick={() => router.push('/empty_dashboard')}
             >
               Cancel
             </button>

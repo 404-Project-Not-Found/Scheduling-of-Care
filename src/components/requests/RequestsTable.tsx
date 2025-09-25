@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import Badge from "@/components/ui/Badge";
+import Badge from '@/components/ui/Badge';
 
 export type RequestRow = {
   id: string;
   task: string;
   change: string;
   requestedBy: string;
-  dateRequested: string;   // keep strings for now (frontend only)
-  status: "Pending" | "Approved" | "Rejected";
-  resolutionDate?: string | "—";
+  dateRequested: string; // keep strings for now (frontend only)
+  status: 'Pending' | 'Approved' | 'Rejected';
+  resolutionDate?: string | '—';
 };
 
 type Props = {
@@ -37,21 +37,36 @@ export default function RequestsTable({ data }: Props) {
           </thead>
 
           <tbody className="divide-y">
-            {data.map(r => (
+            {data.map((r) => (
               <tr key={r.id} className="align-top text-black">
                 <td className="whitespace-nowrap px-4 py-3">{r.task}</td>
                 <td className="px-4 py-3">{r.change}</td>
                 <td className="whitespace-nowrap px-4 py-3">{r.requestedBy}</td>
-                <td className="whitespace-nowrap px-4 py-3" dangerouslySetInnerHTML={{__html: r.dateRequested}} />
+                <td
+                  className="whitespace-nowrap px-4 py-3"
+                  dangerouslySetInnerHTML={{ __html: r.dateRequested }}
+                />
                 <td className="px-4 py-3">
-                  <Badge tone={r.status === "Approved" ? "green" : r.status === "Pending" ? "yellow" : "red"}>
+                  <Badge
+                    tone={
+                      r.status === 'Approved'
+                        ? 'green'
+                        : r.status === 'Pending'
+                          ? 'yellow'
+                          : 'red'
+                    }
+                  >
                     {r.status}
                   </Badge>
                 </td>
                 <td className="whitespace-nowrap px-4 py-3">
-                  {typeof r.resolutionDate === "string"
-                    ? <span dangerouslySetInnerHTML={{__html: r.resolutionDate}} />
-                    : "—"}
+                  {typeof r.resolutionDate === 'string' ? (
+                    <span
+                      dangerouslySetInnerHTML={{ __html: r.resolutionDate }}
+                    />
+                  ) : (
+                    '—'
+                  )}
                 </td>
               </tr>
             ))}

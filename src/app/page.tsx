@@ -62,7 +62,7 @@ export default function Home() {
         localStorage.removeItem('rememberMe');
       }
       sessionStorage.setItem('mockRole', 'family');
-      window.location.href = '/menu/family';
+      window.location.href = '/empty_dashboard';
       return;
     }
 
@@ -75,6 +75,18 @@ export default function Home() {
       }
       sessionStorage.setItem('mockRole', 'carer');
       window.location.href = '/full_dashboard';
+      return;
+    }
+
+    // Case 3: Management mock account
+    if (emailTrimmed === 'management@email.com' && password === 'management') {
+      if (staySigned) {
+        localStorage.setItem('rememberMe', '1');
+      } else {
+        localStorage.removeItem('rememberMe');
+      }
+      sessionStorage.setItem('mockRole', 'management');
+      window.location.href = '/empty_dashboard';
       return;
     }
 
@@ -108,13 +120,13 @@ export default function Home() {
       // Redirect user based on role
       switch (session.user.role) {
         case 'carer':
-          window.location.href = '/menu/carer';
+          window.location.href = '/full_dashboard';
           break;
         case 'management':
-          window.location.href = '/menu/management';
+          window.location.href = '/empty_dashboard';
           break;
         case 'family':
-          window.location.href = '/menu/family';
+          window.location.href = '/empty_dashboard';
           break;
         default:
           setError('Unknown role');

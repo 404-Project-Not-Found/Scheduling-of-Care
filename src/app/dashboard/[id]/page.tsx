@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { use } from "react";
-import { useEffect, useState } from "react";
-import Image from "next/image";
-import CalendarPanel from "@/components/calendar/CalendarPanel";
-import TasksPanel from "@/components/tasks/TasksPanel";
-import SideMenu from "@/components/side-menu/SideMenu";
+import { use } from 'react';
+import { useEffect, useState } from 'react';
+import Image from 'next/image';
+import CalendarPanel from '@/components/calendar/CalendarPanel';
+import TasksPanel from '@/components/tasks/TasksPanel';
+import SideMenu from '@/components/side_menu/management';
 
 type PageProps = { params: Promise<{ id: string }> };
 
@@ -29,7 +29,7 @@ export default function ClientDashboardPage({ params }: PageProps) {
     (async () => {
       try {
         const res = await fetch(`/api/clients/${id}`, {
-          cache: "no-store",
+          cache: 'no-store',
         });
         if (!res.ok) throw new Error(`Failed to load client (${res.status})`);
         const data = (await res.json()) as Client;
@@ -76,7 +76,7 @@ export default function ClientDashboardPage({ params }: PageProps) {
 
             <div className="flex items-center gap-3">
               <span className="truncate max-w-[14rem]">
-                {loading ? "Loading…" : client?.fullName ?? "Unknown client"}
+                {loading ? 'Loading…' : (client?.fullName ?? 'Unknown client')}
               </span>
               <div className="h-16 w-16 rounded-full border border-white overflow-hidden bg-white/20">
                 {client?.avatarUrl ? (

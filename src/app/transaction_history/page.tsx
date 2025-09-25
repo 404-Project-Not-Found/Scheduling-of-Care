@@ -100,9 +100,9 @@ function TransactionHistoryInner() {
     if (isFamily) {
       router.push(resolveFamilyReturnPath(searchParams));
     } else if (role === 'management') {
-      router.push('/menu/management');
+      router.push('/full_dashboard');
     } else {
-      router.push('/carer_dashboard');
+      router.push('/full_dashboard');
     }
   };
 

@@ -29,7 +29,7 @@ function toUTCDateString(date: string) {
 }
 
 export default function CalendarPanel({
-  tasks,
+  tasks = [],
   onDateClick,
 }: CalendarPanelProps) {
   // Normalize task dates to UTC string

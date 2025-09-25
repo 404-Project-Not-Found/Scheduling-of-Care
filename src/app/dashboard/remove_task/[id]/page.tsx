@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { format } from "date-fns";
+import { useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { format } from 'date-fns';
 
-type Unit = "day" | "week" | "month" | "year";
+type Unit = 'day' | 'week' | 'month' | 'year';
 
 type CareItem = {
   id: string;
@@ -24,7 +24,7 @@ export default function RemoveTaskDetailPage() {
   // Load selected item
   useEffect(() => {
     const stored: CareItem[] = JSON.parse(
-      localStorage.getItem("careItems") || "[]"
+      localStorage.getItem('careItems') || '[]'
     );
     setItem(stored.find((x) => x.id === id) || null);
   }, [id]);
@@ -39,19 +39,19 @@ export default function RemoveTaskDetailPage() {
 
   const onRemove = () => {
     const list: CareItem[] = JSON.parse(
-      localStorage.getItem("careItems") || "[]"
+      localStorage.getItem('careItems') || '[]'
     );
     const next = list.filter((x) => x.id !== item.id);
-    localStorage.setItem("careItems", JSON.stringify(next));
-    router.push("/dashboard");
+    localStorage.setItem('careItems', JSON.stringify(next));
+    router.push('/dashboard');
   };
 
   const freq =
     item.frequencyValue && item.frequencyUnit
       ? `every ${item.frequencyValue} ${item.frequencyUnit}${
-          item.frequencyValue === 1 ? "" : "s"
+          item.frequencyValue === 1 ? '' : 's'
         }`
-      : "—";
+      : '—';
 
   return (
     <main className="min-h-screen flex items-center justify-center p-6">
@@ -72,14 +72,14 @@ export default function RemoveTaskDetailPage() {
               <span className="font-medium">Frequency:</span> {freq}
             </p>
             <p>
-              <span className="font-medium">Last done:</span>{" "}
+              <span className="font-medium">Last done:</span>{' '}
               {item.startDate
-                ? format(new Date(item.startDate), "do MMMM yyyy")
-                : "—"}
+                ? format(new Date(item.startDate), 'do MMMM yyyy')
+                : '—'}
             </p>
             <p>
-              <span className="font-medium">Category:</span>{" "}
-              {item.category || "—"}
+              <span className="font-medium">Category:</span>{' '}
+              {item.category || '—'}
             </p>
           </div>
 
@@ -92,7 +92,7 @@ export default function RemoveTaskDetailPage() {
           <div className="flex justify-end gap-3 pt-2">
             <button
               className="px-4 py-2 rounded-md border hover:bg-gray-100"
-              onClick={() => router.push("/dashboard/remove-task")}
+              onClick={() => router.push('/dashboard/remove-task')}
             >
               Cancel
             </button>

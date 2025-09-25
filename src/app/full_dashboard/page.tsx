@@ -10,7 +10,7 @@ import { Task } from './types';
 
 // Dynamically import the MenuDrawer to avoid SSR issues for this page component
 const MenuDrawer = dynamic(
-  () => import('@/app/menu/carer/page').then((m) => m.MenuDrawer),
+  () => import('@/app/menu/page').then((m) => m.MenuDrawer),
   { ssr: false }
 );
 
