@@ -7,10 +7,14 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-// ----- Types -----
-type Client = { _id: string; name: string; dob: string };
+// ----- Type definiton for a client record -----
+type Client = {
+  _id: string;
+  name: string;
+  dob: string;
+};
 
-// ----- UI -----
+// ----- Color palette -----
 const palette = {
   pageBg: '#ffd9b3',
   cardBg: '#F7ECD9',
@@ -19,94 +23,37 @@ const palette = {
   border: '#3A0000',
   help: '#ff9999',
   white: '#ffffff',
-  editGreen: '#4CAF50',
-  dashOrange: '#FF9800',
-  organPink: '#E91E63',
-};
-
-// Hardcoded demo clients (family account only; backend remains intact)
-const FULL_DASH_ID = 'hardcoded-full-1';
-const PARTIAL_DASH_ID = 'hardcoded-partial-1';
-
-const FULL_DASH_CLIENT: Client = {
-  _id: FULL_DASH_ID,
-  name: 'Mary Hong',
-  dob: '2019-12-19',
-};
-
-const PARTIAL_DASH_CLIENT: Client = {
-  _id: PARTIAL_DASH_ID,
-  name: 'John Smith',
-  dob: '2018-03-05',
+  editGreen: '#4CAF50', // green
+  dashOrange: '#FF9800', // orange
+  organPink: '#E91E63', // pink
 };
 
 export default function FamilyPOAListPage() {
   const router = useRouter();
   const [clients, setClients] = useState<Client[]>([]);
 
+  // Fetches client list from API
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch('/api/clients');
-        const data: Client[] = await res.json();
-        const hasFull = data.some((c) => c._id === FULL_DASH_ID);
-        const hasPartial = data.some((c) => c._id === PARTIAL_DASH_ID);
-        const withFull = hasFull ? data : [...data, FULL_DASH_CLIENT];
-        const withBoth = hasPartial
-          ? withFull
-          : [...withFull, PARTIAL_DASH_CLIENT];
-        setClients(withBoth);
-      } catch {
-        setClients([FULL_DASH_CLIENT, PARTIAL_DASH_CLIENT]);
-      }
-    })();
+    async function fetchClients() {
+      const res = await fetch('/api/clients');
+      const data = await res.json();
+      // Saves client list to state so they can be displayed in the UI
+      setClients(data);
+    }
+    fetchClients();
   }, []);
 
   const goBack = () => router.replace('/empty_dashboard');
-
-  // Open full (carer) dashboard as family, for the selected client
-  function openFullDashboardAsFamily(client: Client) {
-    // persist context for other pages
-    localStorage.setItem('activeRole', 'family');
-    localStorage.setItem('activeClientId', client._id);
-    localStorage.setItem('activeClientName', client.name);
-    localStorage.setItem('activeClientDob', client.dob);
-    localStorage.setItem('lastDashboard', 'full');
-
-    // pass identity explicitly too
-    const q = new URLSearchParams({
-      viewer: 'family',
-      id: client._id,
-      name: client.name,
-      dob: client.dob,
-    });
-    router.push(`/full_dashboard?${q.toString()}`);
-  }
-
-  // Open partial dashboard for the selected client
-  function openPartialDashboard(client: Client) {
-    localStorage.setItem('activeRole', 'family');
-    localStorage.setItem('activeClientId', client._id);
-    localStorage.setItem('activeClientName', client.name);
-    localStorage.setItem('activeClientDob', client.dob);
-    localStorage.setItem('lastDashboard', 'partial');
-
-    const q = new URLSearchParams({
-      name: client.name,
-      dob: client.dob,
-    });
-    router.push(`/partial_dashboard?${q.toString()}`);
-  }
-
-  const isFullDash = (c: Client) => c._id === FULL_DASH_ID;
 
   return (
     <main
       className="min-h-screen relative flex items-start justify-center p-8"
       style={{ backgroundColor: palette.pageBg }}
     >
+      {/* === Scale wrapper: shrink everything inside by 20% (0.8) ===
+          Use origin-top to keep the layout anchored to the top while scaling */}
       <div className="origin-top w-full flex items-center justify-center">
-        {/* Logo */}
+        {/* logo */}
         <div className="absolute top-6 left-6">
           <Image
             src="/logo-name.png"
@@ -119,7 +66,7 @@ export default function FamilyPOAListPage() {
         </div>
 
         <div className="w-full scale-[0.8] flex items-center justify-center">
-          {/* Card */}
+          {/* card */}
           <div
             className="w-full max-w-6xl rounded-3xl shadow-lg overflow-hidden relative"
             style={{
@@ -128,7 +75,7 @@ export default function FamilyPOAListPage() {
               minHeight: 720,
             }}
           >
-            {/* Header */}
+            {/* header */}
             <div
               className="w-full flex items-center justify-center px-8 py-6 relative"
               style={{ backgroundColor: palette.header, color: palette.white }}
@@ -141,6 +88,7 @@ export default function FamilyPOAListPage() {
                 style={{ color: palette.white }}
               >
                 <BackIcon />
+                {/* Add Back text next to the arrow */}
                 <span className="text-lg">Back</span>
               </button>
               <h1 className="text-3xl md:text-4xl font-bold">
@@ -148,7 +96,7 @@ export default function FamilyPOAListPage() {
               </h1>
             </div>
 
-            {/* Content */}
+            {/* content */}
             <div className="px-10 pb-12 pt-8">
               <p
                 className="text-2xl md:text-3xl mb-5"
@@ -157,7 +105,7 @@ export default function FamilyPOAListPage() {
                 List of registered family members:
               </p>
 
-              {/* List */}
+              {/* list */}
               <div
                 className="mx-auto rounded-2xl bg-white overflow-y-auto mb-10"
                 style={{
@@ -173,9 +121,8 @@ export default function FamilyPOAListPage() {
                       style={{ color: palette.text }}
                     >
                       <span className="text-2xl">{m.name}</span>
-
                       <div className="flex flex-wrap gap-4">
-                        {/* Edit profile */}
+                        {/* Edit profile → green */}
                         <Link
                           href={`/client_profile?id=${m._id}`}
                           className="px-4 py-2 rounded-lg text-lg font-medium"
@@ -183,44 +130,25 @@ export default function FamilyPOAListPage() {
                             backgroundColor: palette.editGreen,
                             color: palette.white,
                           }}
-                          onClick={() => {
-                            localStorage.setItem('activeRole', 'family');
-                            localStorage.setItem('activeClientId', m._id);
-                            localStorage.setItem('activeClientName', m.name);
-                            localStorage.setItem('activeClientDob', m.dob);
-                          }}
                         >
                           Edit profile
                         </Link>
 
-                        {/* Dashboards */}
-                        {isFullDash(m) ? (
-                          <button
-                            onClick={() => openFullDashboardAsFamily(m)}
-                            className="px-4 py-2 rounded-lg text-lg font-medium"
-                            style={{
-                              backgroundColor: palette.dashOrange,
-                              color: palette.white,
-                            }}
-                          >
-                            View full dashboard
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => openPartialDashboard(m)}
-                            className="px-4 py-2 rounded-lg text-lg font-medium"
-                            style={{
-                              backgroundColor: palette.dashOrange,
-                              color: palette.white,
-                            }}
-                          >
-                            View partial dashboard
-                          </button>
-                        )}
-
-                        {/* Manage organisation access */}
+                        {/* View dashboard → orange */}
                         <Link
-                          href={`/manage_organisation_access?id=${m._id}`}
+                          href={`/partial_dashboard?name=${encodeURIComponent(m.name)}`}
+                          className="px-4 py-2 rounded-lg text-lg font-medium"
+                          style={{
+                            backgroundColor: palette.dashOrange,
+                            color: palette.white,
+                          }}
+                        >
+                          View dashboard
+                        </Link>
+
+                        {/* Manage organisation access → pink (now passes both name + dob) */}
+                        <Link
+                          href={`/family_dashboard/manage_organisation_access?id=${m._id}`}
                           className="px-4 py-2 rounded-lg text-lg font-medium"
                           style={{
                             backgroundColor: palette.organPink,
@@ -250,7 +178,7 @@ export default function FamilyPOAListPage() {
               </div>
             </div>
 
-            {/* Help button */}
+            {/* help button */}
             <button
               className="absolute bottom-6 right-6 w-10 h-10 rounded-full text-white font-bold"
               style={{ backgroundColor: palette.help }}

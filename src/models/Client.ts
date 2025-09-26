@@ -1,3 +1,9 @@
+/**
+ * Filename: /models/Client.ts
+ * Author: Denise Alexander
+ * Date Created: 23/09/2025
+ */
+
 import { Schema, model, models } from 'mongoose';
 
 const ClientSchema = new Schema(
@@ -7,7 +13,17 @@ const ClientSchema = new Schema(
     accessCode: { type: String, required: true },
     avatarUrl: { type: String },
     notes: { type: [String], default: [] },
-    createdBy: { type: String, required: true },
+    createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    organisation: {
+      type: Schema.Types.ObjectId,
+      ref: 'Organisation',
+      required: false,
+    },
+    status: {
+      type: String,
+      enum: ['pending', 'approved', 'denied'],
+      required: false,
+    },
   },
   { timestamps: true }
 );

@@ -1,3 +1,9 @@
+/**
+ * Filename: /lib/mongodb.ts
+ * Author: Denise Alexander
+ * Date Created: 16/09/2025
+ */
+
 import mongoose from 'mongoose';
 
 // Load the MongoDB connection string from environment variables

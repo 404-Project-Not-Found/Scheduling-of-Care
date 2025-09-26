@@ -1,3 +1,9 @@
+/**
+ * Filename: /user/profile/route.ts
+ * Author: Denise Alexander
+ * Date Created: 22/09/2025
+ */
+
 import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import User from '@/models/User';

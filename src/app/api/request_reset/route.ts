@@ -1,3 +1,9 @@
+/**
+ * Filename: /request_reset/route.ts
+ * Author: Denise Alexander
+ * Date Created: 17/09/2025
+ */
+
 import { NextResponse } from 'next/server';
 /*import crypto from 'crypto';
 import { connectDB } from '@/lib/mongodb';

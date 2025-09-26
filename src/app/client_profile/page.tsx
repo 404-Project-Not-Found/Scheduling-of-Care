@@ -1,3 +1,9 @@
+/**
+ * Filename: /client_profile/page.tsx
+ * Authors: Devni Wijesinghe & Denise Alexander
+ * Date Created: 10/09/2025
+ */
+
 'use client';
 
 export const dynamic = 'force-dynamic';
@@ -6,17 +12,7 @@ import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 
-// ===== Demo IDs & mapping (match your family list) =====
-const FULL_DASH_ID = 'hardcoded-full-1'; // Mary
-const PARTIAL_DASH_ID = 'hardcoded-partial-1'; // John
-const DEMO_NAME_DOB_BY_ID: Record<string, { name: string; dob: string }> = {
-  [FULL_DASH_ID]: { name: 'Mary Hong', dob: '2019-12-19' },
-  [PARTIAL_DASH_ID]: { name: 'John Smith', dob: '2018-03-05' },
-};
-const isDemoId = (id?: string | null) =>
-  !!id && (id === FULL_DASH_ID || id === PARTIAL_DASH_ID);
-
-// ----- Types -----
+// ----- Type definiton for a client record -----
 type Client = {
   _id?: string;
   name: string;
@@ -26,73 +22,23 @@ type Client = {
   avatarUrl?: string;
 };
 
-type Role = 'carer' | 'family' | 'management';
+// const TEMP_AVATAR_KEY = 'clientAvatar:__temp__';
 
-// ----- Role helpers -----
-function getActiveRole(): Role {
-  // Frontend mock priority: localStorage.activeRole -> sessionStorage.mockRole -> 'carer'
-  if (typeof window === 'undefined') return 'carer';
-  const r =
-    (localStorage.getItem('activeRole') as Role | null) ||
-    (sessionStorage.getItem('mockRole') as Role | null) ||
-    'carer';
-  return (['carer', 'family', 'management'] as Role[]).includes(r)
-    ? r
-    : 'carer';
-}
-
-function dashboardPathByRole(role: Role): string {
-  switch (role) {
-    case 'carer':
-      return '/full_dashboard';
-    case 'management':
-      return '/empty_dashboard';
-    case 'family':
-      return '/empty_dashboard';
-    default:
-      return '/full_dashboard';
-  }
-}
-
-// ----- Family return resolver -----
-/**
- * Decide where a FAMILY user should go back to:
- * 1) Prefer URL param `from`:
- *    - 'partial_dashboard' -> /partial_dashboard
- *    - 'full_dashboard'    -> /full_dashboard?viewer=family
- * 2) Fallback to localStorage.lastDashboard:
- *    - 'full'              -> /full_dashboard?viewer=family
- *    - 'partial' or others -> /partial_dashboard
- * 3) Final fallback -> /partial_dashboard
- */
-function resolveFamilyReturnPath(searchParams: URLSearchParams): string {
-  const from = searchParams.get('from');
-  if (from === 'partial_dashboard') return '/partial_dashboard';
-  if (from === 'full_dashboard') return '/full_dashboard?viewer=family';
-
-  if (typeof window !== 'undefined') {
-    const last = localStorage.getItem('lastDashboard'); // 'partial' | 'full'
-    if (last === 'full') return '/full_dashboard?viewer=family';
-    if (last === 'partial') return '/partial_dashboard';
-  }
-  return '/partial_dashboard';
-}
-
-// ----- UI palette -----
+// ----- Color palette -----
 const palette = {
-  pageBg: '#ffd9b3',
-  header: '#3A0000',
-  banner: '#F9C9B1',
-  panelBg: '#fdf4e7',
-  notice: '#F9C9B1',
-  accent: '#ff9999',
-  question: '#ff9900',
-  button: '#F4A261',
+  pageBg: '#ffd9b3', // page background
+  header: '#3A0000', // dark brown
+  banner: '#F9C9B1', // notice banner
+  panelBg: '#fdf4e7', // panel background
+  notice: '#F9C9B1', // notice bar background
+  accent: '#ff9999', // info dot
+  question: '#ff9900', // help bubble
+  button: '#F4A261', // primary buttons
   text: '#2b2b2b',
   white: '#FFFFFF',
 };
 
-// ----- Page (Suspense wrapper) -----
+// ----- Wrapper with suspense fallback for loading state -----
 export default function ClientProfilePage() {
   return (
     <Suspense
@@ -107,13 +53,13 @@ function ClientProfilePageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Query flags
+  // Query params: ?new=true means creating a new client
   const isNew = searchParams.get('new') === 'true';
   const clientId = searchParams.get('id') || undefined;
 
-  // ----- Form state -----
+  // ----- Form state variables -----
   const [name, setName] = useState<string>('');
-  const [dob, setDob] = useState<string>(''); // free text
+  const [dob, setDob] = useState<string>('');
   const [accessCode, setAccessCode] = useState<string>('');
   const [avatarUrl, setAvatarUrl] = useState<string>('');
   const [notesInput, setNotesInput] = useState<string>('');
@@ -135,68 +81,20 @@ function ClientProfilePageInner() {
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // ----- Smart "Back" -----
-  const goBackToDashboard = () => {
-    const role = getActiveRole();
-    if (role === 'family') {
-      router.push(resolveFamilyReturnPath(searchParams));
-      return;
-    }
-    router.push(dashboardPathByRole(role));
-  };
-
-  // ===== Prefill from localStorage / demo map (BEFORE any backend fetch) =====
-  useEffect(() => {
-    try {
-      // Highest priority: value written by list/partial/full pages
-      const lsName = localStorage.getItem('currentClientName') || '';
-      const lsDob = localStorage.getItem('currentClientDob') || '';
-
-      if (lsName) setName((prev) => prev || lsName);
-      if (lsDob) setDob((prev) => prev || lsDob);
-
-      const activeId = localStorage.getItem('activeClientId');
-      // Family demo fallback by id
-      if (isDemoId(activeId) && (!lsName || !lsDob)) {
-        const demo = DEMO_NAME_DOB_BY_ID[activeId as string];
-        if (demo) {
-          if (!lsName) setName((prev) => prev || demo.name);
-          if (!lsDob) setDob((prev) => prev || demo.dob);
-        }
-      }
-    } catch {
-      // ignore
-    }
-  }, []);
-
-  // ----- Data fetching -----
-  // Fetch all clients (for duplicate check / list sync) — keep backend flow
+  // Fetches client list from API
   useEffect(() => {
     async function fetchClients() {
-      try {
-        const res = await fetch('/api/clients');
-        const data: Client[] = await res.json();
-        setClients(data);
-      } catch (e: unknown) {
-        console.warn('Failed to fetch clients list:', e);
-      }
+      const res = await fetch('/api/clients');
+      const data = await res.json();
+      // Saves client list to state so they can be displayed in the UI
+      setClients(data);
     }
     fetchClients();
   }, []);
 
-  // Fetch client data if editing an existing profile
+  // Fetch client data if editing exisiting profile
   useEffect(() => {
-    // If this is family demo user clicking from full/partial and id是demo，直接用本地数据，不打后端
-    if (isDemoId(clientId) && getActiveRole() === 'family') {
-      // 我们已经在上面的 prefill 里把 name/dob 兜底了，这里只需要结束 loading
-      setLoading(false);
-      return;
-    }
-
-    if (!clientId) {
-      setLoading(false);
-      return;
-    }
+    if (!clientId) return;
 
     const fetchClient = async () => {
       setLoading(true);
@@ -207,14 +105,14 @@ function ClientProfilePageInner() {
         }
         const client: Client = await res.json();
 
+        // Populate form fields with API response
         setName(client.name);
         setDob(client.dob);
         setAccessCode(client.accessCode || '');
         setSavedNotes(client.notes || []);
         setAvatarUrl(client.avatarUrl || '');
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        console.error('Error fetching client:', msg);
+      } catch (err) {
+        console.error(err);
         setError('Failed to load client data.');
       } finally {
         setLoading(false);
@@ -223,8 +121,21 @@ function ClientProfilePageInner() {
     fetchClient();
   }, [clientId]);
 
-  // ----- Save -----
-  const saveProfile = async (): Promise<boolean> => {
+  // Loading page and error handling
+  if (loading)
+    return (
+      <div className="h-screen w-full flex items-center justify-center bg-[#F3E9D9] text-zinc-900">
+        <div className="text-center">
+          <h2 className="text-4xl font-extrabold mb-4">
+            Loading client profile...
+          </h2>
+        </div>
+      </div>
+    );
+  if (error) return <div style={{ padding: 24, color: 'red' }}>{error}</div>;
+
+  // Save or update client profile
+  const saveProfile = async () => {
     if (!name.trim() || !dob.trim() || !accessCode.trim()) {
       setFormError(
         'Please fill in Name, Date of Birth, and Access Code to continue.'
@@ -232,13 +143,14 @@ function ClientProfilePageInner() {
       return false;
     }
 
-    // Duplicate check when creating new
-    const isDuplicate = clients.some((c) => c.accessCode === accessCode.trim());
+    // Checks for duplicate in local client list
+    const isDuplicate = clients.some((c) => c.accessCode == accessCode.trim());
     if (isDuplicate && isNew) {
       setFormError('This client already exists in your list.');
       return false;
     }
 
+    // Clear error if valid
     setFormError('');
 
     // Merge new note (if any) with saved notes
@@ -246,86 +158,68 @@ function ClientProfilePageInner() {
       ? [...savedNotes, notesInput.trim()]
       : savedNotes;
 
-    // === Family demo: do not hit backend when editing demo entries ===
-    if (getActiveRole() === 'family' && (isDemoId(clientId) || !clientId)) {
-      try {
-        // Best-effort persist to localStorage so family sees their edits immediately
-        localStorage.setItem('currentClientName', name);
-        localStorage.setItem('currentClientDob', dob);
-      } catch {}
-      setSavedNotes(allNotes);
-      setNotesInput('');
-      return true;
-    }
-
-    // For new clients, confirm with backend if access code already exists
+    // Checks if a client with the user inputted access code already exists
     if (isNew && !acceptedExistingClient) {
       try {
         const res = await fetch(
           `/api/clients/check?accessCode=${encodeURIComponent(accessCode)}`
         );
         if (!res.ok) throw new Error('Check request failed');
-        const data: { exists: boolean; client?: Client } = await res.json();
+
+        const data = await res.json();
 
         if (data.exists && data.client) {
           setExistingClientMessage(data.client);
           return false;
         }
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        console.error('Error checking client:', msg);
+      } catch (err) {
+        console.error('Error checking client:', err);
         setFormError('Failed to check access code. Please try again.');
-        return false;
       }
     }
 
-    // Request payload; keep backend contract intact
-    const payload: Client = {
-      name,
-      dob,
-      accessCode,
-      avatarUrl,
-      notes: allNotes,
-    };
+    // Request payload
+    const payload = { name, dob, accessCode, avatarUrl, notes: allNotes };
 
     try {
       if (isNew) {
-        const res = await fetch('/api/clients', {
+        // Create new client record
+        await fetch('/api/clients', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
-        if (!res.ok) throw new Error('Create request failed');
       } else if (clientId) {
-        const res = await fetch(`/api/clients/${clientId}`, {
+        // Update existing client record
+        await fetch(`/api/clients/${clientId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
-        if (!res.ok) throw new Error('Update request failed');
       }
 
+      // Update saved notes
       setSavedNotes(allNotes);
+      // Reset note input
       setNotesInput('');
 
       return true;
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      console.error('Failed to save profile:', msg);
-      alert(`An error occurred while saving profile. ${msg}`);
+    } catch (err) {
+      console.error('Failed to save profile:', err);
+      alert('An error occurred while saving profile. Please try again.');
       return false;
     }
   };
 
-  // Save and go back using the smart return logic
+  // Save profile and navigate back to clients list
   const handleSaveAndReturn = async () => {
     const success = await saveProfile();
     if (success) {
-      goBackToDashboard();
+      router.push('/family_dashboard/clients_list');
     }
   };
 
-  // ----- Avatar upload -----
+  // Handles avatar upload
   const openFilePicker = () => fileInputRef.current?.click();
   const handleFileChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
     const file = e.target.files?.[0];
@@ -339,11 +233,6 @@ function ClientProfilePageInner() {
     e.target.value = '';
   };
 
-  // ----- Render -----
-  if (loading)
-    return <div style={{ padding: 24 }}>Loading client profile...</div>;
-  if (error) return <div style={{ padding: 24, color: 'red' }}>{error}</div>;
-
   return (
     <div
       className="min-h-screen w-full flex flex-col"
@@ -355,7 +244,7 @@ function ClientProfilePageInner() {
         style={{ backgroundColor: palette.header, color: palette.white }}
       >
         <button
-          onClick={goBackToDashboard}
+          onClick={() => router.push('/family_dashboard/clients_list')}
           className="absolute left-4 top-1/2 -translate-y-1/2 rounded-md px-2 py-2 focus:outline-none focus:ring-2 focus:ring-white/60 flex items-center gap-2"
           title="Back"
           aria-label="Go back"
@@ -377,7 +266,7 @@ function ClientProfilePageInner() {
         </h2>
       </div>
 
-      {/* Center card */}
+      {/* Centered white card */}
       <div className="flex-1 w-full flex items-center justify-center px-6 py-8">
         <div className="w-full max-w-4xl">
           <div
@@ -430,23 +319,22 @@ function ClientProfilePageInner() {
                 </button>
               </div>
 
-              {/* Editable fields */}
+              {/* Editable profile fields */}
               <div className="flex flex-col gap-3 w-full">
-                {/* Form error */}
+                {/* Show inline error message if form validation fails */}
                 {formError && (
                   <div className="mb-4 p-2 rounded-md bg-red-100 border border-red-400 text-red-700">
                     {formError}
                   </div>
                 )}
 
-                {/* Existing client notice from /api/clients/check */}
                 {existingClientMessage && (
-                  <div className="mb-4 p-3 rounded-md bg-[#fdf4e7] border border-[#DFC9A9]">
+                  <div className="mb-4 p-3 rounded-md bg-[#fdf4e7] border border-[#fdf4e7]-400">
                     A client named &quot;<b>{existingClientMessage.name}</b>
                     &quot; already exists with this access code.
                     <div className="mt-2">
                       <button
-                        className="px-3 py-1 rounded bg-[#DFC9A9] hover:bg-[#d1b38d] text-sm font-semibold"
+                        className="px-3 py-1 rounded bg-[#fdf4e7]-200 hover:bg-[#DFC9A9] text-sm font-semibold"
                         onClick={() => {
                           setName(existingClientMessage.name);
                           setDob(existingClientMessage.dob || '');
@@ -486,16 +374,14 @@ function ClientProfilePageInner() {
                   />
                 </label>
 
-                {/* DOB (free text) */}
+                {/* DOB */}
                 <label className="text-lg flex items-center gap-3">
                   <span className="font-semibold">Date of Birth:</span>
                   <input
                     type="text"
                     value={dob}
                     onChange={(e) => setDob(e.target.value)}
-                    placeholder={
-                      isNew ? 'e.g., 19/09/1943 or 1943-09-19' : undefined
-                    }
+                    placeholder={isNew ? 'e.g., 19/09/1943' : undefined}
                     className="flex-1 max-w-2xl p-2 rounded-md focus:outline-none focus:ring-2"
                     style={{
                       backgroundColor: palette.white,
@@ -527,7 +413,7 @@ function ClientProfilePageInner() {
                   />
                 </label>
 
-                {/* Helper line */}
+                {/* Helper line aligned with input left edge */}
                 <div className="ml-[8.5rem]">
                   <p className="text-sm">
                     Don&apos;t have an access code?{' '}

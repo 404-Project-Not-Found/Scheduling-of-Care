@@ -1,38 +1,63 @@
+/**
+ * Filename: /management_dashboard/register_client/page.tsx
+ * Authors: Vanessa Teo & Denise Alexander
+ * Date Created: 22/09/2025
+ */
+
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-type Client = {
-  id: string;
-  fullName: string;
-  accessCode: string;
-};
-
 export default function RegisterClientPage() {
-  const [fullName, setFullName] = useState('');
   const [accessCode, setAccessCode] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState<string | null>(null);
+
   const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+    setSuccess(null);
+    setLoading(true);
 
-    const stored: Client[] = JSON.parse(
-      localStorage.getItem('clients') || '[]'
-    );
+    try {
+      const code = accessCode.trim();
+      if (!code) {
+        setError('Access code cannot be empty.');
+        setLoading(false);
+        return;
+      }
 
-    const newClient: Client = {
-      id: Date.now().toString(),
-      fullName,
-      accessCode,
-    };
+      // Call the api endpoint to register the client
+      const res = await fetch('/api/management/register_client', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accessCode }),
+      });
 
-    localStorage.setItem('clients', JSON.stringify([...stored, newClient]));
+      const data = await res.json();
 
-    setFullName('');
-    setAccessCode('');
+      // If api returns an error
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to register client.');
+      }
 
-    router.push('/empty_dashboard');
+      // Client was successfully registered
+      setSuccess(data.message);
+      setAccessCode('');
+    } catch (err) {
+      // Handles errors
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Something went wrong.');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -44,17 +69,23 @@ export default function RegisterClientPage() {
         </h1>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5 text-black">
-          <div>
-            <label className="block mb-1 font-medium">Client Full Name</label>
-            <input
-              type="text"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              required
-              className="w-full px-3 py-2 border rounded-md"
-            />
-          </div>
-
+          {/* Error message */}
+          {error && (
+            <div
+              role="alert"
+              className="mb-4 px-4 py-3 rounded-md text-sm bg-rose-100 border border-rose-300 text-rose-700"
+            >
+              {error}
+            </div>
+          )}
+          {success && (
+            <div
+              role="status"
+              className="mb-4 px-4 py-3 rounded-md text-sm bg-green-100 border border-green-300 text-green-700"
+            >
+              {success}
+            </div>
+          )}
           <div>
             <label className="block mb-1 font-medium">Client Access Code</label>
             <input
@@ -69,7 +100,7 @@ export default function RegisterClientPage() {
           <div className="flex justify-end gap-3 pt-2">
             <button
               type="button"
-              onClick={() => router.push('/empty_dashboard')}
+              onClick={() => router.push('/management_dashboard/clients_list')}
               className="px-4 py-2 rounded-md border hover:bg-gray-100"
             >
               Cancel

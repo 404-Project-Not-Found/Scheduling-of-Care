@@ -1,3 +1,9 @@
+/**
+ * Filename: /types/next-auth.d.ts
+ * Author: Denise Alexander
+ * Date Created: 22/09/2025
+ */
+
 import 'next-auth';
 
 /**
@@ -12,6 +18,7 @@ declare module 'next-auth' {
       email: string;
       role: string; // User role (e.g. carer, family, management)
       name?: string;
+      organisation?: string;
     };
   }
   // Adds `id` and `role` to User object returned by NextAuth
@@ -20,6 +27,7 @@ declare module 'next-auth' {
     email: string;
     role: string;
     name?: string;
+    organisation?: string;
   }
 }
 // Allows storing `id` and `role` in JWT token for session callbacks
@@ -27,5 +35,6 @@ declare module 'next-auth/jwt' {
   interface JWT {
     id: string;
     role: string;
+    organisation?: string;
   }
 }

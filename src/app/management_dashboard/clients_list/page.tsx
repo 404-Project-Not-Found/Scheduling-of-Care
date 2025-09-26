@@ -4,13 +4,16 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 
+// Type definition for a client object
 type Client = {
   _id: string;
-  fullName: string;
+  name: string;
   accessCode?: string;
   avatarUrl?: string;
+  status?: 'pending' | 'approved';
 };
 
+// Converts unknown errors to a readbale string
 function getErrorMessage(err: unknown) {
   if (err instanceof Error) return err.message;
   try {
@@ -26,12 +29,15 @@ export default function ClientListPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [error, setError] = useState<string | null>(null);
 
+  // Fetches the list of clients
   useEffect(() => {
     let alive = true;
 
     (async () => {
       try {
-        const res = await fetch('/api/clients', { cache: 'no-store' });
+        const res = await fetch('/api/management/clients', {
+          cache: 'no-store',
+        });
         if (!res.ok) throw new Error(`Failed to load clients (${res.status})`);
         const data = (await res.json()) as Client[];
         if (alive) setClients(data);
@@ -47,12 +53,13 @@ export default function ClientListPage() {
     };
   }, []);
 
+  // Search query: filters by name or access code (case-insensitive)
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
     if (!term) return clients;
     return clients.filter(
       (c) =>
-        c.fullName.toLowerCase().includes(term) ||
+        c.name.toLowerCase().includes(term) ||
         (c.accessCode?.toLowerCase().includes(term) ?? false)
     );
   }, [q, clients]);
@@ -84,7 +91,7 @@ export default function ClientListPage() {
                   {c.avatarUrl ? (
                     <Image
                       src={c.avatarUrl}
-                      alt={c.fullName}
+                      alt={c.name}
                       width={32}
                       height={32}
                       className="h-8 w-8 rounded-full object-cover"
@@ -93,10 +100,21 @@ export default function ClientListPage() {
                     <div className="h-8 w-8 rounded-full bg-gray-200" />
                   )}
                   <div>
-                    <p className="font-medium text-black">{c.fullName}</p>
+                    <p className="font-medium text-black">{c.name}</p>
                     {c.accessCode && (
                       <p className="text-xs text-gray-500">
                         Access code: {c.accessCode}
+                      </p>
+                    )}
+                    {c.status && (
+                      <p
+                        className={`text-xs font-semibold ${
+                          c.status === 'pending'
+                            ? 'text-orange-600'
+                            : 'text-green-600'
+                        }`}
+                      >
+                        Status: {c.status}
                       </p>
                     )}
                   </div>
@@ -126,7 +144,7 @@ export default function ClientListPage() {
 
         <div className="flex justify-between mt-6">
           <Link
-            href="/dashboard/register-client"
+            href="/management_dashboard/register_client"
             className="px-4 py-2 bg-[#3d0000] text-white rounded"
           >
             Register new client

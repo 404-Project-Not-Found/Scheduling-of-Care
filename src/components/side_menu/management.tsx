@@ -23,16 +23,15 @@ type sideMenuProps = {
 
 // Management menu options
 const defaultMenuItems: Item[] = [
-  { href: '/update_details', label: 'Update your details' },
-
-  { href: '/dashboard/add_care_items', label: 'Add Care Item' },
-  { href: '/dashboard/edit_task', label: 'Edit Task' },
-
-  { href: '/dashboard/remove_task', label: 'Remove Task' },
-  { href: '/carer/search', label: 'Assign Carer' },
-
-  { href: '/dashboard/register_client', label: 'Register new client' },
-  { href: '/dashboard/management_client_list', label: 'List of clients' },
+  { href: '/full_dashboard/update_details', label: 'Update your details' },
+  {
+    href: '/management_dashboard/clients_list',
+    label: 'Manage clients',
+  },
+  { href: '/carer/search', label: 'Assign carer' },
+  { href: '/management_dashboard/add_care_items', label: 'Add Care Item' },
+  { href: '/management_dashboard/edit_task', label: 'Edit Task' },
+  { href: '/management_dashboard/remove_task', label: 'Remove Task' },
 ];
 
 export default function ManagementSideMenu({

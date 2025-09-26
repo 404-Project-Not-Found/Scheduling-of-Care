@@ -1,19 +1,33 @@
+/**
+ * Filename: /signup/page.tsx
+ * Authors: Qingyue Zhao & Denise Alexander
+ * Date Created: 05/09/2025
+ */
+
 'use client';
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { Suspense, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-
-function RoleResolver({ setRole }: { setRole: (role: string) => void }) {
-  const searchParams = useSearchParams();
-  const role = searchParams.get('role') || 'User';
-  setRole(role);
-  return null;
-}
+import { Suspense, useState, useEffect } from 'react';
 
 export default function SignupPage() {
   const [role, setRole] = useState('User');
+  const [orgAction, setOrgAction] = useState<'create' | 'join' | null>(null);
+
+  const [showPw, setShowPw] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [userExists, setUserExists] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const roleParam = searchParams.get('role') || 'User';
+    const orgParam = searchParams.get('org');
+    setRole(roleParam);
+    setOrgAction(
+      orgParam === 'create' ? 'create' : orgParam === 'join' ? 'join' : null
+    );
+  }, []);
 
   // Maps roles to sign up page title names
   const roleDisplayMap: Record<string, string> = {
@@ -24,11 +38,6 @@ export default function SignupPage() {
 
   // Role title to display
   const displayRole = roleDisplayMap[role.toLowerCase()] || 'User';
-
-  const [showPw, setShowPw] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [userExists, setUserExists] = useState(false);
-  const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -41,6 +50,25 @@ export default function SignupPage() {
     const password = (form.password as HTMLInputElement).value;
     const confirm = (form.confirm as HTMLInputElement).value;
 
+    const orgName =
+      orgAction === 'create'
+        ? (form.orgName as HTMLInputElement).value
+        : undefined;
+
+    const inviteCode =
+      orgAction === 'join'
+        ? (form.orgName as HTMLInputElement).value
+        : undefined;
+
+    if (orgAction === 'create' && !orgName) {
+      setError('Organisation name is required');
+      return;
+    }
+    if (orgAction === 'join' && !inviteCode) {
+      setError('Invite code is required');
+      return;
+    }
+
     try {
       // Call signup API route
       const res = await fetch('/api/signup', {
@@ -52,6 +80,8 @@ export default function SignupPage() {
           password,
           confirm,
           role: role.toLowerCase(),
+          orgName,
+          inviteCode,
         }),
       });
 
@@ -88,10 +118,6 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen w-full bg-[#F3E9D9] flex flex-col items-center justify-center px-4">
-      {/* Set role */}
-      <Suspense fallback={null}>
-        <RoleResolver setRole={setRole} />
-      </Suspense>
       {/* Top-left logo */}
       <div className="absolute left-8 top-8">
         <Image
@@ -108,11 +134,60 @@ export default function SignupPage() {
         {displayRole} Sign Up
       </h1>
 
+      {/* Sign Up success */}
+      {success && (
+        <div
+          role="alert"
+          className="fixed top-0 left-0 w-full bg-[#DCF4D9] text-[#1B4B1B] px-6 py-4 text-center font-semibold shadow-md z-50"
+        >
+          Sign up was successful! Redirecting to login...
+        </div>
+      )}
+
       {/* Vertical form layout */}
       <form
         onSubmit={handleSubmit}
         className="w-full max-w-lg space-y-8 text-black"
       >
+        {/* Organisation field - if new carer/management */}
+        {(role === 'management' || role === 'carer') && orgAction && (
+          <div className="flex flex-col gap-2">
+            {orgAction === 'create' ? (
+              <>
+                <label htmlFor="orgName" className="text-[20px] font-medium">
+                  <span>Enter Organisation Name </span>
+                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#E37E72] text-white text-sm font-bold">
+                    i
+                  </span>
+                </label>
+                <input
+                  id="orgName"
+                  name="orgName"
+                  type="text"
+                  required
+                  className="w-full rounded-md border border-[#6E1B1B] bg-white text-black px-4 py-2.5 text-lg outline-none focus:ring-[#4A0A0A]/30"
+                />
+              </>
+            ) : (
+              <>
+                <label htmlFor="invite" className="text-[20px] font-medium">
+                  <span>Enter Organisation Invite Code </span>
+                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#E37E72] text-white text-sm font-bold">
+                    i
+                  </span>
+                </label>
+                <input
+                  id="invite"
+                  name="invite"
+                  type="text"
+                  required
+                  className="w-full rounded-md border border-[#6E1B1B] bg-white text-black px-4 py-2.5 text-lg outline-none focus:ring-[#4A0A0A]/30"
+                />
+              </>
+            )}
+          </div>
+        )}
+
         {/* User Name */}
         <div className="flex flex-col gap-2">
           <label
@@ -172,9 +247,9 @@ export default function SignupPage() {
             <button
               type="button"
               onClick={() => setShowPw((v) => !v)}
-              className="absolute top-1/2 -translate-y-1/2 right-[-8rem] text-[16px] underline underline-offset-4 text-[#4A0A0A] hover:opacity-80 whitespace-nowrap"
+              className="underline absolute right-3 top-1/2 -translate-y-1/2 text-[16px] text-[#4A0A0A] hover:opacity-80"
             >
-              {showPw ? 'hide password' : 'show password'}
+              {showPw ? 'Hide' : 'Show'}
             </button>
           </div>
         </div>
@@ -216,13 +291,6 @@ export default function SignupPage() {
             >
               login
             </Link>
-          </div>
-        )}
-
-        {/* Sign Up success */}
-        {success && (
-          <div className="bg-[#DFC9A9] px-4 py 2 rounded">
-            Sign up was successful! Redirecting to login...
           </div>
         )}
 

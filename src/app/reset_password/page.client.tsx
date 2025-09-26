@@ -1,3 +1,9 @@
+/**
+ * Filename: /reset_password/page.client.tsx
+ * Authors: Devni Wijesinghe & Denise Alexander
+ * Date Created: 17/09/2025
+ */
+
 'use client';
 
 import React, { useState, useEffect } from 'react';

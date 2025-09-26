@@ -1,3 +1,9 @@
+/**
+ * Filename: /models/PasswordResetToken.ts
+ * Author: Denise Alexander
+ * Date Created: 17/09/2025
+ */
+
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IPasswordResetToken extends Document {

@@ -93,7 +93,7 @@ function ManageAccessInner() {
               style={{ backgroundColor: palette.header }}
             >
               <button
-                onClick={() => router.push('/clients_list')}
+                onClick={() => router.push('/family_dashboard/clients_list')}
                 className="absolute left-5 flex items-center gap-1 text-white hover:text-gray-200 transition"
               >
                 <svg
@@ -157,7 +157,7 @@ function ManageAccessInner() {
               <button
                 className="text-white font-semibold px-8 py-3 rounded-md hover:bg-[#3a0808] transition-colors"
                 style={{ backgroundColor: palette.header }}
-                onClick={() => router.push('/clients_list')}
+                onClick={() => router.push('/family_dashboard/clients_list')}
               >
                 Save &amp; Return
               </button>

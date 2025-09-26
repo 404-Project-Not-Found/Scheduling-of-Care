@@ -81,7 +81,7 @@ function PartialDashboardInner() {
       >
         {/* Back to list */}
         <button
-          onClick={() => router.push('/clients_list')}
+          onClick={() => router.push('/family_dashboard/clients_list')}
           className="absolute left-6 top-1/2 -translate-y-1/2 flex items-center gap-2 px-3 py-2 focus:outline-none"
           title="Back to client list"
           aria-label="Back"
@@ -134,10 +134,10 @@ function PartialDashboardInner() {
           className="text-base md:text-lg leading-relaxed"
           style={{ color: palette.header }}
         >
-          This dashboard currently have partial access until the management
-          complete the registeriation process for your person with special
-          needs. You will received the email once is done and all the task of
-          this person will be shown on this page.
+          This dashboard currently has partial functionality until management
+          completes the registration process for your person with special needs.
+          You will receive an email once registration is complete and all the
+          care items of this person will be shown on this page.
         </p>
       </div>
 

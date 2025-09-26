@@ -1,25 +1,30 @@
+/**
+ * Filename: /signup/route.ts
+ * Author: Denise Alexander
+ * Date Created: 16/09/2025
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import mongoose from 'mongoose';
 import { connectDB } from '@/lib/mongodb';
 import bcrypt from 'bcryptjs';
+import Organisation from '@/models/Organisation';
+import User from '@/models/User';
 
-// Defines valid user roles
-const ROLES = ['carer', 'management', 'family'] as const;
-
-const userSchema = new mongoose.Schema({
-  fullName: String,
-  email: String,
-  password: String,
-  role: String,
-  createdAt: Date,
-});
-
-const User = mongoose.models.User || mongoose.model('User', userSchema);
+interface InviteCode {
+  code: string;
+  role: 'management' | 'carer';
+  expiresAt?: Date;
+  used: boolean;
+}
 
 export async function POST(req: NextRequest) {
   try {
+    await connectDB();
+
     // Extract data from request body
-    const { fullName, email, password, confirm, role } = await req.json();
+    const { fullName, email, password, confirm, role, orgName, inviteCode } =
+      await req.json();
 
     // Validate required fields
     if (!fullName || !email || !password || !confirm || !role) {
@@ -33,18 +38,6 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-
-    // Validate role against allowed roles
-    if (!ROLES.includes(role)) {
-      return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
-    }
-
-    /* Connect to MongoDB
-        const client = await clientPromise;
-        const db = client.db("schedule-of-care");
-        const usersCollection = db.collection("users"); */
-
-    await connectDB();
 
     // Check if a user already exists under the email
     const emailLower = email.toLowerCase();
@@ -68,10 +61,59 @@ export async function POST(req: NextRequest) {
       createdAt: new Date(),
     });
 
+    let orgId = null;
+
+    if (role === 'management' && orgName) {
+      const existingOrg = await Organisation.findOne({ name: orgName });
+      if (existingOrg) {
+        return NextResponse.json(
+          { error: 'An organisation with this name already exists.' },
+          { status: 409 }
+        );
+      }
+
+      const newOrg = await Organisation.create({
+        name: orgName,
+        createdBy: newUser._id,
+        members: [newUser._id],
+        inviteCodes: [],
+      });
+      orgId = newOrg._id;
+      newUser.organisation = orgId;
+      await newUser.save();
+    }
+
+    if (role === 'carer' && inviteCode) {
+      const org = await Organisation.findOne({
+        'inviteCodes.code': inviteCode,
+        'inviteCodes.role': 'carer',
+        'inviteCodes.used': false,
+      });
+      if (!org) {
+        return NextResponse.json(
+          { error: 'Invalid or used invite code.' },
+          { status: 400 }
+        );
+      }
+
+      org.inviteCodes = org.inviteCodes.map(
+        (c: InviteCode & mongoose.Document) =>
+          c.code === inviteCode ? { ...c.toObject(), used: true } : c
+      );
+
+      org.members.push(newUser._id);
+      await org.save();
+
+      orgId = org._id;
+      newUser.organisation = orgId;
+      await newUser.save();
+    }
+
     // Success response with new user ID
     return NextResponse.json({
-      message: 'New user created',
+      message: 'New user created successfully!',
       userId: newUser._id,
+      organisation: orgId,
     });
   } catch (error) {
     console.error(error);

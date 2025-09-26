@@ -1,3 +1,9 @@
+/**
+ * Filename: /empty_dashboard/page.tsx
+ * Author: Denise Alexander
+ * Date Created: 25/09/2025
+ */
+
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -25,11 +31,12 @@ export default function EmptyDashboard() {
 
   useEffect(() => {
     const detectRole = async () => {
-      const mockRole = sessionStorage.getItem('mockRole') as Role;
+      // For testing
+      /* const mockRole = sessionStorage.getItem('mockRole') as Role;
       if (mockRole) {
         setRole(mockRole);
         return;
-      }
+      } */
       const session = await getSession();
       if (session?.user?.role) {
         setRole(session.user.role as Role);
@@ -50,11 +57,10 @@ export default function EmptyDashboard() {
 
   if (!role) {
     return (
-      <div
-        className="h-screen w-full flex items-center justify-center"
-        style={{ backgroundColor: palette.pageBg }}
-      >
-        <p className="text-2xl text-[#2b2b2b]">Loading dashboard...</p>
+      <div className="h-screen w-full flex items-center justify-center bg-[#F3E9D9] text-zinc-900">
+        <div className="text-center">
+          <p className="text-4xl font-extrabold mb-4">Loading dashboard...</p>
+        </div>
       </div>
     );
   }
@@ -109,12 +115,16 @@ export default function EmptyDashboard() {
         >
           {role === 'family' ? (
             <>
-              Select a person with special needs under{' '}
+              Click on the menu icon to select a person with special needs under{' '}
               <b>Manage people with special needs</b> to edit their profile,
               view their dashboard, or manage organisation access.
             </>
           ) : (
-            <>Use the menu to manage clients, carers and care items.</>
+            <>
+              Click on the menu icon to add/select a client under{' '}
+              <b>Manage clients</b> to view their dashboard, assign carers or
+              organise their care items.
+            </>
           )}
         </p>
       </div>

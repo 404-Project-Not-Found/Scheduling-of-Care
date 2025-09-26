@@ -1,3 +1,9 @@
+/**
+ * Filename: /app/page.tsx
+ * Authors: Qingyue Zhao & Denise Alexander
+ * Date Created: 05/09/2025
+ */
+
 'use client';
 
 import Image from 'next/image';
@@ -8,6 +14,7 @@ import { useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 
+// Prefills information after user signs up
 function PrefillFromSearchParams({
   setEmail,
   setPassword,
@@ -141,9 +148,6 @@ export default function Home() {
       }
       setLoading(false);
     }
-
-    // Fake auth: always show error for now (no backend yet).
-    // setError("Incorrect email address or password, please try again.");
   }
 
   // Loading screen while signIn and getSession calls run

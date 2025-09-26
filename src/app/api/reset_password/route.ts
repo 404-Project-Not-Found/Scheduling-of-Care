@@ -1,3 +1,9 @@
+/**
+ * Filename: /reset_password/route.ts
+ * Author: Denise Alexander
+ * Date Created: 17/09/2025
+ */
+
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { connectDB } from '@/lib/mongodb';

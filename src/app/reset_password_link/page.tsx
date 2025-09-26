@@ -1,3 +1,9 @@
+/**
+ * Filename: /reset_password_link/page.tsx
+ * Authors: Devni Wijesinghe & Denise Alexander
+ * Date Created: 17/09/2025
+ */
+
 'use client';
 
 import React, { useState } from 'react';

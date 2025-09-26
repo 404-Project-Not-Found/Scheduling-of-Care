@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 /** Shared palette to match the app */
 const palette = {
@@ -19,20 +20,33 @@ const palette = {
  */
 export default function AddAccessCodePanel({
   onClose,
+  returnUrl,
 }: {
   onClose: () => void;
+  returnUrl?: string;
 }) {
   const [code, setCode] = useState(''); // Generated access code
   const [copied, setCopied] = useState<null | 'ok' | 'err'>(null); // Copy feedback
   const [showTip, setShowTip] = useState(false); // Tooltip visibility
   const [showHelp, setShowHelp] = useState(false); // Floating help bubble
 
+  const router = useRouter();
+
   // Close the drawer when pressing ESC
   useEffect(() => {
     const handler = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, [onClose]);
+  }, []);
+
+  function handleClose() {
+    onClose?.();
+    if (returnUrl) {
+      router.push(returnUrl);
+    } else {
+      router.back();
+    }
+  }
 
   // Generate an 8-character random access code
   function generateCode() {
@@ -59,7 +73,7 @@ export default function AddAccessCodePanel({
 
   return (
     <div
-      className="h-full flex flex-col relative"
+      className="min-h-screen flex flex-col relative"
       style={{ backgroundColor: palette.canvas }}
     >
       {/* ===== Header bar (consistent with Client Profile / Dashboard) ===== */}
@@ -72,7 +86,7 @@ export default function AddAccessCodePanel({
 
         {/* Close button on the right */}
         <button
-          onClick={onClose}
+          onClick={handleClose}
           aria-label="Close"
           className="absolute right-4 top-1/2 -translate-y-1/2 rounded px-2 py-1 text-lg hover:opacity-90 focus:outline-none"
         >
@@ -89,11 +103,10 @@ export default function AddAccessCodePanel({
           className="text-sm sm:text-base md:text-lg leading-relaxed font-semibold"
           style={{ color: '#000' }}
         >
-          IMPORTANT: Generate an access code, copy it, and email it to the care
-          organisation management team together with the person’s name so they
-          can create the client record. After that, you can use this access code
-          when adding a new person in{' '}
-          <span className="underline">Add New Person</span>.
+          IMPORTANT: Generate an access code, copy it and use it when you fill
+          out <span className="underline">Add New Person</span>. Then, email the
+          access code to the care organisation management team to register the
+          client.
         </p>
       </div>
 
@@ -129,7 +142,7 @@ export default function AddAccessCodePanel({
                 style={{ color: palette.text, border: '1px solid #e5e7eb' }}
               >
                 Share this access code with the care organisation. They will use
-                it with the family member’s name to create the client record.
+                it to register the client under the organisation.
               </div>
             )}
           </div>
@@ -188,8 +201,8 @@ export default function AddAccessCodePanel({
               </li>
               <li>Share the code with the care organisation via email.</li>
               <li>
-                The organisation will register the family member using this code
-                and the person’s name.
+                The organisation will register the family member using this
+                code.
               </li>
             </ul>
           </div>

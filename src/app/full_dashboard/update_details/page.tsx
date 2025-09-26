@@ -1,10 +1,16 @@
+/**
+ * Filename: /update_details/page.tsx
+ * Authors: Qingyue Zhao & Denise Alexander
+ * Date Created: 22/09/2025
+ */
+
 'use client';
 
 export const dynamic = 'force-dynamic';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 const colors = {
   pageBg: '#ffd9b3',
@@ -14,72 +20,27 @@ const colors = {
   orange: '#F4A261',
 };
 
-type Role = 'family' | 'carer' | 'management';
-
-/** 仅负责在 Suspense 内读取 search params & sessionStorage，并回写 backHref */
-function BackHrefResolver({
-  setBackHref,
-}: {
-  setBackHref: (v: string) => void;
-}) {
-  const search = useSearchParams();
-
-  useEffect(() => {
-    const fromQuery = search.get('from') as Role | null;
-    const stored =
-      typeof window !== 'undefined'
-        ? (sessionStorage.getItem('mockRole') as Role | null)
-        : null;
-
-    const role: Role | null = fromQuery ?? stored;
-    const href = role === 'carer' ? '/full_dashboard' : '/empty_dashboard';
-
-    setBackHref(href);
-  }, [search, setBackHref]);
-
-  return null;
-}
-
 export default function UpdateDetailsPage() {
   const router = useRouter();
-
-  // 用 state 存 backHref，初始给一个安全默认值
-  const [backHref, setBackHref] = useState('/menu/family');
-
   const [email, setEmail] = useState('');
   const [pwd, setPwd] = useState('');
   const [show, setShow] = useState(false);
-
-  // States for backend update
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [formError, setFormError] = useState<string>('');
 
-  // State for help tooltip visibility
-  const [showHelp, setShowHelp] = useState(false);
-  const instructions = [
-    "Change your email using the 'Change email' field.",
-    "Change your password using the 'Change password' field.",
-    "Use the 'Show password' checkbox to view your password.",
-    "Click 'Cancel' to go back without saving.",
-    "Click 'Save' to update your details.",
-  ];
-
-  // Fetch user profile (email, optionally role) from backend
+  // Fetches user email to display in UI
   useEffect(() => {
     async function fetchUser() {
       try {
         const res = await fetch('/api/user/profile');
-        if (!res.ok) throw new Error('Failed to load profile');
+        if (!res.ok) {
+          throw new Error('Failed to load profile');
+        }
         const data = await res.json();
-        if (data.email) setEmail(data.email);
 
-        // Optional: store role as a fallback if backend returns it
-        if (
-          data.role &&
-          (['family', 'carer', 'management'] as Role[]).includes(data.role)
-        ) {
-          sessionStorage.setItem('mockRole', data.role);
+        if (data.email) {
+          setEmail(data.email);
         }
       } catch (err) {
         console.error('Error fetching user:', err);
@@ -88,49 +49,60 @@ export default function UpdateDetailsPage() {
     fetchUser();
   }, []);
 
-  // Validate input and call backend API to update profile
+  // Validates input and sends update request to API
   const handleSave = async () => {
     setError('');
     setSuccess(false);
 
+    // Validate email format if user entered a new email
     if (email && (!email.includes('@') || !email.includes('.'))) {
       setFormError('Please enter a valid email address.');
       return;
     }
 
+    // Prepare request body with only the fields the user wants to update
     const body: { email?: string; password?: string } = {};
-    if (email) body.email = email;
-    if (pwd) body.password = pwd;
+    if (email) {
+      body.email = email;
+    }
+    if (pwd) {
+      body.password = pwd;
+    }
 
+    // Ensures the user has enetered at least one field
     if (!body.email && !body.password) {
       setFormError('Please enter an email or password to update.');
       return;
     }
 
+    // Clear error if valid
     setFormError('');
 
-    try {
-      const res = await fetch('/api/user/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
+    // Send POST request to update API
+    const res = await fetch('/api/user/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        password: pwd,
+      }),
+    });
 
-      const data = await res.json();
+    const data = await res.json();
 
-      if (res.ok) {
-        setSuccess(true);
-        setPwd('');
-        setShow(false);
-        // After success, navigate back to the correct dashboard
-        setTimeout(() => {
-          router.push(backHref);
-        }, 800);
-      } else {
-        setError(data.error || 'Update failed. Try again later.');
-      }
-    } catch {
-      setError('Network error. Please try again.');
+    if (res.ok) {
+      // Show success message and reset inputs
+      setSuccess(true);
+      setEmail('');
+      setPwd('');
+      setShow(false);
+
+      // Hide success message after 3 seconds
+      setTimeout(() => {
+        setSuccess(false);
+      }, 3000);
+    } else {
+      setError(data.error || 'Update failed. Try again later.');
     }
   };
 
@@ -139,11 +111,6 @@ export default function UpdateDetailsPage() {
       className="min-h-screen w-full flex items-center justify-center px-6 py-12 relative"
       style={{ backgroundColor: colors.pageBg }}
     >
-      {/* 只有这个子组件会读 useSearchParams；被 Suspense 包裹，就不会触发 CSR bailout */}
-      <Suspense fallback={null}>
-        <BackHrefResolver setBackHref={setBackHref} />
-      </Suspense>
-
       {/* Top-left logo */}
       <div className="absolute top-6 left-6">
         <Image
@@ -156,12 +123,12 @@ export default function UpdateDetailsPage() {
         />
       </div>
 
-      {/* Card container */}
+      {/* Card container (narrower width) */}
       <div
         className="w-full max-w-xl md:max-w-2xl rounded-2xl shadow-lg overflow-hidden"
         style={{ backgroundColor: colors.cardBg }}
       >
-        {/* Header */}
+        {/* Top bar: centered title, dark brown background, white text */}
         <div
           className="w-full flex items-center justify-center px-6 py-5"
           style={{ backgroundColor: colors.header }}
@@ -171,23 +138,21 @@ export default function UpdateDetailsPage() {
           </h1>
         </div>
 
-        {/* Success message */}
         {success && (
-          <div className="text-green-700 bg-green-100 px-4 py-2 rounded m-4">
+          <div className="text-green-700 bg-green-100 px-4 py-2 rounded mb-4">
             Your details have been successfully updated!
           </div>
         )}
 
-        {/* Content area */}
+        {/* Content area: generous spacing, white inputs */}
         <div className="px-8 md:px-10 py-8 md:py-10 text-black">
-          {/* Form validation error */}
+          {/* Show inline error message if form validation fails */}
           {formError && (
             <div className="mb-4 p-2 rounded-md bg-red-100 border border-red-400 text-red-700">
               {formError}
             </div>
           )}
-
-          {/* Email input */}
+          {/* Email */}
           <label className="block text-lg mb-2" style={{ color: colors.text }}>
             Change email:
           </label>
@@ -200,14 +165,13 @@ export default function UpdateDetailsPage() {
             placeholder="Enter new email"
           />
 
-          {/* API error */}
           {error && (
             <div className="text-red-700 bg-red-100 px-4 py-2 rounded mb-4">
               {error}
             </div>
           )}
 
-          {/* Password input */}
+          {/* Password */}
           <label className="block text-lg mb-2" style={{ color: colors.text }}>
             Change password:
           </label>
@@ -234,12 +198,12 @@ export default function UpdateDetailsPage() {
             Show password
           </label>
 
-          {/* Action buttons */}
+          {/* Actions */}
           <div className="mt-10 flex items-center justify-end gap-6">
             <button
               type="button"
               className="px-6 py-2.5 rounded-full border text-gray-700 hover:bg-gray-200"
-              onClick={() => router.push(backHref)} // Cancel → return by role
+              onClick={() => router.push('/empty_dashboard')}
             >
               Cancel
             </button>
@@ -260,33 +224,6 @@ export default function UpdateDetailsPage() {
         </div>
 
         <div className="h-4" />
-      </div>
-
-      {/* Help tooltip */}
-      <div
-        className="fixed bottom-8 right-8 z-50"
-        onMouseEnter={() => setShowHelp(true)}
-        onMouseLeave={() => setShowHelp(false)}
-      >
-        <div className="relative group">
-          <button
-            className="w-10 h-10 rounded-full text-white font-bold text-lg"
-            style={{ backgroundColor: '#ed5f4f' }}
-          >
-            ?
-          </button>
-
-          {showHelp && (
-            <div className="absolute bottom-14 right-0 w-80 p-4 bg-white border border-gray-400 rounded shadow-lg text-black text-sm">
-              <h3 className="font-bold mb-2">Update Details Help</h3>
-              <ul className="list-disc list-inside space-y-1">
-                {instructions.map((instr, idx) => (
-                  <li key={idx}>{instr}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
       </div>
     </main>
   );

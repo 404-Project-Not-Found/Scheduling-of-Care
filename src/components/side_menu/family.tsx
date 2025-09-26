@@ -1,3 +1,9 @@
+/**
+ * Filename: /components/family.tsx
+ * Author: Denise Alexander
+ * Date Created: 25/09/2025
+ */
+
 'use client';
 
 import React from 'react';
@@ -23,12 +29,15 @@ type sideMenuProps = {
 
 // Family menu options
 const defaultMenuItems: Item[] = [
-  { href: '/update_details', label: 'Update your details' },
+  { href: '/full_dashboard/update_details', label: 'Update your details' },
   {
-    href: '/family_dashboard/family_clients_list',
+    href: '/family_dashboard/clients_list',
     label: 'Manage people with special needs',
   },
-  { href: '/request_of_change_page', label: 'Request to change a task' },
+  {
+    href: '/family_dashboard/request_of_change_page',
+    label: 'Request to change a task',
+  },
 ];
 
 export default function FamilySideMenu({

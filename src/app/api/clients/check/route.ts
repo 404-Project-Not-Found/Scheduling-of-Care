@@ -1,3 +1,9 @@
+/**
+ * Filename: /clients/check/route.ts
+ * Author: Denise Alexander
+ * Date Created: 22/09/2025
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import Client from '@/models/Client';

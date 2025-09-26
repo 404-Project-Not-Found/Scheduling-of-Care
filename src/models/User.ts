@@ -1,3 +1,9 @@
+/**
+ * Filename: /models/User.ts
+ * Author: Denise Alexander
+ * Date Created: 16/09/2025
+ */
+
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IUser extends Document {
@@ -5,6 +11,7 @@ export interface IUser extends Document {
   email: string;
   password: string;
   role: 'carer' | 'management' | 'family';
+  organisation?: mongoose.Types.ObjectId;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -12,6 +19,7 @@ const UserSchema = new Schema<IUser>({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   role: { type: String, required: true },
+  organisation: { type: Schema.Types.ObjectId, ref: 'Organisation' },
 });
 
 export default mongoose.models.User ||

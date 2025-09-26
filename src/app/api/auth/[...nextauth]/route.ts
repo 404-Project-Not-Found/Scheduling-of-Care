@@ -1,3 +1,9 @@
+/**
+ * Filename: /auth/[...nextauth]/route.ts
+ * Author: Denise Alexander
+ * Date Created: 22/09/2025
+ */
+
 import NextAuth, { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { connectDB } from '@/lib/mongodb';
@@ -48,6 +54,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.fullName,
           role: user.role,
+          organisation: user.organisation,
         };
       },
     }),
@@ -63,6 +70,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        token.organisation = user.organisation;
       }
       return token;
     },
@@ -71,6 +79,7 @@ export const authOptions: NextAuthOptions = {
       if (token) {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
+        session.user.organisation = token.organisation as string;
       }
       return session;
     },

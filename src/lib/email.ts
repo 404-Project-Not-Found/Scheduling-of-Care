@@ -1,3 +1,9 @@
+/**
+ * Filename: /lib/emails.ts
+ * Author: Denise Alexander
+ * Date Created: 17/09/2025
+ */
+
 /* import nodemailer from 'nodemailer';
 
 export const transporter = nodemailer.createTransport({
