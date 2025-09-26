@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Checks if client is already linked to an organisation
-    if (client.organisation) {
+    if (client.organisation && client.status != 'pending') {
       return NextResponse.json(
         { error: 'Client is already linked to an organisation.' },
         { status: 400 }

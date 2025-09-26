@@ -57,7 +57,7 @@ export default function SignupPage() {
 
     const inviteCode =
       orgAction === 'join'
-        ? (form.orgName as HTMLInputElement).value
+        ? (form.invite as HTMLInputElement).value
         : undefined;
 
     if (orgAction === 'create' && !orgName) {

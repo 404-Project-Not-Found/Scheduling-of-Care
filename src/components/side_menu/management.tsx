@@ -25,6 +25,10 @@ type sideMenuProps = {
 const defaultMenuItems: Item[] = [
   { href: '/full_dashboard/update_details', label: 'Update your details' },
   {
+    href: '/management_dashboard/staff_list',
+    label: 'Manage staff',
+  },
+  {
     href: '/management_dashboard/clients_list',
     label: 'Manage clients',
   },
