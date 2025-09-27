@@ -11,6 +11,12 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import mongoose from 'mongoose';
 
+/**
+ * Generates an invite code for a staff member (management or carer) within the user's organisation.
+ * Only authenticated users with a valid session can perform this action.
+ * @param req
+ * @returns invite code
+ */
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   // Ensures the user is authenticated
@@ -23,6 +29,7 @@ export async function POST(req: NextRequest) {
 
     const { role } = await req.json();
 
+    // Validate role: must either be management or carer
     if (!role || !['management', 'carer'].includes(role)) {
       return NextResponse.json(
         { error: 'Invalid or missing role.' },
@@ -40,6 +47,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Fetch organisation doc from DB
     const org = await Organisation.findById(orgId);
     if (!org) {
       return NextResponse.json(
@@ -48,14 +56,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Generate a new invite code for the specified role
     const invite = org.generateInviteCode(role as 'management' | 'carer');
     await org.save();
 
+    // Return success response with the generated invite code
     return NextResponse.json({
       message: 'Invite code generated successfully',
       invite,
     });
   } catch (err) {
+    // Handle errors
     console.error(err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }

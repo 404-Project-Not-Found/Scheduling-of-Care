@@ -8,17 +8,18 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { Suspense, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { signIn } from 'next-auth/react';
 
 export default function SignupPage() {
   const [role, setRole] = useState('User');
   const [orgAction, setOrgAction] = useState<'create' | 'join' | null>(null);
-
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [userExists, setUserExists] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  // Effect to read query params from URL
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     const roleParam = searchParams.get('role') || 'User';
@@ -39,27 +40,32 @@ export default function SignupPage() {
   // Role title to display
   const displayRole = roleDisplayMap[role.toLowerCase()] || 'User';
 
+  // Form submission handler
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
     setUserExists(false);
 
+    // Extract form field values
     const form = e.currentTarget;
     const fullName = (form.userName as HTMLInputElement).value;
     const email = (form.email as HTMLInputElement).value;
     const password = (form.password as HTMLInputElement).value;
     const confirm = (form.confirm as HTMLInputElement).value;
 
+    // Organisation name if creating a new organisation
     const orgName =
       orgAction === 'create'
         ? (form.orgName as HTMLInputElement).value
         : undefined;
 
+    // Invite code if joining an existing organisation
     const inviteCode =
       orgAction === 'join'
         ? (form.invite as HTMLInputElement).value
         : undefined;
 
+    // Form validation
     if (orgAction === 'create' && !orgName) {
       setError('Organisation name is required');
       return;
@@ -97,6 +103,13 @@ export default function SignupPage() {
         throw new Error(data.error || 'Sign up failed');
       }
 
+      // Sign in sliently to populate session
+      await signIn('credentials', {
+        redirect: false,
+        email,
+        password,
+      });
+
       // Sign up is successful, redirect to home after 3 seconds
       setSuccess(true);
       setTimeout(() => {
@@ -104,6 +117,7 @@ export default function SignupPage() {
         window.location.href = `/?${params.toString()}`;
       }, 3000);
     } catch (err: unknown) {
+      // Handle errors
       if (err instanceof Error) {
         if (err.message.includes('exists')) {
           setUserExists(true);
@@ -152,7 +166,7 @@ export default function SignupPage() {
         {/* Organisation field - if new carer/management */}
         {(role === 'management' || role === 'carer') && orgAction && (
           <div className="flex flex-col gap-2">
-            {orgAction === 'create' ? (
+            {orgAction === 'create' && role === 'management' && (
               <>
                 <label htmlFor="orgName" className="text-[20px] font-medium">
                   <span>Enter Organisation Name </span>
@@ -168,23 +182,25 @@ export default function SignupPage() {
                   className="w-full rounded-md border border-[#6E1B1B] bg-white text-black px-4 py-2.5 text-lg outline-none focus:ring-[#4A0A0A]/30"
                 />
               </>
-            ) : (
-              <>
-                <label htmlFor="invite" className="text-[20px] font-medium">
-                  <span>Enter Organisation Invite Code </span>
-                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#E37E72] text-white text-sm font-bold">
-                    i
-                  </span>
-                </label>
-                <input
-                  id="invite"
-                  name="invite"
-                  type="text"
-                  required
-                  className="w-full rounded-md border border-[#6E1B1B] bg-white text-black px-4 py-2.5 text-lg outline-none focus:ring-[#4A0A0A]/30"
-                />
-              </>
             )}
+            {orgAction === 'join' &&
+              (role === 'carer' || role === 'management') && (
+                <>
+                  <label htmlFor="invite" className="text-[20px] font-medium">
+                    <span>Enter Organisation Invite Code </span>
+                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#E37E72] text-white text-sm font-bold">
+                      i
+                    </span>
+                  </label>
+                  <input
+                    id="invite"
+                    name="invite"
+                    type="text"
+                    required
+                    className="w-full rounded-md border border-[#6E1B1B] bg-white text-black px-4 py-2.5 text-lg outline-none focus:ring-[#4A0A0A]/30"
+                  />
+                </>
+              )}
           </div>
         )}
 

@@ -54,7 +54,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.fullName,
           role: user.role,
-          organisation: user.organisation,
+          organisation: user.organisation?.toString(),
         };
       },
     }),
@@ -66,16 +66,16 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     // Called whenever JWT is created or updated
     async jwt({ token, user }) {
-      // Add user ID and role to token for role based access
+      // Add user ID, role and organisation to token for role based access
       if (user) {
         token.id = user.id;
         token.role = user.role;
-        token.organisation = user.organisation;
+        token.organisation = user.organisation?.toString();
       }
       return token;
     },
     async session({ session, token }) {
-      // Include user ID and role in session
+      // Include user ID, role and organisation in session
       if (token) {
         session.user.id = token.id as string;
         session.user.role = token.role as string;

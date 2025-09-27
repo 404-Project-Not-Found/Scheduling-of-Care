@@ -24,7 +24,7 @@ export default function SignupPage() {
 
         <div className="space-y-6">
           <Link
-            href="/signup?role=carer"
+            href="/signup?role=carer&org=join"
             className="block w-full rounded-full px-10 py-5 text-2xl font-semibold bg-[#4A0A0A] text-white hover:opacity-95 transition text-center"
           >
             Carer

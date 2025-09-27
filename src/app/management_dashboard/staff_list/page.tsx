@@ -30,7 +30,7 @@ function getErrorMessage(err: unknown) {
   }
 }
 
-export default function ClientListPage() {
+export default function StaffListPage() {
   const [q, setQ] = useState('');
   const [loading, setLoading] = useState(true);
   const [staff, setStaff] = useState<Staff[]>([]);
@@ -107,7 +107,9 @@ export default function ClientListPage() {
                     <div className="h-8 w-8 rounded-full bg-gray-200" />
                   )}
                   <div>
-                    <p className="font-medium text-black">{s.name}</p>
+                    {s.name && (
+                      <p className="font-medium text-black">{s.name}</p>
+                    )}
                     {s.email && (
                       <p className="text-xs text-gray-500">{s.email}</p>
                     )}
@@ -129,17 +131,11 @@ export default function ClientListPage() {
                 </div>
 
                 <div className="flex gap-2">
-                  <Link
+                  {/* <Link
                     href={`/management_dashboard/staff${s._id}`}
                     className="px-3 py-1 rounded bg-white text-black hover:bg-gray-300 text-sm"
                   >
-                    View profile
-                  </Link>
-                  {/* <Link
-                    href={`/carer/manage?client=${c._id}`}
-                    className="px-3 py-1 rounded bg-[#e07a5f] text-black text-sm"
-                  >
-                    Assign carer
+                    Assign Carer
                   </Link> */}
                 </div>
               </li>

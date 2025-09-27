@@ -12,6 +12,7 @@ export interface IUser extends Document {
   password: string;
   role: 'carer' | 'management' | 'family';
   organisation?: mongoose.Types.ObjectId;
+  status?: 'active' | 'inactive';
 }
 
 const UserSchema = new Schema<IUser>({
@@ -24,6 +25,15 @@ const UserSchema = new Schema<IUser>({
     required: true,
   },
   organisation: { type: Schema.Types.ObjectId, ref: 'Organisation' },
+  status: {
+    type: String,
+    enum: ['active', 'inactive'],
+    default: function (this: IUser) {
+      return this.role === 'carer' || this.role === 'management'
+        ? 'active'
+        : undefined;
+    },
+  },
 });
 
 export default mongoose.models.User ||

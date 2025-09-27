@@ -32,7 +32,7 @@ const defaultMenuItems: Item[] = [
     href: '/management_dashboard/clients_list',
     label: 'Manage clients',
   },
-  { href: '/carer/search', label: 'Assign carer' },
+  { href: '/management_dashboard/carer/search', label: 'Assign carer' },
   { href: '/management_dashboard/add_care_items', label: 'Add Care Item' },
   { href: '/management_dashboard/edit_task', label: 'Edit Task' },
   { href: '/management_dashboard/remove_task', label: 'Remove Task' },
