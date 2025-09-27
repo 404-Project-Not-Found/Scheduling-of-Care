@@ -36,7 +36,7 @@ export default function DashboardPage() {
               />
             </div>
 
-            <div className="flex items-center gap-3">
+            {/* <div className="flex items-center gap-3">
               <span>Florence Edwards</span>
               <Image
                 src="/florence.jpg"
@@ -45,7 +45,7 @@ export default function DashboardPage() {
                 height={80}
                 className="rounded-full border border-white object-cover"
               />
-            </div>
+            </div> */}
           </div>
 
           {/* Body */}

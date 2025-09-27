@@ -1,127 +1,151 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
+export const dynamic = "force-dynamic";
+
+import React, { useState } from "react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+
+const colors = {
+  pageBg: "#ffd9b3",
+  cardBg: "#F7ECD9",
+  header: "#3A0000",
+  text: "#2b2b2b",
+  orange: "#F4A261",
+};
 
 export default function UpdateDetailsPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState(''); // New state for error
-  const [showHelp, setShowHelp] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [pwd, setPwd] = useState("");
+  const [show, setShow] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSave = () => {
-    if (!email.trim() || !password.trim()) {
-      setError('Email and password cannot be empty.');
-      setSaved(false);
-    } else {
-      setError('');
-      setSaved(true);
+  function handleSave() {
+    if (!email.trim() || !pwd.trim()) {
+      setError("Email and password cannot be empty.");
+      return;
     }
-  };
 
-  const handleCancel = () => {
-    setEmail('');
-    setPassword('');
-    setSaved(false);
-    setShowPassword(false);
-    setError('');
-  };
+    router.push("/menu");
+  }
+
+  function handleCancel() {
+    router.push("/menu");
+  }
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center"
-      style={{ backgroundColor: '#ffd9b3' }}
+    <main
+      className="min-h-screen w-full flex items-center justify-center px-6 py-12 relative"
+      style={{ backgroundColor: colors.pageBg }}
     >
-      <div
-        className="rounded-md shadow-md p-8 w-[500px]"
-        style={{ backgroundColor: '#fff4e6', color: '#000' }}
-      >
-        <h2 className="text-xl font-bold mb-6">Update your details</h2>
+      <div className="absolute top-6 left-6">
+        <Image
+          src="/logo-name.png"
+          alt="Scheduling of Care"
+          width={220}
+          height={80}
+          className="object-contain"
+          priority
+        />
+      </div>
 
-        <div className="mb-5">
-          <label className="block text-sm font-medium mb-1">Change email:</label>
+      {/* Centered card */}
+      <div
+        className="w-full max-w-xl md:max-w-2xl rounded-2xl shadow-lg overflow-hidden"
+        style={{ backgroundColor: colors.cardBg }}
+      >
+        {/* Maroon header with centered title */}
+        <div
+          className="w-full flex items-center justify-center px-6 py-5"
+          style={{ backgroundColor: colors.header }}
+        >
+          <h1 className="text-2xl md:text-3xl font-bold text-white text-center">
+            Update your details
+          </h1>
+        </div>
+
+        {/* Content */}
+        <div className="px-8 md:px-10 py-8 md:py-10 text-black">
+          {/* Email */}
+          <label className="block text-lg mb-2" style={{ color: colors.text }}>
+            Change email:
+          </label>
           <input
             type="email"
             value={email}
             onChange={(e) => {
               setEmail(e.target.value);
-              setSaved(false);
-              setError('');
+              setError("");
             }}
-            className="w-full border rounded px-3 py-2 text-black"
+            className="w-full bg-white border-2 rounded-md px-4 py-3 mb-8 focus:outline-none focus:ring-2"
+            style={{ borderColor: `${colors.header}55` }}
+            placeholder="Enter new email"
           />
-        </div>
 
-        <div className="mb-2">
-          <label className="block text-sm font-medium mb-1">Change password:</label>
+          {/* Password */}
+          <label className="block text-lg mb-2" style={{ color: colors.text }}>
+            Change password:
+          </label>
           <input
-            type={showPassword ? 'text' : 'password'}
-            value={password}
+            type={show ? "text" : "password"}
+            value={pwd}
             onChange={(e) => {
-              setPassword(e.target.value);
-              setSaved(false);
-              setError('');
+              setPwd(e.target.value);
+              setError("");
             }}
-            className="w-full border rounded px-3 py-2 text-black"
+            className="w-full bg-white border-2 rounded-md px-4 py-3 focus:outline-none focus:ring-2"
+            style={{ borderColor: `${colors.header}55` }}
+            placeholder="Enter new password"
           />
-        </div>
 
-        {/* Show password checkbox */}
-        <div className="mb-5">
-          <label className="flex items-center gap-2 text-sm">
+          {/* Show password toggle */}
+          <label
+            className="mt-4 flex items-center gap-2 text-lg"
+            style={{ color: colors.text }}
+          >
             <input
               type="checkbox"
-              checked={showPassword}
-              onChange={(e) => setShowPassword(e.target.checked)}
+              checked={show}
+              onChange={(e) => setShow(e.target.checked)}
+              className="h-4 w-4"
             />
             Show password
           </label>
-        </div>
 
-        {/* Error or success message */}
-        {error && <div className="text-red-600 text-sm mb-5">{error}</div>}
-        {saved && !error && (
-          <div className="text-green-600 text-sm mb-5">
-            Details saved! (Email: {email || 'not set'}, Password:{' '}
-            {password ? '******' : 'not set'})
-          </div>
-        )}
+          {error && (
+            <p className="mt-4 text-sm" style={{ color: "#b91c1c" }}>
+              {error}
+            </p>
+          )}
 
-        <div className="flex items-center justify-between mt-6">
-          {/* Help button */}
-          <div
-            className="relative"
-            onMouseEnter={() => setShowHelp(true)}
-            onMouseLeave={() => setShowHelp(false)}
-          >
-            <button className="w-7 h-7 rounded-full bg-red-400 text-white text-sm font-bold flex items-center justify-center">
-              ?
-            </button>
-            {showHelp && (
-              <div className="absolute left-9 top-0 bg-white border text-sm p-3 rounded shadow-md w-60 text-black">
-                Enter your new email and/or password, then click <b>Save</b>.
-                Use <b>Cancel</b> to discard changes.
-              </div>
-            )}
-          </div>
-
-          <div className="flex gap-4">
+          {/* Actions */}
+          <div className="mt-10 flex items-center justify-end gap-6">
             <button
+              type="button"
+              className="px-6 py-2.5 rounded-full border text-gray-700 hover:bg-gray-200"
               onClick={handleCancel}
-              className="text-gray-700 hover:underline"
             >
               Cancel
             </button>
+
             <button
+              type="button"
+              className="px-7 py-2.5 rounded-full font-semibold border"
+              style={{
+                backgroundColor: colors.orange,
+                borderColor: "#f08a00",
+                color: colors.header,
+              }}
               onClick={handleSave}
-              className="bg-orange-400 text-white px-5 py-2 rounded shadow hover:bg-orange-500"
             >
               Save
             </button>
           </div>
         </div>
+
+        <div className="h-4" />
       </div>
-    </div>
+    </main>
   );
 }
