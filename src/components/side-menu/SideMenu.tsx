@@ -22,8 +22,8 @@ const palette = {
 
 const defaultItems: Item[] = [
   { href: "/dashboard/update-details", label: "Update your details" },
-  { href: "/dashboard/add-care-items", label: "Add Care Item" },
-  { href: "/dashboard/edit-task", label: "Edit Task" },
+  { href: "/task/add", label: "Add Care Item" },
+  { href: "/task/edit", label: "Edit Task" },
   { href: "/dashboard/remove-task", label: "Remove Task" },
   { href: "/carer/search", label: "Assign Carer" },
   { href: "/dashboard/register-client", label: "Register new client" },

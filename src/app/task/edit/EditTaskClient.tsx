@@ -19,11 +19,11 @@ type Task = {
   lastDone?: string;
 
   // structured fields
-  frequencyDays?: number;      // normalized to days
-  frequencyCount?: number;     // user-entered number
-  frequencyUnit?: Unit;        // user-chosen unit
-  dateFrom?: string;           // YYYY-MM-DD
-  dateTo?: string;             // YYYY-MM-DD
+  frequencyDays?: number; // normalized to days
+  frequencyCount?: number; // user-entered number
+  frequencyUnit?: Unit; // user-chosen unit
+  dateFrom?: string; // YYYY-MM-DD
+  dateTo?: string; // YYYY-MM-DD
 };
 
 function humanize(slug: string) {
@@ -47,17 +47,22 @@ function saveTasks(tasks: Task[]) {
 const unitToDays: Record<Unit, number> = {
   day: 1,
   week: 7,
-  month: 30,  // simple approximation
-  year: 365,  // simple approximation
+  month: 30, // simple approximation
+  year: 365, // simple approximation
 };
 
 function toDays(count: number, unit: Unit) {
   return Math.max(1, Math.floor(count || 1)) * unitToDays[unit];
 }
 
-function parseLegacyFrequency(freq?: string): { count: number; unit: Unit } | null {
+function parseLegacyFrequency(
+  freq?: string
+): { count: number; unit: Unit } | null {
   if (!freq) return null;
-  const m = freq.trim().toLowerCase().match(/^(\d+)\s*(day|days|week|weeks|month|months|year|years)$/);
+  const m = freq
+    .trim()
+    .toLowerCase()
+    .match(/^(\d+)\s*(day|days|week|weeks|month|months|year|years)$/);
   if (!m) return null;
   const n = Math.max(1, parseInt(m[1], 10));
   const u = m[2].replace(/s$/, "") as Unit;
@@ -82,7 +87,13 @@ export default function EditTaskPage() {
   const [label, setLabel] = useState("Replace Toothbrush Head");
 
   // status options for dropdown; if current status isn't in the list, include it as first option
-  const statusOptionsBase = ["in progress", "Completed", "Not started", "Paused", "Cancelled"];
+  const statusOptionsBase = [
+    "in progress",
+    "Completed",
+    "Not started",
+    "Paused",
+    "Cancelled",
+  ];
   const statusOptions = statusOptionsBase.includes(status)
     ? statusOptionsBase
     : [status, ...statusOptionsBase];
@@ -134,7 +145,9 @@ export default function EditTaskPage() {
     const idx = tasks.findIndex((x) => x.slug === taskSlug);
     if (idx >= 0) {
       const days = toDays(frequencyCount, frequencyUnit);
-      const legacyStr = `${frequencyCount} ${frequencyUnit}${frequencyCount > 1 ? "s" : ""}`;
+      const legacyStr = `${frequencyCount} ${frequencyUnit}${
+        frequencyCount > 1 ? "s" : ""
+      }`;
 
       tasks[idx] = {
         ...tasks[idx],
@@ -149,13 +162,16 @@ export default function EditTaskPage() {
         dateTo,
         // legacy fields for compatibility
         frequency: legacyStr,
-        lastDone: dateFrom && dateTo ? `${dateFrom} to ${dateTo}` : tasks[idx].lastDone || "",
+        lastDone:
+          dateFrom && dateTo
+            ? `${dateFrom} to ${dateTo}`
+            : tasks[idx].lastDone || "",
         deleted: false,
       };
 
       saveTasks(tasks);
     }
-    router.push("/task/search");
+    // router.push("/task/search");
   };
 
   const onRemove = () => {
@@ -165,7 +181,7 @@ export default function EditTaskPage() {
       tasks[idx].deleted = true;
       saveTasks(tasks);
     }
-    router.push("/task/search");
+    // router.push("/task/search");
   };
 
   return (
@@ -185,7 +201,9 @@ export default function EditTaskPage() {
           <h1 className="text-3xl font-extrabold">Edit task</h1>
         </div>
 
-        <h2 className="mt-4 text-2xl font-bold text-[#1c130f]">{displayTitle}</h2>
+        <h2 className="mt-4 text-2xl font-bold text-[#1c130f]">
+          {displayTitle}
+        </h2>
 
         <div className="mt-8 space-y-6">
           {/* Client name */}
@@ -225,7 +243,11 @@ export default function EditTaskPage() {
                 min={1}
                 step={1}
                 value={Number.isFinite(frequencyCount) ? frequencyCount : 1}
-                onChange={(e) => setFrequencyCount(Math.max(1, parseInt(e.target.value || "1", 10)))}
+                onChange={(e) =>
+                  setFrequencyCount(
+                    Math.max(1, parseInt(e.target.value || "1", 10))
+                  )
+                }
                 className="w-28 rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black"
               />
               <select
@@ -269,8 +291,9 @@ export default function EditTaskPage() {
 
         <div className="mt-8 -mx-8 px-8 py-5 bg-rose-300/25 text-black border border-rose-300/50">
           <span className="font-bold mr-1">IMPORTANT:</span>
-          Deleting the task or editing the frequency and dates will change the schedule of this care
-          item for the rest of the year. Be aware of any budget implications caused by this change. Make this change?
+          Deleting the task or editing the frequency and dates will change the
+          schedule of this care item for the rest of the year. Be aware of any
+          budget implications caused by this change. Make this change?
         </div>
 
         <div className="mt-8 flex items-center justify-between">
@@ -283,7 +306,7 @@ export default function EditTaskPage() {
 
           <div className="flex items-center gap-6">
             <button
-              onClick={() => router.push("/task/search")}
+              // onClick={() => router.push("/task/search")}
               className="text-xl font-medium text-[#1c130f] hover:opacity-80"
             >
               Cancel
@@ -301,7 +324,13 @@ export default function EditTaskPage() {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="grid grid-cols-[130px_1fr] items-center gap-4">
       <div className="text-xl font-medium text-[#1c130f]">{label}</div>

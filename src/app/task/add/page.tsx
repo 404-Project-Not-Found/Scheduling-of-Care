@@ -1,8 +1,7 @@
-// src/app/task/add/page.tsx
 "use client";
 
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+// import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 type Unit = "day" | "week" | "month" | "year";
@@ -59,7 +58,7 @@ function slugify(s: string) {
 }
 
 export default function AddTaskPage() {
-  const router = useRouter();
+  // const router = useRouter();
 
   // all fields default to empty
   const [clientName, setClientName] = useState("");
@@ -73,7 +72,13 @@ export default function AddTaskPage() {
   const [frequencyCountStr, setFrequencyCountStr] = useState<string>("");
   const [frequencyUnit, setFrequencyUnit] = useState<Unit>("day");
 
-  const statusOptions = ["in progress", "Completed", "Not started", "Paused", "Cancelled"];
+  const statusOptions = [
+    "in progress",
+    "Completed",
+    "Not started",
+    "Paused",
+    "Cancelled",
+  ];
 
   const onCreate = () => {
     const name = label.trim();
@@ -92,7 +97,9 @@ export default function AddTaskPage() {
 
     const countNum = parseInt(frequencyCountStr, 10);
     const hasFrequency = Number.isFinite(countNum) && countNum > 0;
-    const frequencyDays = hasFrequency ? toDays(countNum, frequencyUnit) : undefined;
+    const frequencyDays = hasFrequency
+      ? toDays(countNum, frequencyUnit)
+      : undefined;
     const legacyStr = hasFrequency
       ? `${countNum} ${frequencyUnit}${countNum > 1 ? "s" : ""}`
       : undefined;
@@ -114,7 +121,7 @@ export default function AddTaskPage() {
     };
 
     saveTasks([...(tasks || []), newTask]);
-    router.push("/task/search");
+    // router.push("/task/search");
   };
 
   return (
@@ -231,7 +238,7 @@ export default function AddTaskPage() {
           <div />
           <div className="flex items-center gap-6">
             <button
-              onClick={() => router.push("/task/search")}
+              // onClick={() => router.push("/task/search")}
               className="text-xl font-medium text-[#1c130f] hover:opacity-80"
             >
               Cancel
@@ -249,7 +256,13 @@ export default function AddTaskPage() {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="grid grid-cols-[130px_1fr] items-center gap-4">
       <div className="text-xl font-medium text-[#1c130f]">{label}</div>
