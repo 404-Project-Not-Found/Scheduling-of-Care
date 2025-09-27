@@ -72,7 +72,8 @@ export default function RegisterClientPage() {
           )}
           {inviteCode && (
             <div className="mb-4 px-4 py-3 rounded-md text-sm bg-green-100 border border-green-300 text-green-700">
-              Invite Code: <strong>{inviteCode}</strong>
+              Invite Code: <strong>{inviteCode}</strong>. This code will
+              automatically expire after 15 minutes.
             </div>
           )}
           <div>

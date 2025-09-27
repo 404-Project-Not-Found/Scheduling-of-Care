@@ -30,8 +30,8 @@ const InviteCodeSchema = new Schema<IInviteCode>({
   role: { type: String, enum: ['management', 'carer'], required: true },
   expiresAt: {
     type: Date,
-    // Expires after 7 days from creation
-    default: () => new Date(Date.now() + 7 * 24 * 69 * 69 * 1000),
+    // Expires after 15 minutes
+    default: () => new Date(Date.now() + 15 * 60 * 1000),
   },
   used: { type: Boolean, default: false },
 });
@@ -59,7 +59,7 @@ OrganisationSchema.methods.generateInviteCode = function (
     code,
     role,
     used: false,
-    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    expiresAt: new Date(Date.now() + 15 * 60 * 1000), // expires after 15 minutes
   };
 
   // Add invite code to organisation's invite codes array

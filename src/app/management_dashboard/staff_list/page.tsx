@@ -84,6 +84,21 @@ export default function StaffListPage() {
           className="w-full border rounded-lg text-black px-4 py-2 mb-6"
         />
 
+        <div className="flex justify-end gap-4 mb-6">
+          <Link
+            href="/management_dashboard/add_staff"
+            className="px-4 py-2 bg-[#3d0000] text-white rounded"
+          >
+            Add new staff
+          </Link>
+          <Link
+            href="/empty_dashboard"
+            className="px-4 py-2 bg-gray-300 text-black rounded"
+          >
+            Back to dashboard
+          </Link>
+        </div>
+
         {loading && <p className="text-sm text-gray-600">Loading</p>}
         {error && <p className="text-sm text-red-600">{error}</p>}
 
@@ -145,21 +160,6 @@ export default function StaffListPage() {
             )}
           </ul>
         )}
-
-        <div className="flex justify-between mt-6">
-          <Link
-            href="/management_dashboard/add_staff"
-            className="px-4 py-2 bg-[#3d0000] text-white rounded"
-          >
-            Add new staff
-          </Link>
-          <Link
-            href="/empty_dashboard"
-            className="px-4 py-2 bg-gray-300 text-black rounded"
-          >
-            Back to dashboard
-          </Link>
-        </div>
       </div>
     </main>
   );
