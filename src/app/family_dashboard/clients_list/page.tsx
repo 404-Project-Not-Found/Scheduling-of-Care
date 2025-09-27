@@ -148,7 +148,7 @@ export default function FamilyPOAListPage() {
 
                         {/* Manage organisation access → pink (now passes both name + dob) */}
                         <Link
-                          href={`/family_dashboard/manage_organisation_access?id=${m._id}`}
+                          href={`/family_dashboard/manage_organisation_access/${m._id}`}
                           className="px-4 py-2 rounded-lg text-lg font-medium"
                           style={{
                             backgroundColor: palette.organPink,

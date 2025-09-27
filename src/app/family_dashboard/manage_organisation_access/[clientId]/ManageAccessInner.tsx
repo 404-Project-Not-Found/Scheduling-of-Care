@@ -1,11 +1,23 @@
+/**
+ * Filename: /family_dashboard/manage_organisation_access/[clientId]/ManageAccessInner.tsx
+ * Authors: Qingyue Zhao and Denise Alexander
+ * Date Created: 17/09/2025
+ */
+
 'use client';
 
-import React, { useState, Suspense } from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 type OrgStatus = 'active' | 'pending' | 'revoked';
-interface Organization {
+
+interface ClientDoc {
+  id: string;
+  name: string;
+}
+
+interface Organisation {
   id: string;
   name: string;
   status: OrgStatus;
@@ -18,49 +30,62 @@ const palette = {
   panelBg: '#fdf4e7', // panel background
 };
 
-// Optional: keep dynamic rendering
-export const dynamic = 'force-dynamic';
-
-// ===== Outer page: wraps the inner component with <Suspense> to avoid build errors with useSearchParams =====
-export default function ManageAccessPage() {
-  return (
-    <Suspense fallback={<div style={{ padding: 16 }}>Loading…</div>}>
-      <ManageAccessInner />
-    </Suspense>
-  );
-}
-
-function ManageAccessInner() {
+export default function ManageAccessInner({
+  client,
+  initialOrgs,
+}: {
+  client: ClientDoc;
+  initialOrgs: Organisation[];
+}) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const clientName = searchParams.get('name') || 'Selected client';
+  const [orgs, setOrgs] = useState<Organisation[]>(initialOrgs);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const [orgs, setOrgs] = useState<Organization[]>([
-    { id: '1', name: 'SunnyCare Facility', status: 'active' },
-    { id: '2', name: 'Haven Care Centre', status: 'pending' },
-    { id: '3', name: 'Rosehill Aged Care', status: 'revoked' },
-    { id: '4', name: 'Maple Leaf Aged Care', status: 'active' },
-    { id: '5', name: 'Cedar Grove Home', status: 'pending' },
-    { id: '6', name: 'Lakeside Care', status: 'active' },
-    { id: '7', name: 'Willow Creek Home', status: 'revoked' },
-    { id: '8', name: 'Pine Valley Facility', status: 'pending' },
-    { id: '9', name: 'Oakwood Seniors', status: 'active' },
-  ]);
+  // Updates local UI state to reflect changes optimistically
+  async function updateOrgStatus(
+    orgId: string,
+    action: 'approve' | 'reject' | 'revoke'
+  ) {
+    setLoading(true);
+    try {
+      const res = await fetch(
+        `/api/clients/${client.id}/organisations/${orgId}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action }),
+        }
+      );
 
-  function revokeOrg(id: string) {
-    setOrgs((prev) =>
-      prev.map((o) => (o.id === id ? { ...o, status: 'revoked' } : o))
-    );
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to update organisations.');
+      }
+
+      setOrgs((prev) =>
+        prev.map((o) =>
+          o.id === orgId
+            ? { ...o, status: action === 'approve' ? 'active' : 'revoked' }
+            : o
+        )
+      );
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Something went wrong.');
+      }
+    } finally {
+      setLoading(false);
+    }
   }
-  function approveOrg(id: string) {
-    setOrgs((prev) =>
-      prev.map((o) => (o.id === id ? { ...o, status: 'active' } : o))
-    );
+
+  if (loading) {
+    return <div className="p-6">Loading organisations...</div>;
   }
-  function removePending(id: string) {
-    setOrgs((prev) =>
-      prev.map((o) => (o.id === id ? { ...o, status: 'revoked' } : o))
-    );
+  if (error) {
+    return <div className="p-6 text-red-600">Error: {error}</div>;
   }
 
   return (
@@ -116,7 +141,7 @@ function ManageAccessInner() {
 
             {/* Client name */}
             <div className="px-5 py-4 text-center text-2xl font-bold text-black">
-              Client:&nbsp;{clientName}
+              Client:&nbsp;{client ? client.name : 'Loading...'}
             </div>
 
             {/* Privacy notice */}
@@ -136,14 +161,14 @@ function ManageAccessInner() {
               <Group
                 title="Organisations with Access"
                 items={orgs.filter((o) => o.status === 'active')}
-                onRevoke={revokeOrg}
+                onRevoke={(id) => updateOrgStatus(id, 'revoke')}
               />
               <hr className="my-4" />
               <Group
                 title="Organisations with Access Pending"
                 items={orgs.filter((o) => o.status === 'pending')}
-                onApprove={approveOrg}
-                onRemove={removePending}
+                onApprove={(id) => updateOrgStatus(id, 'approve')}
+                onRemove={(id) => updateOrgStatus(id, 'reject')}
               />
               <hr className="my-4" />
               <Group
@@ -159,7 +184,7 @@ function ManageAccessInner() {
                 style={{ backgroundColor: palette.header }}
                 onClick={() => router.push('/family_dashboard/clients_list')}
               >
-                Save &amp; Return
+                Return
               </button>
             </div>
           </div>
@@ -208,7 +233,7 @@ function Group({
   onApprove,
 }: {
   title: string;
-  items: Organization[];
+  items: Organisation[];
   onRevoke?: (id: string) => void;
   onRemove?: (id: string) => void;
   onApprove?: (id: string) => void;

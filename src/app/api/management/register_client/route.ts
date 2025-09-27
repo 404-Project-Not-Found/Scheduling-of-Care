@@ -11,6 +11,14 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import mongoose from 'mongoose';
 
+interface OrgHistoryItem {
+  organisation: mongoose.Types.ObjectId;
+  status: 'active' | 'pending' | 'revoked';
+  addedBy: string;
+  createdAt: Date;
+  updatedAt?: Date;
+}
+
 /**
  * Links a client to the logged-in user's organisation via the client access code.
  * Only authenticated users can perform this action.
@@ -38,7 +46,7 @@ export async function POST(req: NextRequest) {
   const { accessCode } = await req.json();
   if (!accessCode) {
     return NextResponse.json(
-      { error: 'Access code is reuqired.' },
+      { error: 'Access code is required.' },
       { status: 400 }
     );
   }
@@ -54,26 +62,44 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Checks if client is already linked to an organisation
-    if (client.organisation && client.status != 'pending') {
+    // Initialises organisation history if array not present
+    if (!client.organisationHistory) {
+      client.organisationHistory = [];
+    }
+
+    const orgHistory = client.organisationHistory as OrgHistoryItem[];
+
+    // Checks if the client is already linked or revoked
+    const existingEntry = orgHistory.find(
+      (h) => h.organisation.toString() === orgId
+    );
+    if (existingEntry) {
+      if (existingEntry.status === 'revoked') {
+        return NextResponse.json(
+          {
+            error:
+              'Access for this client has been revoked by family or power of attorney.',
+          },
+          { status: 400 }
+        );
+      }
       return NextResponse.json(
-        { error: 'Client is already linked to an organisation.' },
+        {
+          error: 'Client is already linked to this organisation',
+        },
         { status: 400 }
       );
     }
 
-    // Check if client is already approved
-    if (client.status === 'approved') {
-      return NextResponse.json(
-        { error: 'Client is already approved.' },
-        { status: 400 }
-      );
-    }
+    // Adds new pending entry to client's organisation history
+    client.organisationHistory.push({
+      organisation: new mongoose.Types.ObjectId(orgId),
+      status: 'pending',
+      addedBy: session.user.id,
+      createdAt: new Date(),
+    });
 
-    // Link client to the organisation and set status to pending
-    client.organisation = new mongoose.Types.ObjectId(orgId);
-    client.status = 'pending';
-    await client.save();
+    await client.save(); // persist changes
 
     // Return success response with client info
     return NextResponse.json({
@@ -82,7 +108,7 @@ export async function POST(req: NextRequest) {
         _id: client._id,
         name: client.name,
         accessCode: client.accessCode,
-        status: client.status,
+        organisationHistory: client.organisationHistory,
       },
     });
   } catch (err) {

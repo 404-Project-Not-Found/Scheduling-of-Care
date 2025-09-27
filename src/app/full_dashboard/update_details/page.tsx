@@ -1,6 +1,6 @@
 /**
  * Filename: /update_details/page.tsx
- * Authors: Qingyue Zhao & Denise Alexander
+ * Authors: Devni Wijesinghe & Denise Alexander
  * Date Created: 22/09/2025
  */
 

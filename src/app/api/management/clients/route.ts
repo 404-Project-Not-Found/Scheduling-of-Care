@@ -34,7 +34,12 @@ export async function GET() {
 
   // Query all clients belonging to the user's organisation
   const clients = await Client.find({
-    organisation: session.user.organisation,
+    organisationHistory: {
+      $elemMatch: {
+        organisation: session.user.organisation,
+        status: 'approved',
+      },
+    },
   }).lean();
 
   // Return clients as JSON

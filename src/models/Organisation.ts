@@ -68,5 +68,6 @@ OrganisationSchema.methods.generateInviteCode = function (
 };
 
 // Use existing model if already compiled to prevent recompilation errors
-export default (mongoose.models.Organisation as Model<IOrganisation>) ||
+export const Organisation: Model<IOrganisation> =
+  mongoose.models.Organisation ||
   mongoose.model<IOrganisation>('Organisation', OrganisationSchema);

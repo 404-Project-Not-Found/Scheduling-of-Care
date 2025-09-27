@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import mongoose from 'mongoose';
 import { connectDB } from '@/lib/mongodb';
 import bcrypt from 'bcryptjs';
-import Organisation, { IInviteCode } from '@/models/Organisation';
+import { Organisation, IInviteCode } from '@/models/Organisation';
 import User from '@/models/User';
 
 /**
