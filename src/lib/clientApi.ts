@@ -48,8 +48,6 @@ export async function getClientByIdFE(id: string): Promise<Client | null> {
     return mockData.find((c) => c._id === id) || null;
   }
 
-
-
   // real backend api
   const res = await fetch(`/api/clients/${id}`, { cache: 'no-store' });
   if (!res.ok) return null;
