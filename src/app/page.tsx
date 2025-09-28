@@ -14,6 +14,7 @@ import { useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 
+
 // Prefills information after user signs up
 function PrefillFromSearchParams({
   setEmail,
@@ -58,73 +59,68 @@ export default function Home() {
       return;
     }
 
-    // Frontend test-only mock path (no API/MongoDB):
 
-    // Case 1: Family mock account
-    const emailTrimmed = email.trim().toLowerCase();
-    if (emailTrimmed === 'family@email.com' && password === 'family') {
-      if (staySigned) {
-        localStorage.setItem('rememberMe', '1');
-      } else {
-        localStorage.removeItem('rememberMe');
-      }
-      sessionStorage.setItem('mockRole', 'family');
-      window.location.href = '/empty_dashboard';
-      return;
+    // ============================
+    // Frontend mock path (no API)
+    // ============================
+    if (process.env.NEXT_PUBLIC_ENABLE_MOCK === '1') {
+        const emailTrimmed = email.trim().toLowerCase();
+
+        // Match the three mock accounts
+        const isFamily = emailTrimmed === 'family@email.com' && password === 'family';
+        const isCarer = emailTrimmed === 'carer@email.com' && password === 'carer';
+        const isMgmt  = emailTrimmed === 'management@email.com' && password === 'management';
+
+        if (isFamily || isCarer || isMgmt) {
+            // remember me (same as before)
+            if (staySigned) localStorage.setItem('rememberMe', '1');
+            else localStorage.removeItem('rememberMe');
+
+            // store mock role for downstream pages
+            const role = isCarer ? 'carer' : isMgmt ? 'management' : 'family';
+            sessionStorage.setItem('mockRole', role);
+
+            // redirect and STOP here
+            if (role === 'carer') {
+                window.location.href = '/full_dashboard';
+                return;
+            } else {
+                window.location.href = '/empty_dashboard';
+                return; 
+            }
+        }
+
+        // No mock credentials matched → show error and STOP (do not fall through to NextAuth)
+        setError('Invalid mock credentials');
+        return; 
     }
 
-    // Case 2: Carer mock account
-    if (emailTrimmed === 'carer@email.com' && password === 'carer') {
-      if (staySigned) {
-        localStorage.setItem('rememberMe', '1');
-      } else {
-        localStorage.removeItem('rememberMe');
-      }
-      sessionStorage.setItem('mockRole', 'carer');
-      window.location.href = '/full_dashboard';
-      return;
-    }
-
-    // Case 3: Management mock account
-    if (emailTrimmed === 'management@email.com' && password === 'management') {
-      if (staySigned) {
-        localStorage.setItem('rememberMe', '1');
-      } else {
-        localStorage.removeItem('rememberMe');
-      }
-      sessionStorage.setItem('mockRole', 'management');
-      window.location.href = '/empty_dashboard';
-      return;
-    }
-
-    setLoading(true); // start loading
+    // ============================
+    // Real backend path (NextAuth)
+    // ============================
+    setLoading(true);
 
     try {
-      // Sign in with credentials provider
       const res = await signIn('credentials', {
-        redirect: false, // Prevent automatic redirect
+        redirect: false,
         email,
         password,
       });
 
-      // Handle login failure
       if (!res || !res.ok) {
         setError(res?.error || 'Login failed');
-        setLoading(false); // stop loading
+        setLoading(false);
         return;
       }
 
-      // Get current session after successful login
       const session = await getSession();
 
-      // Ensures user role exists within the session
       if (!session?.user?.role) {
         setError('Could not determine user role');
         setLoading(false);
         return;
       }
 
-      // Redirect user based on role
       switch (session.user.role) {
         case 'carer':
           window.location.href = '/full_dashboard';

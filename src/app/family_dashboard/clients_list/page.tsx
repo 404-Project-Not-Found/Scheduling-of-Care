@@ -7,12 +7,16 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-// ----- Type definiton for a client record -----
-type Client = {
-  _id: string;
-  name: string;
-  dob: string;
-};
+// ✅ Use the shared API helper so pages don't duplicate mock vs backend logic
+import { getClientsFE, type Client } from '@/lib/clientApi';
+
+
+// // ----- Type definiton for a client record -----
+// type Client = {
+//   _id: string;
+//   name: string;
+//   dob: string;
+// };
 
 // ----- Color palette -----
 const palette = {
@@ -33,15 +37,23 @@ export default function FamilyPOAListPage() {
   const [clients, setClients] = useState<Client[]>([]);
 
   // Fetches client list from API
-  useEffect(() => {
-    async function fetchClients() {
-      const res = await fetch('/api/clients');
-      const data = await res.json();
-      // Saves client list to state so they can be displayed in the UI
-      setClients(data);
-    }
-    fetchClients();
-  }, []);
+    useEffect(() => {
+        let mounted = true;
+
+        (async () => {
+        try {
+            const list = await getClientsFE();
+            if (mounted) setClients(Array.isArray(list) ? list : []);
+        } catch (err) {
+            console.error('Load clients failed:', err);
+            if (mounted) setClients([]); 
+        }
+    })();
+
+    return () => {
+    mounted = false;
+    };
+}, []);
 
   const goBack = () => router.replace('/empty_dashboard');
 
@@ -135,16 +147,29 @@ export default function FamilyPOAListPage() {
                         </Link>
 
                         {/* View dashboard → orange */}
-                        <Link
-                          href={`/partial_dashboard?name=${encodeURIComponent(m.name)}`}
-                          className="px-4 py-2 rounded-lg text-lg font-medium"
-                          style={{
-                            backgroundColor: palette.dashOrange,
-                            color: palette.white,
-                          }}
-                        >
-                          View dashboard
-                        </Link>
+                        {m.dashboardType === 'full' ? (
+                            <Link
+                                href={`/full_dashboard?id=${m._id}`}
+                                className="px-4 py-2 rounded-lg text-lg font-medium"
+                                style={{
+                                    backgroundColor: palette.dashOrange,
+                                    color: palette.white,
+                                }}
+                            >
+                                View dashboard
+                            </Link>
+                            ) : (
+                            <Link
+                                href={`/partial_dashboard?id=${m._id}`}
+                                className="px-4 py-2 rounded-lg text-lg font-medium"
+                                style={{
+                                    backgroundColor: palette.dashOrange,
+                                    color: palette.white,
+                                }}
+                            >
+                                View dashboard
+                            </Link>
+                        )}
 
                         {/* Manage organisation access → pink (now passes both name + dob) */}
                         <Link

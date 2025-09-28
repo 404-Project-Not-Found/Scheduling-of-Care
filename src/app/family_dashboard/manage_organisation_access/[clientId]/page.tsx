@@ -8,6 +8,7 @@ import Client from '@/models/Client';
 import { connectDB } from '@/lib/mongodb';
 import '@/models/Organisation'; // Ensures the Organisation model is registered with Mongoose
 import ManageAccessInner from './ManageAccessInner';
+import { isMock, MOCK_ORGS, getClientByIdFE } from '@/lib/clientApi';
 
 type OrgStatus = 'active' | 'pending' | 'revoked';
 
@@ -25,6 +26,23 @@ export default async function ManageAccessPage({
   params: { clientId: string };
 }) {
   const clientId = params.clientId;
+
+  //fronend
+  if (isMock) {
+    // Try to reuse the same helper used by FE pages (returns null if not found)
+    const mockClient = await getClientByIdFE(clientId);
+    const nameFallback =
+      mockClient?.name ?? (clientId === 'mock2' ? 'Mock Bob' : 'Mock Alice');
+
+    return (
+      <ManageAccessInner
+        client={{ id: clientId, name: nameFallback }}
+        initialOrgs={MOCK_ORGS /* [{id,name,status}] */}
+      />
+    );
+  }
+
+  //backend
   await connectDB();
 
   // Fetches client document and populates organisation names from organisationHistory

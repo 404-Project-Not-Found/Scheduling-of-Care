@@ -31,12 +31,30 @@ export default function EmptyDashboard() {
 
   useEffect(() => {
     const detectRole = async () => {
-      // For testing
-      /* const mockRole = sessionStorage.getItem('mockRole') as Role;
-      if (mockRole) {
-        setRole(mockRole);
-        return;
-      } */
+      /**
+       * 1) Frontend mock path:
+       *    If NEXT_PUBLIC_ENABLE_MOCK=1 and sessionStorage has "mockRole",
+       *    treat it as the source of truth to avoid calling NextAuth.
+       *    This lets the UI work without backend/session.
+       */
+      try {
+        const isMock = process.env.NEXT_PUBLIC_ENABLE_MOCK === '1';
+        if (isMock && typeof window !== 'undefined') {
+          const mockRole = window.sessionStorage.getItem('mockRole') as Role;
+          if (mockRole === 'family' || mockRole === 'management') {
+            setRole(mockRole);
+            return; // stop here in mock mode
+          }
+        }
+      } catch {
+        // Ignore any access issues with sessionStorage in older browsers
+      }
+
+      /**
+       * 2) Real backend path:
+       *    Fall back to NextAuth session detection (unchanged from your logic).
+       *    If no role in session, redirect to login page.
+       */
       const session = await getSession();
       if (session?.user?.role) {
         setRole(session.user.role as Role);
@@ -135,14 +153,12 @@ export default function EmptyDashboard() {
           {/* TODO: Insert dashboard widgets here */}
         </div>
       </section>
+
       {/* Drawer */}
       {role === 'family' ? (
         <FamilySideMenu open={open} onBackdropClick={() => setOpen(false)} />
       ) : (
-        <ManagementSideMenu
-          open={open}
-          onBackdropClick={() => setOpen(false)}
-        />
+        <ManagementSideMenu open={open} onBackdropClick={() => setOpen(false)} />
       )}
     </div>
   );

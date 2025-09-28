@@ -6,46 +6,51 @@
 
 import mongoose from 'mongoose';
 
+// In mock mode, skip DB connection entirely
+const isMock = process.env.NEXT_PUBLIC_ENABLE_MOCK === '1';
+
 // Load the MongoDB connection string from environment variables
 const MONGODB_URI = process.env.MONGODB_URI as string;
-
-// Ensure uri exists before attempting connection
-if (!MONGODB_URI) {
-  throw new Error('Please add your Mongo URI to .env.local');
-}
 
 /**
  * To prevent multiple DB connections, we use a global cache object that persists
  * across hot reloads and API calls.
  */
-declare global {
-  // Extends the global object to include our cached connection state
-  var _mongooseConnection: {
-    conn: typeof mongoose | null; // active connection instance (if ready)
-    promise: Promise<typeof mongoose> | null; // pending connection promise (if still connecting)
-  };
-}
+type Cache = {
+  conn: typeof mongoose | null; // active connection instance (if ready)
+  promise: Promise<typeof mongoose> | null; // pending connection promise (if still connecting)
+};
 
 // Initialises global cache
-global._mongooseConnection = global._mongooseConnection || {
-  conn: null,
-  promise: null,
-};
+const g = global as unknown as { _mongooseConnection?: Cache };
+let cached: Cache = g._mongooseConnection || { conn: null, promise: null };
+g._mongooseConnection = cached;
 
 /**
  * Connects to MongoDB using Mongoose
  * @returns existing connection if already established
  * else, starts a new connection and caches it globally
  */
-export async function connectDB() {
+export async function connectDB(): Promise<typeof mongoose | null> {
   // Reuses cached connection (if it exists)
-  if (global._mongooseConnection.conn) {
-    return global._mongooseConnection.conn;
+  if (cached.conn) {
+    return cached.conn;
+  }
+
+  // In mock mode, skip DB connection entirely
+  if (isMock) {
+    console.log('[Mock mode] Skipping MongoDB connection');
+    return null;
+  }
+
+  // Ensure uri exists before attempting connection
+  if (!MONGODB_URI) {
+    throw new Error('Please add your Mongo URI to .env.local');
   }
 
   // If no active promise start a new connection
-  if (!global._mongooseConnection.promise) {
-    global._mongooseConnection.promise = mongoose
+  if (!cached.promise) {
+    cached.promise = mongoose
       .connect(MONGODB_URI, {
         bufferCommands: false, // disable mongoose buffering
       })
@@ -60,6 +65,6 @@ export async function connectDB() {
   }
 
   // Ensures multiple calls share the same connection
-  global._mongooseConnection.conn = await global._mongooseConnection.promise;
-  return global._mongooseConnection.conn;
+  cached.conn = await cached.promise;
+  return cached.conn;
 }

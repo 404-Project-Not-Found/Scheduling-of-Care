@@ -11,6 +11,10 @@ export const dynamic = 'force-dynamic';
 import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
+import AddAccessCodePanel from '@/components/accesscode/access-code'; 
+
+//load data from frontend mock document
+import { getClientsFE, getClientByIdFE, isMock } from '@/lib/clientApi';
 
 // ----- Type definiton for a client record -----
 type Client = {
@@ -21,8 +25,6 @@ type Client = {
   notes?: string[];
   avatarUrl?: string;
 };
-
-// const TEMP_AVATAR_KEY = 'clientAvatar:__temp__';
 
 // ----- Color palette -----
 const palette = {
@@ -41,9 +43,7 @@ const palette = {
 // ----- Wrapper with suspense fallback for loading state -----
 export default function ClientProfilePage() {
   return (
-    <Suspense
-      fallback={<div style={{ padding: 24 }}>Loading client profile...</div>}
-    >
+    <Suspense fallback={<div style={{ padding: 24 }}>Loading client profile...</div>}>
       <ClientProfilePageInner />
     </Suspense>
   );
@@ -81,54 +81,91 @@ function ClientProfilePageInner() {
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  // control access code panel
+  const [showAccessCodeDrawer, setShowAccessCodeDrawer] = useState(false);
+
   // Fetches client list from API
-  useEffect(() => {
+    useEffect(() => {
+    let active = true;
+
     async function fetchClients() {
-      const res = await fetch('/api/clients');
-      const data = await res.json();
-      // Saves client list to state so they can be displayed in the UI
-      setClients(data);
-    }
-    fetchClients();
-  }, []);
+        try {
+            //frontend mock
+            if (isMock) {
+                const data = await getClientsFE();
+                if (active) setClients(Array.isArray(data) ? data : []);
+            //backend
+            } else {
+                const res = await fetch('/api/clients');
+                const data = await res.json();
+                if (active) setClients(data);
+            }
+            } catch (e) {
+            console.error('Failed to load clients:', e);
+            if (active) setClients([]);
+            }
+        }
+
+        fetchClients();
+        return () => {
+            active = false;
+        };
+    }, []);
 
   // Fetch client data if editing exisiting profile
-  useEffect(() => {
-    if (!clientId) return;
+    // Fetch client data if editing exisiting profile
+    useEffect(() => {
+        if (!clientId) return;
 
-    const fetchClient = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch(`/api/clients/${clientId}`);
-        if (!res.ok) {
-          throw new Error('Failed to fetch client');
-        }
-        const client: Client = await res.json();
+        let active = true;
 
-        // Populate form fields with API response
-        setName(client.name);
-        setDob(client.dob);
-        setAccessCode(client.accessCode || '');
-        setSavedNotes(client.notes || []);
-        setAvatarUrl(client.avatarUrl || '');
-      } catch (err) {
-        console.error(err);
-        setError('Failed to load client data.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchClient();
-  }, [clientId]);
+        const fetchClient = async () => {
+            setLoading(true);
+            try {
+                if (isMock) {
+                    const client = await getClientByIdFE(clientId);
+                    if (!client) throw new Error('Mock client not found');
+                    if (!active) return;
+
+                    // frontend mock
+                    setName(client.name);
+                    setDob(client.dob);
+                    setAccessCode('');                 // mock: no code stored
+                    setSavedNotes([]);                 // mock: empty notes
+                    setAvatarUrl('');                  // mock: no avatar
+                } else {
+                    const res = await fetch(`/api/clients/${clientId}`);
+                    if (!res.ok) throw new Error('Failed to fetch client');
+                    const client: Client = await res.json();
+                    if (!active) return;
+
+                    // Populate form fields with API response
+                    setName(client.name);
+                    setDob(client.dob);
+                    setAccessCode(client.accessCode || '');
+                    setSavedNotes(client.notes || []);
+                    setAvatarUrl(client.avatarUrl || '');
+                }
+            } catch (err) {
+              console.error(err);
+              if (active) setError('Failed to load client data.');
+            } finally {
+              if (active) setLoading(false);
+            }
+        };
+
+        fetchClient();
+        return () => {
+            active = false;
+        };
+    }, [clientId]);
 
   // Loading page and error handling
   if (loading)
     return (
       <div className="h-screen w-full flex items-center justify-center bg-[#F3E9D9] text-zinc-900">
         <div className="text-center">
-          <h2 className="text-4xl font-extrabold mb-4">
-            Loading client profile...
-          </h2>
+          <h2 className="text-4xl font-extrabold mb-4">Loading client profile...</h2>
         </div>
       </div>
     );
@@ -137,9 +174,7 @@ function ClientProfilePageInner() {
   // Save or update client profile
   const saveProfile = async () => {
     if (!name.trim() || !dob.trim() || !accessCode.trim()) {
-      setFormError(
-        'Please fill in Name, Date of Birth, and Access Code to continue.'
-      );
+      setFormError('Please fill in Name, Date of Birth, and Access Code to continue.');
       return false;
     }
 
@@ -154,16 +189,12 @@ function ClientProfilePageInner() {
     setFormError('');
 
     // Merge new note (if any) with saved notes
-    const allNotes = notesInput.trim()
-      ? [...savedNotes, notesInput.trim()]
-      : savedNotes;
+    const allNotes = notesInput.trim() ? [...savedNotes, notesInput.trim()] : savedNotes;
 
     // Checks if a client with the user inputted access code already exists
     if (isNew && !acceptedExistingClient) {
       try {
-        const res = await fetch(
-          `/api/clients/check?accessCode=${encodeURIComponent(accessCode)}`
-        );
+        const res = await fetch(`/api/clients/check?accessCode=${encodeURIComponent(accessCode)}`);
         if (!res.ok) throw new Error('Check request failed');
 
         const data = await res.json();
@@ -182,15 +213,22 @@ function ClientProfilePageInner() {
     const payload = { name, dob, accessCode, avatarUrl, notes: allNotes };
 
     try {
+        
+        // frontend Mock mode
+        if (isMock) {
+            setSavedNotes(allNotes);
+            setNotesInput('');
+            return true;
+        }
+
+      // backend path
       if (isNew) {
-        // Create new client record
         await fetch('/api/clients', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
       } else if (clientId) {
-        // Update existing client record
         await fetch(`/api/clients/${clientId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -198,9 +236,7 @@ function ClientProfilePageInner() {
         });
       }
 
-      // Update saved notes
       setSavedNotes(allNotes);
-      // Reset note input
       setNotesInput('');
 
       return true;
@@ -234,36 +270,21 @@ function ClientProfilePageInner() {
   };
 
   return (
-    <div
-      className="min-h-screen w-full flex flex-col"
-      style={{ backgroundColor: palette.pageBg, color: palette.text }}
-    >
+    <div className="min-h-screen w-full flex flex-col" style={{ backgroundColor: palette.pageBg, color: palette.text }}>
       {/* Top bar */}
-      <div
-        className="w-full flex items-center justify-center px-6 py-4 relative"
-        style={{ backgroundColor: palette.header, color: palette.white }}
-      >
+      <div className="w-full flex items-center justify-center px-6 py-4 relative" style={{ backgroundColor: palette.header, color: palette.white }}>
         <button
           onClick={() => router.push('/family_dashboard/clients_list')}
           className="absolute left-4 top-1/2 -translate-y-1/2 rounded-md px-2 py-2 focus:outline-none focus:ring-2 focus:ring-white/60 flex items-center gap-2"
           title="Back"
           aria-label="Go back"
         >
-          <svg
-            width={22}
-            height={22}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
+          <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
             <path d="M15 18l-6-6 6-6" />
           </svg>
           <span className="text-base">Back</span>
         </button>
-        <h2 className="text-2xl font-bold">
-          {isNew ? 'Add New Person' : 'Edit Profile'}
-        </h2>
+        <h2 className="text-2xl font-bold">{isNew ? 'Add New Person' : 'Edit Profile'}</h2>
       </div>
 
       {/* Centered white card */}
@@ -271,48 +292,27 @@ function ClientProfilePageInner() {
         <div className="w-full max-w-4xl">
           <div
             className="rounded-lg p-8 flex flex-col gap-6 relative pb-6 min-h-[460px] border"
-            style={{
-              backgroundColor: palette.white,
-              borderColor: palette.header,
-            }}
+            style={{ backgroundColor: palette.white, borderColor: palette.header }}
           >
             <div className="flex gap-6">
               {/* Avatar */}
               <div className="flex flex-col items-center gap-3">
                 <div
                   className="w-[120px] h-[120px] rounded-full overflow-hidden border flex items-center justify-center"
-                  style={{
-                    backgroundColor: '#e5e7eb',
-                    borderColor: palette.header,
-                  }}
+                  style={{ backgroundColor: '#e5e7eb', borderColor: palette.header }}
                 >
                   {avatarUrl ? (
-                    <Image
-                      src={avatarUrl}
-                      alt="Profile avatar"
-                      width={120}
-                      height={120}
-                      className="object-cover rounded-full"
-                    />
+                    <Image src={avatarUrl} alt="Profile avatar" width={120} height={120} className="object-cover rounded-full" />
                   ) : (
                     <div className="text-gray-500">No Photo</div>
                   )}
                 </div>
 
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleFileChange}
-                />
+                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
                 <button
                   onClick={openFilePicker}
                   className="px-3 py-2 rounded-md text-sm font-medium hover:opacity-90 transition"
-                  style={{
-                    backgroundColor: palette.header,
-                    color: palette.white,
-                  }}
+                  style={{ backgroundColor: palette.header, color: palette.white }}
                   title="Upload profile photo"
                 >
                   Upload photo
@@ -322,19 +322,14 @@ function ClientProfilePageInner() {
               {/* Editable profile fields */}
               <div className="flex flex-col gap-3 w-full">
                 {/* Show inline error message if form validation fails */}
-                {formError && (
-                  <div className="mb-4 p-2 rounded-md bg-red-100 border border-red-400 text-red-700">
-                    {formError}
-                  </div>
-                )}
+                {formError && <div className="mb-4 p-2 rounded-md bg-red-100 border border-red-400 text-red-700">{formError}</div>}
 
                 {existingClientMessage && (
-                  <div className="mb-4 p-3 rounded-md bg-[#fdf4e7] border border-[#fdf4e7]-400">
-                    A client named &quot;<b>{existingClientMessage.name}</b>
-                    &quot; already exists with this access code.
+                  <div className="mb-4 p-3 rounded-md bg-[#fdf4e7] border">
+                    A client named &quot;<b>{existingClientMessage.name}</b>&quot; already exists with this access code.
                     <div className="mt-2">
                       <button
-                        className="px-3 py-1 rounded bg-[#fdf4e7]-200 hover:bg-[#DFC9A9] text-sm font-semibold"
+                        className="px-3 py-1 rounded bg-[#DFC9A9] hover:opacity-90 text-sm font-semibold"
                         onClick={() => {
                           setName(existingClientMessage.name);
                           setDob(existingClientMessage.dob || '');
@@ -365,12 +360,7 @@ function ClientProfilePageInner() {
                     onChange={(e) => setName(e.target.value)}
                     placeholder={isNew ? 'Enter name' : undefined}
                     className="flex-1 max-w-2xl p-2 rounded-md focus:outline-none focus:ring-2"
-                    style={{
-                      backgroundColor: palette.white,
-                      border: `2px solid ${palette.header}`,
-                      color: palette.text,
-                      boxShadow: 'none',
-                    }}
+                    style={{ backgroundColor: palette.white, border: `2px solid ${palette.header}`, color: palette.text, boxShadow: 'none' }}
                   />
                 </label>
 
@@ -383,20 +373,13 @@ function ClientProfilePageInner() {
                     onChange={(e) => setDob(e.target.value)}
                     placeholder={isNew ? 'e.g., 19/09/1943' : undefined}
                     className="flex-1 max-w-2xl p-2 rounded-md focus:outline-none focus:ring-2"
-                    style={{
-                      backgroundColor: palette.white,
-                      border: `2px solid ${palette.header}`,
-                      color: palette.text,
-                      boxShadow: 'none',
-                    }}
+                    style={{ backgroundColor: palette.white, border: `2px solid ${palette.header}`, color: palette.text, boxShadow: 'none' }}
                   />
                 </label>
 
                 {/* Access Code (required) */}
                 <label className="text-lg flex items-center gap-3">
-                  <span className="font-semibold whitespace-nowrap">
-                    Access Code:
-                  </span>
+                  <span className="font-semibold whitespace-nowrap">Access Code:</span>
                   <input
                     type="text"
                     value={accessCode}
@@ -404,12 +387,7 @@ function ClientProfilePageInner() {
                     placeholder="Enter or paste your access code"
                     required
                     className="flex-1 max-w-2xl p-2 rounded-md focus:outline-none focus:ring-2"
-                    style={{
-                      backgroundColor: palette.white,
-                      border: `2px solid ${palette.header}`,
-                      color: palette.text,
-                      boxShadow: 'none',
-                    }}
+                    style={{ backgroundColor: palette.white, border: `2px solid ${palette.header}`, color: palette.text, boxShadow: 'none' }}
                   />
                 </label>
 
@@ -419,7 +397,7 @@ function ClientProfilePageInner() {
                     Don&apos;t have an access code?{' '}
                     <button
                       type="button"
-                      onClick={() => router.push('/create_access_code')}
+                      onClick={() => setShowAccessCodeDrawer(true)} 
                       className="underline underline-offset-2"
                       style={{ color: palette.header }}
                     >
@@ -437,18 +415,12 @@ function ClientProfilePageInner() {
                     <div
                       key={idx}
                       className="w-full p-3 rounded-md flex justify-between items-start"
-                      style={{
-                        backgroundColor: palette.white,
-                        border: `2px solid ${palette.header}`,
-                        color: palette.text,
-                      }}
+                      style={{ backgroundColor: palette.white, border: `2px solid ${palette.header}`, color: palette.text }}
                     >
                       <span className="whitespace-pre-line">{note}</span>
                       <button
                         onClick={() => {
-                          const updated = savedNotes.filter(
-                            (_, i) => i !== idx
-                          );
+                          const updated = savedNotes.filter((_, i) => i !== idx);
                           setSavedNotes(updated);
                         }}
                         className="ml-4 font-bold hover:opacity-80 transition"
@@ -466,12 +438,7 @@ function ClientProfilePageInner() {
                   onChange={(e) => setNotesInput(e.target.value)}
                   placeholder="Write client notes here..."
                   className="mb-6 w-full min-h-[120px] p-3 rounded-md focus:outline-none focus:ring-2"
-                  style={{
-                    backgroundColor: palette.white,
-                    border: `2px solid ${palette.header}`,
-                    color: palette.text,
-                    boxShadow: 'none',
-                  }}
+                  style={{ backgroundColor: palette.white, border: `2px solid ${palette.header}`, color: palette.text, boxShadow: 'none' }}
                 />
               </div>
             </div>
@@ -489,6 +456,9 @@ function ClientProfilePageInner() {
           </div>
         </div>
       </div>
+
+      {/* generate access code panel */}
+      <AddAccessCodePanel open={showAccessCodeDrawer} onClose={() => setShowAccessCodeDrawer(false)} />
     </div>
   );
 }

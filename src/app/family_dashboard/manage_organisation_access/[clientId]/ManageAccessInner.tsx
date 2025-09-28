@@ -9,6 +9,8 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+//load mock data from frontend document
+import { isMock, MOCK_ORGS, Organisation } from '@/lib/clientApi';
 
 type OrgStatus = 'active' | 'pending' | 'revoked';
 
@@ -17,11 +19,11 @@ interface ClientDoc {
   name: string;
 }
 
-interface Organisation {
-  id: string;
-  name: string;
-  status: OrgStatus;
-}
+// interface Organisation {
+//   id: string;
+//   name: string;
+//   status: OrgStatus;
+// }
 
 const palette = {
   pageBg: '#ffd9b3', // page background
@@ -47,6 +49,26 @@ export default function ManageAccessInner({
     orgId: string,
     action: 'approve' | 'reject' | 'revoke'
   ) {
+
+    //frontend path
+    if (isMock) {
+      setOrgs((prev) =>
+        prev.map((o) =>
+          o.id === orgId
+            ? {
+                ...o,
+                status:
+                  action === 'approve'
+                    ? 'active'
+                    : 'revoked', // both reject & revoke -> revoked
+              }
+            : o
+        )
+      );
+      return; // stop here in mock mode
+    }
+
+    //backend path
     setLoading(true);
     try {
       const res = await fetch(
@@ -105,7 +127,7 @@ export default function ManageAccessInner({
         />
       </div>
 
-      <div className="flex justify-center pt-20">
+      <div className="flex justify-center pt-23">
         {/* Note: Tailwind does not have pt-25; use pt-20 or pt-24 */}
         <div className="scale-100 origin-top w-full">
           <div

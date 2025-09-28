@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react';
 import Link from 'next/link';
-import { mockSignOut } from '@/lib/mockSignout';
+import { mockSignOut } from '@/lib/mock/mockSignout';
 
 const palette = {
   panelBg: '#F7ECD9',
