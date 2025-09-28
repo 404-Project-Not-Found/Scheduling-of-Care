@@ -7,16 +7,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-// ✅ Use the shared API helper so pages don't duplicate mock vs backend logic
 import { getClientsFE, type Client } from '@/lib/clientApi';
-
-
-// // ----- Type definiton for a client record -----
-// type Client = {
-//   _id: string;
-//   name: string;
-//   dob: string;
-// };
 
 // ----- Color palette -----
 const palette = {
