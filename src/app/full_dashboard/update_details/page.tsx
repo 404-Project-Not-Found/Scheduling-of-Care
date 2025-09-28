@@ -11,6 +11,7 @@ export const dynamic = 'force-dynamic';
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { getSession } from 'next-auth/react';
 
 const colors = {
   pageBg: '#ffd9b3',
@@ -20,28 +21,37 @@ const colors = {
   orange: '#F4A261',
 };
 
+type Role = 'carer' | 'family' | 'management';
+const isMock = process.env.NEXT_PUBLIC_ENABLE_MOCK === '1';
+
 export default function UpdateDetailsPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [pwd, setPwd] = useState('');
   const [show, setShow] = useState(false);
+
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [formError, setFormError] = useState<string>('');
 
-  // Fetches user email to display in UI
+  // -------------------------------
+  // Load user email (mock or real)
+  // -------------------------------
   useEffect(() => {
     async function fetchUser() {
-      try {
-        const res = await fetch('/api/user/profile');
-        if (!res.ok) {
-          throw new Error('Failed to load profile');
-        }
-        const data = await res.json();
+      if (isMock) {
+        // Mock mode: load mockEmail from sessionStorage
+        const mockEmail = sessionStorage.getItem('mockEmail') || '';
+        setEmail(mockEmail);
+        return;
+      }
 
-        if (data.email) {
-          setEmail(data.email);
-        }
+      // Real mode: fetch from backend
+      try {
+        const res = await fetch('/api/user/profile', { credentials: 'include' });
+        if (!res.ok) throw new Error('Failed to load profile');
+        const data = await res.json();
+        if (data?.email) setEmail(data.email);
       } catch (err) {
         console.error('Error fetching user:', err);
       }
@@ -49,63 +59,92 @@ export default function UpdateDetailsPage() {
     fetchUser();
   }, []);
 
-  // Validates input and sends update request to API
+  // -------------------------------
+  // Cancel button handler
+  // -------------------------------
+  const handleCancel = async () => {
+    let role: Role | null = null;
+
+    if (isMock) {
+      // Mock: role is stored in sessionStorage
+      role = (sessionStorage.getItem('mockRole') as Role | null) ?? null;
+    } else {
+      // Real: role comes from NextAuth session
+      try {
+        const session = await getSession();
+        role = (session?.user?.role as Role | undefined) ?? null;
+      } catch {
+        role = null;
+      }
+    }
+
+    // Route based on role
+    if (role === 'carer') {
+      router.push('/full_dashboard');
+    } else {
+      router.push('/empty_dashboard');
+    }
+  };
+
+  // -------------------------------
+  // Save button handler
+  // -------------------------------
   const handleSave = async () => {
     setError('');
     setSuccess(false);
 
-    // Validate email format if user entered a new email
+    // Validate email format
     if (email && (!email.includes('@') || !email.includes('.'))) {
       setFormError('Please enter a valid email address.');
       return;
     }
 
-    // Prepare request body with only the fields the user wants to update
     const body: { email?: string; password?: string } = {};
-    if (email) {
-      body.email = email;
-    }
-    if (pwd) {
-      body.password = pwd;
-    }
+    if (email) body.email = email;
+    if (pwd) body.password = pwd;
 
-    // Ensures the user has enetered at least one field
     if (!body.email && !body.password) {
       setFormError('Please enter an email or password to update.');
       return;
     }
-
-    // Clear error if valid
     setFormError('');
 
-    // Send POST request to update API
-    const res = await fetch('/api/user/update', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email,
-        password: pwd,
-      }),
-    });
-
-    const data = await res.json();
-
-    if (res.ok) {
-      // Show success message and reset inputs
+    // Mock mode: update sessionStorage only
+    if (isMock) {
+      if (body.email) sessionStorage.setItem('mockEmail', body.email);
       setSuccess(true);
-      setEmail('');
       setPwd('');
       setShow(false);
+      setTimeout(() => setSuccess(false), 3000);
+      return;
+    }
 
-      // Hide success message after 3 seconds
-      setTimeout(() => {
-        setSuccess(false);
-      }, 3000);
-    } else {
-      setError(data.error || 'Update failed. Try again later.');
+    // Real backend call
+    try {
+      const res = await fetch('/api/user/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(body),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setSuccess(true);
+        setPwd('');
+        setShow(false);
+        setTimeout(() => setSuccess(false), 3000);
+      } else {
+        setError(data?.error || 'Update failed. Try again later.');
+      }
+    } catch {
+      setError('Update failed. Try again later.');
     }
   };
 
+  // -------------------------------
+  // UI
+  // -------------------------------
   return (
     <main
       className="min-h-screen w-full flex items-center justify-center px-6 py-12 relative"
@@ -123,12 +162,12 @@ export default function UpdateDetailsPage() {
         />
       </div>
 
-      {/* Card container (narrower width) */}
+      {/* Card container */}
       <div
         className="w-full max-w-xl md:max-w-2xl rounded-2xl shadow-lg overflow-hidden"
         style={{ backgroundColor: colors.cardBg }}
       >
-        {/* Top bar: centered title, dark brown background, white text */}
+        {/* Header */}
         <div
           className="w-full flex items-center justify-center px-6 py-5"
           style={{ backgroundColor: colors.header }}
@@ -138,40 +177,45 @@ export default function UpdateDetailsPage() {
           </h1>
         </div>
 
+        {/* Success message */}
         {success && (
-          <div className="text-green-700 bg-green-100 px-4 py-2 rounded mb-4">
+          <div className="text-green-700 bg-green-100 px-4 py-2 rounded m-4">
             Your details have been successfully updated!
           </div>
         )}
 
-        {/* Content area: generous spacing, white inputs */}
         <div className="px-8 md:px-10 py-8 md:py-10 text-black">
-          {/* Show inline error message if form validation fails */}
+          {/* Validation error */}
           {formError && (
             <div className="mb-4 p-2 rounded-md bg-red-100 border border-red-400 text-red-700">
               {formError}
             </div>
           )}
-          {/* Email */}
+
+          {/* Email input */}
           <label className="block text-lg mb-2" style={{ color: colors.text }}>
             Change email:
           </label>
           <input
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              if (error) setError('');
+            }}
             className="w-full bg-white border-2 rounded-md px-4 py-3 mb-8 focus:outline-none focus:ring-2"
             style={{ borderColor: `${colors.header}55` }}
-            placeholder="Enter new email"
+            placeholder={isMock ? 'Enter new email (mock mode)' : 'Enter new email'}
           />
 
+          {/* Backend error */}
           {error && (
             <div className="text-red-700 bg-red-100 px-4 py-2 rounded mb-4">
               {error}
             </div>
           )}
 
-          {/* Password */}
+          {/* Password input */}
           <label className="block text-lg mb-2" style={{ color: colors.text }}>
             Change password:
           </label>
@@ -181,14 +225,11 @@ export default function UpdateDetailsPage() {
             onChange={(e) => setPwd(e.target.value)}
             className="w-full bg-white border-2 rounded-md px-4 py-3 focus:outline-none focus:ring-2"
             style={{ borderColor: `${colors.header}55` }}
-            placeholder="Enter new password"
+            placeholder={isMock ? 'Enter new password (mock mode)' : 'Enter new password'}
           />
 
           {/* Show password toggle */}
-          <label
-            className="mt-4 flex items-center gap-2 text-lg"
-            style={{ color: colors.text }}
-          >
+          <label className="mt-4 flex items-center gap-2 text-lg" style={{ color: colors.text }}>
             <input
               type="checkbox"
               checked={show}
@@ -198,12 +239,12 @@ export default function UpdateDetailsPage() {
             Show password
           </label>
 
-          {/* Actions */}
+          {/* Action buttons */}
           <div className="mt-10 flex items-center justify-end gap-6">
             <button
               type="button"
               className="px-6 py-2.5 rounded-full border text-gray-700 hover:bg-gray-200"
-              onClick={() => router.push('/empty_dashboard')}
+              onClick={handleCancel}
             >
               Cancel
             </button>

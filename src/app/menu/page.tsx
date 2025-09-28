@@ -79,9 +79,9 @@ export function MenuDrawer({
         <nav className="flex h-[calc(100%-56px)] flex-col justify-between">
           <ul className="px-3 py-4 space-y-2">
             {/* Existing items */}
-            <MenuItem href="/update_details" label="Update your details" />
-            <MenuItem href="/budget_report" label="Budget Report" />
-            <MenuItem href="/transaction_history" label="View Transactions" />
+            <MenuItem href="/full_dashboard/update_details" label="Update your details" />
+            <MenuItem href="/full_dashboard/budget_report" label="Budget Report" />
+            <MenuItem href="/full_dashboard/transaction_history" label="View Transactions" />
 
             {/* Extra entries only for FAMILY viewer on full dashboard */}
             {isFamilyViewer && (
