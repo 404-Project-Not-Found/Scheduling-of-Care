@@ -123,8 +123,9 @@ export default function AddTaskPage() {
       }
 
       router.push("/task/search");
-    } catch(e: any) {
-      alert(`Network error: ${e?.message || e}`);
+    } catch(e: unknown) {
+      const message = e instanceof Error? e.message: String(e);
+      alert('Network error: ${message}');
     }
     
   };
