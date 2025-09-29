@@ -4,16 +4,17 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 
-// Type definition for a client object
+// Type definition for a client object (incoming 里使用了 fullName)
 type Client = {
   _id: string;
-  name: string;
+  name?: string;
+  fullName?: string;
   accessCode?: string;
   avatarUrl?: string;
   status?: 'pending' | 'approved';
 };
 
-// Converts unknown errors to a readbale string
+// Converts unknown errors to a readable string
 function getErrorMessage(err: unknown) {
   if (err instanceof Error) return err.message;
   try {
@@ -22,6 +23,13 @@ function getErrorMessage(err: unknown) {
     return String(err);
   }
 }
+
+const colors = {
+  pageBg: '#ffd9b3', // page background
+  cardBg: '#F7ECD9', // card background
+  header: '#3A0000', // maroon header
+  text: '#2b2b2b',
+};
 
 export default function ClientListPage() {
   const [q, setQ] = useState('');
@@ -32,130 +40,132 @@ export default function ClientListPage() {
   // Fetches the list of clients
   useEffect(() => {
     let alive = true;
-
     (async () => {
       try {
-        const res = await fetch('/api/management/clients', {
-          cache: 'no-store',
-        });
+        const res = await fetch('/api/management/clients', { cache: 'no-store' });
         if (!res.ok) throw new Error(`Failed to load clients (${res.status})`);
         const data = (await res.json()) as Client[];
         if (alive) setClients(data);
-      } catch (err: unknown) {
+      } catch (err) {
         if (alive) setError(getErrorMessage(err));
       } finally {
         if (alive) setLoading(false);
       }
     })();
-
     return () => {
       alive = false;
     };
   }, []);
 
-  // Search query: filters by name or access code (case-insensitive)
+  // Search query: filters by name/fullName or access code (case-insensitive)
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
     if (!term) return clients;
-    return clients.filter(
-      (c) =>
-        c.name.toLowerCase().includes(term) ||
-        (c.accessCode?.toLowerCase().includes(term) ?? false)
-    );
+    return clients.filter((c) => {
+      const displayName = (c.fullName ?? c.name ?? '').toLowerCase();
+      const code = (c.accessCode ?? '').toLowerCase();
+      return displayName.includes(term) || code.includes(term);
+    });
   }, [q, clients]);
 
   return (
-    <main className="min-h-screen p-6">
-      <div className="max-w-3xl mx-auto bg-[#fff4e6]  rounded-2xl p-6">
-        <h1 className="text-xl font-semibold text-[#3d0000] mb-4">Clients</h1>
+    <main
+      className="min-h-screen w-full flex items-center justify-center px-6 py-12 md:py-16 relative"
+      style={{ backgroundColor: colors.pageBg }}
+    >
+      {/* Top-left logo */}
+      <Image
+        src="/logo-name.png"
+        alt="Scheduling of Care"
+        width={220}
+        height={80}
+        className="fixed top-6 left-6 object-contain"
+        priority
+      />
 
-        <input
-          type="text"
-          placeholder="Search clients..."
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          className="w-full border rounded-lg text-black px-4 py-2 mb-6"
-        />
-
-        <div className="flex justify-end gap-4 mb-6">
-          <Link
-            href="/management_dashboard/register_client"
-            className="px-4 py-2 bg-[#3d0000] text-white rounded"
-          >
-            Register new client
-          </Link>
-          <Link
-            href="/empty_dashboard"
-            className="px-4 py-2 bg-gray-300 text-black rounded"
-          >
-            Back to dashboard
-          </Link>
+      {/* Card */}
+      <div
+        className="w-full max-w-2xl rounded-2xl shadow-lg overflow-hidden border"
+        style={{ backgroundColor: colors.cardBg, borderColor: '#e7d8c4' }}
+      >
+        {/* Maroon header with centered title */}
+        <div className="w-full flex items-center justify-center px-6 py-5" style={{ backgroundColor: colors.header }}>
+          <h1 className="text-2xl md:text-3xl font-bold text-white text-center">Clients</h1>
         </div>
 
-        {loading && <p className="text-sm text-gray-600">Loading</p>}
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {/* Body (incoming 结构) */}
+        <div className="px-6 md:px-8 py-6 md:py-8 text-black">
+          {/* Search */}
+          <input
+            type="text"
+            placeholder="Search clients..."
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            className="w-full bg-white border-2 rounded-md px-4 py-3 focus:outline-none focus:ring-2"
+            style={{ borderColor: `${colors.header}55` }}
+          />
 
-        {!loading && !error && (
-          <ul className="divide-y">
-            {filtered.map((c) => (
-              <li
-                key={c._id}
-                className="py-3 flex items-center justify-between"
-              >
-                <div className="flex items-center gap-3">
-                  {c.avatarUrl ? (
-                    <Image
-                      src={c.avatarUrl}
-                      alt={c.name}
-                      width={32}
-                      height={32}
-                      className="h-8 w-8 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="h-8 w-8 rounded-full bg-gray-200" />
-                  )}
-                  <div>
-                    <p className="font-medium text-black">{c.name}</p>
-                    {c.accessCode && (
-                      <p className="text-xs text-gray-500">
-                        Access code: {c.accessCode}
-                      </p>
-                    )}
-                    {c.status && (
-                      <p
-                        className={`text-xs font-semibold ${
-                          c.status === 'pending'
-                            ? 'text-orange-600'
-                            : 'text-green-600'
-                        }`}
+          {/* Messages */}
+          {loading && <p className="mt-4 text-sm text-gray-600">Loading</p>}
+          {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+
+          {/* List */}
+          {!loading && !error && (
+            <div className="mt-6 -mx-6 md:-mx-8 px-6 md:px-8 max-h-[60vh] overflow-y-auto">
+              <ul className="divide-y" style={{ borderColor: '#eadcc8' }}>
+                {filtered.map((c) => (
+                  <li key={c._id} className="py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {c.avatarUrl ? (
+                        <Image
+                          src={c.avatarUrl}
+                          alt={c.fullName ?? c.name ?? 'Client'}
+                          width={32}
+                          height={32}
+                          className="h-8 w-8 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="h-8 w-8 rounded-full bg-gray-200" />
+                      )}
+                      <div>
+                        <p className="font-medium" style={{ color: colors.text }}>
+                          {c.fullName ?? c.name}
+                        </p>
+                        {c.accessCode && <p className="text-xs text-gray-500">Access code: {c.accessCode}</p>}
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Link
+                        href={`/dashboard/${c._id}`}
+                        className="px-3 py-1.5 rounded-full border text-sm bg-white hover:bg-gray-200 transition"
+                        style={{ color: colors.text, borderColor: '#bfb8ad' }}
                       >
-                        Status: {c.status}
-                      </p>
-                    )}
-                  </div>
-                </div>
+                        View dashboard
+                      </Link>
+                    </div>
+                  </li>
+                ))}
 
-                <div className="flex gap-2">
-                  <Link
-                    href={`/dashboard/${c._id}`}
-                    className="px-3 py-1 rounded bg-white text-black hover:bg-gray-300 text-sm"
-                  >
-                    View dashboard
-                  </Link>
-                  {/* <Link
-                    href={`/carer/manage?client=${c._id}`}
-                    className="px-3 py-1 rounded bg-[#e07a5f] text-black text-sm"
-                  >
-                    Assign carer
-                  </Link> */}
-                </div>
-              </li>
-            ))}
-            {filtered.length === 0 && (
-              <li className="py-4 text-sm text-gray-600">No clients found.</li>
-            )}
-          </ul>
-        )}
+                {filtered.length === 0 && <li className="py-4 text-sm text-gray-600">No clients found.</li>}
+              </ul>
+            </div>
+          )}
+
+          {/* Footer actions */}
+          <div className="flex justify-between mt-8">
+            <Link
+              href="/dashboard/register-client"
+              className="px-6 py-2.5 rounded-full font-semibold text-white"
+              style={{ backgroundColor: colors.header }}
+            >
+              Register new client
+            </Link>
+            <Link href="/dashboard" className="px-6 py-2.5 rounded-full border text-gray-700 hover:bg-gray-200">
+              Back to dashboard
+            </Link>
+          </div>
+        </div>
       </div>
     </main>
   );

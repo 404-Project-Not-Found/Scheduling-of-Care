@@ -8,12 +8,9 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { signIn, getSession } from 'next-auth/react';
-import { useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Suspense } from 'react';
-
 
 // Prefills information after user signs up
 function PrefillFromSearchParams({
@@ -23,20 +20,15 @@ function PrefillFromSearchParams({
   setEmail: (val: string) => void;
   setPassword: (val: string) => void;
 }) {
-  // Get email and password for successful sign up or user already exists
   const searchParams = useSearchParams();
 
-  // Prefill email and/or password if provided in the query string
   useEffect(() => {
     const prefillEmail = searchParams.get('email');
     const prefillPassword = searchParams.get('password');
-    if (prefillEmail) {
-      setEmail(prefillEmail);
-    }
-    if (prefillPassword) {
-      setPassword(prefillPassword);
-    }
+    if (prefillEmail) setEmail(prefillEmail);
+    if (prefillPassword) setPassword(prefillPassword);
   }, [searchParams, setEmail, setPassword]);
+
   return null;
 }
 
@@ -45,61 +37,52 @@ export default function Home() {
   const [password, setPassword] = useState('');
   const [staySigned, setStaySigned] = useState(false);
   const [showPw, setShowPw] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const form = e.currentTarget;
     setError(null);
 
-    // If required fields are empty, trigger native validation tooltip.
-    if (!form.checkValidity()) {
-      form.reportValidity();
-      return;
-    }
-
+    const form = e.currentTarget as HTMLFormElement;
+    const formData = new FormData(form);
+    const email = (formData.get('email') as string).trim().toLowerCase();
+    const password = formData.get('password') as string;
 
     // ============================
     // Frontend mock path (no API)
     // ============================
     if (process.env.NEXT_PUBLIC_ENABLE_MOCK === '1') {
-        const emailTrimmed = email.trim().toLowerCase();
+      const emailTrimmed = email.trim().toLowerCase();
 
-        // Match the three mock accounts
-        const isFamily = emailTrimmed === 'family@email.com' && password === 'family';
-        const isCarer = emailTrimmed === 'carer@email.com' && password === 'carer';
-        const isMgmt  = emailTrimmed === 'management@email.com' && password === 'management';
+      const isFamily = emailTrimmed === 'family@email.com' && password === 'family';
+      const isCarer  = emailTrimmed === 'carer@email.com' && password === 'carer';
+      const isMgmt   = emailTrimmed === 'management@email.com' && password === 'management';
 
-        if (isFamily || isCarer || isMgmt) {
-            // remember me (same as before)
-            if (staySigned) localStorage.setItem('rememberMe', '1');
-            else localStorage.removeItem('rememberMe');
+      if (isFamily || isCarer || isMgmt) {
+        if (staySigned) localStorage.setItem('rememberMe', '1');
+        else localStorage.removeItem('rememberMe');
 
-            // store mock role for downstream pages
-            const role = isCarer ? 'carer' : isMgmt ? 'management' : 'family';
-            sessionStorage.setItem('mockRole', role);
+        const role = isCarer ? 'carer' : isMgmt ? 'management' : 'family';
+        sessionStorage.setItem('mockRole', role);
 
-            // redirect and STOP here
-            if (role === 'carer') {
-                window.location.href = '/full_dashboard';
-                return;
-            } else {
-                window.location.href = '/empty_dashboard';
-                return; 
-            }
+        if (role === 'carer') {
+          window.location.href = '/full_dashboard';
+          return;
+        } else {
+          window.location.href = '/empty_dashboard';
+          return;
         }
+      }
 
-        // No mock credentials matched → show error and STOP (do not fall through to NextAuth)
-        setError('Invalid mock credentials');
-        return; 
+      setError('Invalid mock credentials');
+      return;
     }
 
     // ============================
     // Real backend path (NextAuth)
     // ============================
     setLoading(true);
-
     try {
       const res = await signIn('credentials', {
         redirect: false,
@@ -114,7 +97,6 @@ export default function Home() {
       }
 
       const session = await getSession();
-
       if (!session?.user?.role) {
         setError('Could not determine user role');
         setLoading(false);
@@ -137,11 +119,7 @@ export default function Home() {
           return;
       }
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('An unexepected error occurred');
-      }
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
       setLoading(false);
     }
   }
@@ -161,11 +139,9 @@ export default function Home() {
     <div className="h-screen w-full bg-[#F3E9D9] text-zinc-900">
       {/* Prefill email and password */}
       <Suspense fallback={null}>
-        <PrefillFromSearchParams
-          setEmail={setEmail}
-          setPassword={setPassword}
-        />
+        <PrefillFromSearchParams setEmail={setEmail} setPassword={setPassword} />
       </Suspense>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 h-full w-full">
         {/* Left section */}
         <section className="bg-[#F3C8A5] relative flex flex-col h-full">
@@ -200,10 +176,7 @@ export default function Home() {
             <form className="space-y-6" onSubmit={handleSubmit} noValidate>
               {/* Email */}
               <div>
-                <label
-                  htmlFor="email"
-                  className="block text-xl font-medium mb-2 text-left"
-                >
+                <label htmlFor="email" className="block text-xl font-medium mb-2 text-left">
                   Email
                 </label>
                 <input
@@ -222,10 +195,7 @@ export default function Home() {
 
               {/* Password + Show/Hide link */}
               <div>
-                <label
-                  htmlFor="password"
-                  className="block text-xl font-medium mb-2 text-left"
-                >
+                <label htmlFor="password" className="block text-xl font-medium mb-2 text-left">
                   Password
                 </label>
                 <div className="relative">
@@ -287,35 +257,19 @@ export default function Home() {
 
             {/* Links */}
             <div className="mt-6 text-center">
-              <Link
-                href="/reset_password_link"
-                className="text-lg underline underline-offset-4 hover:opacity-80"
-              >
+              <Link href="/reset_password_link" className="text-lg underline underline-offset-4 hover:opacity-80">
                 Forgot Password?
               </Link>
             </div>
             <p className="mt-4 text-lg text-center">
               Don’t have an account?{' '}
-              <Link
-                href="/role"
-                className="underline underline-offset-4 font-semibold hover:opacity-80"
-              >
+              <Link href="/role" className="underline underline-offset-4 font-semibold hover:opacity-80">
                 Sign Up
               </Link>
             </p>
           </div>
         </section>
       </div>
-
-      {/* Floating help button */}
-      <Link
-        href="/help"
-        aria-label="Help"
-        className="fixed bottom-6 right-6 flex h-12 w-12 items-center justify-center rounded-full
-                   bg-[#E37E72] text-white text-2xl font-bold shadow-lg hover:shadow-xl transition"
-      >
-        ?
-      </Link>
     </div>
   );
 }

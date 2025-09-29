@@ -100,9 +100,9 @@ export default function EditTaskDetailPage() {
             </div>
           </div>
 
-          {/* Last done */}
+          {/* Next Due */}
           <div>
-            <label className="block mb-1 font-medium">Last done:</label>
+            <label className="block mb-1 font-medium">Next Due:</label>
             <input
               type="date"
               value={item.startDate ? item.startDate.slice(0, 10) : ''}

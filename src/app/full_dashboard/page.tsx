@@ -10,7 +10,7 @@ import { getTasksFE, saveTasksFE, type Task } from '@/lib/clientApi';
 
 // Dynamically import the MenuDrawer to avoid SSR issues for this page component
 const MenuDrawer = dynamic(
-  () => import('@/app/menu/page').then((m) => m.MenuDrawer),
+  () => import('@/app/calendar_menu/page').then((m) => m.MenuDrawer),
   { ssr: false }
 );
 

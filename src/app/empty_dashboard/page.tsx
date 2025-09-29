@@ -158,7 +158,7 @@ export default function EmptyDashboard() {
       {role === 'family' ? (
         <FamilySideMenu open={open} onBackdropClick={() => setOpen(false)} />
       ) : (
-        <ManagementSideMenu open={open} onBackdropClick={() => setOpen(false)} />
+        <ManagementSideMenu open={open} onClose={() => setOpen(false)} />
       )}
     </div>
   );
