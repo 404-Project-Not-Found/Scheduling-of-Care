@@ -1,7 +1,12 @@
+/**
+ * Filename: /app/api/tasks/[slug]/route.ts
+ * Author: Zahra Rizqita
+ */
+
 import { NextResponse } from "next/server";
-import {connectDB} from "@/app/lib/mongodb";
+import {connectDB} from "@/lib/mongodb";
 import Task, {type TaskDoc} from "@/models/task";
-import {normaliseTaskPayLoad, errorJson} from "@/app/lib/task-utils";
+import {normaliseTaskPayLoad, errorJson} from "@/lib/task-utils";
 
 export const runtime = "nodejs";
 

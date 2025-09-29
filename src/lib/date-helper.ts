@@ -1,3 +1,8 @@
+/**
+ * Filename: /lib/date-helpers.ts
+ * Author: Zahra Rizqita
+ */
+
 import {
     addDays,
     addWeeks,
@@ -51,4 +56,10 @@ export function generateDueDate(ISO: string, count: number, unit: Unit, n=6): st
         out.push(cursor);
     }
     return out;
+}
+
+export function toISO(input: unknown): string | undefined {
+    if(!input) return undefined;
+    const d = input instanceof Date? input : typeof input === "string"? new Date(input) : undefined;
+    return d && !Number.isNaN(d.getTime())? d.toISOString() : undefined;
 }

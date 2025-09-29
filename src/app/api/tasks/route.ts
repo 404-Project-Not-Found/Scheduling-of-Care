@@ -1,6 +1,12 @@
+/**
+ * Filename: /app/api/tasks/route.ts
+ * Author: Zahra Rizqita
+ */
+
 import { NextResponse } from "next/server";
-import {connectDB} from "@/app/lib/mongodb";
-import Task, { TaskDoc } from "@/models/task";
+import {connectDB} from "@/lib/mongodb";
+import Task, { TaskDoc,  isUnit} from "@/models/task";
+import { toISO } from "@/lib/date-helper";
 
 
 export const runtime = "nodejs";
@@ -65,7 +71,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
     await connectDB();
 
-    let body: ;
+    let body: TaskDoc;
     try {
         body = await req.json();
     } catch {
@@ -75,7 +81,7 @@ export async function POST(req: Request) {
     const label = String(body?.label || "").trim();
     const status = String(body?.status || "").trim();
     const category = String(body?.category || "").trim();
-    const clientName = body?.clientName.trim() || undefined;
+    const clientName = body?.clientName.trim();
 
     if(!label || !status || ! category) {
         return errorJson("label, status and category required", 422);
@@ -88,32 +94,45 @@ export async function POST(req: Request) {
     const base = slugify(String(body?.slug || label));
     const slug = await ensureUniqueSlug(base);
 
-    const count = Number.isFinite(parseInt(body?.frequencyCount, 10)) ? Math.max(1, parseInt(body.frequencyCount, 10)) : undefined;
+    const count = Number.isFinite(body?.frequencyCount) ? Math.max(1, body.frequencyCount): undefined;
     const unit = body?.frequencyUnit?String(body.frequencyUnit).toLowerCase() : undefined;
 
-    const payload: any = {
+    const hasCount = typeof count === "number" && Number.isFinite(count);
+    const hasUnit = hasCount && isUnit(unit);
+    const isDayOrWeek = hasUnit && (unit === "day" || unit == "week");
+
+    const dateFromStr = toISO(body?.dateFrom);
+    const dateToStr = toISO(body?.dateTo);
+
+    const payload = {
         label, 
         status, 
         category, 
         clientName, 
         slug,
-        frequencyCount: count,
-        frequencyUnit: count && unit?unit : undefined,
-        frequencyDays: count && (unit === "day" || unit === "week") ? count*(unit === "day" ? 1 : 7) : undefined,
-        dateFrom: body?.dateFrom || undefined,
-        dateTo: body?.dateTo || undefined, 
-        frequency: count && unit ? `${count} ${unit}${count > 1 ? "s" : ""}` : undefined,
-        lastDone: body?.dateFrom && body?.dateTo ? `${String(body.dateFrom)} to ${String(body.dateTo)}` : "",
         deleted: false,
-    };
+        ...(hasCount ? { frequencyCount: count } : {}),
+        ...(hasUnit ? { frequencyUnit: unit } : {}),
+        ...(isDayOrWeek ? {frequencyDays: unit === "day" ? count: count*7} : {}),
+        ...(dateFromStr ? { dateFrom: dateFromStr } : {}), 
+        ...(dateToStr   ? { dateTo:   dateToStr}   : {}),
+        ...(hasUnit ? { frequency: `${count} ${unit}${count! > 1 ? "s" : ""}` } : {}),
+        ...(dateFromStr && dateToStr ? { lastDone: `${dateFromStr} to ${dateToStr}` } : {}),
+    } satisfies Partial<TaskDoc>;
 
     try {
         const created = await Task.create(payload);
         return NextResponse.json(created, {status: 201});
-    } catch (err: any) {
-        if (err?.code === 11000) return errorJson("slug already exists", 409);
+    } catch (err: unknown) {
+        if (typeof err === "object" && err && "code" in err) { 
+            if ((err as { code?: number }).code === 11000) { 
+                return errorJson("slug already exists", 409); 
+            } 
+        }
         console.error(err);
-        return errorJson(err?.message || "Failed to add task", 500);
+        return errorJson(
+            err instanceof Error? err.message: "failed to add task", 500
+        );
     }
 }
 

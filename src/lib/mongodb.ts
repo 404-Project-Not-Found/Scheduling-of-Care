@@ -1,3 +1,8 @@
+/**
+ * Filename: /lib/mongodb.ts
+ * Author: Zahra Rizqita
+ */
+
 import mongoose from "mongoose";
 
 const MONGODB_URI = process.env.MONGODB_URI as string;

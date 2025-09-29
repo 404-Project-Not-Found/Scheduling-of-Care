@@ -1,3 +1,8 @@
+/**
+ * Filename: /lib/legacy.ts
+ * Author: Zahra Rizqita
+ */
+
 import type {Unit} from "./date-helper";
 
 export function parseLegacyFrequency(freq?: string): {count:number; unit:Unit } | null {

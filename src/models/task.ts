@@ -2,24 +2,29 @@ import mongoose, { Schema, model, models} from "mongoose";
 
 export type Unit = "day" | "week" | "month" | "year";
 
+export function isUnit(u: unknown): u is Unit {
+    return u === "day" || u === "week" || u === "month" || u === "year";
+}
+
+
 export interface TaskDoc extends mongoose.Document {
     label: string;
     slug: string;
     status: string;
     category: string;
-    clientName?: string;
-    deleted?: boolean;
+    clientName: string;
+    deleted: boolean;
 
     // legacy string field
     frequency?: string;
     lastDone?: string;
 
     // structured field
-    frequencyDays?: number;     // normalised to days
-    frequencyCount?: number;    // user-entered number
-    frequencyUnit?: Unit;       // user-chosen unit
-    dateFrom?: string;          // YYYY-MM-DD
-    dateTo?: string;            // YYYY-MM-DD
+    frequencyDays: number;     // normalised to days
+    frequencyCount: number;    // user-entered number
+    frequencyUnit: Unit;       // user-chosen unit
+    dateFrom: string;          // YYYY-MM-DD
+    dateTo: string;            // YYYY-MM-DD
 
     createdAt: Date;
     updatedAt: Date;
