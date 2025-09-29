@@ -24,7 +24,7 @@ const defaultItems: Item[] = [
   { href: "/dashboard/update-details", label: "Update your details" },
   { href: "/task/add", label: "Add Care Item" },
   // { href: "/task/edit", label: "Edit Task" },
-  { href: "/task/search", label: "Edit Task" },
+  { href: "/task/edit", label: "Edit Task" },
   { href: "/carer/search", label: "Assign Carer" },
   { href: "/dashboard/register-client", label: "Register new client" },
   { href: "/dashboard/client-list", label: "List of clients" },

@@ -7,10 +7,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 type Unit = "day" | "week" | "month" | "year";
 
 type Task = {
+  id?: string;
   label: string;
   slug: string;
-  status: string;
-  category: string;
+  status?: string;
+  category?: string;
   clientName?: string;
   deleted?: boolean;
 
@@ -19,36 +20,18 @@ type Task = {
   lastDone?: string;
 
   // structured fields
-  frequencyDays?: number; // normalized to days
-  frequencyCount?: number; // user-entered number
-  frequencyUnit?: Unit; // user-chosen unit
+  frequencyDays?: number;
+  frequencyCount?: number;
+  frequencyUnit?: Unit;
   dateFrom?: string; // YYYY-MM-DD
   dateTo?: string; // YYYY-MM-DD
 };
 
-function humanize(slug: string) {
-  return slug.replace(/-/g, " ").replace(/\b\w/g, (s) => s.toUpperCase());
-}
-
-function loadTasks(): Task[] {
-  if (typeof window === "undefined") return [];
-  try {
-    return JSON.parse(localStorage.getItem("tasks") || "[]") as Task[];
-  } catch {
-    return [];
-  }
-}
-function saveTasks(tasks: Task[]) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem("tasks", JSON.stringify(tasks));
-}
-
-// ---- frequency helpers ----
 const unitToDays: Record<Unit, number> = {
   day: 1,
   week: 7,
-  month: 30, // simple approximation
-  year: 365, // simple approximation
+  month: 30,
+  year: 365,
 };
 
 function toDays(count: number, unit: Unit) {
@@ -69,124 +52,161 @@ function parseLegacyFrequency(
   return { count: n, unit: u };
 }
 
+function loadTasks(): Task[] {
+  if (typeof window === "undefined") return [];
+  try {
+    return JSON.parse(localStorage.getItem("tasks") || "[]") as Task[];
+  } catch {
+    return [];
+  }
+}
+function saveTasks(tasks: Task[]) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem("tasks", JSON.stringify(tasks));
+  localStorage.setItem("tasks_version", String(Date.now()));
+}
+
 export default function EditTaskPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const taskSlug = searchParams.get("task") ?? "";
+  const slugFromURL = searchParams.get("task") ?? "";
 
-  // structured state
+  const clientNameFixed = "John Smith";
+
+  const [allTasks, setAllTasks] = useState<Task[]>([]);
+  const johnTasks = useMemo(
+    () =>
+      allTasks.filter((t) => !t.deleted && t.clientName === clientNameFixed),
+    [allTasks, clientNameFixed]
+  );
+
+  const [selectedSlug, setSelectedSlug] = useState<string>(slugFromURL);
+
+  const [status, setStatus] = useState("in progress");
+  const [category, setCategory] = useState("Appointments");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [frequencyCount, setFrequencyCount] = useState<number>(10);
   const [frequencyUnit, setFrequencyUnit] = useState<Unit>("day");
 
-  // other fields
-  const [clientName, setClientName] = useState("John Smith"); // default filled value (not placeholder)
-  const [status, setStatus] = useState("in progress");
-  const [category, setCategory] = useState("Appointments");
-  const [label, setLabel] = useState("Replace Toothbrush Head");
-
-  // status options for dropdown; if current status isn't in the list, include it as first option
-  const statusOptionsBase = [
+  // status options
+  const statusBase = [
     "in progress",
     "Completed",
     "Not started",
     "Paused",
     "Cancelled",
   ];
-  const statusOptions = statusOptionsBase.includes(status)
-    ? statusOptionsBase
-    : [status, ...statusOptionsBase];
+  const statusOptions = useMemo(
+    () => (statusBase.includes(status) ? statusBase : [status, ...statusBase]),
+    [status]
+  );
 
   useEffect(() => {
-    const tasks = loadTasks();
-    const t = tasks.find((x) => x.slug === taskSlug);
+    setAllTasks(loadTasks());
+  }, []);
+
+  useEffect(() => {
+    if (johnTasks.length === 0) return;
+
+    const existsInJohn = johnTasks.some((t) => t.slug === selectedSlug);
+    if (!selectedSlug || !existsInJohn) {
+      setSelectedSlug(johnTasks[0].slug);
+    }
+  }, [johnTasks.length]);
+
+  useEffect(() => {
+    if (!selectedSlug) return;
+    const t = allTasks.find(
+      (x) =>
+        x.slug === selectedSlug &&
+        x.clientName === clientNameFixed &&
+        !x.deleted
+    );
     if (!t) return;
 
-    setLabel(t.label || label);
-    setClientName(t.clientName || clientName);
-    setStatus(t.status || status);
-    setCategory(t.category || category);
+    setStatus(t.status || "in progress");
+    setCategory(t.category || "Appointments");
 
-    // prefer structured frequency
     if (typeof t.frequencyCount === "number" && t.frequencyUnit) {
       setFrequencyCount(Math.max(1, t.frequencyCount));
       setFrequencyUnit(t.frequencyUnit);
     } else {
-      // fallback to legacy string like "90 days"
       const parsed = parseLegacyFrequency(t.frequency);
       if (parsed) {
         setFrequencyCount(parsed.count);
         setFrequencyUnit(parsed.unit);
       } else if (t.frequencyDays) {
-        // crude back-conversion if only days were stored
         setFrequencyCount(Math.max(1, t.frequencyDays));
+        setFrequencyUnit("day");
+      } else {
+        setFrequencyCount(10);
         setFrequencyUnit("day");
       }
     }
 
-    if (t.dateFrom) setDateFrom(t.dateFrom);
-    if (t.dateTo) setDateTo(t.dateTo);
-    if (!t.dateFrom && !t.dateTo && t.lastDone?.includes(" to ")) {
-      const [from, to] = t.lastDone.split(" to ").map((s) => s.trim());
-      if (from) setDateFrom(from);
-      if (to) setDateTo(to);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [taskSlug]);
+    setDateFrom(t.dateFrom || "");
+    setDateTo(t.dateTo || "");
+  }, [selectedSlug, allTasks]);
 
-  const displayTitle = useMemo(
-    () => (label ? label : taskSlug ? humanize(taskSlug) : "Edit Task"),
-    [label, taskSlug]
+  const currentTask = useMemo(
+    () =>
+      allTasks.find(
+        (x) =>
+          x.slug === selectedSlug &&
+          x.clientName === clientNameFixed &&
+          !x.deleted
+      ) || null,
+    [allTasks, selectedSlug, clientNameFixed]
   );
 
+  const title = clientNameFixed;
+
   const onDone = () => {
-    const tasks = loadTasks();
-    const idx = tasks.findIndex((x) => x.slug === taskSlug);
-    if (idx >= 0) {
-      const days = toDays(frequencyCount, frequencyUnit);
-      const legacyStr = `${frequencyCount} ${frequencyUnit}${
+    if (!currentTask) return;
+
+    const updated: Task = {
+      ...currentTask,
+
+      status,
+      category,
+      frequencyCount: Math.max(1, frequencyCount),
+      frequencyUnit,
+      frequencyDays: toDays(frequencyCount, frequencyUnit),
+      dateFrom: dateFrom || undefined,
+      dateTo: dateTo || undefined,
+
+      frequency: `${frequencyCount} ${frequencyUnit}${
         frequencyCount > 1 ? "s" : ""
-      }`;
+      }`,
+      lastDone:
+        dateFrom && dateTo
+          ? `${dateFrom} to ${dateTo}`
+          : currentTask.lastDone || "",
+      deleted: false,
+    };
 
-      tasks[idx] = {
-        ...tasks[idx],
-        clientName: clientName.trim() || undefined,
-        status,
-        category,
-        // structured fields
-        frequencyCount: Math.max(1, frequencyCount),
-        frequencyUnit,
-        frequencyDays: days,
-        dateFrom,
-        dateTo,
-        // legacy fields for compatibility
-        frequency: legacyStr,
-        lastDone:
-          dateFrom && dateTo
-            ? `${dateFrom} to ${dateTo}`
-            : tasks[idx].lastDone || "",
-        deleted: false,
-      };
-
-      saveTasks(tasks);
-    }
-    // router.push("/task/search");
+    const next = allTasks.map((t) =>
+      t.slug === currentTask.slug ? updated : t
+    );
+    setAllTasks(next);
+    saveTasks(next);
   };
 
   const onRemove = () => {
-    const tasks = loadTasks();
-    const idx = tasks.findIndex((x) => x.slug === taskSlug);
-    if (idx >= 0) {
-      tasks[idx].deleted = true;
-      saveTasks(tasks);
-    }
-    // router.push("/task/search");
+    if (!currentTask) return;
+    if (!confirm(`Delete "${currentTask.label}"?`)) return;
+
+    const next = loadTasks().filter((t) => t.slug !== currentTask.slug);
+    setAllTasks(next);
+    saveTasks(next);
+
+    router.back();
   };
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-[#F5CBA7] p-6">
-      {/* screen top-left logo (outside the card) */}
+      {/* logo */}
       <Image
         src="/logo-name.png"
         alt="Scheduling of Care"
@@ -197,22 +217,33 @@ export default function EditTaskPage() {
       />
 
       <div className="w-full max-w-xl rounded-[22px] border border-[#6b3f2a] bg-[#F7ECD9] p-8 shadow relative">
+        {/* Maroon header with centered fixed client name */}
         <div className="-mx-8 -mt-8 px-8 py-4 bg-[#3A0000] text-white rounded-t-[22px] border-b border-black/10 text-center">
-          <h1 className="text-3xl font-extrabold">Edit task</h1>
+          <h1 className="text-3xl font-extrabold">{title}</h1>
         </div>
 
+        {/* Subtitle = selected care item label */}
         <h2 className="mt-4 text-2xl font-bold text-[#1c130f]">
-          {displayTitle}
+          {currentTask ? currentTask.label : "Select a care item"}
         </h2>
 
         <div className="mt-8 space-y-6">
-          {/* Client name */}
-          <Field label="Client name:">
-            <input
-              value={clientName}
-              onChange={(e) => setClientName(e.target.value)}
+          {/* Care item selector */}
+          <Field label="Care item:">
+            <select
+              value={selectedSlug}
+              onChange={(e) => setSelectedSlug(e.target.value)}
               className="w-full rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black"
-            />
+            >
+              {johnTasks.map((t) => (
+                <option key={t.slug} value={t.slug}>
+                  {t.label}
+                </option>
+              ))}
+              {johnTasks.length === 0 && (
+                <option value="">(No care items yet)</option>
+              )}
+            </select>
           </Field>
 
           {/* Date range */}
@@ -235,7 +266,7 @@ export default function EditTaskPage() {
             </div>
           </Field>
 
-          {/* Frequency count + unit */}
+          {/* Repeat every */}
           <Field label="Repeat every:">
             <div className="flex items-center gap-3">
               <input
@@ -263,7 +294,7 @@ export default function EditTaskPage() {
             </div>
           </Field>
 
-          {/* Status - dropdown */}
+          {/* Status */}
           <Field label="Status:">
             <select
               value={status}
@@ -289,6 +320,7 @@ export default function EditTaskPage() {
           </Field>
         </div>
 
+        {/* Banner */}
         <div className="mt-8 -mx-8 px-8 py-5 bg-rose-300/25 text-black border border-rose-300/50">
           <span className="font-bold mr-1">IMPORTANT:</span>
           Deleting the task or editing the frequency and dates will change the
@@ -296,24 +328,27 @@ export default function EditTaskPage() {
           budget implications caused by this change. Make this change?
         </div>
 
+        {/* Footer */}
         <div className="mt-8 flex items-center justify-between">
           <button
             onClick={onRemove}
-            className="rounded-full bg-[#8B0000] hover:bg-[#a40f0f] text-white text-base font-semibold px-5 py-2 shadow"
+            disabled={!currentTask}
+            className="rounded-full bg-[#8B0000] hover:bg-[#a40f0f] disabled:opacity-60 text-white text-base font-semibold px-5 py-2 shadow"
           >
             Delete Task
           </button>
 
           <div className="flex items-center gap-6">
             <button
-              // onClick={() => router.push("/task/search")}
-              className="text-xl font-medium text-[#1c130f] hover:opacity-80"
+              onClick={() => router.back()}
+              className="text-xl font-medium text-[#1c130f] border border-[#1c130f] px-6 py-2 rounded-full hover:bg-gray-100 transition"
             >
               Cancel
             </button>
             <button
               onClick={onDone}
-              className="rounded-full bg-[#F39C6B] hover:bg-[#ef8a50] text-[#1c130f] text-xl font-bold px-8 py-2 shadow"
+              disabled={!currentTask}
+              className="rounded-full bg-[#F39C6B] hover:bg-[#ef8a50] disabled:opacity-60 text-[#1c130f] text-xl font-bold px-8 py-2 shadow"
             >
               Done
             </button>
