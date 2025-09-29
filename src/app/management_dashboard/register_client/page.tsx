@@ -4,116 +4,193 @@
  * Date Created: 22/09/2025
  */
 
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+
+// ----- Color palette -----
+const palette = {
+  pageBg: "#ffd9b3",
+  cardBg: "#F7ECD9",
+  header: "#3A0000",
+  text: "#2b2b2b",
+  border: "#3A0000",
+  help: "#ff9999",
+  white: "#ffffff",
+};
 
 export default function RegisterClientPage() {
-  const [accessCode, setAccessCode] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [accessCode, setAccessCode] = useState("");
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setMessage(null);
     setError(null);
-    setSuccess(null);
-    setLoading(true);
+
+    const code = accessCode.trim();
+    if (!code) {
+      setError("Access code cannot be empty.");
+      return;
+    }
 
     try {
-      const code = accessCode.trim();
-      if (!code) {
-        setError('Access code cannot be empty.');
-        setLoading(false);
-        return;
-      }
-
-      // Call the api endpoint to register the client
-      const res = await fetch('/api/management/register_client', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ accessCode }),
+      setLoading(true);
+      const res = await fetch("/api/management/register_client", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ accessCode: code }), // Keep original payload
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
-      // If api returns an error
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to register client.');
+        throw new Error(data?.error || "Failed to register client.");
       }
 
-      // Client was successfully registered
-      setSuccess(data.message);
-      setAccessCode('');
+      // success
+      setMessage(data?.message || "Client registered successfully.");
+      setAccessCode("");
     } catch (err) {
-      // Handles errors
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('Something went wrong.');
-      }
+      setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-6">
-      <div className="bg-[#fff4e6] rounded-2xl shadow-md w-full max-w-lg border border-[#3d0000]/20">
-        {/* Maroon header */}
-        <h1 className="text-xl font-semibold px-6 py-4 bg-[#3d0000] text-white rounded-t-2xl">
-          Register Client with Access Code
-        </h1>
+    <main
+      className="min-h-screen w-full flex flex-col"
+      style={{ backgroundColor: palette.cardBg, color: palette.text }}
+    >
+      {/* Header with logo */}
+      <header className="w-full px-6 py-5 flex items-center">
+        <Image
+          src="/logo-name.png"
+          alt="Scheduling of Care"
+          width={200}
+          height={50}
+          priority
+        />
+      </header>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5 text-black">
-          {/* Error message */}
+      {/* Banner (maroon) */}
+      <div className="w-full text-white" style={{ backgroundColor: palette.header }}>
+        <div className="px-6 py-5 relative">
+          <Link
+            href="/empty_dashboard"
+            aria-label="Back to Management Dashboard"
+            className="absolute left-6 top-1/2 -translate-y-1/2 font-semibold tracking-wide
+                       text-lg md:text-xl lg:text-2xl px-2 py-1 text-white"
+          >
+            {"<"} back
+          </Link>
+
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-wide text-center">
+            Register Client with Access Code
+          </h1>
+        </div>
+      </div>
+
+      {/* Form */}
+      <section className="flex-1 w-full flex justify-center px-6 py-25">
+        <form onSubmit={onSubmit} className="w-full max-w-2xl space-y-9">
+          {/* Alerts */}
           {error && (
             <div
               role="alert"
-              className="mb-4 px-4 py-3 rounded-md text-sm bg-rose-100 border border-rose-300 text-rose-700"
+              className="mx-auto w-full max-w-2xl rounded-xl border px-4 py-3 shadow-sm"
+              style={{ backgroundColor: palette.cardBg, borderColor: palette.border, color: palette.text }}
             >
               {error}
             </div>
           )}
-          {success && (
+          {message && (
             <div
               role="status"
-              className="mb-4 px-4 py-3 rounded-md text-sm bg-green-100 border border-green-300 text-green-700"
+              className="mx-auto w-full max-w-2xl rounded-xl border px-4 py-3 shadow-sm"
+              style={{ backgroundColor: palette.cardBg, borderColor: palette.border, color: palette.text }}
             >
-              {success}
+              {message}
             </div>
           )}
-          <div>
-            <label className="block mb-1 font-medium">Client Access Code</label>
+
+          {/* Access code (required) */}
+          <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-6">
+            <label
+              htmlFor="accessCode"
+              className="md:w-1/3 text-lg md:text-xl font-medium flex items-center gap-2"
+              style={{ color: palette.text }}
+            >
+              <span>Client Access Code</span>
+              <InfoDot />
+            </label>
             <input
+              id="accessCode"
+              name="accessCode"
               type="text"
               value={accessCode}
               onChange={(e) => setAccessCode(e.target.value)}
-              required
-              className="w-full px-3 py-2 border rounded-md"
+              className="md:flex-1 w-full rounded-xl border px-4 py-3 text-lg shadow-sm tracking-wide focus:outline-none focus:ring-4 focus:ring-zinc-300/50"
+              style={{
+                borderColor: palette.border,
+                backgroundColor: palette.white,
+                color: palette.text,
+              }}
             />
           </div>
 
-          <div className="flex justify-end gap-3 pt-2">
-            <button
-              type="button"
-              onClick={() => router.push('/management_dashboard/clients_list')}
-              className="px-4 py-2 rounded-md border hover:bg-gray-100"
-            >
-              Cancel
-            </button>
+          {/* Actions */}
+          <div className="mt-10 md:mt-16 flex items-center justify-center gap-[12px]">
             <button
               type="submit"
-              className="px-4 py-2 rounded-md bg-[#e07a5f] text-white font-semibold hover:bg-[#d06950]"
+              disabled={loading}
+              className="rounded-full px-10 md:px-12 py-3 md:py-4 text-base md:text-xl
+                         font-semibold text-white shadow-md transition active:scale-95
+                         disabled:opacity-60 min-w-[200px]"
+              style={{ backgroundColor: palette.header }}
             >
-              Register
+              {loading ? "Registering…" : "Register"}
             </button>
           </div>
         </form>
-      </div>
+      </section>
+
+      <HelpButton />
     </main>
+  );
+}
+
+function InfoDot({ title }: { title?: string }) {
+  return (
+    <span
+      title={title}
+      aria-label={title}
+      className="inline-flex h-5 w-5 items-center justify-center rounded-full text-[12px] leading-none select-none"
+      style={{ backgroundColor: palette.help, color: palette.white }}
+    >
+      i
+    </span>
+  );
+}
+
+function HelpButton() {
+  return (
+    <Link
+      href="" //need to add help info
+      aria-label="QnA"
+      className="fixed bottom-6 right-6 flex h-12 w-12 items-center justify-center rounded-full text-2xl shadow-lg"
+      title="QnA"
+      style={{ backgroundColor: palette.help, color: palette.white }}
+    >
+      ?
+    </Link>
   );
 }
