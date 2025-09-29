@@ -31,7 +31,7 @@ export default function UpdateDetailsPage() {
   }
 
   function handleCancel() {
-    router.push("/menu");
+    router.push("/dashboard");
   }
 
   return (

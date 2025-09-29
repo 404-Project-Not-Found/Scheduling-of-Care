@@ -64,24 +64,22 @@ export default function ClientListPage() {
 
   return (
     <main
-      className="min-h-screen w-full flex items-start justify-center px-6 pb-12 pt-28 md:pt-36 relative"
+      className="min-h-screen w-full flex items-center justify-center px-6 py-12 md:py-16 relative"
       style={{ backgroundColor: colors.pageBg }}
     >
       {/* Top-left logo */}
-      <div className="absolute top-6 left-6">
-        <Image
-          src="/logo-name.png"
-          alt="Scheduling of Care"
-          width={220}
-          height={80}
-          className="object-contain"
-          priority
-        />
-      </div>
+      <Image
+        src="/logo-name.png"
+        alt="Scheduling of Care"
+        width={220}
+        height={80}
+        className="fixed top-6 left-6 object-contain"
+        priority
+      />
 
       {/* Card */}
       <div
-        className="w-full max-w-3xl rounded-2xl shadow-lg overflow-hidden border"
+        className="w-full max-w-2xl rounded-2xl shadow-lg overflow-hidden border"
         style={{ backgroundColor: colors.cardBg, borderColor: "#e7d8c4" }}
       >
         {/* Maroon header with centered title */}
@@ -112,53 +110,59 @@ export default function ClientListPage() {
 
           {/* List */}
           {!loading && !error && (
-            <ul className="mt-6 divide-y" style={{ borderColor: "#eadcc8" }}>
-              {filtered.map((c) => (
-                <li
-                  key={c._id}
-                  className="py-3 flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-3">
-                    {c.avatarUrl ? (
-                      <Image
-                        src={c.avatarUrl}
-                        alt={c.fullName}
-                        width={32}
-                        height={32}
-                        className="h-8 w-8 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="h-8 w-8 rounded-full bg-gray-200" />
-                    )}
-                    <div>
-                      <p className="font-medium" style={{ color: colors.text }}>
-                        {c.fullName}
-                      </p>
-                      {c.accessCode && (
-                        <p className="text-xs text-gray-500">
-                          Access code: {c.accessCode}
-                        </p>
+            <div className="mt-6 -mx-6 md:-mx-8 px-6 md:px-8 max-h-[60vh] overflow-y-auto">
+              <ul className="divide-y" style={{ borderColor: "#eadcc8" }}>
+                {filtered.map((c) => (
+                  <li
+                    key={c._id}
+                    className="py-3 flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-3">
+                      {c.avatarUrl ? (
+                        <Image
+                          src={c.avatarUrl}
+                          alt={c.fullName}
+                          width={32}
+                          height={32}
+                          className="h-8 w-8 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="h-8 w-8 rounded-full bg-gray-200" />
                       )}
+                      <div>
+                        <p
+                          className="font-medium"
+                          style={{ color: colors.text }}
+                        >
+                          {c.fullName}
+                        </p>
+                        {c.accessCode && (
+                          <p className="text-xs text-gray-500">
+                            Access code: {c.accessCode}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="flex gap-2">
-                    <Link
-                      href={`/dashboard/${c._id}`}
-                      className="px-3 py-1.5 rounded-full border text-sm bg-white hover:bg-gray-200 transition"
-                      style={{ color: colors.text, borderColor: "#bfb8ad" }}
-                    >
-                      View dashboard
-                    </Link>
-                  </div>
-                </li>
-              ))}
-              {filtered.length === 0 && (
-                <li className="py-4 text-sm text-gray-600">
-                  No clients found.
-                </li>
-              )}
-            </ul>
+                    <div className="flex gap-2">
+                      <Link
+                        href={`/dashboard/${c._id}`}
+                        className="px-3 py-1.5 rounded-full border text-sm bg-white hover:bg-gray-200 transition"
+                        style={{ color: colors.text, borderColor: "#bfb8ad" }}
+                      >
+                        View dashboard
+                      </Link>
+                    </div>
+                  </li>
+                ))}
+
+                {filtered.length === 0 && (
+                  <li className="py-4 text-sm text-gray-600">
+                    No clients found.
+                  </li>
+                )}
+              </ul>
+            </div>
           )}
 
           {/* Footer actions */}
