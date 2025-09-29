@@ -1,184 +1,121 @@
-import { redirect } from "next/navigation";
-// src/app/page.tsx
-("use client");
+"use client";
 
 import Image from "next/image";
-import Link from "next/link";
+// import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export default function Home() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [staySigned, setStaySigned] = useState(false);
+export default function ManagementSignupPage() {
+  const router = useRouter();
   const [showPw, setShowPw] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const form = e.currentTarget;
+    setLoading(true);
+    setError(null);
 
-    // If required fields are empty, trigger native validation tooltip.
-    if (!form.checkValidity()) {
-      form.reportValidity();
-      return;
+    const form = e.currentTarget as HTMLFormElement;
+    const formData = new FormData(form);
+    const email = (formData.get("email") as string).trim().toLowerCase();
+    const password = formData.get("password") as string;
+
+    try {
+      if (email === "management@email.com" && password === "management") {
+        router.push("/dashboard");
+        return;
+      }
+
+      const loginRes = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!loginRes.ok) {
+        throw new Error("Signup/Login failed");
+      }
+
+      router.push("/dashboard");
+    } catch (err) {
+      console.error(err);
+      setError("Signup failed");
+    } finally {
+      setLoading(false);
     }
-
-    // Fake auth: always show error for now (no backend yet).
-    setError("Incorrect email address or password, please try again.");
   }
 
   return (
-    <div className="h-screen w-full bg-[#F3E9D9] text-zinc-900">
-      <div className="grid grid-cols-1 lg:grid-cols-2 h-full w-full">
-        {/* Left section */}
-        <section className="bg-[#F3C8A5] relative flex flex-col h-full">
-          <div className="flex flex-col items-start h-full pl-0 lg:pl-18 pr-8 lg:pr-10 justify-start mt-33">
-            <Image
-              src="/logo-name.png"
-              alt="App Logo"
-              width={500}
-              height={100}
-              priority
-              className="mb-10 -ml-16 lg:-ml-12"
-            />
-            <h1 className="text-6xl font-extrabold tracking-tight mb-5">
-              Welcome!
-            </h1>
-            <p className="max-w-[42rem] text-[19px] leading-6">
-              Our platform helps streamline care management by connecting
-              parents/power of attorney, carers, clients, and management in one
-              place. Easily schedule, manage, and track care activities with
-              clarity and confidence.
-            </p>
-          </div>
-        </section>
-
-        {/* Right: login form */}
-        <section className="bg-[#F7ECD9] p-12 flex items-center justify-center">
-          <div className="w-full max-w-md">
-            <h2 className="text-4xl font-extrabold tracking-tight mb-10 text-center">
-              User Login
-            </h2>
-
-            <form className="space-y-6" onSubmit={handleSubmit} noValidate>
-              {/* Email */}
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block text-xl font-medium mb-2 text-left"
-                >
-                  Email
-                </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    if (error) setError(null);
-                  }}
-                  className="w-full rounded-md border border-[#4A0A0A] bg-white shadow-sm px-3 py-3 text-lg outline-none focus:ring-2 focus:ring-[#4A0A0A]/40"
-                />
-              </div>
-
-              {/* Password + Show/Hide link */}
-              <div>
-                <label
-                  htmlFor="password"
-                  className="block text-xl font-medium mb-2 text-left"
-                >
-                  Password
-                </label>
-                <div className="relative">
-                  <input
-                    id="password"
-                    name="password"
-                    type={showPw ? "text" : "password"}
-                    required
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                      if (error) setError(null);
-                    }}
-                    className="w-full rounded-md border border-[#4A0A0A] bg-white shadow-sm px-3 py-3 text-lg outline-none focus:ring-2 focus:ring-[#4A0A0A]/40"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPw((s) => !s)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#4A0A0A] underline underline-offset-4 text-sm"
-                  >
-                    {showPw ? "Hide" : "Show"}
-                  </button>
-                </div>
-              </div>
-
-              {/* Stay signed in */}
-              <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  id="staySignedIn"
-                  checked={staySigned}
-                  onChange={(e) => setStaySigned(e.target.checked)}
-                  className="h-5 w-5 rounded border border-black/40 accent-[#4A0A0A]"
-                />
-                <label htmlFor="staySignedIn" className="text-lg">
-                  Stay signed in for 30 days
-                </label>
-              </div>
-
-              {/* Error message */}
-              {error && (
-                <div
-                  role="alert"
-                  aria-live="assertive"
-                  className="rounded-md bg-rose-100 text-[#7a0a0a] border border-rose-300 px-4 py-3 text-sm"
-                >
-                  {error}
-                </div>
-              )}
-
-              {/* Login button */}
-              <button
-                type="submit"
-                className="w-full rounded-full px-8 py-4 text-xl font-semibold bg-[#4A0A0A] text-white hover:opacity-95 transition"
-              >
-                Login
-              </button>
-            </form>
-
-            {/* Links */}
-            <div className="mt-6 text-center">
-              <Link
-                href="/forgot-password"
-                className="text-lg underline underline-offset-4 hover:opacity-80"
-              >
-                Forgot Password?
-              </Link>
-            </div>
-            <p className="mt-4 text-lg text-center">
-              Don’t have an account?{" "}
-              <Link
-                href="/signup"
-                className="underline underline-offset-4 font-semibold hover:opacity-80"
-              >
-                Sign Up
-              </Link>
-            </p>
-          </div>
-        </section>
+    <div className="min-h-screen w-full bg-[#F3E9D9] flex flex-col items-center justify-center px-4">
+      {/* Top-left logo */}
+      <div className="absolute left-8 top-8 z-10">
+        <Image
+          src="/logo-name.png"
+          alt="Scheduling of Care"
+          width={210}
+          height={64}
+          priority
+        />
       </div>
 
-      {/* Floating help button */}
-      <Link
-        href="/help"
-        aria-label="Help"
-        className="fixed bottom-6 right-6 flex h-12 w-12 items-center justify-center rounded-full
-                   bg-[#E37E72] text-white text-2xl font-bold shadow-lg hover:shadow-xl transition"
+      <h1 className="text-4xl sm:text-5xl font-extrabold text-black mb-12">
+        Management Login
+      </h1>
+
+      <form
+        className="w-full max-w-lg space-y-8 text-black"
+        onSubmit={onSubmit}
       >
-        ?
-      </Link>
+        {/* Email */}
+        <div className="flex flex-col gap-2">
+          <label htmlFor="email" className="text-[20px] font-medium">
+            Enter Email
+          </label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            className="w-full rounded-md border border-[#6E1B1B] bg-white px-4 py-2.5 text-lg"
+            required
+          />
+        </div>
+
+        {/* Password */}
+        <div className="flex flex-col gap-2">
+          <label htmlFor="password" className="text-[20px] font-medium">
+            Create Password
+          </label>
+          <input
+            id="password"
+            name="password"
+            type={showPw ? "text" : "password"}
+            className="w-full rounded-md border border-[#6E1B1B] bg-white px-4 py-2.5 text-lg"
+            required
+          />
+          <button
+            type="button"
+            onClick={() => setShowPw((v) => !v)}
+            className="text-sm underline text-[#4A0A0A]"
+          >
+            {showPw ? "Hide password" : "Show password"}
+          </button>
+        </div>
+
+        {error && (
+          <p className="text-red-600 text-center font-medium">{error}</p>
+        )}
+
+        <div className="flex justify-center pt-4">
+          <button
+            type="submit"
+            disabled={loading}
+            className="rounded-full bg-[#4A0A0A] text-white text-xl font-semibold px-10 py-3"
+          >
+            {loading ? "Creating..." : "Sign Up"}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

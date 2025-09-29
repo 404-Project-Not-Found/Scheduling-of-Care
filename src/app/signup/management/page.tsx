@@ -3,9 +3,69 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function ManagementSignupPage() {
   const [showPw, setShowPw] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+
+    if (!name.trim() || !email.trim() || !password) {
+      setError("Please fill in all fields.");
+      return;
+    }
+    if (password !== confirm) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // create account with role=management
+      const signupRes = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim(),
+          email: email.trim().toLowerCase(),
+          password,
+          role: "management",
+        }),
+      });
+
+      if (!signupRes.ok) {
+        const j = await signupRes.json().catch(() => ({}));
+        throw new Error(j.error || "Signup failed");
+      }
+
+      // auto-login to set cookie/session
+      const loginRes = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
+      });
+
+      if (!loginRes.ok) {
+        const j = await loginRes.json().catch(() => ({}));
+        throw new Error(j.error || "Login after signup failed");
+      }
+
+      router.push("/dashboard");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err?.message || "Something went wrong");
+      }
+    }
+  }
 
   return (
     <div className="min-h-screen w-full bg-[#F3E9D9] flex flex-col items-center justify-center px-4">
@@ -25,8 +85,15 @@ export default function ManagementSignupPage() {
         Management Sign Up
       </h1>
 
-      {/* Vertical form layout */}
-      <form className="w-full max-w-lg space-y-8 text-black">
+      <form
+        onSubmit={onSubmit}
+        className="w-full max-w-lg space-y-8 text-black"
+      >
+        {error && (
+          <div className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
 
         {/* User Name */}
         <div className="flex flex-col gap-2">
@@ -42,6 +109,8 @@ export default function ManagementSignupPage() {
           <input
             id="userName"
             type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
             className="w-full rounded-md border border-[#6E1B1B] bg-white text-black px-4 py-2.5 text-lg outline-none focus:ring-2 focus:ring-[#4A0A0A]/30"
             required
           />
@@ -61,6 +130,8 @@ export default function ManagementSignupPage() {
           <input
             id="email"
             type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             className="w-full rounded-md border border-[#6E1B1B] bg-white text-black px-4 py-2.5 text-lg outline-none focus:ring-2 focus:ring-[#4A0A0A]/30"
             required
           />
@@ -81,8 +152,11 @@ export default function ManagementSignupPage() {
             <input
               id="password"
               type={showPw ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-md border border-[#6E1B1B] bg-white text-black px-4 py-2.5 text-lg outline-none focus:ring-2 focus:ring-[#4A0A0A]/30"
               required
+              minLength={6}
             />
             <button
               type="button"
@@ -108,8 +182,11 @@ export default function ManagementSignupPage() {
           <input
             id="confirm"
             type={showPw ? "text" : "password"}
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
             className="w-full rounded-md border border-[#6E1B1B] bg-white text-black px-4 py-2.5 text-lg outline-none focus:ring-2 focus:ring-[#4A0A0A]/30"
             required
+            minLength={6}
           />
         </div>
 
@@ -117,9 +194,10 @@ export default function ManagementSignupPage() {
         <div className="flex justify-center pt-4">
           <button
             type="submit"
-            className="rounded-full bg-[#4A0A0A] text-white text-xl font-semibold px-10 py-3 hover:opacity-95 transition"
+            disabled={loading}
+            className="rounded-full bg-[#4A0A0A] text-white text-xl font-semibold px-10 py-3 hover:opacity-95 transition disabled:opacity-60"
           >
-            Sign Up
+            {loading ? "Creating..." : "Sign Up"}
           </button>
         </div>
 
