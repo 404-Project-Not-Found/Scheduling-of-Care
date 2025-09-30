@@ -297,3 +297,41 @@ export async function saveTasksFE(tasks: Task[]): Promise<void> {
   });
   if (!res.ok) throw new Error(`Failed to save tasks (${res.status})`);
 }
+
+//mock data for manage client task for management
+
+export type TaskCatalogItem = { label: string; slug: string };
+export type TaskCatalog = { category: string; tasks: TaskCatalogItem[] }[];
+
+/**
+ * Frontend-mock catalog for category -> task names.
+ * Hardcoded as requested: Appointments / Hygiene / Clothing
+ */
+export function getTaskCatalogFE(): TaskCatalog {
+  return [
+    {
+      category: 'Appointments',
+      tasks: [
+        { label: 'Dental Appointment', slug: 'dental-appointment' },
+        { label: 'GP Checkup', slug: 'gp-checkup' },
+        { label: 'Eye Test', slug: 'eye-test' },
+      ],
+    },
+    {
+      category: 'Hygiene',
+      tasks: [
+        { label: 'Replace Toothbrush Head', slug: 'replace-toothbrush-head' },
+        { label: 'Shower Assistance', slug: 'shower-assistance' },
+        { label: 'Nail Trimming', slug: 'nail-trimming' },
+      ],
+    },
+    {
+      category: 'Clothing',
+      tasks: [
+        { label: 'Laundry Pickup', slug: 'laundry-pickup' },
+        { label: 'Seasonal Wardrobe Update', slug: 'seasonal-wardrobe-update' },
+        { label: 'Mend Clothing', slug: 'mend-clothing' },
+      ],
+    },
+  ];
+}

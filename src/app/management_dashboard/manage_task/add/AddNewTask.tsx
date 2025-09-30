@@ -3,17 +3,11 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-
-type Client = { id: string; fullName: string };
-
-function loadClients(): Client[] {
-  if (typeof window === "undefined") return [];
-  try {
-    return JSON.parse(localStorage.getItem("clients") || "[]") as Client[];
-  } catch {
-    return [];
-  }
-}
+import {
+  readActiveClientFromStorage,
+  FULL_DASH_ID,
+  NAME_BY_ID,
+} from "@/lib/mockApi";
 
 type Unit = "day" | "week" | "month" | "year";
 
@@ -71,18 +65,21 @@ function slugify(s: string) {
 export default function AddTaskPage() {
   const router = useRouter();
 
+  // client name from mockApi (active client)
+  const [clientName, setClientName] = useState<string>("");
+  useEffect(() => {
+    const { id, name } = readActiveClientFromStorage();
+    const resolvedId = id || FULL_DASH_ID;
+    const resolvedName = name || NAME_BY_ID[resolvedId] || "";
+    setClientName(resolvedName);
+  }, []);
+
   // all fields default to empty
-  const [clientName, setClientName] = useState("");
   const [label, setLabel] = useState("");
   const [status, setStatus] = useState("in progress");
   const [category, setCategory] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-
-  const [clients, setClients] = useState<Client[]>([]);
-  useEffect(() => {
-    setClients(loadClients());
-  }, []);
 
   // frequency: allow empty input; keep as string then parse on submit
   const [frequencyCountStr, setFrequencyCountStr] = useState<string>("");
@@ -121,7 +118,7 @@ export default function AddTaskPage() {
       : undefined;
 
     const newTask: Task = {
-      clientName: clientName.trim() || undefined,
+      clientName, 
       label: name,
       slug,
       status: status.trim(),
@@ -137,7 +134,7 @@ export default function AddTaskPage() {
     };
 
     saveTasks([...(tasks || []), newTask]);
-    router.push("/dashboard");
+    router.push("/calender_dashboard");
   };
 
   return (
@@ -158,26 +155,21 @@ export default function AddTaskPage() {
           <h1 className="text-3xl font-extrabold">Create new task</h1>
         </div>
 
+        {/* client name line */}
+        <p className="mt-6 text-2xl font-bold text-center text-black">
+          <span className="font-semibold">Client Name:</span> {clientName}
+        </p>
+
+
         {/* form fields */}
         <div className="mt-8 space-y-6">
-          <Field label="Client name:">
-            <select
-              value={clientName}
-              onChange={(e) => setClientName(e.target.value)}
+          <Field label="Category:">
+            <input
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
               className="w-full rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black"
-            >
-              <option value="">-- Select a client --</option>
-              {clients.map((client) => (
-                <option key={client.id} value={client.fullName}>
-                  {client.fullName}
-                </option>
-              ))}
-              {clients.length === 0 && (
-                <option value="" disabled>
-                  (No clients yet)
-                </option>
-              )}
-            </select>
+              placeholder="e.g., Appointments"
+            />
           </Field>
 
           <Field label="Task name:">
@@ -250,14 +242,7 @@ export default function AddTaskPage() {
             </select>
           </Field>
 
-          <Field label="Category:">
-            <input
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black"
-              placeholder="e.g., Appointments"
-            />
-          </Field>
+
         </div>
 
         {/* footer actions */}

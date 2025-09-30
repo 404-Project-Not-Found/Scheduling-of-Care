@@ -1,3 +1,23 @@
+/**
+ * Filename: /app/menu/page.tsx
+ * Author: Qingyue Zhao
+ * Date Created: 01/10/2025
+ *
+ * Description:
+ * - Implements a reusable left-side Menu Drawer for role-based navigation.
+ * - Supports three viewer roles: 'carer', 'family', and 'management'.
+ *
+ * Features:
+ * - Common navigation items: Budget Report, Transaction History. (for all users)
+ * - Carer-only item: Manage your account (update details).
+ * - Management-only items: Manage tasks, Add new task.
+ *
+ * Notes:
+ *  Some options for family and management are shown on their empty dashboard.
+ *  Need to decide whether they should also be shown on the calendar dashboard.
+ * （see comments for menu options below)
+ */
+
 'use client';
 
 import React, { useEffect } from 'react';
@@ -15,7 +35,7 @@ const palette = {
 export function MenuDrawer({
   open,
   onClose,
-  viewer, // optional: 'carer' | 'family' | 'management' 
+  viewer, // optional: 'carer' | 'family' | 'management'
 }: {
   open: boolean;
   onClose: () => void;
@@ -32,11 +52,23 @@ export function MenuDrawer({
     if (e.target === e.currentTarget) onClose();
   }
 
-  // Detect "family" viewer even if prop not provided (fallback to frontend mock role)
+  // Detect "family" viewer even if prop not provided
   const isFamilyViewer =
     viewer === 'family' ||
     (typeof window !== 'undefined' &&
       (localStorage.getItem('activeRole') || '').toLowerCase() === 'family');
+
+  // Detect "management" viewer
+  const isManagementViewer =
+    viewer === 'management' ||
+    (typeof window !== 'undefined' &&
+      (localStorage.getItem('activeRole') || '').toLowerCase() === 'management');
+
+  // Detect "management" viewer
+  const isCarerViewer =
+    viewer === 'carer' ||
+    (typeof window !== 'undefined' &&
+      (localStorage.getItem('activeRole') || '').toLowerCase() === 'carer');
 
   return (
     <>
@@ -78,23 +110,72 @@ export function MenuDrawer({
 
         <nav className="flex h-[calc(100%-56px)] flex-col justify-between">
           <ul className="px-3 py-4 space-y-2">
-            {/* Existing items */}
-            <MenuItem href="/calender_dashboard/update_details" label="Update your details" />
-            <MenuItem href="/calender_dashboard/budget_report" label="Budget Report" />
-            <MenuItem href="/calender_dashboard/transaction_history" label="View Transactions" />
+            {/* Existing items for all user */}
 
-            {/* Extra entries only for FAMILY viewer on calender dashboard */}
+            <MenuItem
+              href="/calender_dashboard/budget_report"
+              label="Budget Report"
+            />
+            <MenuItem
+              href="/calender_dashboard/transaction_history"
+              label="View Transactions"
+            />
+
+
+            {/* Extra entries only for CARER viewer */}
+            {isCarerViewer && (
+              <MenuItem
+                href="/calender_dashboard/update_details"
+                label="Manage your account"
+              />
+            )}
+
+            {/* Extra entries only for FAMILY viewer */}
             {isFamilyViewer && (
               <>
-                <MenuItem
-                  href="/people_list"
+
+                 {/* optional menu option for family */}
+            
+                {/* <MenuItem
+                  href="/people_list" 
                   label="Manage people with special needs"
-                />
-                <MenuItem
+                /> */}
+
+                {/* <MenuItem
                   href="/request_of_change_page"
                   label="Request to change a task"
-                />
+                /> */}
+
               </>
+            )}
+
+            {/* Extra entry only for MANAGEMENT viewer */}
+            {isManagementViewer && (
+             <>
+
+            {/* optional menu option for management */}
+
+               {/* <MenuItem
+                  href="/clients_list" 
+                  label="List of clients"
+                /> */}
+
+                {/* <MenuItem
+                  href="/assign_carer"
+                  label="Manage carer assignment"
+                /> */}
+             
+              <MenuItem
+                href="/management_dashboard/manage_task/edit"
+                label="Manage task"
+              />
+              <MenuItem
+                href="/management_dashboard/manage_task/add"
+                label="add new task"
+              />
+              </>
+              
+              
             )}
           </ul>
 

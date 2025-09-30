@@ -291,12 +291,22 @@ function DashboardContent() {
           {/* Only for family: Back to people list (bottom-right) */}
           {role === 'family' && (
             <button
-              onClick={() => router.push('/people_list')}
+              onClick={() => router.push('/family_dashboard/people_list')}
               className="absolute bottom-4 right-4 px-4 py-2 rounded-lg bg-orange-400 text-black font-semibold shadow-md hover:bg-orange-500"
               aria-label="Back to People List"
               title="Back to People List"
             >
               Back to People List
+            </button>
+          )}
+          {role === 'management' && (
+            <button
+              onClick={() => router.push('/management_dashboard/clients_list')}
+              className="absolute bottom-4 right-4 px-4 py-2 rounded-lg bg-orange-400 text-black font-semibold shadow-md hover:bg-orange-500"
+              aria-label="Back to People List"
+              title="Back to People List"
+            >
+              Back to Client List
             </button>
           )}
         </section>

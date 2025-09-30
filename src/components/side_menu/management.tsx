@@ -22,8 +22,10 @@ const palette = {
 };
 
 const defaultItems: Item[] = [
-  { href: "/calender_dashboard/update_details", label: "Update your details" },
+  { href: "/calender_dashboard/update_details", label: "Manage your account" },
 
+  // decision need to be made by backend: 
+  
   // option 1. path before select client: need to search carer first
   { href: "/management_dashboard/assign_carer/search", label: "Manage Carer Assignment" },
 
