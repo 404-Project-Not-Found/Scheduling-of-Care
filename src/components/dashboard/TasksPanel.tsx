@@ -1,13 +1,7 @@
 'use client';
 
-//   <div className="mt-4 flex justify-end">
-//     <button className="rounded-full px-4 py-2 bg-[#FFFFFF] text-black">
-//       Print
-//     </button>
-//   </div>
-
 import { useState, useEffect } from 'react';
-import { Task } from '@/app/dashboards/calendar_dashboard/types';
+import { Task } from '@/app/calender_dashboard/types';
 
 type TasksPanelProps = {
   tasks: Task[];
