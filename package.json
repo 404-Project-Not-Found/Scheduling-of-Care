@@ -11,11 +11,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "husky install",
-    "test": "echo 'No tests defined yet'"
+    "test": "jest --detectOpenHandles --runInBand"
   },
   "dependencies": {
-    "@auth/core": "^0.34.2",
-    "@auth/mongodb-adapter": "^3.10.0",
     "@fullcalendar/common": "^5.11.5",
     "@fullcalendar/core": "^6.1.19",
     "@fullcalendar/daygrid": "^6.1.15",
@@ -33,6 +31,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@types/jest": "^30.0.0",
     "@types/next-auth": "^3.13.0",
     "@types/node": "^20.19.13",
     "@types/nodemailer": "^7.0.1",
@@ -47,9 +46,12 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
     "husky": "^8.0.3",
+    "jest": "^30.2.0",
     "lint-staged": "^16.2.0",
+    "mongodb-memory-server": "^10.2.1",
     "prettier": "^3.6.2",
     "tailwindcss": "^4",
+    "ts-jest": "^29.4.4",
     "typescript": "^5"
   },
   "lint-staged": {

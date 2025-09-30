@@ -4,7 +4,7 @@
  * Date Created: 23/09/2025
  */
 
-import { Schema, model, models, Types } from 'mongoose';
+import { Schema, model, models } from 'mongoose';
 
 const ClientSchema = new Schema(
   {

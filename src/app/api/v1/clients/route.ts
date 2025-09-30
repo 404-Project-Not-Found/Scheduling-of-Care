@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import Client from '@/models/Client';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/app/api/v1/auth/[...nextauth]/route';
 
 /**
  * Retrieves all clients that belong to the currently authenticated user.
