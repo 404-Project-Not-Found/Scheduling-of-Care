@@ -38,12 +38,12 @@ function resolveFamilyReturnPath(sp: {
   get: (k: string) => string | null;
 }): string {
   const from = sp.get('from');
-  if (from === 'full') return '/full_dashboard?viewer=family';
+  if (from === 'full') return '/calender_dashboard?viewer=family';
   if (from === 'partial') return '/partial_dashboard';
 
   if (typeof window !== 'undefined') {
     const last = localStorage.getItem('lastDashboard');
-    if (last === 'full') return '/full_dashboard?viewer=family';
+    if (last === 'full') return '/calender_dashboard?viewer=family';
     if (last === 'partial') return '/partial_dashboard';
   }
   return '/partial_dashboard';
@@ -100,9 +100,9 @@ function TransactionHistoryInner() {
     if (isFamily) {
       router.push(resolveFamilyReturnPath(searchParams));
     } else if (role === 'management') {
-      router.push('/full_dashboard');
+      router.push('/calender_dashboard');
     } else {
-      router.push('/full_dashboard');
+      router.push('/calender_dashboard');
     }
   };
 

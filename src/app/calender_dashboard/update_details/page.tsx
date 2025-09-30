@@ -80,7 +80,7 @@ export default function UpdateDetailsPage() {
 
     // Route based on role
     if (role === 'carer') {
-      router.push('/full_dashboard');
+      router.push('/calender_dashboard');
     } else {
       router.push('/empty_dashboard');
     }

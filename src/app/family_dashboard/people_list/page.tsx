@@ -1,3 +1,5 @@
+
+
 'use client';
 
 export const dynamic = 'force-dynamic';
@@ -7,7 +9,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-import { getClientsFE, type Client } from '@/lib/clientApi';
+import { getClientsFE, type Client } from '@/lib/mockApi';
 
 // ----- Color palette -----
 const palette = {
@@ -140,7 +142,7 @@ export default function FamilyPOAListPage() {
                         {/* View dashboard → orange */}
                         {m.dashboardType === 'full' ? (
                             <Link
-                                href={`/full_dashboard?id=${m._id}`}
+                                href={`/calender_dashboard?id=${m._id}`}
                                 className="px-4 py-2 rounded-lg text-lg font-medium"
                                 style={{
                                     backgroundColor: palette.dashOrange,

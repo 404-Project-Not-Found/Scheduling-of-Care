@@ -42,20 +42,20 @@ function getActiveRole(): Role {
 
 /** Decide where FAMILY should go back to.
  * Priority:
- *   1) URL ?from=full_dashboard|partial_dashboard (optional)
- *   2) localStorage.lastDashboard: 'full' -> /full_dashboard?viewer=family, else /partial_dashboard
+ *   1) URL ?from=calender_dashboard|partial_dashboard (optional)
+ *   2) localStorage.lastDashboard: 'full' -> /calender_dashboard?viewer=family, else /partial_dashboard
  *   3) default: /partial_dashboard
  */
 function resolveFamilyBackPath(searchParams: {
   get: (k: string) => string | null;
 }): string {
   const from = searchParams.get('from');
-  if (from === 'full_dashboard') return '/full_dashboard?viewer=family';
+  if (from === 'calender_dashboard') return '/calender_dashboard?viewer=family';
   if (from === 'partial_dashboard') return '/partial_dashboard';
 
   if (typeof window !== 'undefined') {
     const last = localStorage.getItem('lastDashboard'); // 'full' | 'partial'
-    if (last === 'full') return '/full_dashboard?viewer=family';
+    if (last === 'full') return '/calender_dashboard?viewer=family';
     if (last === 'partial') return '/partial_dashboard';
   }
   return '/partial_dashboard';
@@ -102,9 +102,9 @@ function TotalCostInner() {
     if (role === 'family') {
       router.push(resolveFamilyBackPath(searchParams));
     } else if (role === 'management') {
-      router.push('/full_dashboard');
+      router.push('/calender_dashboard');
     } else {
-      router.push('/full_dashboard');
+      router.push('/calender_dashboard');
     }
   };
 

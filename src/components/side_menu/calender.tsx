@@ -15,7 +15,7 @@ const palette = {
 export function MenuDrawer({
   open,
   onClose,
-  viewer, // optional: 'carer' | 'family' | 'management' (caller may pass this in)
+  viewer, // optional: 'carer' | 'family' | 'management' 
 }: {
   open: boolean;
   onClose: () => void;
@@ -79,15 +79,15 @@ export function MenuDrawer({
         <nav className="flex h-[calc(100%-56px)] flex-col justify-between">
           <ul className="px-3 py-4 space-y-2">
             {/* Existing items */}
-            <MenuItem href="/full_dashboard/update_details" label="Update your details" />
-            <MenuItem href="/full_dashboard/budget_report" label="Budget Report" />
-            <MenuItem href="/full_dashboard/transaction_history" label="View Transactions" />
+            <MenuItem href="/calender_dashboard/update_details" label="Update your details" />
+            <MenuItem href="/calender_dashboard/budget_report" label="Budget Report" />
+            <MenuItem href="/calender_dashboard/transaction_history" label="View Transactions" />
 
-            {/* Extra entries only for FAMILY viewer on full dashboard */}
+            {/* Extra entries only for FAMILY viewer on calender dashboard */}
             {isFamilyViewer && (
               <>
                 <MenuItem
-                  href="/clients_list"
+                  href="/people_list"
                   label="Manage people with special needs"
                 />
                 <MenuItem
@@ -100,7 +100,7 @@ export function MenuDrawer({
 
           <div className="px-4 pb-6 flex justify-end pr-6">
             <Link
-              href="#"
+              href="/"
               onClick={(e) => {
                 e.preventDefault();
                 mockSignOut();

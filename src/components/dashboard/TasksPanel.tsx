@@ -7,7 +7,7 @@
 //   </div>
 
 import { useState, useEffect } from 'react';
-import { Task } from '@/app/full_dashboard/types';
+import { Task } from '@/app/dashboards/calendar_dashboard/types';
 
 type TasksPanelProps = {
   tasks: Task[];

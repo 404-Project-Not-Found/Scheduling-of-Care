@@ -1,3 +1,5 @@
+/* Partial client dashboard before the management finfished the registration process */
+
 'use client';
 
 export const dynamic = 'force-dynamic';
@@ -81,7 +83,7 @@ function PartialDashboardInner() {
       >
         {/* Back to list */}
         <button
-          onClick={() => router.push('/family_dashboard/clients_list')}
+          onClick={() => router.push('/family_dashboard/people_list')}
           className="absolute left-6 top-1/2 -translate-y-1/2 flex items-center gap-2 px-3 py-2 focus:outline-none"
           title="Back to client list"
           aria-label="Back"

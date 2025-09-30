@@ -1,63 +1,49 @@
+/**
+* Frontend: 
+* 
+* - UI Build by Vanessa Teo
+* 
+* - frontend mock mode logic by Qingyue Zhao:
+* 
+* carer / family / management enter this page from different entrances; 
+* the view & available actions & page navigation adapt to the role. 
+* 
+* Backend: 
+* 
+*/
+
+
 'use client';
 
 import { Suspense, useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
+
 import CalendarPanel from '@/components/dashboard/CalendarPanel';
 import TasksPanel from '@/components/tasks/TasksPanel';
-import dynamic from 'next/dynamic';
-import { getTasksFE, saveTasksFE, type Task } from '@/lib/clientApi';
+
+import {
+  getTasksFE,
+  saveTasksFE,
+  type Task,
+  readActiveClientFromStorage,
+} from '@/lib/mockApi';
 
 // Dynamically import the MenuDrawer to avoid SSR issues for this page component
 const MenuDrawer = dynamic(
-  () => import('@/app/calendar_menu/page').then((m) => m.MenuDrawer),
+  () => import('@/components/side_menu/calender').then((m) => m.MenuDrawer),
   { ssr: false }
 );
 
-// ---- Demo client ids used by the family list hardcode ----
-const FULL_DASH_ID = 'hardcoded-full-1'; // Mary Hong
-const PARTIAL_DASH_ID = 'hardcoded-partial-1'; // John Smith
-
-// Fallback map in case currentClientName wasn't set for some reason
-const NAME_BY_ID: Record<string, string> = {
-  [FULL_DASH_ID]: 'Mary Hong',
-  [PARTIAL_DASH_ID]: 'John Smith',
-};
-
-// Utility: read/write "viewer role" (carer | family | management)
 type Role = 'carer' | 'family' | 'management';
 
-/** Resolver priority:
- * 1) URL ?role=carer|family|management
- * 2) URL ?viewer=family (compat)
- * 3) Mock sessionStorage.mockRole (when NEXT_PUBLIC_ENABLE_MOCK=1)
- * 4) localStorage.activeRole
- * 5) default carer
- */
-function getInitialRole(searchParams: URLSearchParams): Role {
-  const valid = new Set<Role>(['carer', 'family', 'management']);
-
-  // 1) ?role=
-  const qpRoleRaw = (searchParams.get('role') || '').toLowerCase();
-  if (valid.has(qpRoleRaw as Role)) return qpRoleRaw as Role;
-
-  // 2) ?viewer=family
-  const viewer = (searchParams.get('viewer') || '').toLowerCase();
-  if (viewer === 'family') return 'family';
-
-  // 3) mock sessionStorage
+/** Mock-only role resolver */
+function getInitialRole(): Role {
   if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_ENABLE_MOCK === '1') {
-    const mockRole = (sessionStorage.getItem('mockRole') || '').toLowerCase() as Role;
-    if (valid.has(mockRole)) return mockRole;
+    const v = (sessionStorage.getItem('mockRole') || '').toLowerCase();
+    if (v === 'carer' || v === 'family' || v === 'management') return v as Role;
   }
-
-  // 4) localStorage
-  if (typeof window !== 'undefined') {
-    const stored = (localStorage.getItem('activeRole') || '').toLowerCase() as Role;
-    if (valid.has(stored)) return stored;
-  }
-
-  // 5) default
   return 'carer';
 }
 
@@ -75,8 +61,8 @@ function DashboardContent() {
   const searchParams = useSearchParams();
   const addedFile = searchParams.get('addedFile');
 
-  // Role
-  const [role, setRole] = useState<Role>(() => getInitialRole(searchParams));
+  // Role (mock-only)
+  const [role, setRole] = useState<Role>(() => getInitialRole());
 
   const [open, setOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string>('');
@@ -90,41 +76,12 @@ function DashboardContent() {
   const [activeClientId, setActiveClientId] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string>('');
 
-  // Sync/override role from URL params and persist locally
+  // Persist current role for other pages if needed (optional)
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const valid = new Set<Role>(['carer', 'family', 'management']);
-
-    // Prefer ?role
-    const qpRoleRaw = (searchParams.get('role') || '').toLowerCase();
-    if (valid.has(qpRoleRaw as Role)) {
-      const r = qpRoleRaw as Role;
-      setRole(r);
-      localStorage.setItem('activeRole', r);
-      if (process.env.NEXT_PUBLIC_ENABLE_MOCK === '1') {
-        sessionStorage.setItem('mockRole', r);
-      }
-      if (r === 'family') localStorage.setItem('lastDashboard', 'full');
-      return;
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('activeRole', role);
     }
-
-    // Fallback ?viewer=family
-    const viewer = (searchParams.get('viewer') || '').toLowerCase();
-    if (viewer === 'family') {
-      setRole('family');
-      localStorage.setItem('activeRole', 'family');
-      localStorage.setItem('viewer', 'family');
-      localStorage.setItem('lastDashboard', 'full');
-      if (process.env.NEXT_PUBLIC_ENABLE_MOCK === '1') {
-        sessionStorage.setItem('mockRole', 'family');
-      }
-      return;
-    }
-
-    // No explicit override → ensure current role is persisted
-    localStorage.setItem('activeRole', role);
-  }, [searchParams, role]);
+  }, [role]);
 
   // Close drawer with Escape
   useEffect(() => {
@@ -133,23 +90,10 @@ function DashboardContent() {
     return () => document.removeEventListener('keydown', onKey);
   }, [open]);
 
-  // Resolve which client and display name we show
+  // Resolve which client and display name we show (via helper)
   useEffect(() => {
-    const cid =
-      typeof window !== 'undefined'
-        ? localStorage.getItem('activeClientId')
-        : null;
-    setActiveClientId(cid);
-
-    let name = '';
-    try {
-      name = localStorage.getItem('currentClientName') || '';
-    } catch {}
-
-    if (!name && cid) {
-      name = NAME_BY_ID[cid] || '';
-    }
-
+    const { id, name } = readActiveClientFromStorage();
+    setActiveClientId(id);
     setDisplayName(name);
   }, []);
 
@@ -188,7 +132,7 @@ function DashboardContent() {
     }
   }, [addedFile, selectedTask, role]);
 
-  // Filtered list by date
+  // Filter by date
   const filteredTasks = selectedDate
     ? tasks.filter((t) => t.nextDue === selectedDate)
     : tasks;
@@ -197,9 +141,7 @@ function DashboardContent() {
   const addComment = (taskId: string, comment: string) => {
     setTasks((prev) =>
       prev.map((t) =>
-        t.id === taskId
-          ? { ...t, comments: [...(t.comments || []), comment] }
-          : t
+        t.id === taskId ? { ...t, comments: [...(t.comments || []), comment] } : t
       )
     );
     setSelectedTask((prev) =>
@@ -211,9 +153,7 @@ function DashboardContent() {
 
   const addFile = (taskId: string, fileName: string) => {
     setTasks((prev) =>
-      prev.map((t) =>
-        t.id === taskId ? { ...t, files: [...(t.files || []), fileName] } : t
-      )
+      prev.map((t) => (t.id === taskId ? { ...t, files: [...(t.files || []), fileName] } : t))
     );
     setSelectedTask((prev) =>
       prev ? { ...prev, files: [...(prev.files || []), fileName] } : prev
@@ -221,7 +161,7 @@ function DashboardContent() {
   };
 
   const getStatusBadgeClasses = (status: string | undefined) => {
-    switch (status?.toLowerCase()) {
+    switch ((status || '').toLowerCase()) {
       case 'due':
         return 'bg-red-500 text-white';
       case 'pending':
@@ -237,11 +177,9 @@ function DashboardContent() {
   const goEditProfile = () => {
     localStorage.setItem('activeRole', role);
     if (activeClientId) {
-      router.push(
-        `/client_profile?new=false&id=${activeClientId}&from=full_dashboard`
-      );
+      router.push(`/client_profile?new=false&id=${activeClientId}&from=calender_dashboard`);
     } else {
-      router.push('/client_profile?new=true&from=full_dashboard');
+      router.push('/client_profile?new=true&from=calender_dashboard');
     }
   };
 
@@ -261,24 +199,13 @@ function DashboardContent() {
           <h3 className="font-bold mb-2">Dashboard Help</h3>
           <ul className="list-disc list-inside space-y-1">
             <li>
-              Click the <span className="font-bold">≡</span> button to open menu
-              options.
+              Click the <span className="font-bold">≡</span> button to open menu options.
             </li>
-            <li>
-              Calendar: click a highlighted blue date to view tasks due that
-              day.
-            </li>
+            <li>Calendar: click a highlighted blue date to view tasks due that day.</li>
             <li>The red highlighted day is today.</li>
+            <li>Click a task to view details, add comments, upload files, or mark as done.</li>
             <li>
-              Click a task to view details, add comments, upload files, or mark
-              as done.
-            </li>
-            <li>
-              Go to{' '}
-              <span className="font-bold underline text-blue-600">
-                transactions
-              </span>{' '}
-              to manage receipts.
+              Go to <span className="font-bold underline text-blue-600">transactions</span> to manage receipts.
             </li>
           </ul>
         </div>
@@ -306,7 +233,7 @@ function DashboardContent() {
               />
             </div>
 
-            {/* Right: dynamic name + avatar → edit profile (removed family badge) */}
+            {/* Right: dynamic name + avatar → edit profile */}
             <div className="flex items-center gap-3">
               <span>{displayName || '—'}</span>
 
@@ -327,10 +254,7 @@ function DashboardContent() {
           </div>
 
           <div className="p-5 flex-1 relative">
-            <CalendarPanel
-              tasks={tasks}
-              onDateClick={(date: string) => setSelectedDate(date)}
-            />
+            <CalendarPanel tasks={tasks} onDateClick={(date: string) => setSelectedDate(date)} />
           </div>
         </section>
 
@@ -343,11 +267,7 @@ function DashboardContent() {
               </div>
               <div className="p-5 flex-1">
                 <TasksPanel
-                  tasks={
-                    selectedDate
-                      ? tasks.filter((t) => t.nextDue === selectedDate)
-                      : tasks
-                  }
+                  tasks={filteredTasks}
                   onTaskClick={(task: Task) => setSelectedTask(task)}
                 />
               </div>
@@ -368,15 +288,15 @@ function DashboardContent() {
             />
           )}
 
-          {/* Only for family: Back to client list (bottom-right) */}
+          {/* Only for family: Back to people list (bottom-right) */}
           {role === 'family' && (
             <button
-              onClick={() => router.push('/clients_list')}
+              onClick={() => router.push('/people_list')}
               className="absolute bottom-4 right-4 px-4 py-2 rounded-lg bg-orange-400 text-black font-semibold shadow-md hover:bg-orange-500"
-              aria-label="Back to Client List"
-              title="Back to Client List"
+              aria-label="Back to People List"
+              title="Back to People List"
             >
-              Back to Client List
+              Back to People List
             </button>
           )}
         </section>
@@ -434,9 +354,7 @@ function TaskDetail({
         <p><span className="font-bold">Next Due:</span> {task.nextDue}</p>
         <p>
           <span className="font-bold">Status:</span>{' '}
-          <span
-            className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusBadgeClasses(task.status)}`}
-          >
+          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusBadgeClasses(task.status)}`}>
             {task.status}
           </span>
         </p>
@@ -558,16 +476,16 @@ function TaskDetail({
 
         {/* Go to transactions (only visible for carer) */}
         {role === 'carer' && (
-        <div className="mt-3 text-black text-sm">
+          <div className="mt-3 text-black text-sm">
             Need to add a receipt/view receipts? Go to{' '}
             <span
-            className="underline cursor-pointer text-blue-600 hover:text-blue-800"
-            onClick={() => (window.location.href = '/transaction_history')}
+              className="underline cursor-pointer text-blue-600 hover:text-blue-800"
+              onClick={() => (window.location.href = '/transaction_history')}
             >
-            transactions
+              transactions
             </span>
             .
-        </div>
+          </div>
         )}
       </div>
     </div>

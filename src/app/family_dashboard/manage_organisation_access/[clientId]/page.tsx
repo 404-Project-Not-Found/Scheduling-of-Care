@@ -8,7 +8,7 @@ import Client from '@/models/Client';
 import { connectDB } from '@/lib/mongodb';
 import '@/models/Organisation'; // Ensures the Organisation model is registered with Mongoose
 import ManageAccessInner from './ManageAccessInner';
-import { isMock, MOCK_ORGS, getClientByIdFE } from '@/lib/clientApi';
+import { isMock, MOCK_ORGS, getClientByIdFE } from '@/lib/mockApi';
 
 type OrgStatus = 'active' | 'pending' | 'revoked';
 

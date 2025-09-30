@@ -194,7 +194,7 @@ export default function SearchCarerPage() {
                           aria-selected="false"
                           onClick={() =>
                             router.push(
-                              `/carer/manage?carer=${encodeURIComponent(c.id)}`
+                              `/management_dashboard/assign_carer/manage?carer=${encodeURIComponent(c.id)}`
                             )
                           }
                           className="w-full text-left px-5 py-3 text-lg text-black hover:bg-gray-300 focus:bg-gray-300 focus:outline-none transition"

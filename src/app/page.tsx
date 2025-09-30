@@ -67,7 +67,7 @@ export default function Home() {
         sessionStorage.setItem('mockRole', role);
 
         if (role === 'carer') {
-          window.location.href = '/full_dashboard';
+          window.location.href = '/calender_dashboard';
           return;
         } else {
           window.location.href = '/empty_dashboard';
@@ -105,7 +105,7 @@ export default function Home() {
 
       switch (session.user.role) {
         case 'carer':
-          window.location.href = '/full_dashboard';
+          window.location.href = '/calender_dashboard';
           break;
         case 'management':
           window.location.href = '/empty_dashboard';

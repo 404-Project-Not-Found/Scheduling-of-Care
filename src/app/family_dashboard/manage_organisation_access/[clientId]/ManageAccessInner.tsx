@@ -10,7 +10,7 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 //load mock data from frontend document
-import { isMock, MOCK_ORGS, Organisation } from '@/lib/clientApi';
+import { isMock, MOCK_ORGS, Organisation } from '@/lib/mockApi';
 
 type OrgStatus = 'active' | 'pending' | 'revoked';
 
@@ -140,7 +140,7 @@ export default function ManageAccessInner({
               style={{ backgroundColor: palette.header }}
             >
               <button
-                onClick={() => router.push('/family_dashboard/clients_list')}
+                onClick={() => router.push('/family_dashboard/people_list')}
                 className="absolute left-5 flex items-center gap-1 text-white hover:text-gray-200 transition"
               >
                 <svg
@@ -204,7 +204,7 @@ export default function ManageAccessInner({
               <button
                 className="text-white font-semibold px-8 py-3 rounded-md hover:bg-[#3a0808] transition-colors"
                 style={{ backgroundColor: palette.header }}
-                onClick={() => router.push('/family_dashboard/clients_list')}
+                onClick={() => router.push('/family_dashboard/people_list')}
               >
                 Return
               </button>

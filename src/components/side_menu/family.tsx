@@ -12,13 +12,12 @@ import { signOut } from 'next-auth/react';
 
 type Item = { href: string; label: string };
 
-/** Shared palette (borderless, full-width header/banner) */
 const palette = {
-  header: '#3A0000', // Dark brown header
-  banner: '#F9C9B1', // Pink notice bar
+  header: '#3A0000',
+  banner: '#F9C9B1',
   text: '#2b2b2b',
   white: '#FFFFFF',
-  pageBg: '#FAEBDC', // Light beige page background
+  pageBg: '#FAEBDC',
 };
 
 type sideMenuProps = {
@@ -27,17 +26,10 @@ type sideMenuProps = {
   items?: Item[];
 };
 
-// Family menu options
 const defaultMenuItems: Item[] = [
-  { href: '/full_dashboard/update_details', label: 'Update your details' },
-  {
-    href: '/family_dashboard/clients_list',
-    label: 'Manage people with special needs',
-  },
-  {
-    href: '/family_dashboard/request_of_change_page',
-    label: 'Request to change a task',
-  },
+  { href: '/calender_dashboard/update_details', label: 'Update your details' },
+  { href: '/family_dashboard/people_list', label: 'Manage people with special needs' },
+  { href: '/family_dashboard/request_of_change_page', label: 'Request to change a task' },
 ];
 
 export default function FamilySideMenu({
@@ -45,19 +37,38 @@ export default function FamilySideMenu({
   onBackdropClick,
   items = defaultMenuItems,
 }: sideMenuProps) {
+
+  // sign-out (mock first, else next-auth) ----
   const handleSignOut = async () => {
+    const isMockEnv = process.env.NEXT_PUBLIC_ENABLE_MOCK === '1';
+    const hasMockRole =
+      typeof window !== 'undefined' &&
+      (!!sessionStorage.getItem('mockRole') ||
+        ['family','carer','management'].includes((localStorage.getItem('activeRole') || '').toLowerCase()));
+
+    if (isMockEnv || hasMockRole) {
+      // clear FE state and hard-redirect to login
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+      } catch {
+        /* ignore storage errors */
+      }
+      // use replace() to prevent back navigation into authed pages
+      window.location.replace('/');
+      return;
+    }
+
+    // Real next-auth logout (backend)
     try {
-      await signOut({ redirect: false });
-    } catch (err) {
-      console.error('Sign-out error:', err);
-    } finally {
-      window.location.href = '/'; // redirect to login page
+      await signOut({ callbackUrl: '/' });
+    } catch {
+      window.location.replace('/');
     }
   };
 
   return (
     <>
-      {/* ===== Drawer Backdrop ===== */}
       {open && (
         <div
           onClick={onBackdropClick}
@@ -66,7 +77,6 @@ export default function FamilySideMenu({
         />
       )}
 
-      {/* ===== Drawer Panel (left slide-in) ===== */}
       <div
         role="dialog"
         aria-modal="true"
@@ -75,7 +85,6 @@ export default function FamilySideMenu({
           ${open ? 'translate-x-0' : '-translate-x-full'}`}
         style={{ backgroundColor: palette.pageBg }}
       >
-        {/* Drawer header — SAME height as page header (py-5), same color */}
         <div
           className="flex items-center justify-between px-8 py-5"
           style={{ backgroundColor: palette.header, color: palette.white }}
@@ -94,15 +103,15 @@ export default function FamilySideMenu({
           </button>
         </div>
 
-        {/* Drawer body — list + sign out; height excludes header (approx 72px) */}
         <nav className="flex h-[calc(100%-72px)] flex-col justify-between">
           <nav className="p-2 space-y-1">
             {items.map((it) => (
               <MenuItem key={it.href} href={it.href} label={it.label} />
             ))}
           </nav>
+
           <div className="px-4 pb-6 flex justify-end pr-6">
-            {/* Hybrid sign-out: mock mode → clear storage & redirect; else → next-auth signOut */}
+            {/* Button ensures no <Link> routing interferes with logout */}
             <button
               onClick={handleSignOut}
               className="underline underline-offset-4 focus:outline-none rounded text-lg"
@@ -117,7 +126,7 @@ export default function FamilySideMenu({
   );
 }
 
-/* ===== Helper icons (SVG only; no external deps) ===== */
+/* ===== Helper icons ===== */
 function HamburgerIcon({
   size = 24,
   color = 'currentColor',
@@ -143,7 +152,6 @@ function HamburgerIcon({
   );
 }
 
-/** Single menu item with a small red dot aligned to text baseline */
 function MenuItem({ href, label }: { href: string; label: string }) {
   return (
     <li>
@@ -153,13 +161,11 @@ function MenuItem({ href, label }: { href: string; label: string }) {
         style={{ color: palette.text }}
       >
         <div className="flex items-start gap-3">
-          {/* Dot is fixed-size and slightly nudged to align with text line-height */}
           <span
             aria-hidden="true"
             className="inline-block w-3 h-3 rounded-full shrink-0 mt-[6px]"
             style={{ backgroundColor: '#FF5C5C' }}
           />
-          {/* Keep predictable line-height so alignment stays consistent */}
           <div className="text-lg font-medium leading-7">{label}</div>
         </div>
       </Link>

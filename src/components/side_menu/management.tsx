@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
+import { signOut } from "next-auth/react";
 
 type Item = { href: string; label: string };
 
@@ -21,11 +22,14 @@ const palette = {
 };
 
 const defaultItems: Item[] = [
-  { href: "/full_dashboard/update_details", label: "Update your details" },
-  { href: "/task/add", label: "Add Care Item" },
-  // { href: "/task/edit", label: "Edit Task" },
-  { href: "/task/edit_task", label: "Edit Task" },
-  { href: "/management_dashboard/carer/", label: "Assign Carer" },
+  { href: "/calender_dashboard/update_details", label: "Update your details" },
+
+  // option 1. path before select client: need to search carer first
+  { href: "/management_dashboard/assign_carer/search", label: "Manage Carer Assignment" },
+
+  // option 2. path after select client: don't need the search page
+  // { href: "/management_dashboard/assign_carer/manage", label: "Manage Carer access" },
+
   { href: "/management_dashboard/register_client", label: "Register new client" },
   { href: "/management_dashboard/clients_list", label: "List of clients" },
 ];
@@ -47,6 +51,32 @@ export default function SideMenu({
   function handleBackdropClick(e: React.MouseEvent<HTMLDivElement>) {
     if (e.target === e.currentTarget) onClose();
   }
+
+  // sign-out (mock first, else next-auth)
+  const handleSignOut = async () => {
+    const isMockEnv = process.env.NEXT_PUBLIC_ENABLE_MOCK === "1";
+    const hasMockRole =
+      typeof window !== "undefined" &&
+      (!!sessionStorage.getItem("mockRole") ||
+        ["family", "carer", "management"].includes(
+          (localStorage.getItem("activeRole") || "").toLowerCase()
+        ));
+
+    if (isMockEnv || hasMockRole) {
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+      } catch {}
+      window.location.replace("/");
+      return;
+    }
+
+    try {
+      await signOut({ callbackUrl: "/" });
+    } catch {
+      window.location.replace("/");
+    }
+  };
 
   return (
     <>
@@ -101,16 +131,16 @@ export default function SideMenu({
           </ul>
 
           <div className="px-4 pb-6 flex justify-end pr-6">
-            <Link
-              href="#"
+            {/* Button ensures no <Link> routing interferes with logout */}
+            <button
+              onClick={handleSignOut}
               className="underline underline-offset-4 text-lg"
               style={{ color: palette.header }}
-              onClick={onClose}
             >
               Sign out
-            </Link>
+            </button>
           </div>
-        </nav>
+       </nav>
       </aside>
     </>
   );
@@ -141,7 +171,6 @@ function MenuItem({
             className="inline-block w-3 h-3 rounded-full shrink-0 mt-[6px]"
             style={{ backgroundColor: "#FF5C5C" }}
           />
-
           <div className="text-lg font-medium leading-7">{label}</div>
         </div>
       </Link>
