@@ -1,19 +1,29 @@
 /**
  * Filename: /client_profile/page.tsx
- * Authors: Devni Wijesinghe & Denise Alexander
+ * Authors: 
+ * - Fronntend UI Build: Devni Wijesinghe 
+ * - Backend logic: Denise Alexander
  * Date Created: 10/09/2025
- *
- * Frontend notes:
- * - Role is resolved from mock API: getViewerRoleFE() → 'family' | 'carer' | 'management'.
+ * ====================================================================================================
+ * 
+ * Frontend notes(latest update on 30/09/2025 by Qingyue Zhao):
+ * 
+ * - Mock Role: getViewerRoleFE() → 'family' | 'carer' | 'management'
+ * 
  * - Permissions:
  *    family: edit ALL fields (name, dob, accessCode, avatar, notes)
  *    carer:  add notes ONLY (other fields read-only; no avatar upload)
  *    management: READ-ONLY (no borders, no save, no uploads)
- * - Back routes:
+ * 
+ * - Back page routes:
  *    family → /family_dashboard/people_list
  *    carer → /calender_dashboard
  *    management → /management_dashboard/clients_list
- * - Backend logic (API endpoints & payloads) is UNCHANGED.
+ * ====================================================================================================
+ * 
+ * Backend logic: API endpoints & payloads
+ * 
+ * - Author:
  */
 
 'use client';
