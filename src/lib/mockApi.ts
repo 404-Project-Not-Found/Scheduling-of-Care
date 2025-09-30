@@ -335,3 +335,68 @@ export function getTaskCatalogFE(): TaskCatalog {
     },
   ];
 }
+
+/* =================
+ * Staff API (FE)
+ * ================= */
+
+export type Staff = {
+  _id: string;
+  name: string;
+  email?: string;
+  avatarUrl?: string;
+  role?: 'management' | 'carer';
+  status?: 'active' | 'inactive';
+};
+
+
+export const MOCK_STAFF: Staff[] = [
+  {
+    _id: 's001',
+    name: 'Alice Brown',
+    email: 'alice.brown@example.com',
+    role: 'carer',
+    status: 'active',
+    avatarUrl: '/avatars/alice.png',
+  },
+  {
+    _id: 's002',
+    name: 'Brian Chen',
+    email: 'brian.chen@example.com',
+    role: 'carer',
+    status: 'inactive',
+    avatarUrl: '/avatars/brian.png',
+  },
+  {
+    _id: 's003',
+    name: 'Chloe Davis',
+    email: 'chloe.davis@example.com',
+    role: 'management',
+    status: 'active',
+    avatarUrl: '/avatars/chloe.png',
+  },
+  {
+    _id: 's004',
+    name: 'Diego Evans',
+    email: 'diego.evans@example.com',
+    role: 'carer',
+    status: 'active',
+  },
+  {
+    _id: 's005',
+    name: 'Emma Fox',
+    email: 'emma.fox@example.com',
+    role: 'carer',
+    status: 'active',
+  },
+];
+
+export async function getStaffFE(): Promise<Staff[]> {
+  if (isMock) {
+    return MOCK_STAFF;
+  }
+  const res = await fetch('/api/management/staff', { cache: 'no-store' });
+  if (!res.ok) throw new Error(`Failed to fetch staff (${res.status})`);
+  const data = await res.json();
+  return Array.isArray(data) ? (data as Staff[]) : [];
+}

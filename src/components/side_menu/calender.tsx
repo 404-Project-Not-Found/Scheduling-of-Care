@@ -141,11 +141,6 @@ export function MenuDrawer({
                   label="Manage people with special needs"
                 /> */}
 
-                {/* <MenuItem
-                  href="/request_of_change_page"
-                  label="Request to change a task"
-                /> */}
-
               </>
             )}
 

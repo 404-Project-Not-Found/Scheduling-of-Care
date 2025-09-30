@@ -24,16 +24,19 @@ const palette = {
 const defaultItems: Item[] = [
   { href: "/calender_dashboard/update_details", label: "Manage your account" },
 
-  // decision need to be made by backend: 
+  // decision need to be made:
   
-  // option 1. path before select client: need to search carer first
+  // option 1. path before select client: need to search carer first (or via search from staff list)
   { href: "/management_dashboard/assign_carer/search", label: "Manage Carer Assignment" },
 
-  // option 2. path after select client: don't need the search page
+  // option 2. path after select client: don't need the search page ( or could add 'manage carer access' button on the client list page)
   // { href: "/management_dashboard/assign_carer/manage", label: "Manage Carer access" },
 
+  { href: "/management_dashboard/add_care_items", label: "Add care items" },
   { href: "/management_dashboard/register_client", label: "Register new client" },
   { href: "/management_dashboard/clients_list", label: "List of clients" },
+  { href: "/management_dashboard/staff_list", label: "List of staff" },
+  
 ];
 
 export default function SideMenu({

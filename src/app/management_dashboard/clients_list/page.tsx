@@ -1,12 +1,13 @@
-// src/app/client_list/page.tsx
 
 /**
  * Filename: /src/app/client_list/page.tsx
  * Frontend Author: Qingyue Zhao
+ * 
  * Purpose:
  * - Display a list of clients for family and management
  *  1. family options: edit profile, view dashboard, manage organisation access
  *  2. management options: view profile, view dashboard
+ * 
  *
  * Data:
  * - Source: getClientsFE() — mocked frontend API.
@@ -164,6 +165,19 @@ export default function ClientListPage() {
                             View dashboard
                           </Link>
                         )}
+
+                        {/* optional： Manage carer access */}
+                        {/* <Link
+                          href={`/management_dashboard/assign_carer/manage`}
+                          className="px-4 py-2 rounded-lg text-lg font-medium"
+                          style={{
+                            backgroundColor: palette.organPink,
+                            color: palette.white,
+                          }}
+                        >
+                          Manage carer access
+                        </Link> */}
+                        
                       </div>
                     </li>
                   ))}
