@@ -1,151 +1,123 @@
 'use client';
 
-export const dynamic = 'force-dynamic';
-
-import React, { useState } from 'react';
+import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
-const colors = {
-  pageBg: '#ffd9b3',
-  cardBg: '#F7ECD9',
-  header: '#3A0000',
-  text: '#2b2b2b',
-  orange: '#F4A261',
+const COLORS = {
+  header: '#3d0000',
+  headerSep: '#f3d9c9',
+  panel: '#3d0000',
+  pageBg: '#fff4e6',
+  textDark: '#3d0000',
 };
 
-export default function UpdateDetailsPage() {
-  const router = useRouter();
+export default function ManagementProfilePage() {
   const [email, setEmail] = useState('');
   const [pwd, setPwd] = useState('');
-  const [show, setShow] = useState(false);
-  const [error, setError] = useState('');
 
-  function handleSave() {
-    if (!email.trim() || !pwd.trim()) {
-      setError('Email and password cannot be empty.');
-      return;
-    }
-
-    router.push('/menu');
-  }
-
-  function handleCancel() {
-    router.push('/dashboard');
-  }
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log({ email, pwd });
+  };
 
   return (
-    <main
-      className="min-h-screen w-full flex items-center justify-center px-6 py-12 relative"
-      style={{ backgroundColor: colors.pageBg }}
-    >
-      <div className="absolute top-6 left-6">
-        <Image
-          src="/logo-name.png"
-          alt="Scheduling of Care"
-          width={220}
-          height={80}
-          className="object-contain"
-          priority
-        />
-      </div>
-
-      {/* Centered card */}
-      <div
-        className="w-full max-w-xl md:max-w-2xl rounded-2xl shadow-lg overflow-hidden"
-        style={{ backgroundColor: colors.cardBg }}
+    <main className="min-h-screen" style={{ background: COLORS.pageBg }}>
+      {/* Header */}
+      <header
+        className="flex items-center justify-between px-6 py-3"
+        style={{ background: COLORS.header, color: 'white' }}
       >
-        {/* Maroon header with centered title */}
-        <div
-          className="w-full flex items-center justify-center px-6 py-5"
-          style={{ backgroundColor: colors.header }}
-        >
-          <h1 className="text-2xl md:text-3xl font-bold text-white text-center">
-            Update your details
-          </h1>
+        <div className="flex items-center gap-8">
+          {/* Logo → back to empty dashboard */}
+          <Link href="/empty_dashboard" className="shrink-0">
+            <Image
+              src="/dashboardLogo.png"
+              alt="Dashboard Logo"
+              width={60}
+              height={60}
+              className="cursor-pointer"
+              priority
+            />
+          </Link>
+
+          <span className="font-semibold text-lg">Management Dashboard</span>
+
+          <span className="hover:underline cursor-default">
+            Client Schedule
+          </span>
+          <Link
+            href="/management_dashboard/carer-schedule"
+            className="hover:underline"
+          >
+            Staff Schedule
+          </Link>
         </div>
 
-        {/* Content */}
-        <div className="px-8 md:px-10 py-8 md:py-10 text-black">
-          {/* Email */}
-          <label className="block text-lg mb-2" style={{ color: colors.text }}>
-            Change email:
-          </label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              setError('');
-            }}
-            className="w-full bg-white border-2 rounded-md px-4 py-3 mb-8 focus:outline-none focus:ring-2"
-            style={{ borderColor: `${colors.header}55` }}
-            placeholder="Enter new email"
-          />
+        <div
+          className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center"
+          title="Profile"
+        >
+          <span>👤</span>
+        </div>
+      </header>
 
-          {/* Password */}
-          <label className="block text-lg mb-2" style={{ color: colors.text }}>
-            Change password:
-          </label>
-          <input
-            type={show ? 'text' : 'password'}
-            value={pwd}
-            onChange={(e) => {
-              setPwd(e.target.value);
-              setError('');
-            }}
-            className="w-full bg-white border-2 rounded-md px-4 py-3 focus:outline-none focus:ring-2"
-            style={{ borderColor: `${colors.header}55` }}
-            placeholder="Enter new password"
-          />
+      <div style={{ background: COLORS.headerSep, height: 10 }} />
 
-          {/* Show password toggle */}
-          <label
-            className="mt-4 flex items-center gap-2 text-lg"
-            style={{ color: colors.text }}
-          >
+      <div
+        className="px-6 py-3 text-white text-xl font-semibold"
+        style={{ background: COLORS.panel }}
+      >
+        Update your details
+      </div>
+
+      {/* Content */}
+      <section className="px-6 py-8">
+        <form
+          onSubmit={onSubmit}
+          className="mx-auto w-full max-w-xl bg-transparent"
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-3 items-center gap-4 sm:gap-6 py-2">
+            <label className="justify-self-end font-semibold text-lg text-black sm:text-base">
+              Change email
+            </label>
             <input
-              type="checkbox"
-              checked={show}
-              onChange={(e) => setShow(e.target.checked)}
-              className="h-4 w-4"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="sm:col-span-2 w-full border border-gray-400 rounded bg-white px-3 py-2"
             />
-            Show password
-          </label>
+          </div>
 
-          {error && (
-            <p className="mt-4 text-sm" style={{ color: '#b91c1c' }}>
-              {error}
-            </p>
-          )}
+          <div className="grid grid-cols-1 sm:grid-cols-3 items-center gap-4 sm:gap-6 py-2">
+            <label className="justify-self-end font-semibold text-lg text-black sm:text-base">
+              Change password
+            </label>
+            <input
+              type="password"
+              value={pwd}
+              onChange={(e) => setPwd(e.target.value)}
+              className="sm:col-span-2 w-full border border-gray-400 rounded bg-white px-3 py-2"
+            />
+          </div>
 
-          {/* Actions */}
-          <div className="mt-10 flex items-center justify-end gap-6">
-            <button
-              type="button"
-              className="px-6 py-2.5 rounded-full border text-gray-700 hover:bg-gray-200"
-              onClick={handleCancel}
+          {/* Buttons */}
+          <div className="flex items-center gap-5 mt-8 justify-center">
+            <Link
+              href="/management_empty_dashboard"
+              className="bg-[#d7c2b7] text-black/90 px-8 py-2 rounded-full font-semibold shadow-sm hover:brightness-95"
             >
               Cancel
-            </button>
-
+            </Link>
             <button
-              type="button"
-              className="px-7 py-2.5 rounded-full font-semibold border"
-              style={{
-                backgroundColor: colors.orange,
-                borderColor: '#f08a00',
-                color: colors.header,
-              }}
-              onClick={handleSave}
+              type="submit"
+              className="bg-[#3d0000] text-white px-8 py-2 rounded-full font-semibold shadow-sm hover:brightness-110"
             >
               Save
             </button>
           </div>
-        </div>
-
-        <div className="h-4" />
-      </div>
+        </form>
+      </section>
     </main>
   );
 }
