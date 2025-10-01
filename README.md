@@ -10,7 +10,6 @@
     </p>
 </div>
 
-
 <!-- TABLE OF CONTENTS -->
 <details>
     <summary><Strong>Table of Contents</strong></summary>
@@ -37,11 +36,12 @@
     </ol>
 </details>
 
-
 <!-- Content -->
+
 ## About the Project
 
 ### Features
+
 <details>
     <summary>Roles and Permissions for User</summary>
     <ul>
@@ -81,6 +81,7 @@
 </details>
 
 ### Tech Stack and Resources
+
 <ul>
     <li><strong>Framework</strong>: <a href="https://nextjs.org/docs">Next.Js</a></li>
     <li><strong>Frontend</strong>: <a href="https://react.dev/learn">React</a></li>
@@ -91,8 +92,11 @@
 </ul>
 
 ## Getting Started
+
 ### Prerequisites
+
 Before running the app, ensure that you have the following:
+
 <ul>
     <li>Node.js</li>
     <li>Package manager - pnpm or npm or yarn</li>
@@ -101,7 +105,9 @@ Before running the app, ensure that you have the following:
 </ul>
 
 ### Installation
+
 If local development do the following:
+
 <ol>
     <li>Clone this repository</li>
     <pre><code>git clone https://github.com/404-Project-Not-Found/Schedule-of-Care-Program.git
@@ -127,7 +133,9 @@ Open <a href="http://localhost:3000">http://localhost:3000</a> on your browser t
 </br>
 
 ## Deployment
+
 Once deployment, do the following:
+
 <ol>
     <li>Push code to GitHub</li>
     <li>Connect the repo to Vercel</li>
@@ -139,10 +147,11 @@ For more information, you can read the <a href="https://nextjs.org/docs/app/gett
 </br>
 
 ## Testing
+
 To be added
 
-
 ## Team Members
+
 <a href="https://github.com/dpalexander21">
 <img style="border-radius: 50%;" src="https://avatars.githubusercontent.com/u/201690137?v=4" width="50px">
 </a>
@@ -159,15 +168,95 @@ To be added
 <img style="border-radius: 50%;" src="https://avatars.githubusercontent.com/u/136954712?v=4" width="50px">
 </a>
 
-
 ## License
 
 Scheduling for Care is licensed under the MIT license. See <a href="LICENSE">LICENSE</a> for details.
 
-
 ## Links
+
 <ul>
     <li><a href="">Website</a> -- TBA</li>
     <li><a href="https://team404projectnotfound.atlassian.net/wiki/spaces/09ace67881cc434bab85e12ce5e340a7/overview">Documentation: Confluence</a> -- Requires permission to view</li>
     <li><a href="https://github.com/404-Project-Not-Found/Schedule-of-Care-Program">Source Code</a></li>
 </ul>
+
+
+# Frontend Demo (Mock Mode)
+
+> Quick guide for **local frontend demo** using mock data & mock login. Includes three demo accounts, `.env.local` setup, where to put the mock API, and common gotchas.
+
+---
+
+## 👤 Demo Accounts (Mock Login)
+
+On the login page `/`, use any set below. After login, role is stored in browser storage and controls routing & permissions.
+
+| Role       | Email                  | Password     |
+|------------|------------------------|--------------|
+| Family     | `family@email.com`     | `family`     | 
+| Carer      | `carer@email.com`      | `carer`      | 
+| Management | `management@email.com` | `management` | 
+
+\* Redirects are based on the current mock logic. If you change your routes, also update the logic in the login page.
+
+---
+
+## ⚙️ Enable Mock Mode
+
+Create **`.env.local`** in the project root:
+
+```ini
+NEXT_PUBLIC_ENABLE_MOCK=1
+```
+
+What this does:
+
+- Sets the app to **frontend-only mock** mode: login & data are handled on the client, no backend required.
+- Tasks are stored in `localStorage["tasks"]`; a demo seed is written on first run.
+- Viewer role is stored in:
+  - `sessionStorage["mockRole"]` (per-tab, preferred in mock)
+  - `localStorage["activeRole"]` (persistent fallback)
+
+---
+
+## ▶️ Run Locally
+
+```bash
+# install dependencies
+npm install   
+
+# start dev server
+npm run dev        
+
+# open
+http://localhost:3000
+```
+
+---
+
+## 🧰 Where Is the Mock API?
+
+
+```
+Source files in /src/lib/clientApi.ts
+```
+
+pages import from `@/lib/mockApi`. 
+
+
+### Common exports expected by pages
+
+- **Environment & Role**
+  - `isMock`
+  - `setViewerRoleFE(role)` / `getViewerRoleFE()` / `clearViewerRoleFE()`
+- **Clients**
+  - `getClientsFE()` / `getClientByIdFE(id)`
+  - `readActiveClientFromStorage()` / `writeActiveClientToStorage(id,name?)`
+  - Demo constants: `FULL_DASH_ID`, `NAME_BY_ID`
+- **Tasks**
+  - `getTasksFE()` / `saveTasksFE(tasks)`
+  - Dropdown helpers: `getTaskCatalogFE()` / `getFrequencyOptionsByTaskSlugFE(slug)`
+
+> If an import fails with `@/lib/mockApi`, prefer adding the **path alias** above.
+
+---

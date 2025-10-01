@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
+import { TransactionProvider } from '@/context/TransactionContext';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -19,15 +20,17 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="en">
+    <html lang="en" className="h-full">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        style={{ background: '#ffd9b3' }}
       >
-        {children}
+        {/* Wrap all children in TransactionProvider to share state across pages */}
+        <TransactionProvider>{children}</TransactionProvider>
       </body>
     </html>
   );

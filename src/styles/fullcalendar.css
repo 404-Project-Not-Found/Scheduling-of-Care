@@ -1,0 +1,62 @@
+/* FullCalendar custom overrides */
+
+.fc-theme-standard .fc-scrollgrid {
+  border: none !important;
+}
+
+.fc-theme-standard td,
+.fc-theme-standard th {
+  border: none !important;
+  background: transparent !important;
+}
+
+.fc .fc-col-header-cell-cushion {
+  text-transform: uppercase !important;
+  font-weight: 600;
+  color: #3d0000;
+  font-size: 0.9rem;
+}
+
+.fc-daygrid-day-number {
+  color: #000 !important;
+  font-weight: 500;
+}
+
+.fc-toolbar-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #3d0000;
+}
+
+.fc .fc-toolbar button {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #f6a56f !important;
+  font-size: 1.5rem;
+  padding: 0 8px;
+}
+
+.fc .fc-toolbar button:hover {
+  background: none !important;
+  color: #d96f3d !important;
+}
+
+/* ===== Custom FullCalendar Highlights ===== */
+/* Highlight today with red circle */
+.fc-daygrid-day.fc-today-custom .fc-daygrid-day-number {
+  background-color: #ff4d4d !important;
+  color: white !important;
+  border-radius: 50% !important;
+  padding: 0.25rem;
+  display: inline-block;
+}
+
+/* Highlight task days with light blue + hand cursor */
+.fc-daygrid-day.fc-task-day .fc-daygrid-day-number {
+  background-color: #cce5ff !important;
+  cursor: pointer;
+  border-radius: 0.25rem;
+  padding: 0.25rem;
+  display: inline-block;
+}
