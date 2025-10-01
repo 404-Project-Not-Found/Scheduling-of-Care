@@ -48,6 +48,8 @@ const unitToDays: Record<Unit, number> = {
   month: 30,
   year: 365,
 };
+
+/*
 function toDays(count: number, unit: Unit) {
   return Math.max(1, Math.floor(count || 1)) * unitToDays[unit];
 }
@@ -59,6 +61,7 @@ function slugify(s: string) {
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-");
 }
+    */
 
 export default function AddTaskPage() {
   const router = useRouter();
@@ -125,7 +128,7 @@ export default function AddTaskPage() {
       router.push("/task/search");
     } catch(e: unknown) {
       const message = e instanceof Error? e.message: String(e);
-      alert('Network error: ${message}');
+      alert(`Network error: ${message}`);
     }
     
   };
