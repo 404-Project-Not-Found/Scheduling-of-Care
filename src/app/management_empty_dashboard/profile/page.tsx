@@ -30,7 +30,7 @@ export default function ManagementProfilePage() {
       >
         <div className="flex items-center gap-8">
           {/* Logo → back to empty dashboard */}
-          <Link href="/empty_dashboard" className="shrink-0">
+          <Link href="/management_empty_dashboard" className="shrink-0">
             <Image
               src="/dashboardLogo.png"
               alt="Dashboard Logo"
