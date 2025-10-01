@@ -30,7 +30,7 @@ export default function EmptyDashboard() {
             Client Schedule
           </span>
           <Link
-            href="/management_dashboard/carer-schedule"
+            href="/management_empty_dashboard/staff"
             className="hover:underline"
           >
             Staff Schedule
