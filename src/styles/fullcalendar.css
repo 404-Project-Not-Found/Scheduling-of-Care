@@ -45,10 +45,10 @@
 /* ===== Custom FullCalendar Highlights ===== */
 /* Highlight today with red circle */
 .fc-daygrid-day.fc-today-custom .fc-daygrid-day-number {
-  background-color: #ff4d4d !important;
+  background-color: #ff9999 !important; 
   color: white !important;
   border-radius: 50% !important;
-  padding: 0.25rem;
+  padding: 0.35rem;
   display: inline-block;
 }
 
