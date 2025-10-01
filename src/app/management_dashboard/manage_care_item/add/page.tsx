@@ -152,7 +152,7 @@ export default function AddTaskPage() {
       <div className="w-full max-w-xl rounded-[22px] border border-[#6b3f2a] bg-[#F7ECD9] p-8 shadow relative">
         {/* top bar */}
         <div className="-mx-8 -mt-8 px-8 py-4 bg-[#3A0000] text-white rounded-t-[22px] border-b border-black/10 text-center">
-          <h1 className="text-3xl font-extrabold">Create new task</h1>
+          <h1 className="text-3xl font-extrabold">Manage care item</h1>
         </div>
 
         {/* client name line */}

@@ -32,7 +32,6 @@ const defaultItems: Item[] = [
   // option 2. path after select client: don't need the search page ( or could add 'manage carer access' button on the client list page)
   // { href: "/management_dashboard/assign_carer/manage", label: "Manage Carer access" },
 
-  { href: "/management_dashboard/add_care_items", label: "Add care items" },
   { href: "/management_dashboard/register_client", label: "Register new client" },
   { href: "/management_dashboard/clients_list", label: "List of clients" },
   { href: "/management_dashboard/staff_list", label: "List of staff" },

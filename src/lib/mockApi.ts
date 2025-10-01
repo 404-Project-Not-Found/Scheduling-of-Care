@@ -1,5 +1,5 @@
 /**
- * Filename: /src/lib/clientApi.ts
+ * Filename: /src/lib/mockApi.ts
  * Author: Qingyue Zhao
  * Date Created: 28/09/2025
  *
@@ -399,4 +399,125 @@ export async function getStaffFE(): Promise<Staff[]> {
   if (!res.ok) throw new Error(`Failed to fetch staff (${res.status})`);
   const data = await res.json();
   return Array.isArray(data) ? (data as Staff[]) : [];
+}
+
+
+ // ========== Frequency options for Manage Care Item (FE mock only) ==========
+
+/**
+ * Canonical time unit used by the frequency selector.
+ * If you already have a Unit type in your app, delete this duplicate.
+ */
+export type Unit = 'day' | 'week' | 'month' | 'year';
+
+/**
+ * One selectable frequency option in the dropdown.
+ * - id: stable string for <option value>, avoids number+unit tuples in DOM values
+ * - label: human-friendly text (what the user sees)
+ * - count + unit: the actual semantic value used by your logic
+ */
+export type FrequencyOption = {
+  id: string;
+  label: string;
+  count: number;
+  unit: Unit;
+};
+
+/**
+ * Fallback options used when a task slug has no specific template.
+ * Keep this generic so the UI always has something to render.
+ */
+const DEFAULT_FREQUENCY_OPTIONS: FrequencyOption[] = [
+  { id: '1w', label: 'Every week',       count: 1, unit: 'week'  },
+  { id: '2w', label: 'Every 2 weeks',    count: 2, unit: 'week'  },
+  { id: '1m', label: 'Every month',      count: 1, unit: 'month' },
+  { id: '3m', label: 'Every 3 months',   count: 3, unit: 'month' },
+  { id: '6m', label: 'Every 6 months',   count: 6, unit: 'month' },
+  { id: '1y', label: 'Every year',       count: 1, unit: 'year'  },
+];
+
+/**
+ * Lightweight per-task templates for FE mock.
+ */
+const TASK_TEMPLATES: Record<
+  string,
+  {
+    frequencyOptions: FrequencyOption[];
+  }
+> = {
+  'dental-appointment': {
+    frequencyOptions: [
+      { id: '1m', label: 'Every month',      count: 1, unit: 'month' },
+      { id: '3m', label: 'Every 3 months',   count: 3, unit: 'month' },
+      { id: '6m', label: 'Every 6 months',   count: 6, unit: 'month' },
+      { id: '1y', label: 'Every year',       count: 1, unit: 'year'  },
+    ],
+  },
+  'gp-checkup': {
+    frequencyOptions: [
+      { id: '1m', label: 'Every month',    count: 1, unit: 'month' },
+      { id: '2m', label: 'Every 2 months', count: 2, unit: 'month' },
+      { id: '3m', label: 'Every 3 months', count: 3, unit: 'month' },
+      { id: '6m', label: 'Every 6 months', count: 6, unit: 'month' },
+    ],
+  },
+  'eye-test': {
+    frequencyOptions: [
+      { id: '6m', label: 'Every 6 months', count: 6, unit: 'month' },
+      { id: '1y', label: 'Every year',     count: 1, unit: 'year'  },
+      { id: '2y', label: 'Every 2 years',  count: 2, unit: 'year'  },
+    ],
+  },
+  'replace-toothbrush-head': {
+    frequencyOptions: [
+      { id: '1m', label: 'Every month',    count: 1, unit: 'month' },
+      { id: '3m', label: 'Every 3 months', count: 3, unit: 'month' },
+      { id: '6m', label: 'Every 6 months', count: 6, unit: 'month' },
+    ],
+  },
+  'shower-assistance': {
+    frequencyOptions: [
+      { id: '1d', label: 'Every day',      count: 1, unit: 'day'   },
+      { id: '2d', label: 'Every 2 days',   count: 2, unit: 'day'   },
+      { id: '1w', label: 'Every week',     count: 1, unit: 'week'  },
+    ],
+  },
+  'nail-trimming': {
+    frequencyOptions: [
+      { id: '2w', label: 'Every 2 weeks',  count: 2, unit: 'week'  },
+      { id: '1m', label: 'Every month',    count: 1, unit: 'month' },
+      { id: '6w', label: 'Every 6 weeks',  count: 6, unit: 'week'  },
+    ],
+  },
+  'laundry-pickup': {
+    frequencyOptions: [
+      { id: '1w', label: 'Every week',     count: 1, unit: 'week'  },
+      { id: '2w', label: 'Every 2 weeks',  count: 2, unit: 'week'  },
+      { id: '1m', label: 'Every month',    count: 1, unit: 'month' },
+    ],
+  },
+  'seasonal-wardrobe-update': {
+    frequencyOptions: [
+      { id: '3m', label: 'Every 3 months', count: 3, unit: 'month' },
+      { id: '6m', label: 'Every 6 months', count: 6, unit: 'month' },
+      { id: '1y', label: 'Every year',     count: 1, unit: 'year'  },
+    ],
+  },
+  'mend-clothing': {
+    frequencyOptions: [
+      { id: '2w', label: 'Every 2 weeks',  count: 2, unit: 'week'  },
+      { id: '1m', label: 'Every month',    count: 1, unit: 'month' },
+      { id: '3m', label: 'Every 3 months', count: 3, unit: 'month' },
+    ],
+  },
+};
+
+/**
+ * Public helper for UI: returns frequency dropdown options for a given task slug.
+ * - If the slug is unknown or missing, DEFAULT_FREQUENCY_OPTIONS are returned.
+ * - This is FE-only and intentionally does not touch backend APIs.
+ */
+export function getFrequencyOptionsByTaskSlugFE(slug?: string): FrequencyOption[] {
+  if (!slug) return DEFAULT_FREQUENCY_OPTIONS;
+  return TASK_TEMPLATES[slug]?.frequencyOptions ?? DEFAULT_FREQUENCY_OPTIONS;
 }

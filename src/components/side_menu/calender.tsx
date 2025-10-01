@@ -134,7 +134,6 @@ export function MenuDrawer({
             {isFamilyViewer && (
               <>
 
-                 {/* optional menu option for family */}
             
                 {/* <MenuItem
                   href="/people_list" 
@@ -148,25 +147,18 @@ export function MenuDrawer({
             {isManagementViewer && (
              <>
 
-            {/* optional menu option for management */}
-
-               {/* <MenuItem
-                  href="/clients_list" 
-                  label="List of clients"
-                /> */}
-
                 {/* <MenuItem
                   href="/assign_carer"
                   label="Manage carer assignment"
                 /> */}
              
               <MenuItem
-                href="/management_dashboard/manage_task/edit"
-                label="Manage task"
+                href="/management_dashboard/manage_care_item/edit"
+                label="Manage care item"
               />
               <MenuItem
-                href="/management_dashboard/manage_task/add"
-                label="add new task"
+                href="/management_dashboard/manage_care_item/add"
+                label="add new care item"
               />
               </>
               
