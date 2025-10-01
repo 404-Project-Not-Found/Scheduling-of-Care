@@ -57,7 +57,8 @@ export default function AddAccessCodePanel({
   function generateCode() {
     const CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     let out = '';
-    for (let i = 0; i < 8; i++) out += CHARS[Math.floor(Math.random() * CHARS.length)];
+    for (let i = 0; i < 8; i++)
+      out += CHARS[Math.floor(Math.random() * CHARS.length)];
     setCode(out);
     setCopied(null);
     onGenerated?.(out);
@@ -80,7 +81,9 @@ export default function AddAccessCodePanel({
         aria-label="Close overlay"
         onClick={onClose}
         className={`fixed inset-0 z-[90] bg-black/40 transition-opacity duration-300 ${
-          open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          open
+            ? 'opacity-100 pointer-events-auto'
+            : 'opacity-0 pointer-events-none'
         }`}
       />
 
@@ -110,11 +113,18 @@ export default function AddAccessCodePanel({
           </button>
         </div>
 
-        <div className="w-full px-6 md:px-8 py-5 md:py-6" style={{ backgroundColor: palette.notice }}>
-          <p className="text-sm sm:text-base md:text-lg leading-relaxed font-semibold" style={{ color: '#000' }}>
-            IMPORTANT: Generate an access code, copy it and use it when you fill out{' '}
-            <span className="underline">Add New Person</span>. Then, email the access code to the care organisation
-            management team to register the client.
+        <div
+          className="w-full px-6 md:px-8 py-5 md:py-6"
+          style={{ backgroundColor: palette.notice }}
+        >
+          <p
+            className="text-sm sm:text-base md:text-lg leading-relaxed font-semibold"
+            style={{ color: '#000' }}
+          >
+            IMPORTANT: Generate an access code, copy it and use it when you fill
+            out <span className="underline">Add New Person</span>. Then, email
+            the access code to the care organisation management team to register
+            the client.
           </p>
         </div>
 
@@ -132,7 +142,11 @@ export default function AddAccessCodePanel({
               value={code}
               readOnly
               className="h-10 w-44 text-lg text-center rounded border outline-none"
-              style={{ borderColor: palette.inputBorder, color: palette.text, background: 'white' }}
+              style={{
+                borderColor: palette.inputBorder,
+                color: palette.text,
+                background: 'white',
+              }}
             />
             <button
               onClick={copyCode}
@@ -143,7 +157,9 @@ export default function AddAccessCodePanel({
               Copy
             </button>
             {copied && (
-              <span className={`text-sm ${copied === 'ok' ? 'text-green-700' : 'text-red-600'}`}>
+              <span
+                className={`text-sm ${copied === 'ok' ? 'text-green-700' : 'text-red-600'}`}
+              >
                 {copied === 'ok' ? 'Copied!' : 'Copy failed'}
               </span>
             )}

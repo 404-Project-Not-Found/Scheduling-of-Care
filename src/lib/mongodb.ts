@@ -23,7 +23,7 @@ type Cache = {
 
 // Initialises global cache
 const g = global as unknown as { _mongooseConnection?: Cache };
-let cached: Cache = g._mongooseConnection || { conn: null, promise: null };
+const cached: Cache = g._mongooseConnection || { conn: null, promise: null };
 g._mongooseConnection = cached;
 
 /**

@@ -1,5 +1,3 @@
-
-
 'use client';
 
 export const dynamic = 'force-dynamic';
@@ -30,23 +28,23 @@ export default function FamilyPOAListPage() {
   const [clients, setClients] = useState<Client[]>([]);
 
   // Fetches client list from API
-    useEffect(() => {
-        let mounted = true;
+  useEffect(() => {
+    let mounted = true;
 
-        (async () => {
-        try {
-            const list = await getClientsFE();
-            if (mounted) setClients(Array.isArray(list) ? list : []);
-        } catch (err) {
-            console.error('Load clients failed:', err);
-            if (mounted) setClients([]); 
-        }
+    (async () => {
+      try {
+        const list = await getClientsFE();
+        if (mounted) setClients(Array.isArray(list) ? list : []);
+      } catch (err) {
+        console.error('Load clients failed:', err);
+        if (mounted) setClients([]);
+      }
     })();
 
     return () => {
-    mounted = false;
+      mounted = false;
     };
-}, []);
+  }, []);
 
   const goBack = () => router.replace('/empty_dashboard');
 
@@ -141,27 +139,27 @@ export default function FamilyPOAListPage() {
 
                         {/* View dashboard → orange */}
                         {m.dashboardType === 'full' ? (
-                            <Link
-                                href={`/calender_dashboard?id=${m._id}`}
-                                className="px-4 py-2 rounded-lg text-lg font-medium"
-                                style={{
-                                    backgroundColor: palette.dashOrange,
-                                    color: palette.white,
-                                }}
-                            >
-                                View dashboard
-                            </Link>
-                            ) : (
-                            <Link
-                                href={`/partial_dashboard?id=${m._id}`}
-                                className="px-4 py-2 rounded-lg text-lg font-medium"
-                                style={{
-                                    backgroundColor: palette.dashOrange,
-                                    color: palette.white,
-                                }}
-                            >
-                                View dashboard
-                            </Link>
+                          <Link
+                            href={`/calender_dashboard?id=${m._id}`}
+                            className="px-4 py-2 rounded-lg text-lg font-medium"
+                            style={{
+                              backgroundColor: palette.dashOrange,
+                              color: palette.white,
+                            }}
+                          >
+                            View dashboard
+                          </Link>
+                        ) : (
+                          <Link
+                            href={`/partial_dashboard?id=${m._id}`}
+                            className="px-4 py-2 rounded-lg text-lg font-medium"
+                            style={{
+                              backgroundColor: palette.dashOrange,
+                              color: palette.white,
+                            }}
+                          >
+                            View dashboard
+                          </Link>
                         )}
 
                         {/* Manage organisation access → pink (now passes both name + dob) */}

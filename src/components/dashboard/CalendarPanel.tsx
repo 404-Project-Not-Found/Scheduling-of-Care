@@ -1,6 +1,5 @@
 'use client';
 
-
 import dynamic from 'next/dynamic';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';

@@ -48,7 +48,9 @@ export default function UpdateDetailsPage() {
 
       // Real mode: fetch from backend
       try {
-        const res = await fetch('/api/user/profile', { credentials: 'include' });
+        const res = await fetch('/api/user/profile', {
+          credentials: 'include',
+        });
         if (!res.ok) throw new Error('Failed to load profile');
         const data = await res.json();
         if (data?.email) setEmail(data.email);
@@ -205,7 +207,9 @@ export default function UpdateDetailsPage() {
             }}
             className="w-full bg-white border-2 rounded-md px-4 py-3 mb-8 focus:outline-none focus:ring-2"
             style={{ borderColor: `${colors.header}55` }}
-            placeholder={isMock ? 'Enter new email (mock mode)' : 'Enter new email'}
+            placeholder={
+              isMock ? 'Enter new email (mock mode)' : 'Enter new email'
+            }
           />
 
           {/* Backend error */}
@@ -225,11 +229,16 @@ export default function UpdateDetailsPage() {
             onChange={(e) => setPwd(e.target.value)}
             className="w-full bg-white border-2 rounded-md px-4 py-3 focus:outline-none focus:ring-2"
             style={{ borderColor: `${colors.header}55` }}
-            placeholder={isMock ? 'Enter new password (mock mode)' : 'Enter new password'}
+            placeholder={
+              isMock ? 'Enter new password (mock mode)' : 'Enter new password'
+            }
           />
 
           {/* Show password toggle */}
-          <label className="mt-4 flex items-center gap-2 text-lg" style={{ color: colors.text }}>
+          <label
+            className="mt-4 flex items-center gap-2 text-lg"
+            style={{ color: colors.text }}
+          >
             <input
               type="checkbox"
               checked={show}

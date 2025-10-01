@@ -28,8 +28,14 @@ type sideMenuProps = {
 
 const defaultMenuItems: Item[] = [
   { href: '/calender_dashboard/update_details', label: 'Manage your account' },
-  { href: '/family_dashboard/people_list', label: 'Manage people with special needs' },
-  { href: '/family_dashboard/request_of_change_page', label: 'Request to change a task' },
+  {
+    href: '/family_dashboard/people_list',
+    label: 'Manage people with special needs',
+  },
+  {
+    href: '/family_dashboard/request_of_change_page',
+    label: 'Request to change a task',
+  },
 ];
 
 export default function FamilySideMenu({
@@ -37,14 +43,15 @@ export default function FamilySideMenu({
   onBackdropClick,
   items = defaultMenuItems,
 }: sideMenuProps) {
-
   // sign-out (mock first, else next-auth) ----
   const handleSignOut = async () => {
     const isMockEnv = process.env.NEXT_PUBLIC_ENABLE_MOCK === '1';
     const hasMockRole =
       typeof window !== 'undefined' &&
       (!!sessionStorage.getItem('mockRole') ||
-        ['family','carer','management'].includes((localStorage.getItem('activeRole') || '').toLowerCase()));
+        ['family', 'carer', 'management'].includes(
+          (localStorage.getItem('activeRole') || '').toLowerCase()
+        ));
 
     if (isMockEnv || hasMockRole) {
       // clear FE state and hard-redirect to login

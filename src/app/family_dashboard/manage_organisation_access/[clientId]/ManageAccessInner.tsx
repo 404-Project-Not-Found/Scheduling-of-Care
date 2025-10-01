@@ -49,7 +49,6 @@ export default function ManageAccessInner({
     orgId: string,
     action: 'approve' | 'reject' | 'revoke'
   ) {
-
     //frontend path
     if (isMock) {
       setOrgs((prev) =>
@@ -57,10 +56,7 @@ export default function ManageAccessInner({
           o.id === orgId
             ? {
                 ...o,
-                status:
-                  action === 'approve'
-                    ? 'active'
-                    : 'revoked', // both reject & revoke -> revoked
+                status: action === 'approve' ? 'active' : 'revoked', // both reject & revoke -> revoked
               }
             : o
         )

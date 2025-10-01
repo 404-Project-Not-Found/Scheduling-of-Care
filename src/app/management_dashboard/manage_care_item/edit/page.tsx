@@ -1,20 +1,20 @@
 /* page purpose: the manage care item page for the management
-* feature: including select, edit, remove tasks
-* Frontend author: Qingyue Zhao */
+ * feature: including select, edit, remove tasks
+ * Frontend author: Qingyue Zhao */
 
-"use client";
+'use client';
 
-import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { useState, useEffect, useMemo } from "react";
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useState, useEffect, useMemo } from 'react';
 import {
   readActiveClientFromStorage,
   FULL_DASH_ID,
   NAME_BY_ID,
   getTaskCatalogFE, // dropdown data (mock)
-} from "@/lib/mockApi";
+} from '@/lib/mockApi';
 
-type Unit = "day" | "week" | "month" | "year";
+type Unit = 'day' | 'week' | 'month' | 'year';
 
 type Task = {
   label: string;
@@ -37,13 +37,13 @@ type Task = {
 };
 
 function saveTasks(tasks: Task[]) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem("tasks", JSON.stringify(tasks));
+  if (typeof window === 'undefined') return;
+  localStorage.setItem('tasks', JSON.stringify(tasks));
 }
 function loadTasks(): Task[] {
-  if (typeof window === "undefined") return [];
+  if (typeof window === 'undefined') return [];
   try {
-    return JSON.parse(localStorage.getItem("tasks") || "[]") as Task[];
+    return JSON.parse(localStorage.getItem('tasks') || '[]') as Task[];
   } catch {
     return [];
   }
@@ -51,8 +51,8 @@ function loadTasks(): Task[] {
 
 // ---- palette for the red Delete button (match previous style) ----
 const palette = {
-  danger: "#8B0000",
-  dangerHover: "#a40f0f",
+  danger: '#8B0000',
+  dangerHover: '#a40f0f',
 };
 
 const unitToDays: Record<Unit, number> = {
@@ -68,41 +68,41 @@ function slugify(s: string) {
   return s
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-");
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
 }
 
 export default function AddTaskPage() {
   const router = useRouter();
 
   // client name from mockApi (active client)
-  const [clientName, setClientName] = useState<string>("");
+  const [clientName, setClientName] = useState<string>('');
   useEffect(() => {
     const { id, name } = readActiveClientFromStorage();
     const resolvedId = id || FULL_DASH_ID;
-    const resolvedName = name || NAME_BY_ID[resolvedId] || "";
+    const resolvedName = name || NAME_BY_ID[resolvedId] || '';
     setClientName(resolvedName);
   }, []);
 
   // all fields default to empty
-  const [label, setLabel] = useState("");
-  const [notes, setNotes] = useState("");
-  const [status, setStatus] = useState("in progress");
-  const [category, setCategory] = useState("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [label, setLabel] = useState('');
+  const [notes, setNotes] = useState('');
+  const [status, setStatus] = useState('in progress');
+  const [category, setCategory] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
   // frequency: allow empty input; keep as string then parse on submit
-  const [frequencyCountStr, setFrequencyCountStr] = useState<string>("");
-  const [frequencyUnit, setFrequencyUnit] = useState<Unit>("day");
+  const [frequencyCountStr, setFrequencyCountStr] = useState<string>('');
+  const [frequencyUnit, setFrequencyUnit] = useState<Unit>('day');
 
   const statusOptions = [
-    "in progress",
-    "Completed",
-    "Not started",
-    "Paused",
-    "Cancelled",
+    'in progress',
+    'Completed',
+    'Not started',
+    'Paused',
+    'Cancelled',
   ];
 
   // Category/Task dropdown data (from mock API)
@@ -115,17 +115,17 @@ export default function AddTaskPage() {
   const onCreate = () => {
     const name = label.trim();
     if (!name) {
-      alert("Please select the task name.");
+      alert('Please select the task name.');
       return;
     }
     if (!category.trim()) {
-      alert("Please select a category.");
+      alert('Please select a category.');
       return;
     }
 
     const tasks = loadTasks();
 
-    const base = slugify(name) || "task";
+    const base = slugify(name) || 'task';
     let slug = base;
     let i = 2;
     while (tasks.some((t) => t.slug === slug)) {
@@ -138,7 +138,7 @@ export default function AddTaskPage() {
       ? toDays(countNum, frequencyUnit)
       : undefined;
     const legacyStr = hasFrequency
-      ? `${countNum} ${frequencyUnit}${countNum > 1 ? "s" : ""}`
+      ? `${countNum} ${frequencyUnit}${countNum > 1 ? 's' : ''}`
       : undefined;
 
     const newTask: Task = {
@@ -153,17 +153,17 @@ export default function AddTaskPage() {
       dateFrom: dateFrom || undefined,
       dateTo: dateTo || undefined,
       frequency: legacyStr,
-      lastDone: dateFrom && dateTo ? `${dateFrom} to ${dateTo}` : "",
+      lastDone: dateFrom && dateTo ? `${dateFrom} to ${dateTo}` : '',
       deleted: false,
     };
 
     saveTasks([...(tasks || []), newTask]);
-    router.push("/calender_dashboard");
+    router.push('/calender_dashboard');
   };
 
   // red Delete button behavior (bottom-left)
   const onDeleteDraft = () => {
-    if (!confirm("Discard this new task and go back?")) return;
+    if (!confirm('Discard this new task and go back?')) return;
     router.back();
   };
 
@@ -199,7 +199,7 @@ export default function AddTaskPage() {
               onChange={(e) => {
                 setCategory(e.target.value);
                 // reset task name when category changes
-                setLabel("");
+                setLabel('');
               }}
               className="w-full rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black"
             >
@@ -221,7 +221,7 @@ export default function AddTaskPage() {
               className="w-full rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black disabled:opacity-60"
             >
               <option value="">
-                {category ? "Select a task…" : "Choose a category first"}
+                {category ? 'Select a task…' : 'Choose a category first'}
               </option>
               {tasksInCategory.map((t) => (
                 <option key={t.slug} value={t.label}>
@@ -260,7 +260,7 @@ export default function AddTaskPage() {
                 pattern="[0-9]*"
                 value={frequencyCountStr}
                 onChange={(e) => {
-                  const v = e.target.value.replace(/[^\d]/g, "");
+                  const v = e.target.value.replace(/[^\d]/g, '');
                   setFrequencyCountStr(v);
                 }}
                 className="w-28 rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black"
@@ -300,15 +300,16 @@ export default function AddTaskPage() {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               className="w-full rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black"
-              placeholder={" add notes here"}
+              placeholder={' add notes here'}
             />
           </Field>
 
           {/* IMPORTANT banner (INSIDE the card) */}
           <div className="mt-8 -mx-8 px-8 py-5 bg-rose-300/25 text-black border border-rose-300/50 rounded-b-[0]">
             <span className="font-bold mr-1">IMPORTANT:</span>
-            Deleting the task or editing the frequency and dates will change the schedule of
-            this care item for the rest of the year. Be aware of any budget implications.
+            Deleting the task or editing the frequency and dates will change the
+            schedule of this care item for the rest of the year. Be aware of any
+            budget implications.
           </div>
         </div>
 
@@ -334,7 +335,7 @@ export default function AddTaskPage() {
           {/* RIGHT: Cancel / Create */}
           <div className="flex items-center gap-6">
             <button
-              onClick={() => router.push("/calender_dashboard")}
+              onClick={() => router.push('/calender_dashboard')}
               className="px-6 py-2.5 rounded-full border border-[#3A0000] text-gray-700 hover:bg-gray-200"
             >
               Cancel

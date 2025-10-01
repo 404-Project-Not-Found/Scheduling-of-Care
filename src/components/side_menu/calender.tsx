@@ -62,7 +62,8 @@ export function MenuDrawer({
   const isManagementViewer =
     viewer === 'management' ||
     (typeof window !== 'undefined' &&
-      (localStorage.getItem('activeRole') || '').toLowerCase() === 'management');
+      (localStorage.getItem('activeRole') || '').toLowerCase() ===
+        'management');
 
   // Detect "management" viewer
   const isCarerViewer =
@@ -121,7 +122,6 @@ export function MenuDrawer({
               label="View Transactions"
             />
 
-
             {/* Extra entries only for CARER viewer */}
             {isCarerViewer && (
               <MenuItem
@@ -133,36 +133,30 @@ export function MenuDrawer({
             {/* Extra entries only for FAMILY viewer */}
             {isFamilyViewer && (
               <>
-
-            
                 {/* <MenuItem
                   href="/people_list" 
                   label="Manage people with special needs"
                 /> */}
-
               </>
             )}
 
             {/* Extra entry only for MANAGEMENT viewer */}
             {isManagementViewer && (
-             <>
-
+              <>
                 {/* <MenuItem
                   href="/assign_carer"
                   label="Manage carer assignment"
                 /> */}
-             
-              <MenuItem
-                href="/management_dashboard/manage_care_item/edit"
-                label="Manage care item"
-              />
-              <MenuItem
-                href="/management_dashboard/manage_care_item/add"
-                label="add new care item"
-              />
+
+                <MenuItem
+                  href="/management_dashboard/manage_care_item/edit"
+                  label="Manage care item"
+                />
+                <MenuItem
+                  href="/management_dashboard/manage_care_item/add"
+                  label="add new care item"
+                />
               </>
-              
-              
             )}
           </ul>
 

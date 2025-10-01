@@ -1,13 +1,12 @@
-
 /**
  * Filename: /src/app/client_list/page.tsx
  * Frontend Author: Qingyue Zhao
- * 
+ *
  * Purpose:
  * - Display a list of clients for family and management
  *  1. family options: edit profile, view dashboard, manage organisation access
  *  2. management options: view profile, view dashboard
- * 
+ *
  *
  * Data:
  * - Source: getClientsFE() — mocked frontend API.
@@ -120,14 +119,20 @@ export default function ClientListPage() {
 
             {/* content */}
             <div className="px-10 pb-12 pt-8">
-              <p className="text-2xl md:text-3xl mb-5" style={{ color: palette.text }}>
+              <p
+                className="text-2xl md:text-3xl mb-5"
+                style={{ color: palette.text }}
+              >
                 List of registered clients:
               </p>
 
               {/* list */}
               <div
                 className="mx-auto rounded-2xl bg-white overflow-y-auto mb-10"
-                style={{ maxHeight: 520, border: `2px solid ${palette.border}55` }}
+                style={{
+                  maxHeight: 520,
+                  border: `2px solid ${palette.border}55`,
+                }}
               >
                 <ul className="divide-y divide-black/10">
                   {clients.map((p) => (
@@ -142,7 +147,10 @@ export default function ClientListPage() {
                         <Link
                           href={`/client_profile?id=${p._id}`}
                           className="px-4 py-2 rounded-lg text-lg font-medium"
-                          style={{ backgroundColor: palette.editGreen, color: palette.white }}
+                          style={{
+                            backgroundColor: palette.editGreen,
+                            color: palette.white,
+                          }}
                         >
                           View profile
                         </Link>
@@ -152,7 +160,10 @@ export default function ClientListPage() {
                           <Link
                             href={`/calender_dashboard?id=${p._id}`}
                             className="px-4 py-2 rounded-lg text-lg font-medium"
-                            style={{ backgroundColor: palette.dashOrange, color: palette.white }}
+                            style={{
+                              backgroundColor: palette.dashOrange,
+                              color: palette.white,
+                            }}
                           >
                             View dashboard
                           </Link>
@@ -160,7 +171,10 @@ export default function ClientListPage() {
                           <Link
                             href={`/partial_dashboard?id=${p._id}`}
                             className="px-4 py-2 rounded-lg text-lg font-medium"
-                            style={{ backgroundColor: palette.dashOrange, color: palette.white }}
+                            style={{
+                              backgroundColor: palette.dashOrange,
+                              color: palette.white,
+                            }}
                           >
                             View dashboard
                           </Link>
@@ -177,7 +191,6 @@ export default function ClientListPage() {
                         >
                           Manage carer access
                         </Link> */}
-                        
                       </div>
                     </li>
                   ))}
@@ -187,9 +200,16 @@ export default function ClientListPage() {
               {/* Add new person */}
               <div className="flex justify-center">
                 <button
-                  onClick={() => router.push('/management_dashboard/register_client?new=true')}
+                  onClick={() =>
+                    router.push(
+                      '/management_dashboard/register_client?new=true'
+                    )
+                  }
                   className="px-7 py-4 rounded-xl text-2xl font-semibold"
-                  style={{ backgroundColor: palette.header, color: palette.white }}
+                  style={{
+                    backgroundColor: palette.header,
+                    color: palette.white,
+                  }}
                 >
                   + register new client
                 </button>

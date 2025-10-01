@@ -7,6 +7,5 @@ export type Task = {
   nextDue: string;
   status: 'Due' | 'Pending' | 'Completed';
   comments: string[];
-  files: (string)[];
+  files: string[];
 };
-

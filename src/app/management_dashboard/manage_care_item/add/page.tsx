@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import {
   readActiveClientFromStorage,
   FULL_DASH_ID,
   NAME_BY_ID,
-} from "@/lib/mockApi";
+} from '@/lib/mockApi';
 
-type Unit = "day" | "week" | "month" | "year";
+type Unit = 'day' | 'week' | 'month' | 'year';
 
 type Task = {
   label: string;
@@ -32,13 +32,13 @@ type Task = {
 };
 
 function saveTasks(tasks: Task[]) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem("tasks", JSON.stringify(tasks));
+  if (typeof window === 'undefined') return;
+  localStorage.setItem('tasks', JSON.stringify(tasks));
 }
 function loadTasks(): Task[] {
-  if (typeof window === "undefined") return [];
+  if (typeof window === 'undefined') return [];
   try {
-    return JSON.parse(localStorage.getItem("tasks") || "[]") as Task[];
+    return JSON.parse(localStorage.getItem('tasks') || '[]') as Task[];
   } catch {
     return [];
   }
@@ -57,51 +57,51 @@ function slugify(s: string) {
   return s
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-");
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
 }
 
 export default function AddTaskPage() {
   const router = useRouter();
 
   // client name from mockApi (active client)
-  const [clientName, setClientName] = useState<string>("");
+  const [clientName, setClientName] = useState<string>('');
   useEffect(() => {
     const { id, name } = readActiveClientFromStorage();
     const resolvedId = id || FULL_DASH_ID;
-    const resolvedName = name || NAME_BY_ID[resolvedId] || "";
+    const resolvedName = name || NAME_BY_ID[resolvedId] || '';
     setClientName(resolvedName);
   }, []);
 
   // all fields default to empty
-  const [label, setLabel] = useState("");
-  const [status, setStatus] = useState("in progress");
-  const [category, setCategory] = useState("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [label, setLabel] = useState('');
+  const [status, setStatus] = useState('in progress');
+  const [category, setCategory] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
   // frequency: allow empty input; keep as string then parse on submit
-  const [frequencyCountStr, setFrequencyCountStr] = useState<string>("");
-  const [frequencyUnit, setFrequencyUnit] = useState<Unit>("day");
+  const [frequencyCountStr, setFrequencyCountStr] = useState<string>('');
+  const [frequencyUnit, setFrequencyUnit] = useState<Unit>('day');
 
   const statusOptions = [
-    "in progress",
-    "Completed",
-    "Not started",
-    "Paused",
-    "Cancelled",
+    'in progress',
+    'Completed',
+    'Not started',
+    'Paused',
+    'Cancelled',
   ];
 
   const onCreate = () => {
     const name = label.trim();
     if (!name) {
-      alert("Please enter the task name.");
+      alert('Please enter the task name.');
       return;
     }
     const tasks = loadTasks();
 
-    const base = slugify(name) || "task";
+    const base = slugify(name) || 'task';
     let slug = base;
     let i = 2;
     while (tasks.some((t) => t.slug === slug)) {
@@ -114,11 +114,11 @@ export default function AddTaskPage() {
       ? toDays(countNum, frequencyUnit)
       : undefined;
     const legacyStr = hasFrequency
-      ? `${countNum} ${frequencyUnit}${countNum > 1 ? "s" : ""}`
+      ? `${countNum} ${frequencyUnit}${countNum > 1 ? 's' : ''}`
       : undefined;
 
     const newTask: Task = {
-      clientName, 
+      clientName,
       label: name,
       slug,
       status: status.trim(),
@@ -129,12 +129,12 @@ export default function AddTaskPage() {
       dateFrom: dateFrom || undefined,
       dateTo: dateTo || undefined,
       frequency: legacyStr,
-      lastDone: dateFrom && dateTo ? `${dateFrom} to ${dateTo}` : "",
+      lastDone: dateFrom && dateTo ? `${dateFrom} to ${dateTo}` : '',
       deleted: false,
     };
 
     saveTasks([...(tasks || []), newTask]);
-    router.push("/calender_dashboard");
+    router.push('/calender_dashboard');
   };
 
   return (
@@ -159,7 +159,6 @@ export default function AddTaskPage() {
         <p className="mt-6 text-2xl font-bold text-center text-black">
           <span className="font-semibold">Client Name:</span> {clientName}
         </p>
-
 
         {/* form fields */}
         <div className="mt-8 space-y-6">
@@ -208,7 +207,7 @@ export default function AddTaskPage() {
                 pattern="[0-9]*"
                 value={frequencyCountStr}
                 onChange={(e) => {
-                  const v = e.target.value.replace(/[^\d]/g, "");
+                  const v = e.target.value.replace(/[^\d]/g, '');
                   setFrequencyCountStr(v);
                 }}
                 className="w-28 rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black"
@@ -241,8 +240,6 @@ export default function AddTaskPage() {
               ))}
             </select>
           </Field>
-
-
         </div>
 
         {/* footer actions */}
@@ -250,7 +247,7 @@ export default function AddTaskPage() {
           <div />
           <div className="flex items-center gap-6">
             <button
-              onClick={() => router.push("/dashboard")}
+              onClick={() => router.push('/dashboard')}
               className="px-6 py-2.5 rounded-full border border-[#3A0000] text-gray-700 hover:bg-gray-200"
             >
               Cancel

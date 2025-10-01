@@ -1,17 +1,16 @@
 /**
-* Frontend: 
-* 
-* - UI Build by Vanessa Teo
-* 
-* - frontend mock mode logic by Qingyue Zhao:
-* 
-* carer / family / management enter this page from different entrances; 
-* the view & available actions & page navigation adapt to the role. 
-* 
-* Backend: 
-* 
-*/
-
+ * Frontend:
+ *
+ * - UI Build by Vanessa Teo
+ *
+ * - frontend mock mode logic by Qingyue Zhao:
+ *
+ * carer / family / management enter this page from different entrances;
+ * the view & available actions & page navigation adapt to the role.
+ *
+ * Backend:
+ *
+ */
 
 'use client';
 
@@ -40,7 +39,10 @@ type Role = 'carer' | 'family' | 'management';
 
 /** Mock-only role resolver */
 function getInitialRole(): Role {
-  if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_ENABLE_MOCK === '1') {
+  if (
+    typeof window !== 'undefined' &&
+    process.env.NEXT_PUBLIC_ENABLE_MOCK === '1'
+  ) {
     const v = (sessionStorage.getItem('mockRole') || '').toLowerCase();
     if (v === 'carer' || v === 'family' || v === 'management') return v as Role;
   }
@@ -50,7 +52,9 @@ function getInitialRole(): Role {
 // Page wrapper with Suspense
 export default function DashboardPage() {
   return (
-    <Suspense fallback={<div className="p-6 text-gray-500">Loading dashboard...</div>}>
+    <Suspense
+      fallback={<div className="p-6 text-gray-500">Loading dashboard...</div>}
+    >
       <DashboardContent />
     </Suspense>
   );
@@ -141,7 +145,9 @@ function DashboardContent() {
   const addComment = (taskId: string, comment: string) => {
     setTasks((prev) =>
       prev.map((t) =>
-        t.id === taskId ? { ...t, comments: [...(t.comments || []), comment] } : t
+        t.id === taskId
+          ? { ...t, comments: [...(t.comments || []), comment] }
+          : t
       )
     );
     setSelectedTask((prev) =>
@@ -153,7 +159,9 @@ function DashboardContent() {
 
   const addFile = (taskId: string, fileName: string) => {
     setTasks((prev) =>
-      prev.map((t) => (t.id === taskId ? { ...t, files: [...(t.files || []), fileName] } : t))
+      prev.map((t) =>
+        t.id === taskId ? { ...t, files: [...(t.files || []), fileName] } : t
+      )
     );
     setSelectedTask((prev) =>
       prev ? { ...prev, files: [...(prev.files || []), fileName] } : prev
@@ -177,7 +185,9 @@ function DashboardContent() {
   const goEditProfile = () => {
     localStorage.setItem('activeRole', role);
     if (activeClientId) {
-      router.push(`/client_profile?new=false&id=${activeClientId}&from=calender_dashboard`);
+      router.push(
+        `/client_profile?new=false&id=${activeClientId}&from=calender_dashboard`
+      );
     } else {
       router.push('/client_profile?new=true&from=calender_dashboard');
     }
@@ -199,13 +209,24 @@ function DashboardContent() {
           <h3 className="font-bold mb-2">Dashboard Help</h3>
           <ul className="list-disc list-inside space-y-1">
             <li>
-              Click the <span className="font-bold">≡</span> button to open menu options.
+              Click the <span className="font-bold">≡</span> button to open menu
+              options.
             </li>
-            <li>Calendar: click a highlighted blue date to view tasks due that day.</li>
-            <li>The red highlighted day is today.</li>
-            <li>Click a task to view details, add comments, upload files, or mark as done.</li>
             <li>
-              Go to <span className="font-bold underline text-blue-600">transactions</span> to manage receipts.
+              Calendar: click a highlighted blue date to view tasks due that
+              day.
+            </li>
+            <li>The red highlighted day is today.</li>
+            <li>
+              Click a task to view details, add comments, upload files, or mark
+              as done.
+            </li>
+            <li>
+              Go to{' '}
+              <span className="font-bold underline text-blue-600">
+                transactions
+              </span>{' '}
+              to manage receipts.
             </li>
           </ul>
         </div>
@@ -254,7 +275,10 @@ function DashboardContent() {
           </div>
 
           <div className="p-5 flex-1 relative">
-            <CalendarPanel tasks={tasks} onDateClick={(date: string) => setSelectedDate(date)} />
+            <CalendarPanel
+              tasks={tasks}
+              onDateClick={(date: string) => setSelectedDate(date)}
+            />
           </div>
         </section>
 
@@ -359,12 +383,20 @@ function TaskDetail({
 
       <div className="p-5 text-black flex flex-col gap-3 flex-1">
         {/* Meta */}
-        <p><span className="font-bold">Frequency:</span> {task.frequency}</p>
-        <p><span className="font-bold">Last Done:</span> {task.lastDone}</p>
-        <p><span className="font-bold">Next Due:</span> {task.nextDue}</p>
+        <p>
+          <span className="font-bold">Frequency:</span> {task.frequency}
+        </p>
+        <p>
+          <span className="font-bold">Last Done:</span> {task.lastDone}
+        </p>
+        <p>
+          <span className="font-bold">Next Due:</span> {task.nextDue}
+        </p>
         <p>
           <span className="font-bold">Status:</span>{' '}
-          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusBadgeClasses(task.status)}`}>
+          <span
+            className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusBadgeClasses(task.status)}`}
+          >
             {task.status}
           </span>
         </p>

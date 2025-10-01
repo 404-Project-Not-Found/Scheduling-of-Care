@@ -1,28 +1,28 @@
 /**
  * Filename: /client_profile/page.tsx
- * Authors: 
- * - Fronntend UI Build: Devni Wijesinghe 
+ * Authors:
+ * - Fronntend UI Build: Devni Wijesinghe
  * - Backend logic: Denise Alexander
  * Date Created: 10/09/2025
  * ====================================================================================================
- * 
+ *
  * Frontend notes(latest update on 30/09/2025 by Qingyue Zhao):
- * 
+ *
  * - Mock Role: getViewerRoleFE() → 'family' | 'carer' | 'management'
- * 
+ *
  * - Permissions:
  *    family: edit ALL fields (name, dob, accessCode, avatar, notes)
  *    carer:  add notes ONLY (other fields read-only; no avatar upload)
  *    management: READ-ONLY (no borders, no save, no uploads)
- * 
+ *
  * - Back page routes:
  *    family → /family_dashboard/people_list
  *    carer → /calender_dashboard
  *    management → /management_dashboard/clients_list
  * ====================================================================================================
- * 
+ *
  * Backend logic: API endpoints & payloads
- * 
+ *
  * - Author:
  */
 
@@ -72,7 +72,9 @@ const palette = {
 // ----- Wrapper with suspense fallback -----
 export default function ClientProfilePage() {
   return (
-    <Suspense fallback={<div style={{ padding: 24 }}>Loading client profile...</div>}>
+    <Suspense
+      fallback={<div style={{ padding: 24 }}>Loading client profile...</div>}
+    >
       <ClientProfilePageInner />
     </Suspense>
   );
@@ -113,8 +115,8 @@ function ClientProfilePageInner() {
     role === 'management'
       ? '/management_dashboard/clients_list'
       : role === 'carer'
-      ? '/calendar_dashboard'
-      : '/family_dashboard/people_list';
+        ? '/calendar_dashboard'
+        : '/family_dashboard/people_list';
 
   // ----- Form state -----
   const [name, setName] = useState<string>('');
@@ -213,7 +215,9 @@ function ClientProfilePageInner() {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-[#F3E9D9] text-zinc-900">
         <div className="text-center">
-          <h2 className="text-4xl font-extrabold mb-4">Loading client profile...</h2>
+          <h2 className="text-4xl font-extrabold mb-4">
+            Loading client profile...
+          </h2>
         </div>
       </div>
     );
@@ -225,7 +229,9 @@ function ClientProfilePageInner() {
     // family must provide all major fields (original requirement)
     if (canEditAll) {
       if (!name.trim() || !dob.trim() || !accessCode.trim()) {
-        setFormError('Please fill in Name, Date of Birth, and Access Code to continue.');
+        setFormError(
+          'Please fill in Name, Date of Birth, and Access Code to continue.'
+        );
         return false;
       }
     }
@@ -240,7 +246,9 @@ function ClientProfilePageInner() {
 
     // Duplicate check for new client (only meaningful for family creating)
     if (canEditAll && isNew) {
-      const isDuplicate = clients.some((c) => c.accessCode == accessCode.trim());
+      const isDuplicate = clients.some(
+        (c) => c.accessCode == accessCode.trim()
+      );
       if (isDuplicate) {
         setFormError('This client already exists in your list.');
         return false;
@@ -250,12 +258,16 @@ function ClientProfilePageInner() {
     setFormError('');
 
     // Merge notes (for all roles). For carer, this is the only change.
-    const allNotes = notesInput.trim() ? [...savedNotes, notesInput.trim()] : savedNotes;
+    const allNotes = notesInput.trim()
+      ? [...savedNotes, notesInput.trim()]
+      : savedNotes;
 
     // Access-code existence check only when creating new (keep original behavior)
     if (canEditAll && isNew && !acceptedExistingClient) {
       try {
-        const res = await fetch(`/api/clients/check?accessCode=${encodeURIComponent(accessCode)}`);
+        const res = await fetch(
+          `/api/clients/check?accessCode=${encodeURIComponent(accessCode)}`
+        );
         if (!res.ok) throw new Error('Check request failed');
         const data = await res.json();
         if (data.exists && data.client) {
@@ -326,22 +338,35 @@ function ClientProfilePageInner() {
   const title = readOnly
     ? 'View Profile'
     : canAddNotesOnly
-    ? 'Client Profile (Add Notes)'
-    : isNew
-    ? 'Add New Person'
-    : 'Edit Profile';
+      ? 'Client Profile (Add Notes)'
+      : isNew
+        ? 'Add New Person'
+        : 'Edit Profile';
 
   return (
-    <div className="min-h-screen w-full flex flex-col" style={{ backgroundColor: palette.pageBg, color: palette.text }}>
+    <div
+      className="min-h-screen w-full flex flex-col"
+      style={{ backgroundColor: palette.pageBg, color: palette.text }}
+    >
       {/* Top bar with role-based back route */}
-      <div className="w-full flex items-center justify-center px-6 py-4 relative" style={{ backgroundColor: palette.header, color: palette.white }}>
+      <div
+        className="w-full flex items-center justify-center px-6 py-4 relative"
+        style={{ backgroundColor: palette.header, color: palette.white }}
+      >
         <button
           onClick={() => router.push(backHref)}
           className="absolute left-4 top-1/2 -translate-y-1/2 rounded-md px-2 py-2 focus:outline-none focus:ring-2 focus:ring-white/60 flex items-center gap-2"
           title="Back"
           aria-label="Go back"
         >
-          <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+          <svg
+            width={22}
+            height={22}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
             <path d="M15 18l-6-6 6-6" />
           </svg>
           <span className="text-base">Back</span>
@@ -361,10 +386,19 @@ function ClientProfilePageInner() {
               <div className="flex flex-col items-center gap-3">
                 <div
                   className="w-[120px] h-[120px] rounded-full overflow-hidden border flex items-center justify-center"
-                  style={{ backgroundColor: '#e5e7eb', borderColor: fieldBorder }}
+                  style={{
+                    backgroundColor: '#e5e7eb',
+                    borderColor: fieldBorder,
+                  }}
                 >
                   {avatarUrl ? (
-                    <Image src={avatarUrl} alt="Profile avatar" width={120} height={120} className="object-cover rounded-full" />
+                    <Image
+                      src={avatarUrl}
+                      alt="Profile avatar"
+                      width={120}
+                      height={120}
+                      className="object-cover rounded-full"
+                    />
                   ) : (
                     <div className="text-gray-500">No Photo</div>
                   )}
@@ -372,11 +406,20 @@ function ClientProfilePageInner() {
 
                 {canEditAll && (
                   <>
-                    <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleFileChange}
+                    />
                     <button
                       onClick={openFilePicker}
                       className="px-3 py-2 rounded-md text-sm font-medium hover:opacity-90 transition"
-                      style={{ backgroundColor: palette.header, color: palette.white }}
+                      style={{
+                        backgroundColor: palette.header,
+                        color: palette.white,
+                      }}
                       title="Upload profile photo"
                     >
                       Upload photo
@@ -388,12 +431,18 @@ function ClientProfilePageInner() {
               {/* Fields block */}
               <div className="flex flex-col gap-3 w-full">
                 {(canEditAll || canAddNotesOnly) && formError && (
-                  <div className="mb-4 p-2 rounded-md bg-red-100 border border-red-400 text-red-700">{formError}</div>
+                  <div className="mb-4 p-2 rounded-md bg-red-100 border border-red-400 text-red-700">
+                    {formError}
+                  </div>
                 )}
 
                 {existingClientMessage && canEditAll && (
-                  <div className="mb-4 p-3 rounded-md bg-[#fdf4e7] border" style={{ borderColor: fieldBorder }}>
-                    A client named &quot;<b>{existingClientMessage.name}</b>&quot; already exists with this access code.
+                  <div
+                    className="mb-4 p-3 rounded-md bg-[#fdf4e7] border"
+                    style={{ borderColor: fieldBorder }}
+                  >
+                    A client named &quot;<b>{existingClientMessage.name}</b>
+                    &quot; already exists with this access code.
                     <div className="mt-2">
                       <button
                         className="px-3 py-1 rounded bg-[#DFC9A9] hover:opacity-90 text-sm font-semibold"
@@ -428,7 +477,12 @@ function ClientProfilePageInner() {
                       onChange={(e) => setName(e.target.value)}
                       placeholder={isNew ? 'Enter name' : undefined}
                       className="flex-1 max-w-2xl p-2 rounded-md focus:outline-none focus:ring-2"
-                      style={{ backgroundColor: palette.white, border: `2px solid ${fieldBorder}`, color: palette.text, boxShadow: 'none' }}
+                      style={{
+                        backgroundColor: palette.white,
+                        border: `2px solid ${fieldBorder}`,
+                        color: palette.text,
+                        boxShadow: 'none',
+                      }}
                     />
                   </label>
                 ) : (
@@ -448,7 +502,12 @@ function ClientProfilePageInner() {
                       onChange={(e) => setDob(e.target.value)}
                       placeholder={isNew ? 'e.g., 19/09/1943' : undefined}
                       className="flex-1 max-w-2xl p-2 rounded-md focus:outline-none focus:ring-2"
-                      style={{ backgroundColor: palette.white, border: `2px solid ${fieldBorder}`, color: palette.text, boxShadow: 'none' }}
+                      style={{
+                        backgroundColor: palette.white,
+                        border: `2px solid ${fieldBorder}`,
+                        color: palette.text,
+                        boxShadow: 'none',
+                      }}
                     />
                   </label>
                 ) : (
@@ -461,7 +520,9 @@ function ClientProfilePageInner() {
                 {/* Access Code */}
                 {canEditAll ? (
                   <label className="text-lg flex items-center gap-3">
-                    <span className="font-semibold whitespace-nowrap">Access Code:</span>
+                    <span className="font-semibold whitespace-nowrap">
+                      Access Code:
+                    </span>
                     <input
                       type="text"
                       value={accessCode}
@@ -469,12 +530,19 @@ function ClientProfilePageInner() {
                       placeholder="Enter or paste your access code"
                       required
                       className="flex-1 max-w-2xl p-2 rounded-md focus:outline-none focus:ring-2"
-                      style={{ backgroundColor: palette.white, border: `2px solid ${fieldBorder}`, color: palette.text, boxShadow: 'none' }}
+                      style={{
+                        backgroundColor: palette.white,
+                        border: `2px solid ${fieldBorder}`,
+                        color: palette.text,
+                        boxShadow: 'none',
+                      }}
                     />
                   </label>
                 ) : (
                   <div className="text-lg flex items-center gap-3">
-                    <span className="font-semibold whitespace-nowrap">Access Code:</span>
+                    <span className="font-semibold whitespace-nowrap">
+                      Access Code:
+                    </span>
                     <span>{accessCode || '—'}</span>
                   </div>
                 )}
@@ -507,7 +575,9 @@ function ClientProfilePageInner() {
                       className="w-full p-3 rounded-md flex justify-between items-start"
                       style={{
                         backgroundColor: palette.white,
-                        border: readOnly ? '1px solid transparent' : `2px solid ${fieldBorder}`,
+                        border: readOnly
+                          ? '1px solid transparent'
+                          : `2px solid ${fieldBorder}`,
                         color: palette.text,
                       }}
                     >
@@ -516,7 +586,9 @@ function ClientProfilePageInner() {
                       {canEditAll && (
                         <button
                           onClick={() => {
-                            const updated = savedNotes.filter((_, i) => i !== idx);
+                            const updated = savedNotes.filter(
+                              (_, i) => i !== idx
+                            );
                             setSavedNotes(updated);
                           }}
                           className="ml-4 font-bold hover:opacity-80 transition"
@@ -537,9 +609,18 @@ function ClientProfilePageInner() {
                   <textarea
                     value={notesInput}
                     onChange={(e) => setNotesInput(e.target.value)}
-                    placeholder={canAddNotesOnly ? 'Write a new note…' : 'Write client notes here…'}
+                    placeholder={
+                      canAddNotesOnly
+                        ? 'Write a new note…'
+                        : 'Write client notes here…'
+                    }
                     className="mb-6 w-full min-h-[120px] p-3 rounded-md focus:outline-none focus:ring-2"
-                    style={{ backgroundColor: palette.white, border: `2px solid ${fieldBorder}`, color: palette.text, boxShadow: 'none' }}
+                    style={{
+                      backgroundColor: palette.white,
+                      border: `2px solid ${fieldBorder}`,
+                      color: palette.text,
+                      boxShadow: 'none',
+                    }}
                   />
                 )}
               </div>
@@ -555,7 +636,10 @@ function ClientProfilePageInner() {
               <button
                 onClick={handleSaveAndReturn}
                 className="px-8 py-3 rounded-lg text-lg hover:opacity-90 transition disabled:opacity-50"
-                style={{ backgroundColor: palette.header, color: palette.white }}
+                style={{
+                  backgroundColor: palette.header,
+                  color: palette.white,
+                }}
                 disabled={canAddNotesOnly && notesInput.trim().length === 0}
               >
                 {canAddNotesOnly ? 'Save Notes' : 'Save'}
@@ -567,7 +651,10 @@ function ClientProfilePageInner() {
 
       {/* Access code panel (family only) */}
       {canEditAll && (
-        <AddAccessCodePanel open={showAccessCodeDrawer} onClose={() => setShowAccessCodeDrawer(false)} />
+        <AddAccessCodePanel
+          open={showAccessCodeDrawer}
+          onClose={() => setShowAccessCodeDrawer(false)}
+        />
       )}
     </div>
   );

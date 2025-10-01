@@ -21,8 +21,8 @@
 
 export const isMock = process.env.NEXT_PUBLIC_ENABLE_MOCK === '1';
 
-export const FULL_DASH_ID = 'mock1';     // Demo: full dashboard client
-export const PARTIAL_DASH_ID = 'mock2';  // Demo: partial dashboard client
+export const FULL_DASH_ID = 'mock1'; // Demo: full dashboard client
+export const PARTIAL_DASH_ID = 'mock2'; // Demo: partial dashboard client
 
 export const LS_ACTIVE_CLIENT_ID = 'activeClientId';
 export const LS_CURRENT_CLIENT_NAME = 'currentClientName';
@@ -33,7 +33,7 @@ export const LS_CURRENT_CLIENT_NAME = 'currentClientName';
 
 export type ViewerRole = 'family' | 'carer' | 'management';
 export const LS_ACTIVE_ROLE = 'activeRole'; // long-lived
-export const SS_MOCK_ROLE  = 'mockRole';    // session-scoped for mock
+export const SS_MOCK_ROLE = 'mockRole'; // session-scoped for mock
 
 /**
  * Persist viewer role (call this right after mock sign-in).
@@ -59,11 +59,13 @@ export function getViewerRoleFE(): ViewerRole {
 
   if (isMock) {
     const s = (sessionStorage.getItem(SS_MOCK_ROLE) || '').toLowerCase();
-    if (s === 'family' || s === 'carer' || s === 'management') return s as ViewerRole;
+    if (s === 'family' || s === 'carer' || s === 'management')
+      return s as ViewerRole;
   }
 
   const l = (localStorage.getItem(LS_ACTIVE_ROLE) || '').toLowerCase();
-  if (l === 'family' || l === 'carer' || l === 'management') return l as ViewerRole;
+  if (l === 'family' || l === 'carer' || l === 'management')
+    return l as ViewerRole;
 
   return 'family';
 }
@@ -106,7 +108,10 @@ export const NAME_BY_ID: Record<string, string> = {
 };
 
 /** Read active client (id, name) from localStorage with safe fallback */
-export function readActiveClientFromStorage(): { id: string | null; name: string } {
+export function readActiveClientFromStorage(): {
+  id: string | null;
+  name: string;
+} {
   if (typeof window === 'undefined') return { id: null, name: '' };
   const id = localStorage.getItem(LS_ACTIVE_CLIENT_ID);
   let name = localStorage.getItem(LS_CURRENT_CLIENT_NAME) || '';
@@ -188,8 +193,8 @@ export async function getClientByIdFE(id: string): Promise<Client | null> {
 
 /** Optional: mock organisations for UI demo */
 export const MOCK_ORGS: Organisation[] = [
-  { id: 'org1', name: 'Sunrise Care',  status: 'active'  },
-  { id: 'org2', name: 'North Clinic',  status: 'pending' },
+  { id: 'org1', name: 'Sunrise Care', status: 'active' },
+  { id: 'org2', name: 'North Clinic', status: 'pending' },
   { id: 'org3', name: 'Old Town Care', status: 'revoked' },
 ];
 
@@ -202,7 +207,7 @@ export type Task = {
   title: string;
   frequency: string;
   lastDone: string; // YYYY-MM-DD
-  nextDue: string;  // YYYY-MM-DD
+  nextDue: string; // YYYY-MM-DD
   status: 'Pending' | 'Due' | 'Completed';
   comments: string[];
   files: string[];
@@ -217,8 +222,8 @@ const DEMO_TASKS: Task[] = [
     title: 'Dental Appointment',
     frequency: 'Monthly',
     lastDone: '2025-09-15',
-    nextDue:  '2025-10-01',
-    status:   'Pending',
+    nextDue: '2025-10-01',
+    status: 'Pending',
     comments: [
       'Carer note: Arrived on time, patient was calm.',
       'Reminder: Bring Medicare card next visit.',
@@ -230,8 +235,8 @@ const DEMO_TASKS: Task[] = [
     title: 'Replace Toothbrush Head',
     frequency: 'Every 3 months',
     lastDone: '2025-07-13',
-    nextDue:  '2025-10-13',
-    status:   'Pending',
+    nextDue: '2025-10-13',
+    status: 'Pending',
     comments: [
       'Carer note: Current head slightly worn.',
       'Suggested brand: OralCare Soft-Head (blue).',
@@ -243,8 +248,8 @@ const DEMO_TASKS: Task[] = [
     title: 'Submit Report',
     frequency: 'Weekly',
     lastDone: '2025-09-18',
-    nextDue:  '2025-09-25',
-    status:   'Due',
+    nextDue: '2025-09-25',
+    status: 'Due',
     comments: [],
     files: [],
   },
@@ -349,7 +354,6 @@ export type Staff = {
   status?: 'active' | 'inactive';
 };
 
-
 export const MOCK_STAFF: Staff[] = [
   {
     _id: 's001',
@@ -401,8 +405,7 @@ export async function getStaffFE(): Promise<Staff[]> {
   return Array.isArray(data) ? (data as Staff[]) : [];
 }
 
-
- // ========== Frequency options for Manage Care Item (FE mock only) ==========
+// ========== Frequency options for Manage Care Item (FE mock only) ==========
 
 /**
  * Canonical time unit used by the frequency selector.
@@ -428,12 +431,12 @@ export type FrequencyOption = {
  * Keep this generic so the UI always has something to render.
  */
 const DEFAULT_FREQUENCY_OPTIONS: FrequencyOption[] = [
-  { id: '1w', label: 'Every week',       count: 1, unit: 'week'  },
-  { id: '2w', label: 'Every 2 weeks',    count: 2, unit: 'week'  },
-  { id: '1m', label: 'Every month',      count: 1, unit: 'month' },
-  { id: '3m', label: 'Every 3 months',   count: 3, unit: 'month' },
-  { id: '6m', label: 'Every 6 months',   count: 6, unit: 'month' },
-  { id: '1y', label: 'Every year',       count: 1, unit: 'year'  },
+  { id: '1w', label: 'Every week', count: 1, unit: 'week' },
+  { id: '2w', label: 'Every 2 weeks', count: 2, unit: 'week' },
+  { id: '1m', label: 'Every month', count: 1, unit: 'month' },
+  { id: '3m', label: 'Every 3 months', count: 3, unit: 'month' },
+  { id: '6m', label: 'Every 6 months', count: 6, unit: 'month' },
+  { id: '1y', label: 'Every year', count: 1, unit: 'year' },
 ];
 
 /**
@@ -447,15 +450,15 @@ const TASK_TEMPLATES: Record<
 > = {
   'dental-appointment': {
     frequencyOptions: [
-      { id: '1m', label: 'Every month',      count: 1, unit: 'month' },
-      { id: '3m', label: 'Every 3 months',   count: 3, unit: 'month' },
-      { id: '6m', label: 'Every 6 months',   count: 6, unit: 'month' },
-      { id: '1y', label: 'Every year',       count: 1, unit: 'year'  },
+      { id: '1m', label: 'Every month', count: 1, unit: 'month' },
+      { id: '3m', label: 'Every 3 months', count: 3, unit: 'month' },
+      { id: '6m', label: 'Every 6 months', count: 6, unit: 'month' },
+      { id: '1y', label: 'Every year', count: 1, unit: 'year' },
     ],
   },
   'gp-checkup': {
     frequencyOptions: [
-      { id: '1m', label: 'Every month',    count: 1, unit: 'month' },
+      { id: '1m', label: 'Every month', count: 1, unit: 'month' },
       { id: '2m', label: 'Every 2 months', count: 2, unit: 'month' },
       { id: '3m', label: 'Every 3 months', count: 3, unit: 'month' },
       { id: '6m', label: 'Every 6 months', count: 6, unit: 'month' },
@@ -464,49 +467,49 @@ const TASK_TEMPLATES: Record<
   'eye-test': {
     frequencyOptions: [
       { id: '6m', label: 'Every 6 months', count: 6, unit: 'month' },
-      { id: '1y', label: 'Every year',     count: 1, unit: 'year'  },
-      { id: '2y', label: 'Every 2 years',  count: 2, unit: 'year'  },
+      { id: '1y', label: 'Every year', count: 1, unit: 'year' },
+      { id: '2y', label: 'Every 2 years', count: 2, unit: 'year' },
     ],
   },
   'replace-toothbrush-head': {
     frequencyOptions: [
-      { id: '1m', label: 'Every month',    count: 1, unit: 'month' },
+      { id: '1m', label: 'Every month', count: 1, unit: 'month' },
       { id: '3m', label: 'Every 3 months', count: 3, unit: 'month' },
       { id: '6m', label: 'Every 6 months', count: 6, unit: 'month' },
     ],
   },
   'shower-assistance': {
     frequencyOptions: [
-      { id: '1d', label: 'Every day',      count: 1, unit: 'day'   },
-      { id: '2d', label: 'Every 2 days',   count: 2, unit: 'day'   },
-      { id: '1w', label: 'Every week',     count: 1, unit: 'week'  },
+      { id: '1d', label: 'Every day', count: 1, unit: 'day' },
+      { id: '2d', label: 'Every 2 days', count: 2, unit: 'day' },
+      { id: '1w', label: 'Every week', count: 1, unit: 'week' },
     ],
   },
   'nail-trimming': {
     frequencyOptions: [
-      { id: '2w', label: 'Every 2 weeks',  count: 2, unit: 'week'  },
-      { id: '1m', label: 'Every month',    count: 1, unit: 'month' },
-      { id: '6w', label: 'Every 6 weeks',  count: 6, unit: 'week'  },
+      { id: '2w', label: 'Every 2 weeks', count: 2, unit: 'week' },
+      { id: '1m', label: 'Every month', count: 1, unit: 'month' },
+      { id: '6w', label: 'Every 6 weeks', count: 6, unit: 'week' },
     ],
   },
   'laundry-pickup': {
     frequencyOptions: [
-      { id: '1w', label: 'Every week',     count: 1, unit: 'week'  },
-      { id: '2w', label: 'Every 2 weeks',  count: 2, unit: 'week'  },
-      { id: '1m', label: 'Every month',    count: 1, unit: 'month' },
+      { id: '1w', label: 'Every week', count: 1, unit: 'week' },
+      { id: '2w', label: 'Every 2 weeks', count: 2, unit: 'week' },
+      { id: '1m', label: 'Every month', count: 1, unit: 'month' },
     ],
   },
   'seasonal-wardrobe-update': {
     frequencyOptions: [
       { id: '3m', label: 'Every 3 months', count: 3, unit: 'month' },
       { id: '6m', label: 'Every 6 months', count: 6, unit: 'month' },
-      { id: '1y', label: 'Every year',     count: 1, unit: 'year'  },
+      { id: '1y', label: 'Every year', count: 1, unit: 'year' },
     ],
   },
   'mend-clothing': {
     frequencyOptions: [
-      { id: '2w', label: 'Every 2 weeks',  count: 2, unit: 'week'  },
-      { id: '1m', label: 'Every month',    count: 1, unit: 'month' },
+      { id: '2w', label: 'Every 2 weeks', count: 2, unit: 'week' },
+      { id: '1m', label: 'Every month', count: 1, unit: 'month' },
       { id: '3m', label: 'Every 3 months', count: 3, unit: 'month' },
     ],
   },
@@ -517,7 +520,9 @@ const TASK_TEMPLATES: Record<
  * - If the slug is unknown or missing, DEFAULT_FREQUENCY_OPTIONS are returned.
  * - This is FE-only and intentionally does not touch backend APIs.
  */
-export function getFrequencyOptionsByTaskSlugFE(slug?: string): FrequencyOption[] {
+export function getFrequencyOptionsByTaskSlugFE(
+  slug?: string
+): FrequencyOption[] {
   if (!slug) return DEFAULT_FREQUENCY_OPTIONS;
   return TASK_TEMPLATES[slug]?.frequencyOptions ?? DEFAULT_FREQUENCY_OPTIONS;
 }
