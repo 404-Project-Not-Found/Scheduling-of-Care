@@ -1,83 +1,54 @@
-/**
- * Frontend:
- *   - Authors: Vanessa Teo & Qingyue Zhao
- *   - Role-aware view: carers / family / management enter through different entry points.
- *
- * Notes in this revision:
- *   1) side menu change to top menu
- *   2) Title reflects selected client: "<Name>’s Schedule".
- */
-
-/**
- * Dashboard (Client Schedule) — Top menu mapped from former side menu
- *
- * - Top menu items (paths taken from previous side menu):
- *   1) /calender_dashboard/budget_report         -> "Budget Report" (all users)
- *   2) /calender_dashboard/transaction_history   -> "View Transactions" (all users)
- *   3）request log (management）
- *   4) Care Items (MANAGEMENT only dropdown):
- *        - /management_dashboard/manage_care_item/edit -> "Manage care item"
- *        - /management_dashboard/manage_care_item/add  -> "Add new care item"
- *   5) request of change from (family)
- *
- * - Left-top logo is larger and clickable; clicking goes "home" while preserving role.
- * - Default state (no client selected):
- *     dropdown = "- Select a client -"
- *     title = "Client Schedule"
- *     calendar highlights suppressed
- *     tasks empty
- */
-
 'use client';
+
+/**
+ * Calendar Dashboard (Schedule)
+ * - Uses the shared DashboardChrome for consistent header/banner/top-menu.
+ * - Role-aware actions in the task detail follow your original logic.
+ * - Client selection is preserved in storage across pages.
+ */
 
 import { Suspense, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 
+import DashboardChrome from '@/components/top_menu/client_schedule';
 import CalendarPanel from '@/components/dashboard/CalendarPanel';
 import TasksPanel from '@/components/tasks/TasksPanel';
-import { getTasksFE, saveTasksFE, type Task } from '@/lib/mockApi';
 
-// ---------- Routes (edit to match your app if needed) ----------
+import {
+  getViewerRoleFE,
+  getTasksFE,
+  saveTasksFE,
+  type Task,
+  getClientsFE,
+  readActiveClientFromStorage,
+  writeActiveClientToStorage,
+  type Client as ApiClient,
+} from '@/lib/mockApi';
+
+// Routes (kept identical)
 const ROUTES = {
   requestForm: '/family_dashboard/request_of_change_form',
   requestLog: '/management_dashboard/requests',
-  homeByRole: '/empty_dashboard', // Preserve role via localStorage, then land here
+  homeByRole: '/empty_dashboard',
   budgetReport: '/calender_dashboard/budget_report',
   transactions: '/calender_dashboard/transaction_history',
   mgmtCareEdit: '/management_dashboard/manage_care_item/edit',
   mgmtCareAdd: '/management_dashboard/manage_care_item/add',
-  accountUpdate: '/management/profile', // Manager profile (avatar dropdown)
+  accountUpdate: '/management/profile',
   signOut: '/api/auth/signout',
 };
 
-// ---------- Palette ----------
+// Palette (matches the calendar look)
 const palette = {
-  header: '#3A0000', // brown top bar
-  banner: '#F9C9B1', // pink toolbar
+  header: '#3A0000',
+  banner: 'rgba(249, 201, 177, 0.7)',
   text: '#2b2b2b',
-  white: '#FFFFFF',
-  pageBg: '#FAEBDC', // right column bg
+  pageBg: '#FAEBDC',
 };
-
-function hexToRgba(hex: string, alpha = 1) {
-  const h = hex.replace('#', '');
-  const r = parseInt(h.slice(0, 2), 16);
-  const g = parseInt(h.slice(2, 4), 16);
-  const b = parseInt(h.slice(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
 
 type Role = 'carer' | 'family' | 'management';
 type Client = { id: string; name: string };
-
-function getInitialRole(): Role {
-  if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_ENABLE_MOCK === '1') {
-    const v = (sessionStorage.getItem('mockRole') || '').toLowerCase();
-    if (v === 'carer' || v === 'family' || v === 'management') return v as Role;
-  }
-  return 'carer';
-}
 
 export default function Page() {
   return (
@@ -92,26 +63,53 @@ function ClientSchedule() {
   const searchParams = useSearchParams();
   const addedFile = searchParams.get('addedFile');
 
-  // ---- Role & menus ----
-  const [role] = useState<Role>(getInitialRole);
-  const [careMenuOpen, setCareMenuOpen] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  // Role (read once; chrome may also use role for menu visibility if needed)
+  const role: Role = getViewerRoleFE();
 
-  // ---- Clients / tasks ----
-  const [activeClientId, setActiveClientId] = useState<string | null>(null); // default: none selected
-  const [displayName, setDisplayName] = useState('');
-  const [clients, setClients] = useState<Client[]>([
-    { id: 'c-1', name: 'Client A' },
-    { id: 'c-2', name: 'Client B' },
-  ]);
+  // Clients
+  const [clients, setClients] = useState<Client[]>([]);
+  const [activeClientId, setActiveClientId] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState<string>('');
 
+  useEffect(() => {
+    (async () => {
+      try {
+        const list = await getClientsFE(); // ApiClient[]
+        const mapped: Client[] = list.map((c: ApiClient) => ({ id: c._id, name: c.name }));
+        setClients(mapped);
+
+        const { id, name } = readActiveClientFromStorage();
+        if (id) {
+          setActiveClientId(id);
+          setDisplayName(name || mapped.find(m => m.id === id)?.name || '');
+        }
+      } catch {
+        setClients([]);
+      }
+    })();
+  }, []);
+
+  const onClientChange = (id: string) => {
+    if (!id) {
+      setActiveClientId(null);
+      setDisplayName('');
+      writeActiveClientToStorage('', '');
+      return;
+    }
+    const c = clients.find((x) => x.id === id);
+    const name = c?.name || '';
+    setActiveClientId(id);
+    setDisplayName(name);
+    writeActiveClientToStorage(id, name);
+  };
+
+  // Tasks
   const [selectedDate, setSelectedDate] = useState('');
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isAddingComment, setIsAddingComment] = useState(false);
   const [newComment, setNewComment] = useState('');
 
-  // ---- Load & persist tasks ----
   useEffect(() => {
     (async () => {
       try {
@@ -122,6 +120,7 @@ function ClientSchedule() {
       }
     })();
   }, []);
+
   useEffect(() => {
     if (!tasks) return;
     (async () => {
@@ -131,7 +130,7 @@ function ClientSchedule() {
     })();
   }, [tasks]);
 
-  // ---- Optional: attach file via query (?addedFile=...) ----
+  // Optional: attach file via query (?addedFile=...)
   const hasAddedFile = useRef(false);
   useEffect(() => {
     if (role !== 'carer') return;
@@ -141,31 +140,14 @@ function ClientSchedule() {
     }
   }, [addedFile, selectedTask, role]);
 
-  // ---- Derived ----
+  // Derived
   const noClientSelected = !activeClientId;
-  const byClient = noClientSelected
+  const tasksByClient = noClientSelected
     ? []
     : tasks.filter((t) => ((t as any).clientId ? (t as any).clientId === activeClientId : true));
-  const filteredTasks = selectedDate ? byClient.filter((t) => t.nextDue === selectedDate) : byClient;
+  const filteredTasks = selectedDate ? tasksByClient.filter((t) => t.nextDue === selectedDate) : tasksByClient;
 
-  // ---- Handlers ----
-  const onClientChange = (id: string) => {
-    if (!id) {
-      setActiveClientId(null);
-      setDisplayName('');
-      return;
-    }
-    const c = clients.find((x) => x.id === id);
-    setActiveClientId(id);
-    setDisplayName(c?.name || '');
-  };
-
-  const goHome = () => {
-    if (typeof window !== 'undefined') localStorage.setItem('activeRole', role);
-    router.push(ROUTES.homeByRole);
-  };
-  const onPrint = () => typeof window !== 'undefined' && window.print();
-
+  // Actions
   const addComment = (taskId: string, comment: string) => {
     setTasks((prev) =>
       prev.map((t) => (t.id === taskId ? { ...t, comments: [...(t.comments || []), comment] } : t)),
@@ -174,199 +156,92 @@ function ClientSchedule() {
     setNewComment('');
     setIsAddingComment(false);
   };
+
   const addFile = (taskId: string, fileName: string) => {
-    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, files: [...(t.files || []), fileName] } : t)));
+    setTasks((prev) =>
+      prev.map((t) => (t.id === taskId ? { ...t, files: [...(t.files || []), fileName] } : t)),
+    );
     setSelectedTask((prev) => (prev ? { ...prev, files: [...(prev.files || []), fileName] } : prev));
   };
+
   const getStatusBadgeClasses = (status?: string) => {
     switch ((status || '').toLowerCase()) {
-      case 'due': return 'bg-red-500 text-white';
-      case 'pending': return 'bg-orange-400 text-white';
-      case 'completed': return 'bg-green-500 text-white';
-      default: return 'bg-gray-300 text-black';
+      case 'due':
+        return 'bg-red-500 text-white';
+      case 'pending':
+        return 'bg-orange-400 text-white';
+      case 'completed':
+        return 'bg-green-500 text-white';
+      default:
+        return 'bg-gray-300 text-black';
     }
   };
 
-  const isManagement = role === 'management';
-  const isFamily = role === 'family';
+  // Avatar dropdown passed into chrome
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const topRight = (
+    <>
+      <button
+        onClick={() => setUserMenuOpen((v) => !v)}
+        className="h-16 w-16 rounded-full overflow-hidden border-2 border-white/80 hover:border-white"
+        aria-haspopup="menu"
+        aria-expanded={userMenuOpen}
+        title="Account"
+      >
+        <Image
+          src="/default_profile.png"
+          alt="Profile"
+          width={64}
+          height={64}
+          className="h-full w-full object-cover"
+        />
+      </button>
+      {userMenuOpen && (
+        <div
+          className="absolute right-0 mt-3 w-80 rounded-md border border-white/30 bg-white text-black shadow-2xl z-50"
+          role="menu"
+        >
+          <button
+            className="w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5"
+            onClick={() => {
+              setUserMenuOpen(false);
+              router.push(ROUTES.accountUpdate);
+            }}
+          >
+            Update your details
+          </button>
+          <button
+            className="w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5"
+            onClick={() => {
+              setUserMenuOpen(false);
+              router.push(ROUTES.signOut);
+            }}
+          >
+            Sign out
+          </button>
+        </div>
+      )}
+    </>
+  );
 
-  // ---- Layout ----
+  // Logo → home (same as before)
+  const onLogoClick = () => {
+    if (typeof window !== 'undefined') localStorage.setItem('activeRole', role);
+    router.push(ROUTES.homeByRole);
+  };
+
+  // Render with shared chrome
   return (
-    <div className="min-h-screen flex flex-col" style={{ color: palette.text }}>
-      {/* ========= TOP HEADER (brown) with bigger logo + large white bold nav ========= */}
-      <header
-        className="px-8 py-2 flex items-center justify-between text-white"
-        style={{ backgroundColor: palette.header, color: 'white' }}
-      >
-        {/* Left: BIG clickable logo -> home (increase width/height to make it even bigger) */}
-        <button onClick={goHome} className="flex items-center gap-8 hover:opacity-90" title="Go to dashboard">
-          <Image
-            src="/logo.png"
-            alt="Logo"
-            width={80}  
-            height={30}
-            className="object-contain"
-            priority
-          />
-          {/* Brand title (bigger & bold) */}
-          <span className="font-extrabold leading-none text-2xl md:text-3xl">
-            Client Schedule
-          </span>
-        </button>
-
-        {/* Center: TOP MENU mapped from your side menu (2x font, white, bold) */}
-        <nav className="hidden lg:flex items-center gap-20 font-extrabold text-white text-xl">
-          <button onClick={() => router.push(ROUTES.budgetReport)} className="hover:underline">
-            Budget Report
-          </button>
-          <button onClick={() => router.push(ROUTES.transactions)} className="hover:underline">
-            View Transactions
-          </button>
-
-          {/* family-only item */}
-          {isFamily && (
-            <button onClick={() => router.push(ROUTES.requestForm)} className="hover:underline">
-              Request Form
-            </button>
-          )}
-
-          
-
-          {/* Management-only dropdown: Care Items */}
-          {isManagement && (
-            <div className="relative">
-              <button
-                onClick={() => setCareMenuOpen((v) => !v)}
-                className="hover:underline inline-flex items-center gap-2"
-                aria-haspopup="menu"
-                aria-expanded={careMenuOpen}
-              >
-                Care Items <span className="text-white/90">{careMenuOpen ? '▲' : '▼'}</span>
-              </button>
-              {careMenuOpen && (
-                <div
-                  className="absolute left-1/2 -translate-x-1/2 mt-3 w-80 rounded-md border border-white/30 bg-white text-black shadow-2xl z-50"
-                  role="menu"
-                >
-                  <button
-                    className="w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5"
-                    onClick={() => { setCareMenuOpen(false); router.push(ROUTES.mgmtCareEdit); }}
-                  >
-                    Manage care item
-                  </button>
-                  <button
-                    className="w-full text-left px-5 py-4 text-xl font-semibold hover:bg黑/5 hover:bg-black/5"
-                    onClick={() => { setCareMenuOpen(false); router.push(ROUTES.mgmtCareAdd); }}
-                  >
-                    Add new care item
-                  </button>
-                </div>
-              )}
-            </div>
-            
-          )}
-
-          {/* management-only item */}
-          {isManagement && (
-            <button onClick={() => router.push(ROUTES.requestLog)} className="hover:underline">
-              Request Log
-            </button>
-          )}
-
-        </nav>
-
-        
-
-        {/* Right: Manager avatar (default_profile.png) with dropdown */}
-        <div className="relative">
-          <button
-            onClick={() => setUserMenuOpen((v) => !v)}
-            className="h-16 w-16 rounded-full overflow-hidden border-2 border-white/80 hover:border-white"
-            aria-haspopup="menu"
-            aria-expanded={userMenuOpen}
-            title="Account"
-          >
-            <Image
-              src="/default_profile.png"
-              alt="Profile"
-              width={64}
-              height={64}
-              className="h-full w-full object-cover"
-            />
-          </button>
-          {userMenuOpen && (
-            <div
-              className="absolute right-0 mt-3 w-80 rounded-md border border-white/30 bg-white text-black shadow-2xl z-50"
-              role="menu"
-            >
-              <button
-                className="w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5"
-                onClick={() => { setUserMenuOpen(false); router.push(ROUTES.accountUpdate); }}
-              >
-                Update your details
-              </button>
-              <button
-                className="w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5"
-                onClick={() => { setUserMenuOpen(false); router.push(ROUTES.signOut); }}
-              >
-                Sign out
-              </button>
-            </div>
-          )}
-        </div>
-      </header>
-
-      {/* ========= PINK BANNER (taller) : select client | centered title | print ========= */}
-      <div
-        className="px-4 md:px-8 py-2 md:py-3 grid grid-cols-[auto_1fr_auto] items-center"
-        style={{ backgroundColor: hexToRgba(palette.banner, 0.7) }}
-      >
-        {/* Left: Client select (default "- Select a client -") */}
-        <div className="relative justify-self-start">
-          <label className="sr-only">Select Client</label>
-          <select
-            className="appearance-none h-12 w-56 md:w-64 pl-8 pr-12 rounded-2xl border border-black/30 bg-white font-extrabold text-xl shadow-sm focus:outline-none"
-            value={activeClientId || ''}
-            onChange={(e) => onClientChange(e.target.value)}
-            aria-label="Select client"
-          >
-            <option value="">{'- Select a client -'}</option>
-            {clients.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
-          <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-black/60 text-xl">▾</span>
-        </div>
-
-        {/* Center: avatar + title (keeps true center) */}
-        
-        <div className="flex items-center gap-3 justify-center md:-translate-x-16">
-            <Image
-                src="/default_profile.png"
-                alt="Client avatar"
-                width={40}
-                height={40}
-                className="rounded-full border border-black/20 object-cover"
-                priority
-            />
-            <h1 className="font-extrabold leading-none text-2xl md:text-3xl select-none">
-                    {displayName ? `${displayName}’s Schedule` : 'Client Schedule'}
-            </h1>
-        </div>
-
-
-        {/* Right: Print */}
-        <div className="justify-self-end">
-          <button
-            onClick={onPrint}
-            className="inline-flex items-center px-6 py-3 rounded-2xl border border-black/30 bg-white font-extrabold text-xl hover:bg-black/5"
-            title="Print"
-          >
-            Print
-          </button>
-        </div>
-      </div>
-
+    <DashboardChrome
+      page="schedule"
+      clients={clients}
+      activeClientId={activeClientId}
+      activeClientName={displayName}
+      onClientChange={onClientChange}
+      colors={{ header: palette.header, banner: palette.banner, text: palette.text }}
+      topRight={topRight}
+      onLogoClick={onLogoClick}
+    >
       {/* ========= Content: 2 columns (keep area sizes), calendar vertically centered ========= */}
       <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-0 min-h-0">
         {/* LEFT: Square calendar, vertically & horizontally centered in its area */}
@@ -386,7 +261,7 @@ function ClientSchedule() {
           {!selectedTask ? (
             <>
               <div className="px-6 py-6">
-                <h2 className="text-3xl md:text-4xl font-extrabold">Tasks</h2>
+                <h2 className="text-3xl md:text-4xl font-extrabold">Care Items</h2>
                 {noClientSelected && (
                   <p className="text-lg mt-3 opacity-80">Select a client to view tasks.</p>
                 )}
@@ -416,7 +291,7 @@ function ClientSchedule() {
         </section>
       </div>
 
-    </div>
+    </DashboardChrome>
   );
 }
 
@@ -531,7 +406,7 @@ function TaskDetail({
                 Mark as done
               </button>
               <button
-                className="px-5 py-2 border rounded bg白 bg-white"
+                className="px-5 py-2 border rounded bg-white"
                 onClick={() => setIsAddingComment(true)}
               >
                 Add comment

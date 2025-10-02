@@ -34,6 +34,7 @@ const defaultItems: Item[] = [
 
   { href: "/management_dashboard/register_client", label: "Register new client" },
   { href: "/management_dashboard/clients_list", label: "List of clients" },
+   { href: "/calender_dashboard", label: "Clients Schedule" },
   { href: "/management_dashboard/staff_list", label: "List of staff" },
   { href: "/request-log-page", label: "request log" },
   

@@ -101,8 +101,8 @@ export type Organisation = {
 
 /** Fallback name map (when currentClientName not set) */
 export const NAME_BY_ID: Record<string, string> = {
-  [FULL_DASH_ID]: 'Mock Alice',
-  [PARTIAL_DASH_ID]: 'Mock Bob',
+  [FULL_DASH_ID]: 'Mock Client A',
+  [PARTIAL_DASH_ID]: 'MockClient B',
 };
 
 /** Read active client (id, name) from localStorage with safe fallback */
@@ -207,6 +207,7 @@ export type Task = {
   comments: string[];
   files: string[];
 };
+
 
 const TASKS_LS_KEY = 'tasks';
 

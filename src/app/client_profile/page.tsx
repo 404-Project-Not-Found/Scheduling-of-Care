@@ -113,7 +113,7 @@ function ClientProfilePageInner() {
     role === 'management'
       ? '/management_dashboard/clients_list'
       : role === 'carer'
-      ? '/calendar_dashboard'
+      ? '/calender_dashboard'
       : '/family_dashboard/people_list';
 
   // ----- Form state -----
