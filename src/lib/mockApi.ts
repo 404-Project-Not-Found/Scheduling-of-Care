@@ -522,3 +522,62 @@ export function getFrequencyOptionsByTaskSlugFE(slug?: string): FrequencyOption[
   if (!slug) return DEFAULT_FREQUENCY_OPTIONS;
   return TASK_TEMPLATES[slug]?.frequencyOptions ?? DEFAULT_FREQUENCY_OPTIONS;
 }
+
+/* ========= Change Requests (Request Log) ========= */
+
+export type ChangeRequest = {
+  id: string;
+  clientId: string;                 // 必须和 getClientsFE() 返回的 _id 对齐（mock1/mock2）
+  task: string;
+  change: string;
+  requestedBy: string;              // e.g. "John (Family)" | "Mary (POA)"
+  dateRequested: string;            // "28 Jun 2025" 或 ISO
+  status: "Pending" | "Approved";
+  resolutionDate: string;           // "-" 或日期
+};
+
+// ✅ 给 Mock Alice (mock1) 放一些请求；Mock Bob (mock2) 留空
+const CHANGE_REQUESTS_DB: ChangeRequest[] = [
+  {
+    id: "r1",
+    clientId: "mock1",
+    task: "Replace Toothbrush Head",
+    change: "Change frequency to every 2 months",
+    requestedBy: "John (Family)",
+    dateRequested: "28 Jun 2025",
+    status: "Pending",
+    resolutionDate: "-",
+  },
+  {
+    id: "r2",
+    clientId: "mock1",
+    task: "Dental Appointments",
+    change: "Add oral cancer screening on 6 Jun 2025",
+    requestedBy: "Mary (POA)",
+    dateRequested: "19 May 2025",
+    status: "Approved",
+    resolutionDate: "25 May 2025",
+  },
+  {
+    id: "r3",
+    clientId: "mock1",
+    task: "Daily Medication",
+    change: "Add Vitamin D supplement in mornings",
+    requestedBy: "John (Family)",
+    dateRequested: "10 May 2025",
+    status: "Pending",
+    resolutionDate: "-",
+  },
+  // 注意：mock2（Bob）不放数据，页面自然显示为空
+];
+
+export async function getRequestsByClientFE(clientId: string): Promise<ChangeRequest[]> {
+  if (isMock) {
+    await new Promise((r) => setTimeout(r, 120)); // 模拟网络延迟
+    return CHANGE_REQUESTS_DB.filter((r) => r.clientId === clientId);
+  }
+  const res = await fetch(`/api/requests?clientId=${encodeURIComponent(clientId)}`, { cache: "no-store" });
+  if (!res.ok) throw new Error(`Failed to fetch requests (${res.status})`);
+  const data = await res.json();
+  return Array.isArray(data) ? (data as ChangeRequest[]) : [];
+}
