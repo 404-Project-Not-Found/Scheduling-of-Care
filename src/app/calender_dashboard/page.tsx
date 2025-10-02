@@ -40,10 +40,11 @@ import { getTasksFE, saveTasksFE, type Task } from '@/lib/mockApi';
 
 // ---------- Routes (edit to match your app if needed) ----------
 const ROUTES = {
+  requestForm: '/family_dashboard/request_of_change_form',
+  requestLog: '/management_dashboard/requests',
   homeByRole: '/empty_dashboard', // Preserve role via localStorage, then land here
   budgetReport: '/calender_dashboard/budget_report',
   transactions: '/calender_dashboard/transaction_history',
-  carerManageAccount: '/calender_dashboard/update_details',
   mgmtCareEdit: '/management_dashboard/manage_care_item/edit',
   mgmtCareAdd: '/management_dashboard/manage_care_item/add',
   accountUpdate: '/management/profile', // Manager profile (avatar dropdown)
@@ -186,24 +187,24 @@ function ClientSchedule() {
     }
   };
 
-  const isCarer = role === 'carer';
   const isManagement = role === 'management';
+  const isFamily = role === 'family';
 
   // ---- Layout ----
   return (
-    <div className="h-screen flex flex-col" style={{ color: palette.text }}>
+    <div className="min-h-screen flex flex-col" style={{ color: palette.text }}>
       {/* ========= TOP HEADER (brown) with bigger logo + large white bold nav ========= */}
       <header
-        className="px-4 md:px-8 py-2 flex items-center justify-between"
+        className="px-8 py-2 flex items-center justify-between text-white"
         style={{ backgroundColor: palette.header, color: 'white' }}
       >
         {/* Left: BIG clickable logo -> home (increase width/height to make it even bigger) */}
-        <button onClick={goHome} className="flex items-center gap-4 hover:opacity-90" title="Go to dashboard">
+        <button onClick={goHome} className="flex items-center gap-8 hover:opacity-90" title="Go to dashboard">
           <Image
-            src="/dashboardLogo.png"
+            src="/logo.png"
             alt="Logo"
-            width={112}  /* ⬅️ logo enlarged */
-            height={112}
+            width={80}  
+            height={30}
             className="object-contain"
             priority
           />
@@ -214,7 +215,7 @@ function ClientSchedule() {
         </button>
 
         {/* Center: TOP MENU mapped from your side menu (2x font, white, bold) */}
-        <nav className="hidden lg:flex items-center gap-10 font-extrabold text-white text-2xl">
+        <nav className="hidden lg:flex items-center gap-20 font-extrabold text-white text-xl">
           <button onClick={() => router.push(ROUTES.budgetReport)} className="hover:underline">
             Budget Report
           </button>
@@ -222,12 +223,14 @@ function ClientSchedule() {
             View Transactions
           </button>
 
-          {/* Carer-only item */}
-          {isCarer && (
-            <button onClick={() => router.push(ROUTES.carerManageAccount)} className="hover:underline">
-              Manage your account
+          {/* family-only item */}
+          {isFamily && (
+            <button onClick={() => router.push(ROUTES.requestForm)} className="hover:underline">
+              Request Form
             </button>
           )}
+
+          
 
           {/* Management-only dropdown: Care Items */}
           {isManagement && (
@@ -260,8 +263,19 @@ function ClientSchedule() {
                 </div>
               )}
             </div>
+            
           )}
+
+          {/* management-only item */}
+          {isManagement && (
+            <button onClick={() => router.push(ROUTES.requestLog)} className="hover:underline">
+              Request Log
+            </button>
+          )}
+
         </nav>
+
+        
 
         {/* Right: Manager avatar (default_profile.png) with dropdown */}
         <div className="relative">
@@ -304,11 +318,11 @@ function ClientSchedule() {
 
       {/* ========= PINK BANNER (taller) : select client | centered title | print ========= */}
       <div
-        className="px-4 md:px-8 py-2 md:py-3 grid grid-cols-[auto_1fr_auto] items-center gap-6"
+        className="px-4 md:px-8 py-2 md:py-3 grid grid-cols-[auto_1fr_auto] items-center"
         style={{ backgroundColor: hexToRgba(palette.banner, 0.7) }}
       >
         {/* Left: Client select (default "- Select a client -") */}
-        <div className="relative inline-block">
+        <div className="relative justify-self-start">
           <label className="sr-only">Select Client</label>
           <select
             className="appearance-none h-12 w-56 md:w-64 pl-8 pr-12 rounded-2xl border border-black/30 bg-white font-extrabold text-xl shadow-sm focus:outline-none"
@@ -324,12 +338,22 @@ function ClientSchedule() {
           <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-black/60 text-xl">▾</span>
         </div>
 
-        {/* Center: plain title (bigger; slight negative margin to look optically centered) */}
-        <div className="justify-self-center -ml-8 md:-ml-8">
-          <h1 className="font-extrabold leading-none text-2xl md:text-3xl select-none">
-            {displayName ? `${displayName}’s Schedule` : 'Client Schedule'}
-          </h1>
+        {/* Center: avatar + title (keeps true center) */}
+        
+        <div className="flex items-center gap-3 justify-center md:-translate-x-16">
+            <Image
+                src="/default_profile.png"
+                alt="Client avatar"
+                width={40}
+                height={40}
+                className="rounded-full border border-black/20 object-cover"
+                priority
+            />
+            <h1 className="font-extrabold leading-none text-2xl md:text-3xl select-none">
+                    {displayName ? `${displayName}’s Schedule` : 'Client Schedule'}
+            </h1>
         </div>
+
 
         {/* Right: Print */}
         <div className="justify-self-end">
@@ -392,60 +416,6 @@ function ClientSchedule() {
         </section>
       </div>
 
-      {/* ========= Calendar square + compact overrides ========= */}
-      <style jsx global>{`
-        /* Make calendar container exactly square */
-        .calendar-square { position: relative; width: 100%; }
-        .calendar-square::before { content: ''; display: block; padding-top: 100%; } /* 1:1 */
-        .calendar-square > .calendar-compact { position: absolute; inset: 0; }
-
-        /* Compact grid so full month fits in the square (tune if needed) */
-        .calendar-compact .grid.grid-cols-7 {
-          row-gap: 0.15rem !important;
-          column-gap: 0.25rem !important;
-        }
-        .calendar-compact [role="gridcell"],
-        .calendar-compact .day-cell,
-        .calendar-compact .date-cell,
-        .calendar-compact .cal-cell {
-          height: 30px !important;
-          min-height: 30px !important;
-          padding: 0 !important;
-          line-height: 1.05 !important;
-        }
-        .calendar-compact [role="gridcell"] > button,
-        .calendar-compact .day-cell > button,
-        .calendar-compact .date-cell > button {
-          height: 100% !important;
-          width: 100% !important;
-          padding: 0 !important;
-        }
-        .calendar-compact [data-cal-header],
-        .calendar-compact .weekday,
-        .calendar-compact .dow {
-          padding: 2px 0 !important;
-          line-height: 1.1 !important;
-          font-size: 1rem !important;
-        }
-
-        /* Suppress highlights when no client is selected */
-        .no-highlight .today,
-        .no-highlight .is-today,
-        .no-highlight [data-today="true"],
-        .no-highlight .selected,
-        .no-highlight [aria-selected="true"] {
-          background: transparent !important;
-          color: inherit !important;
-          box-shadow: none !important;
-          border-color: transparent !important;
-        }
-        .no-highlight .today *, .no-highlight .selected * {
-          background: transparent !important;
-          color: inherit !important;
-          box-shadow: none !important;
-        }
-      `}</style>
-      
     </div>
   );
 }

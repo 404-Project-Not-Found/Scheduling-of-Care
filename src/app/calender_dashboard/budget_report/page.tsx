@@ -1,22 +1,28 @@
 'use client';
 
 /**
- * Budget Report Page
- * - Keeps the same top brown header and the pink toolbar banner as your calendar dashboard.
- * - Replaces the main content area with the Budget Report UI you provided.
- * - Removes the bottom "Back to Dashboard" floating button.
- *
- * Notes:
- * - The Select Client dropdown + center title + Print button in the pink banner are preserved.
- * - Clicking the logo in the top header routes back to the (role-aware) dashboard.
+ * Budget Report Page 
+ * - Keeps the same dark-brown header and the pink utility banner as your calendar dashboard.
+ * - Client dropdown, centered title, and Print button are preserved.
+ * - Role and client data are all sourced from /src/lib/mockApi.ts.
  */
 
 import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Badge from '@/components/ui/Badge';
 
+// ==== Pull data from mockApi ====
+import {
+  getViewerRoleFE,
+  getClientsFE,
+  readActiveClientFromStorage,
+  writeActiveClientToStorage,
+  type Client as ApiClient,
+} from '@/lib/mockApi';
+
+// Demo rows; if you later compute from tasks/transactions, replace these with real data.
 type Row = { item: string; category: string; allocated: number; spent: number };
 const rows: Row[] = [
   { item: 'Dental Appointments', category: 'Appointments', allocated: 600, spent: 636 },
@@ -31,28 +37,14 @@ const getStatus = (remaining: number): { tone: Tone; label: string } => {
   return { tone: 'green', label: 'Within Limit' };
 };
 
-// ---------- Role helpers (frontend-only) ----------
-type Role = 'carer' | 'family' | 'management';
-
-function getActiveRole(): Role {
-  if (typeof window === 'undefined') return 'carer';
-  const r =
-    (localStorage.getItem('activeRole') as Role | null) ||
-    (sessionStorage.getItem('mockRole') as Role | null) ||
-    'carer';
-  return (['carer', 'family', 'management'] as const).includes(r as Role) ? (r as Role) : 'carer';
-}
-
-// ---------- Shared palette (same as dashboard) ----------
+// ---------- Shared palette ----------
 const palette = {
   header: '#3A0000',   // dark brown header
-  banner: '#F9C9B1',   // pink banner
   text:   '#2b2b2b',
-  white:  '#FFFFFF',
   pageBg: '#FAEBDC',
 };
 
-// Convert HEX to RGBA for the semi-transparent banner (same as dashboard)
+// HEX → RGBA helper for the semi-transparent banner
 function hexToRgba(hex: string, alpha = 1) {
   const h = hex.replace('#', '');
   const r = parseInt(h.substring(0, 2), 16);
@@ -61,7 +53,6 @@ function hexToRgba(hex: string, alpha = 1) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-// ---------- Page shell with Suspense ----------
 export default function BudgetReportPage() {
   return (
     <Suspense fallback={<div className="p-6 text-gray-600">Loading budget report...</div>}>
@@ -73,32 +64,36 @@ export default function BudgetReportPage() {
 function BudgetReportInner() {
   const router = useRouter();
 
-  // ======== Pink banner state (kept the same as your calendar page) ========
+  // ======== Role (from mockApi) ========
+  const role = getViewerRoleFE(); // 'family' | 'carer' | 'management'
+  const isManagement = role === 'management';
+
+  // ======== Client selection in the pink banner (from mockApi) ========
   type Client = { id: string; name: string };
   const [clients, setClients] = useState<Client[]>([]);
   const [activeClientId, setActiveClientId] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string>('');
-
   const [openProfileMenu, setOpenProfileMenu] = useState(false);
-  const role = getActiveRole();
 
   useEffect(() => {
-    // Load client list (same behavior as calendar page; no auto-select)
-    try {
-      const raw = typeof window !== 'undefined' ? localStorage.getItem('clients') : null;
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) {
-          const cleaned = parsed.filter((c: any) => c && c.id && c.name);
-          if (cleaned.length) {
-            setClients(cleaned);
-            return;
-          }
+    (async () => {
+      try {
+        // Fetch client list (auto routes to mock or real backend)
+        const list = await getClientsFE(); // ApiClient[]
+        const mapped: Client[] = list.map((c: ApiClient) => ({ id: c._id, name: c.name }));
+        setClients(mapped);
+
+        // Restore current selection from storage (provided by mockApi)
+        const { id, name } = readActiveClientFromStorage();
+        if (id) {
+          setActiveClientId(id);
+          setDisplayName(name || mapped.find(m => m.id === id)?.name || '');
         }
+      } catch {
+        // Non-blocking on error; leaving the list empty is fine for UI
+        setClients([]);
       }
-      // fallback examples
-      setClients([{ id: 'c-1', name: 'Client A' }, { id: 'c-2', name: 'Client B' }]);
-    } catch { /* ignore */ }
+    })();
   }, []);
 
   const onClientChange = (id: string) => {
@@ -111,12 +106,13 @@ function BudgetReportInner() {
     const name = c?.name || '';
     setActiveClientId(id);
     setDisplayName(name);
+    // Persist to storage so other pages share the same selection
+    writeActiveClientToStorage(id, name);
   };
 
   const handleLogoClick = () => {
-    // Role-aware: family goes to partial dashboard, others to calendar dashboard
-    const r = getActiveRole();
-    if (r === 'family') router.push('/partial_dashboard');
+    // Same routing rule as your existing app: family → partial, others → calendar dashboard
+    if (role === 'family') router.push('/empty_dashboard');
     else router.push('/calender_dashboard');
   };
 
@@ -124,7 +120,7 @@ function BudgetReportInner() {
     if (typeof window !== 'undefined') window.print();
   };
 
-  // ======== Budget Report local state (your provided content) ========
+  // ======== Local state for the budget report content ========
   const [q, setQ] = useState('');
   const [year, setYear] = useState('2025');
 
@@ -142,17 +138,14 @@ function BudgetReportInner() {
     return { allocated, spent, remaining: allocated - spent };
   }, [filtered]);
 
-  // Management-only dropdown (Care Items) visibility
-  const isManagement = role === 'management';
-
   return (
     <div className="min-h-screen flex flex-col" style={{ color: palette.text }}>
-      {/* ===== Top dark header (UNCHANGED) ===== */}
+      {/* ===== Top dark header ===== */}
       <header
         className="px-5 py-4 flex items-center justify-between text-white"
         style={{ backgroundColor: palette.header }}
       >
-        {/* Left: Logo (click → dashboard), Title */}
+        {/* Left: Logo (click → dashboard) + Title */}
         <div className="flex items-center gap-4">
           <button
             onClick={handleLogoClick}
@@ -161,9 +154,9 @@ function BudgetReportInner() {
             title="Dashboard"
           >
             <Image
-              src="/dashboardLogo.png"
+              src="/logo.png"
               alt="App Logo"
-              width={72}     
+              width={72}
               height={72}
               className="object-contain"
             />
@@ -173,7 +166,7 @@ function BudgetReportInner() {
           </span>
         </div>
 
-        {/* Center: top nav (white, clickable). Keep items consistent with your header */}
+        {/* Center: top nav */}
         <nav className="hidden lg:flex items-center gap-8 font-extrabold text-white">
           <Link href="/calender_dashboard/budget_report" className="underline underline-offset-4">
             Budget Report
@@ -182,15 +175,10 @@ function BudgetReportInner() {
             Transaction History
           </Link>
 
-          {/* Management-only: Care Items dropdown (Edit/Add) */}
+          {/* Management-only: Care Items dropdown */}
           {isManagement && (
             <div className="relative group">
-              <button
-                className="hover:opacity-90"
-                aria-haspopup="menu"
-                aria-expanded="false"
-                type="button"
-              >
+              <button className="hover:opacity-90" aria-haspopup="menu" aria-expanded="false" type="button">
                 Care Items
               </button>
               <div
@@ -216,7 +204,7 @@ function BudgetReportInner() {
           )}
         </nav>
 
-        {/* Right: profile avatar dropdown (Update details / Sign out) */}
+        {/* Right: profile avatar dropdown */}
         <div className="relative">
           <button
             onClick={() => setOpenProfileMenu((v) => !v)}
@@ -225,7 +213,7 @@ function BudgetReportInner() {
             className="h-10 w-10 rounded-full bg-gray-300 border border-white flex items-center justify-center text-sm font-semibold text-gray-700 hover:opacity-90"
             title="Profile"
           >
-            {/* Use default profile image if you have one */}
+            {/* Use a default profile image if you have one */}
             <Image
               src="/default_profile.png"
               alt="Profile"
@@ -235,10 +223,7 @@ function BudgetReportInner() {
             />
           </button>
           {openProfileMenu && (
-            <div
-              className="absolute right-0 mt-2 w-56 rounded-xl border bg-white text-black shadow-md"
-              role="menu"
-            >
+            <div className="absolute right-0 mt-2 w-56 rounded-xl border bg-white text-black shadow-md" role="menu">
               <Link
                 href="/calender_dashboard/update_details"
                 className="block w-full text-left px-5 py-3 text-sm font-semibold hover:bg-black/5"
@@ -246,11 +231,7 @@ function BudgetReportInner() {
               >
                 Update Your Details
               </Link>
-              <Link
-                href="/"
-                className="block w-full text-left px-5 py-3 text-sm font-semibold hover:bg-black/5"
-                role="menuitem"
-              >
+              <Link href="/" className="block w-full text-left px-5 py-3 text-sm font-semibold hover:bg-black/5" role="menuitem">
                 Sign out
               </Link>
             </div>
@@ -258,7 +239,7 @@ function BudgetReportInner() {
         </div>
       </header>
 
-      {/* ===== Pink banner under header (UNCHANGED) ===== */}
+      {/* ===== Pink banner under header: Select Client / Title / Print ===== */}
       <div
         className="px-5 py-4 grid grid-cols-[auto_1fr_auto] items-center gap-4"
         style={{ backgroundColor: hexToRgba(palette.pageBg, 0.7) }}
@@ -280,14 +261,14 @@ function BudgetReportInner() {
           <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-black/60 text-base">▾</span>
         </div>
 
-        {/* Center: Title (same logic as calendar page) */}
+        {/* Center: Title (mirrors the calendar page behavior) */}
         <div className="justify-self-center -ml-6 md:-ml-10">
           <h1 className="font-extrabold leading-none text-2xl md:text-3xl">
             {displayName ? `${displayName}’s Schedule` : 'Client Schedule'}
           </h1>
         </div>
 
-        {/* Right: Print (kept) */}
+        {/* Right: Print */}
         <div className="justify-self-end">
           <button
             onClick={onPrint}
@@ -300,9 +281,9 @@ function BudgetReportInner() {
         </div>
       </div>
 
-      {/* ===== Main Budget Report content (REPLACES calendar/tasks grid) ===== */}
+      {/* ===== Main content: Budget Report ===== */}
       <main className="flex-1 bg-[#F8CBA6]/40 flex items-start justify-center">
-        <div className="w-full max-w-6xl m-6 rounded-3xl  border-[#3A0000] bg-[#FFF4E6] shadow-md overflow-hidden">
+        <div className="w-full max-w-6xl m-6 rounded-3xl border-[#3A0000] bg-[#FFF4E6] shadow-md overflow-hidden">
           {/* Card top bar (title + search) */}
           <div className="bg-[#3A0000] px-6 py-4 flex items-center justify-between">
             <h2 className="text-white text-2xl font-semibold">Budget Report</h2>
@@ -335,13 +316,7 @@ function BudgetReportInner() {
                 <option value="2024">2024</option>
                 <option value="2023">2023</option>
               </select>
-              <button
-                type="button"
-                aria-label="Help"
-                className="h-6 w-6 rounded-full bg-[#E37E72] text-white text-xs"
-              >
-                ?
-              </button>
+              <button type="button" aria-label="Help" className="h-6 w-6 rounded-full bg-[#E37E72] text-white text-xs">?</button>
             </div>
 
             {/* Overview tiles */}
@@ -361,9 +336,7 @@ function BudgetReportInner() {
               </div>
 
               <div className="rounded-2xl border px-6 py-4 bg-white flex flex-col items-center justify-center">
-                <div
-                  className={`text-2xl font-bold ${totals.remaining < 0 ? 'text-red-600' : 'text-green-600'}`}
-                >
+                <div className={`text-2xl font-bold ${totals.remaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
                   {totals.remaining < 0
                     ? `-$${Math.abs(totals.remaining).toLocaleString()}`
                     : `$${totals.remaining.toLocaleString()}`}
@@ -390,14 +363,14 @@ function BudgetReportInner() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((r, i) => {
+                  {rows.map((r, i) => {
                     const remaining = r.allocated - r.spent;
                     const status = getStatus(remaining);
                     return (
-                      <tr key={i} className="border-t border-[#3A0000]/20">
+                      <tr key={i} className="border-top border-[#3A0000]/20">
                         <td className="px-4 py-3">
                           <Link
-                            href={`/category-cost/${r.category.trim().toLowerCase().replace(/\s+/g, '-')}`}
+                            href={`/budget_report/category-cost/${r.category.trim().toLowerCase().replace(/\s+/g, '-')}`}
                             className="font-bold text-black underline"
                           >
                             {r.category}
@@ -420,12 +393,8 @@ function BudgetReportInner() {
 
             {/* Actions */}
             <div className="mt-6 flex justify-end gap-3">
-              <button className="px-5 rounded-full bg-white text-black border">
-                Export CSV
-              </button>
-              <button className="h-10 px-5 rounded-full bg-[#3A0000] text-white">
-                Print
-              </button>
+              <button className="px-5 rounded-full bg-white text-black border">Export CSV</button>
+              <button className="h-10 px-5 rounded-full bg-[#3A0000] text-white" onClick={onPrint}>Print</button>
             </div>
           </div>
         </div>
