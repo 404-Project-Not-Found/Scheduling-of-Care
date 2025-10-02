@@ -63,18 +63,18 @@ const ROUTES = {
   accountUpdate: '/calender_dashboard/update_details',
   signOut: '/lib/mock/mockSignout',
   homeByRole: '/empty_dashboard',
-  profile: '/client_profile', // ✅ ensure leading slash
+  profile: '/client_profile', // ensure leading slash
 };
 
 function nounForPage(page: PageKey): string {
   switch (page) {
-    case 'budget': return 'Budget';
+    case 'budget': return 'Budget Report';
     case 'transactions': return 'Transactions';
     case 'request-form': return 'Request';
     case 'request-log': return 'Requests';
     case 'care-edit':
     case 'care-add': return 'Care Items';
-    case 'category-cost': return 'Category Cost';
+    case 'category-cost': return 'Budget Report';
     case 'client-list': return 'Client List';
     case 'schedule':
     case 'profile': return 'Profile';
@@ -159,7 +159,11 @@ export default function DashboardChrome({
           </button>
           <button
             onClick={() => router.push(ROUTES.schedule)}
-            className="hover:opacity-90"
+            className={`font-extrabold leading-none text-2xl md:text-3xl ${
+                page === 'schedule' || page === 'profile'
+                ? 'underline'   // 粉色文字
+                : 'text-white hover:underline'
+            }`}
             title="Go to schedule dashboard"
           >
             <span className="font-extrabold leading-none text-2xl md:text-3xl">Client Schedule</span>
@@ -222,17 +226,17 @@ export default function DashboardChrome({
               </button>
               {userMenuOpen && (
                 <div
-                  className="absolute right-0 mt-3 w-80 rounded-md border border-white/30 bg白 text-black shadow-2xl z-50"
+                  className="absolute right-0 mt-3 w-80 rounded-md border border-white/30 bg-white text-black shadow-2xl z-50"
                   role="menu"
                 >
                   <button
-                    className="w-full text-left px-5 py-4 text-xl font-semibold hover:bg黑/5"
+                    className="w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5"
                     onClick={goProfile}
                   >
                     Update your details
                   </button>
                   <button
-                    className="w-full text-left px-5 py-4 text-xl font-semibold hover:bg黑/5"
+                    className="w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5"
                     onClick={doSignOut}
                   >
                     Sign out

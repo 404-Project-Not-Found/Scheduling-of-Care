@@ -1,11 +1,11 @@
 /**
  * Budget Report
  * Frontend Author: Vanessa Teo & Qingyue Zhao
- * 
+ *
  * - Underlines "Budget Report" in the top menu via page="budget".
  * - Pink banner title becomes "<Client>'s Budget" automatically.
- * - Adds "Edit" (management-only) to edit Annual Budget; recalculates Remaining.
- * - Body fills remaining viewport height (same as calendar page).
+ * - Management-only "Edit" to change Annual Budget and recalc Remaining.
+ * - Layout: full-bleed (no inner white panel), header + content fill viewport.
  */
 
 'use client';
@@ -63,16 +63,14 @@ export default function BudgetReportPage() {
 function BudgetReportInner() {
   const router = useRouter();
 
-  /* ===== Role (hydration-safe) =====
-     Default to 'family' so SSR and the first client render match.
-     Then update to the real role after mount to avoid hook-order/mismatch errors. */
+  // ===== Role (hydration-safe) =====
   const [role, setRole] = useState<Role>('family');
   useEffect(() => {
     setRole(getViewerRoleFE());
   }, []);
   const isManagement = role === 'management';
 
-  /* ===== Clients (from mockApi) ===== */
+  // ===== Clients (from mockApi) =====
   const [clients, setClients] = useState<Client[]>([]);
   const [activeClientId, setActiveClientId] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string>('');
@@ -89,7 +87,6 @@ function BudgetReportInner() {
         const mapped: Client[] = list.map((c: ApiClient) => ({ id: c._id, name: c.name }));
         setClients(mapped);
 
-        // Restore persisted selection
         const { id, name } = readActiveClientFromStorage();
         if (id) {
           setActiveClientId(id);
@@ -115,13 +112,13 @@ function BudgetReportInner() {
     writeActiveClientToStorage(id, name);
   };
 
-  /* ===== Logo -> home ===== */
+  // ===== Logo -> home =====
   const onLogoClick = () => {
     if (typeof window !== 'undefined') localStorage.setItem('activeRole', role);
     router.push('/empty_dashboard');
   };
 
-  /* ===== Local UI state ===== */
+  // ===== Local UI state =====
   const [q, setQ] = useState('');
   const [year, setYear] = useState('2025');
 
@@ -143,7 +140,7 @@ function BudgetReportInner() {
   const effectiveAllocated = annualBudgetOverride ?? totals.allocated;
   const effectiveRemaining = effectiveAllocated - totals.spent;
 
-  /* ===== Render ===== */
+  /* ===== Render (Full-bleed layout) ===== */
   return (
     <DashboardChrome
       page="budget"
@@ -154,168 +151,169 @@ function BudgetReportInner() {
       colors={colors}
       onLogoClick={onLogoClick}
     >
-      <div className="flex-1 h-full bg-[#F8CBA6]/40 overflow-auto">
-        <div className="w-full h-full p-6">
-          <div className="w-full h-[600px] rounded-3xl border-[#3A0000] bg-[#FFF4E6] shadow-md flex flex-col overflow-hidden">
-            {/* Header with Search + (management-only) Edit */}
-            <div className="bg-[#3A0000] px-6 py-4 flex items-center justify-between">
-              <h2 className="text-white text-2xl font-semibold">Budget Report</h2>
-              <div className="flex items-center gap-3">
-                <input
-                  value={q}
-                  onChange={(e) => setQ(e.target.value)}
-                  placeholder="Search"
-                  className="h-9 rounded-full bg-white text-black px-4 border"
-                />
-                {isManagement && (
-                  !isEditing ? (
-                    <button
-                      onClick={() => {
-                        setIsEditing(true);
-                        setAnnualBudgetInput(String(annualBudgetOverride ?? totals.allocated));
-                      }}
-                      className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10"
-                    >
-                      Edit
-                    </button>
-                  ) : (
-                    <>
-                      <button
-                        onClick={() => {
-                          const val = parseFloat(annualBudgetInput);
-                          if (!Number.isFinite(val) || val < 0) return;
-                          setAnnualBudgetOverride(val);
-                          setIsEditing(false);
-                        }}
-                        className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10"
-                      >
-                        Save
-                      </button>
-                      <button
-                        onClick={() => {
-                          setIsEditing(false);
-                          setAnnualBudgetInput('');
-                        }}
-                        className="px-3 py-1 rounded-md bg-white/80 text-black font-semibold hover:bg-white"
-                      >
-                        Cancel
-                      </button>
-                    </>
-                  )
-                )}
-              </div>
-            </div>
-
-            {/* Warning banner */}
-            <div className="w-full bg-[#fde7e4] border-y border-[#f5c2c2] px-6 py-3">
-              <p className="text-[#9b2c2c] font-semibold">
-                WARNING: Dental Checkup budget exceeded by <b>$36</b>
-              </p>
-            </div>
-
-            {/* Body */}
-            <div className="flex-1 px-6 py-6 overflow-auto">
-              <div className="mb-4 flex items-center gap-2">
-                <span className="font-semibold">Select year:</span>
-                <select
-                  value={year}
-                  onChange={(e) => setYear(e.target.value)}
-                  className="rounded-md bg-white text-black text-sm px-3 py-1 border"
-                >
-                  <option value="2025">2025</option>
-                  <option value="2024">2024</option>
-                  <option value="2023">2023</option>
-                </select>
-              </div>
-
-              {/* Overview tiles */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-center">
-                {/* Annual Budget (editable for management only) */}
-                <div className="rounded-2xl border px-6 py-6 bg-[#F8CBA6]">
-                  {isManagement && isEditing ? (
-                    <>
-                      <input
-                        type="number"
-                        min="0"
-                        step="1"
-                        value={annualBudgetInput}
-                        onChange={(e) => setAnnualBudgetInput(e.target.value)}
-                        className="w-full max-w-[220px] mx-auto text-center text-2xl font-bold rounded-md bg-white text-black px-3 py-2 border"
-                      />
-                      <div className="text-sm mt-2">Annual Budget</div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="text-2xl font-bold">
-                        ${effectiveAllocated.toLocaleString()}
-                      </div>
-                      <div className="text-sm">Annual Budget</div>
-                    </>
-                  )}
-                </div>
-
-                {/* Spent to Date */}
-                <div className="rounded-2xl border px-6 py-6 bg-white">
-                  <div className="text-2xl font-bold">${totals.spent.toLocaleString()}</div>
-                  <div className="text-sm">Spent to Date</div>
-                </div>
-
-                {/* Remaining (recomputed) */}
-                <div className="rounded-2xl border px-6 py-6 bg-white">
-                  <div className={`text-2xl font-bold ${effectiveRemaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                    {effectiveRemaining < 0
-                      ? `-$${Math.abs(effectiveRemaining).toLocaleString()}`
-                      : `$${effectiveRemaining.toLocaleString()}`}
-                  </div>
-                  <div className="text-sm">Remaining Balance</div>
-                </div>
-              </div>
-
-              {/* Table */}
-              <div className="rounded-2xl border border-[#3A0000] bg-white overflow-hidden">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-[#3A0000] text-white">
-                    <tr>
-                      <th className="px-4 py-4">Category</th>
-                      <th className="px-4 py-4">Allocated</th>
-                      <th className="px-4 py-4">Spent</th>
-                      <th className="px-4 py-4">Remaining</th>
-                      <th className="px-4 py-4">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filtered.map((r, i) => {
-                      const remaining = r.allocated - r.spent;
-                      const status = getStatus(remaining);
-                      return (
-                        <tr key={i} className="border-t border-[#3A0000]/20">
-                          <td className="px-4 py-5">
-                            <Link
-                              href={`/calender_dashboard/budget_report/category-cost/${encodeURIComponent(
-                                r.category.trim().toLowerCase().replace(/\s+/g, '-')
-                              )}`}
-                              className="font-bold text-black underline"
-                            >
-                              {r.category}
-                            </Link>
-                          </td>
-                          <td className="px-4 py-3">${r.allocated}</td>
-                          <td className="px-4 py-3">${r.spent}</td>
-                          <td className={`px-4 py-3 ${remaining < 0 ? 'text-red-600' : ''}`}>
-                            {remaining < 0 ? `-$${Math.abs(remaining)}` : `$${remaining}`}
-                          </td>
-                          <td className="px-4 py-3">
-                            <Badge tone={status.tone}>{status.label}</Badge>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
+      {/* Full screen body; no inner white card */}
+      <div className="flex-1 h-[680px] bg-white/50 overflow-auto">
+        {/* Top maroon bar */}
+        <div className="w-full bg-[#3A0000] px-6 py-4 flex items-center justify-between">
+          {/* LEFT: Title + Year select (moved here, side-by-side) */}
+          <div className="flex items-center gap-10">
+            <h2 className="text-white text-2xl font-semibold">Annual Budget </h2>
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-white text-lg">Select year:</span>
+              <select
+                value={year}
+                onChange={(e) => setYear(e.target.value)}
+                className="rounded-md font-semibol bg-white text-sm px-3 py-1 border"
+              >
+                <option value="2025">2025</option>
+                <option value="2024">2024</option>
+                <option value="2023">2023</option>
+              </select>
             </div>
           </div>
+
+          {/* RIGHT: Search + Edit controls (unchanged) */}
+          <div className="flex items-center gap-3">
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search"
+              className="h-9 rounded-full bg-white text-black px-4 border"
+            />
+            {isManagement && (
+              !isEditing ? (
+                <button
+                  onClick={() => {
+                    setIsEditing(true);
+                    setAnnualBudgetInput(String(annualBudgetOverride ?? totals.allocated));
+                  }}
+                  className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10"
+                >
+                  Edit
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={() => {
+                      const val = parseFloat(annualBudgetInput);
+                      if (!Number.isFinite(val) || val < 0) return;
+                      setAnnualBudgetOverride(val);
+                      setIsEditing(false);
+                    }}
+                    className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsEditing(false);
+                      setAnnualBudgetInput('');
+                    }}
+                    className="px-3 py-1 rounded-md bg-white/80 text-black font-semibold hover:bg-white"
+                  >
+                    Cancel
+                  </button>
+                </>
+              )
+            )}
+          </div>
+        </div>
+
+        {/* Warning banner (full width) */}
+        <div className="w-full bg-[#fde7e4] border-y border-[#f5c2c2] px-6 py-3">
+          <p className="text-[#9b2c2c] font-semibold">
+            WARNING: Dental Checkup budget exceeded by <b>$36</b>
+          </p>
+        </div>
+
+        {/* Main content (kept exactly the same, except removed duplicate year select) */}
+        <div className="w-full px-12 py-10">
+          {/* Overview tiles */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-18 mb-10 text-center">
+            {/* Annual Budget */}
+            <div className="rounded-2xl border px-6 py-8 bg-[#F8CBA6]">
+              {isManagement && isEditing ? (
+                <>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={annualBudgetInput}
+                    onChange={(e) => setAnnualBudgetInput(e.target.value)}
+                    className="w-full max-w-[220px] mx-auto text-center text-2xl font-bold rounded-md bg-white text-black px-3 py-2 border"
+                  />
+                  <div className="text-sm mt-2">Annual Budget</div>
+                </>
+              ) : (
+                <>
+                  <div className="text-2xl font-bold">
+                    ${effectiveAllocated.toLocaleString()}
+                  </div>
+                  <div className="text-sm">Annual Budget</div>
+                </>
+              )}
+            </div>
+
+            {/* Spent to Date */}
+            <div className="rounded-2xl border px-6 py-8 bg-white">
+              <div className="text-2xl font-bold">${totals.spent.toLocaleString()}</div>
+              <div className="text-sm">Spent to Date</div>
+            </div>
+
+            {/* Remaining */}
+            <div className="rounded-2xl border px-6 py-8 bg-white">
+              <div className={`text-2xl font-bold ${effectiveRemaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                {effectiveRemaining < 0
+                  ? `-$${Math.abs(effectiveRemaining).toLocaleString()}`
+                  : `$${effectiveRemaining.toLocaleString()}`}
+              </div>
+              <div className="text-sm">Remaining Balance</div>
+            </div>
+          </div>
+
+          {/* Table: full width */}
+          <div className="rounded-2xl border border-[#3A0000] bg-white overflow-hidden">
+            <table className="w-full text-left text-sm bg-white">
+              <thead className="bg-[#3A0000] text-lg text-white">
+                <tr>
+                  <th className="px-4 py-4">Category</th>
+                  <th className="px-4 py-4">Allocated</th>
+                  <th className="px-4 py-4">Spent</th>
+                  <th className="px-5 py-5">Remaining</th>
+                  <th className="px-4 py-4">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((r, i) => {
+                  const remaining = r.allocated - r.spent;
+                  const status = getStatus(remaining);
+                  return (
+                    <tr key={i} className="border-b last:border-b border-[#3A0000]/20">
+                      <td className="px-4 py-5">
+                        <Link
+                          href={`/calender_dashboard/budget_report/category-cost/${encodeURIComponent(
+                            r.category.trim().toLowerCase().replace(/\s+/g, '-')
+                          )}`}
+                          className="font-bold text-black underline"
+                        >
+                          {r.category}
+                        </Link>
+                      </td>
+                      <td className="px-4 py-5">${r.allocated}</td>
+                      <td className="px-4 py-5">${r.spent}</td>
+                      <td className={`px-4 py-5 ${remaining < 0 ? 'text-red-600' : ''}`}>
+                        {remaining < 0 ? `-$${Math.abs(remaining)}` : `$${remaining}`}
+                      </td>
+                      <td className="px-4 py-5">
+                        <Badge tone={status.tone}>{status.label}</Badge>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
         </div>
       </div>
     </DashboardChrome>

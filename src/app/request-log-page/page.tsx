@@ -11,7 +11,6 @@
  * - Management users can change the Status inline; the <select> is color-coded.
  * - The table section is flush to the white panel’s edges (no inner horizontal padding).
  */
-
 "use client";
 
 import React, { useState, useEffect, Suspense, useMemo } from "react";
@@ -62,7 +61,7 @@ const parseDateString = (dateStr: string) => {
   return isNaN(d.getTime()) ? new Date(0) : d;
 };
 
-/** Utility for status color classes (both badge and editable select) */
+/** Utility for status color classes */
 const statusClasses = (value: "Pending" | "Approved") =>
   value === "Pending"
     ? "bg-yellow-100 text-yellow-800 border-yellow-300"
@@ -74,22 +73,22 @@ function RequestLogInner() {
   const role = getViewerRoleFE();
   const isManagement = role === "management";
 
-  // Clients for the pink banner select
+  // Clients for pink banner select
   const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
   const [activeClientId, setActiveClientId] = useState<string | null>(null);
   const [activeClientName, setActiveClientName] = useState<string>("");
 
-  // Requests (fetched per-client)
+  // Requests
   const [requests, setRequests] = useState<ApiRequest[]>([]);
   const [loading, setLoading] = useState(false);
   const [errorText, setErrorText] = useState<string>("");
 
-  // Filters / sorting
+  // Filters
   const [search, setSearch] = useState<string>("");
   const [sortKey, setSortKey] = useState<keyof ApiRequest | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
-  /** Bootstrap: get clients + restore last chosen client */
+  /** Load clients */
   useEffect(() => {
     (async () => {
       try {
@@ -108,7 +107,7 @@ function RequestLogInner() {
     })();
   }, []);
 
-  /** When the active client changes, reload that client's requests */
+  /** Load requests when active client changes */
   useEffect(() => {
     if (!activeClientId) {
       setRequests([]);
@@ -129,7 +128,7 @@ function RequestLogInner() {
     })();
   }, [activeClientId]);
 
-  /** Client selector handler in pink banner */
+  /** Pink banner select */
   const onClientChange = (id: string) => {
     const c = clients.find((x) => x.id === id) || null;
     const name = c?.name || "";
@@ -138,7 +137,7 @@ function RequestLogInner() {
     writeActiveClientToStorage(id || "", name);
   };
 
-  /** Search filter + sort */
+  /** Filter + sort */
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return requests;
@@ -179,7 +178,7 @@ function RequestLogInner() {
     }
   };
 
-  /** Inline status change (Management only). Persist to backend here if needed. */
+  /** Inline status change (Management only) */
   const handleStatusChange = (reqId: string, next: "Pending" | "Approved") => {
     if (!isManagement) return;
     setRequests((prev) =>
@@ -212,108 +211,98 @@ function RequestLogInner() {
       colors={colors}
       onLogoClick={() => router.push("/empty_dashboard")}
     >
-      {/* Card area — keep the same outer spacing/feel as other pages */}
-      <div className="w-full py-8 h-full bg-[#F8CBA6]/40 overflow-auto">
-        <div className="w-full px-6 h-full">
-            <div className="w-full min-h-[70vh] rounded-3xl border border-[#3A0000] bg-white shadow-md flex flex-col overflow-hidden">
-
-            {/* Dark header bar on the panel */}
-            <div
-              className="flex items-center justify-between px-6 py-5"
-              style={{ backgroundColor: colors.header }}
-            >
-              <h1 className="text-2xl font-bold text-white">Request Log</h1>
-              <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2">
-                <input
-                  type="text"
-                  placeholder="Search"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="border-none focus:outline-none w-56 text-black text-sm"
-                />
-              </div>
-            </div>
-
-            {/* Table area  */}
-            <div className="flex-1 overflow-auto px-0 py-0">
-              {loading ? (
-                <div className="p-6 text-gray-600">Loading requests…</div>
-              ) : errorText ? (
-                <div className="p-6 text-red-600">{errorText}</div>
-              ) : (
-                <table className="w-full border-collapse text-sm text-black">
-                  <thead className="sticky top-0 bg-[#F9C9B1] shadow-sm">
-                    <tr className="text-left">
-                      <th className="p-5 cursor-pointer" onClick={() => toggleSort("task")}>
-                        Task {sortKey === "task" ? (sortDir === "asc" ? "⬆" : "⬇") : "⬍"}
-                      </th>
-                      <th className="p-5">Requested Change</th>
-                      <th className="p-5 cursor-pointer" onClick={() => toggleSort("requestedBy")}>
-                        Requested By {sortKey === "requestedBy" ? (sortDir === "asc" ? "⬆" : "⬇") : "⬍"}
-                      </th>
-                      <th className="p-5 cursor-pointer" onClick={() => toggleSort("dateRequested")}>
-                        Date Requested {sortKey === "dateRequested" ? (sortDir === "asc" ? "⬆" : "⬇") : "⬍"}
-                      </th>
-                      <th className="p-5 cursor-pointer" onClick={() => toggleSort("status")}>
-                        Status {sortKey === "status" ? (sortDir === "asc" ? "⬆" : "⬇") : "⬍"}
-                      </th>
-                      <th className="p-5">Resolution Date</th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {sorted.length > 0 ? (
-                      sorted.map((req) => (
-                        <tr key={req.id} className="border-b hover:bg-[#fff6ea] transition">
-                          <td className="p-5 font-semibold">{req.task}</td>
-                          <td className="p-5">{req.change}</td>
-                          <td className="p-5">{req.requestedBy}</td>
-                          <td className="p-5">{req.dateRequested}</td>
-
-                          {/* Status (color-coded; editable for Management) */}
-                          <td className="p-5">
-                            {isManagement ? (
-                              <select
-                                value={req.status}
-                                onChange={(e) =>
-                                  handleStatusChange(
-                                    req.id,
-                                    e.target.value as "Pending" | "Approved"
-                                  )
-                                }
-                                className={`rounded-full border px-3 py-1.5 text-xs font-bold ${statusClasses(
-                                  req.status
-                                )}`}
-                              >
-                                <option value="Pending">Pending</option>
-                                <option value="Approved">Approved</option>
-                              </select>
-                            ) : req.status === "Pending" ? (
-                              <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-bold">
-                                Pending
-                              </span>
-                            ) : (
-                              <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold">
-                                Approved
-                              </span>
-                            )}
-                          </td>
-
-                          <td className="p-5">{req.resolutionDate}</td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={6} className="p-8 text-center text-gray-500">
-                          No requests for this client.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              )}
-            </div>
+      {/* Main content: 铺满全屏 */}
+      <div className="flex-1 h-[680px] bg-white/80 overflow-auto">
+        {/* Header bar */}
+        <div
+          className="w-full flex items-center justify-between px-6 py-5"
+          style={{ backgroundColor: colors.header }}
+        >
+          <h1 className="text-2xl font-bold text-white">Request Log</h1>
+          <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2">
+            <input
+              type="text"
+              placeholder="Search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="border-none focus:outline-none w-56 text-black text-sm"
+            />
           </div>
+        </div>
+
+        {/* Table full width */}
+        <div className="w-full overflow-auto">
+          {loading ? (
+            <div className="p-6 text-gray-600">Loading requests…</div>
+          ) : errorText ? (
+            <div className="p-6 text-red-600">{errorText}</div>
+          ) : (
+            <table className="w-full border-collapse text-sm text-black">
+              <thead className="sticky top-0 bg-[#F9C9B1] shadow-sm">
+                <tr className="text-left">
+                  <th className="p-5 cursor-pointer" onClick={() => toggleSort("task")}>
+                    Task {sortKey === "task" ? (sortDir === "asc" ? "⬆" : "⬇") : "⬍"}
+                  </th>
+                  <th className="p-5">Requested Change</th>
+                  <th className="p-5 cursor-pointer" onClick={() => toggleSort("requestedBy")}>
+                    Requested By {sortKey === "requestedBy" ? (sortDir === "asc" ? "⬆" : "⬇") : "⬍"}
+                  </th>
+                  <th className="p-5 cursor-pointer" onClick={() => toggleSort("dateRequested")}>
+                    Date Requested{" "}
+                    {sortKey === "dateRequested" ? (sortDir === "asc" ? "⬆" : "⬇") : "⬍"}
+                  </th>
+                  <th className="p-5 cursor-pointer" onClick={() => toggleSort("status")}>
+                    Status {sortKey === "status" ? (sortDir === "asc" ? "⬆" : "⬇") : "⬍"}
+                  </th>
+                  <th className="p-5">Resolution Date</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {sorted.length > 0 ? (
+                  sorted.map((req) => (
+                    <tr key={req.id} className="border-b hover:bg-[#fff6ea] transition">
+                      <td className="p-5 font-semibold">{req.task}</td>
+                      <td className="p-5">{req.change}</td>
+                      <td className="p-5">{req.requestedBy}</td>
+                      <td className="p-5">{req.dateRequested}</td>
+                      <td className="p-5">
+                        {isManagement ? (
+                          <select
+                            value={req.status}
+                            onChange={(e) =>
+                              handleStatusChange(req.id, e.target.value as "Pending" | "Approved")
+                            }
+                            className={`rounded-full border px-3 py-1.5 text-xs font-bold ${statusClasses(
+                              req.status
+                            )}`}
+                          >
+                            <option value="Pending">Pending</option>
+                            <option value="Approved">Approved</option>
+                          </select>
+                        ) : req.status === "Pending" ? (
+                          <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-bold">
+                            Pending
+                          </span>
+                        ) : (
+                          <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold">
+                            Approved
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-5">{req.resolutionDate}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="p-8 text-center text-gray-500">
+                      No requests for this client.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </DashboardChrome>
