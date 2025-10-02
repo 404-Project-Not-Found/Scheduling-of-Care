@@ -32,7 +32,7 @@ const ROUTES = {
   requestLog: '/management_dashboard/requests',
   homeByRole: '/empty_dashboard',
   budgetReport: '/calender_dashboard/budget_report',
-  transactions: '/calender_dashboard/transaction_history',
+  transactions: '/calender_dashboard/add_tran',
   mgmtCareEdit: '/management_dashboard/manage_care_item/edit',
   mgmtCareAdd: '/management_dashboard/manage_care_item/add',
   accountUpdate: '/management/profile',

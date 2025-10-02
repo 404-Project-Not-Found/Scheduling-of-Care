@@ -4,7 +4,8 @@
  * Budget Report (reusing DashboardChrome)
  * - Underlines "Budget Report" in the top menu via page="budget".
  * - Pink banner title becomes "<Client>'s Budget" automatically.
- * - Body fills the remaining viewport height (same as calendar page).
+ * - Adds "Edit" (management-only) to edit Annual Budget; recalculates Remaining.
+ * - Body fills remaining viewport height (same as calendar page).
  */
 
 import React, { Suspense, useEffect, useMemo, useState } from 'react';
@@ -41,7 +42,7 @@ const getStatus = (remaining: number): { tone: Tone; label: string } => {
 // ------- Shared palette passed to chrome -------
 const colors = {
   header: '#3A0000',
-  banner: '#F9C9B1', // chrome内部会做透明度处理
+  banner: '#F9C9B1',
   text:   '#2b2b2b',
 };
 
@@ -61,16 +62,22 @@ function BudgetReportInner() {
 
   // ===== Role (from mockApi) =====
   const role: Role = getViewerRoleFE();
+  const isManagement = role === 'management';
 
   // ===== Clients (from mockApi) =====
   const [clients, setClients] = useState<Client[]>([]);
   const [activeClientId, setActiveClientId] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string>('');
 
+  // --- Editing state for Annual Budget override (management only) ---
+  const [isEditing, setIsEditing] = useState(false);
+  const [annualBudgetOverride, setAnnualBudgetOverride] = useState<number | null>(null);
+  const [annualBudgetInput, setAnnualBudgetInput] = useState<string>('');
+
   useEffect(() => {
     (async () => {
       try {
-        const list = await getClientsFE(); // ApiClient[]
+        const list = await getClientsFE();
         const mapped: Client[] = list.map((c: ApiClient) => ({ id: c._id, name: c.name }));
         setClients(mapped);
 
@@ -134,7 +141,7 @@ function BudgetReportInner() {
     </>
   );
 
-  // ===== Logo -> home (same behavior as calendar) =====
+  // ===== Logo -> home =====
   const onLogoClick = () => {
     if (typeof window !== 'undefined') localStorage.setItem('activeRole', role);
     router.push('/empty_dashboard');
@@ -158,6 +165,10 @@ function BudgetReportInner() {
     return { allocated, spent, remaining: allocated - spent };
   }, [filtered]);
 
+  // Effective values (apply override if present)
+  const effectiveAllocated = annualBudgetOverride ?? totals.allocated;
+  const effectiveRemaining = effectiveAllocated - totals.spent;
+
   return (
     <DashboardChrome
       page="budget"
@@ -167,24 +178,62 @@ function BudgetReportInner() {
       activeClientName={displayName}
       colors={colors}
       topRight={topRight}
-      onLogoClick={onLogoClick}
+      onLogoClick={onLogoClick} 
     >
-      {/* ===== Main content fills the remaining viewport (same sizing as calendar page) ===== */}
       <div className="flex-1 h-full bg-[#F8CBA6]/40 overflow-auto">
         <div className="w-full h-full p-6">
           <div className="w-full h-[600px] rounded-3xl border-[#3A0000] bg-[#FFF4E6] shadow-md flex flex-col overflow-hidden">
-            {/* Card top bar */}
+            
+            {/* Header with Search + (management-only) Edit */}
             <div className="bg-[#3A0000] px-6 py-4 flex items-center justify-between">
               <h2 className="text-white text-2xl font-semibold">Budget Report</h2>
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Search"
-                className="h-9 rounded-full bg-white text-black px-4 border"
-              />
+              <div className="flex items-center gap-3">
+                <input
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="Search"
+                  className="h-9 rounded-full bg-white text-black px-4 border"
+                />
+                {isManagement && (
+                  !isEditing ? (
+                    <button
+                      onClick={() => {
+                        setIsEditing(true);
+                        setAnnualBudgetInput(String(annualBudgetOverride ?? totals.allocated));
+                      }}
+                      className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10"
+                    >
+                      Edit
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => {
+                          const val = parseFloat(annualBudgetInput);
+                          if (!Number.isFinite(val) || val < 0) return;
+                          setAnnualBudgetOverride(val);
+                          setIsEditing(false);
+                        }}
+                        className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsEditing(false);
+                          setAnnualBudgetInput('');
+                        }}
+                        className="px-3 py-1 rounded-md bg-white/80 text-black font-semibold hover:bg-white"
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  )
+                )}
+              </div>
             </div>
 
-            {/* Alert banner (example) */}
+            {/* Warning banner */}
             <div className="w-full bg-[#fde7e4] border-y border-[#f5c2c2] px-6 py-3">
               <p className="text-[#9b2c2c] font-semibold">
                 WARNING: Dental Checkup budget exceeded by <b>$36</b>
@@ -193,7 +242,6 @@ function BudgetReportInner() {
 
             {/* Body */}
             <div className="flex-1 px-6 py-6 overflow-auto">
-              {/* Year selector */}
               <div className="mb-4 flex items-center gap-2">
                 <span className="font-semibold">Select year:</span>
                 <select
@@ -209,19 +257,42 @@ function BudgetReportInner() {
 
               {/* Overview tiles */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-center">
+                {/* Annual Budget (editable for management only) */}
                 <div className="rounded-2xl border px-6 py-6 bg-[#F8CBA6]">
-                  <div className="text-2xl font-bold">${totals.allocated.toLocaleString()}</div>
-                  <div className="text-sm">Annual Budget</div>
+                  {isManagement && isEditing ? (
+                    <>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={annualBudgetInput}
+                        onChange={(e) => setAnnualBudgetInput(e.target.value)}
+                        className="w-full max-w-[220px] mx-auto text-center text-2xl font-bold rounded-md bg-white text-black px-3 py-2 border"
+                      />
+                      <div className="text-sm mt-2">Annual Budget</div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-2xl font-bold">
+                        ${effectiveAllocated.toLocaleString()}
+                      </div>
+                      <div className="text-sm">Annual Budget</div>
+                    </>
+                  )}
                 </div>
+
+                {/* Spent to Date */}
                 <div className="rounded-2xl border px-6 py-6 bg-white">
                   <div className="text-2xl font-bold">${totals.spent.toLocaleString()}</div>
                   <div className="text-sm">Spent to Date</div>
                 </div>
+
+                {/* Remaining (recomputed) */}
                 <div className="rounded-2xl border px-6 py-6 bg-white">
-                  <div className={`text-2xl font-bold ${totals.remaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                    {totals.remaining < 0
-                      ? `-$${Math.abs(totals.remaining).toLocaleString()}`
-                      : `$${totals.remaining.toLocaleString()}`}
+                  <div className={`text-2xl font-bold ${effectiveRemaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    {effectiveRemaining < 0
+                      ? `-$${Math.abs(effectiveRemaining).toLocaleString()}`
+                      : `$${effectiveRemaining.toLocaleString()}`}
                   </div>
                   <div className="text-sm">Remaining Balance</div>
                 </div>
@@ -269,6 +340,7 @@ function BudgetReportInner() {
                   </tbody>
                 </table>
               </div>
+
             </div>
           </div>
         </div>

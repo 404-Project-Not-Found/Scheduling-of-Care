@@ -5,16 +5,18 @@
  *
  * Purpose:
  * - Category Budget Report page for a specific category (e.g., Appointments).
- * - Reuses the same chrome (header + pink banner) as the annual Budget Report page
- *   via <DashboardChrome />, so layout/branding are identical.
- * - When users click a category on the annual Budget Report page, they land here.
+ * - Reuses the same chrome (header + pink banner) via <DashboardChrome /> so
+ *   layout/branding are identical to the annual Budget Report page.
+ * - Navigates here when a user clicks a category in the annual report.
  *
- * Key behaviors:
+ * Behavior:
  * - Reads the `[category]` route param and converts slug -> Title case.
  * - Loads mock client list and restores active client selection (same as annual page).
  * - Shows category-level summary tiles and a table of items within this category.
- * - Adds a "< Back" text link at the top-left of the panel header to return to the
- *   annual Budget Report page at /calender_dashboard/budget_report.
+ * - Adds a "< Back" text link (top-left in brown header) to return to
+ *   /calender_dashboard/budget_report.
+ * - Management-only: Edit flow to override this category's budget number
+ *   (Edit → Save/Cancel), and recompute Remaining accordingly.
  */
 
 import React, { Suspense, useEffect, useMemo, useState } from 'react';
@@ -52,14 +54,14 @@ const getStatus = (remaining: number): { tone: Tone; label: string } => {
   return { tone: 'green', label: 'Within Limit' };
 };
 
-// Reuse the same palette used by the annual page
+// Palette used by the annual page
 const colors = {
   header: '#3A0000',
   banner: '#F9C9B1', // DashboardChrome applies transparency internally
   text:   '#2b2b2b',
 };
 
-// Keep this in sync with your annual Budget Report page route
+// Annual report route (Back target)
 const BACK_TARGET = '/calender_dashboard/budget_report';
 
 type Client = { id: string; name: string };
@@ -76,6 +78,7 @@ export default function CategoryCostPage() {
 function CategoryCostInner() {
   const router = useRouter();
   const role: Role = getViewerRoleFE();
+  const isManagement = role === 'management';
 
   // ----- Route param -> human-readable category name -----
   const params = useParams<{ category: string }>();
@@ -95,7 +98,7 @@ function CategoryCostInner() {
         const mapped: Client[] = list.map((c: ApiClient) => ({ id: c._id, name: c.name }));
         setClients(mapped);
 
-        // restore last active client selection
+        // Restore last active client selection
         const { id, name } = readActiveClientFromStorage();
         if (id) {
           setActiveClientId(id);
@@ -167,11 +170,21 @@ function CategoryCostInner() {
     [categoryName]
   );
 
-  const totals = useMemo(() => {
+  // Base totals from data
+  const baseTotals = useMemo(() => {
     const allocated = rows.reduce((s, r) => s + r.allocated, 0);
     const spent = rows.reduce((s, r) => s + r.spent, 0);
     return { allocated, spent, remaining: allocated - spent };
   }, [rows]);
+
+  // ===== Management-only editing state for THIS CATEGORY budget =====
+  const [isEditing, setIsEditing] = useState(false);
+  const [categoryBudgetOverride, setCategoryBudgetOverride] = useState<number | null>(null);
+  const [categoryBudgetInput, setCategoryBudgetInput] = useState<string>('');
+
+  // Apply override if present
+  const effectiveAllocated = categoryBudgetOverride ?? baseTotals.allocated;
+  const effectiveRemaining = effectiveAllocated - baseTotals.spent;
 
   return (
     <DashboardChrome
@@ -188,9 +201,9 @@ function CategoryCostInner() {
       <div className="flex-1 h-full bg-[#F8CBA6]/40 overflow-auto">
         <div className="w-full h-full p-6">
           <div className="w-full rounded-3xl border-[#3A0000] bg-[#FFF4E6] shadow-md flex flex-col overflow-hidden">
-            {/* Panel header: added "< Back" at top-left; keeps same brown bar */}
+            {/* Panel header: "< Back" on the left; optional controls on the right */}
             <div className="bg-[#3A0000] px-6 py-4 flex items-center justify-between">
-              {/* Left cluster: < Back + title */}
+              {/* Left: Back + Title (same line) */}
               <div className="flex items-center gap-8">
                 <Link
                   href={BACK_TARGET}
@@ -205,27 +218,94 @@ function CategoryCostInner() {
                 </h1>
               </div>
 
-              {/* (Optional) Right cluster reserved for future controls */}
-              <div />
+              {/* Right: management-only Edit/Save/Cancel (same UX as annual page) */}
+              <div className="flex items-center gap-3">
+                {isManagement && (
+                  !isEditing ? (
+                    <button
+                      onClick={() => {
+                        setIsEditing(true);
+                        setCategoryBudgetInput(String(categoryBudgetOverride ?? baseTotals.allocated));
+                      }}
+                      className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10"
+                      aria-label="Edit category budget"
+                      title="Edit category budget"
+                    >
+                      Edit
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => {
+                          const val = parseFloat(categoryBudgetInput);
+                          if (!Number.isFinite(val) || val < 0) return;
+                          setCategoryBudgetOverride(val);
+                          setIsEditing(false);
+                        }}
+                        className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10"
+                        aria-label="Save category budget"
+                        title="Save category budget"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsEditing(false);
+                          setCategoryBudgetInput('');
+                        }}
+                        className="px-3 py-1 rounded-md bg-white/80 text-black font-semibold hover:bg-white"
+                        aria-label="Cancel editing"
+                        title="Cancel"
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  )
+                )}
+              </div>
             </div>
 
             {/* Body */}
             <div className="px-6 py-6">
-              {/* Overview tiles (same visual language as annual page) */}
+              {/* Overview tiles */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-center text-black">
+                {/* Category Budget (editable for management only) */}
                 <div className="rounded-2xl border px-6 py-6 bg-[#F8CBA6]">
-                  <div className="text-2xl font-bold">${totals.allocated.toLocaleString()}</div>
-                  <div className="text-sm">{categoryName} Budget</div>
+                  {isManagement && isEditing ? (
+                    <>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={categoryBudgetInput}
+                        onChange={(e) => setCategoryBudgetInput(e.target.value)}
+                        className="w-full max-w-[220px] mx-auto text-center text-2xl font-bold rounded-md bg-white text-black px-3 py-2 border"
+                        aria-label="Category budget amount"
+                      />
+                      <div className="text-sm mt-2">{categoryName} Budget</div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-2xl font-bold">
+                        ${effectiveAllocated.toLocaleString()}
+                      </div>
+                      <div className="text-sm">{categoryName} Budget</div>
+                    </>
+                  )}
                 </div>
+
+                {/* Spent to Date */}
                 <div className="rounded-2xl border px-6 py-6 bg-white">
-                  <div className="text-2xl font-bold">${totals.spent.toLocaleString()}</div>
+                  <div className="text-2xl font-bold">${baseTotals.spent.toLocaleString()}</div>
                   <div className="text-sm">Spent to Date</div>
                 </div>
+
+                {/* Remaining (recomputed if edited) */}
                 <div className="rounded-2xl border px-6 py-6 bg-white">
-                  <div className={`text-2xl font-bold ${totals.remaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                    {totals.remaining < 0
-                      ? `-$${Math.abs(totals.remaining).toLocaleString()}`
-                      : `$${totals.remaining.toLocaleString()}`}
+                  <div className={`text-2xl font-bold ${effectiveRemaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    {effectiveRemaining < 0
+                      ? `-$${Math.abs(effectiveRemaining).toLocaleString()}`
+                      : `$${effectiveRemaining.toLocaleString()}`}
                   </div>
                   <div className="text-sm">Remaining Balance</div>
                 </div>
@@ -252,6 +332,7 @@ function CategoryCostInner() {
                     {rows.map((r, i) => {
                       const remaining = r.allocated - r.spent;
                       const status = getStatus(remaining);
+
                       return (
                         <tr key={i} className="border-t border-[#3A0000]/20">
                           <td className="px-4 py-3">{r.item}</td>
