@@ -38,8 +38,8 @@ const ROUTES = {
   transactions: '/calender_dashboard/add_tran',
   mgmtCareEdit: '/management_dashboard/manage_care_item/edit',
   mgmtCareAdd: '/management_dashboard/manage_care_item/add',
-  accountUpdate: '/management/profile',
-  signOut: '/api/auth/signout',
+  accountUpdate: '/client_profile',
+  signOut: '/calender_dashboard/update_details',
 };
 
 /* ------------------------------ Palette ----------------------------- */
@@ -202,53 +202,6 @@ function ClientSchedule() {
     }
   };
 
-  /* --------------------- Avatar menu (top-right) -------------------- */
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const topRight = (
-    <>
-      <button
-        onClick={() => setUserMenuOpen((v) => !v)}
-        className="h-16 w-16 rounded-full overflow-hidden border-2 border-white/80 hover:border-white"
-        aria-haspopup="menu"
-        aria-expanded={userMenuOpen}
-        title="Account"
-      >
-        <Image
-          src="/default_profile.png"
-          alt="Profile"
-          width={64}
-          height={64}
-          className="h-full w-full object-cover"
-        />
-      </button>
-      {userMenuOpen && (
-        <div
-          className="absolute right-0 mt-3 w-80 rounded-md border border-white/30 bg-white text-black shadow-2xl z-50"
-          role="menu"
-        >
-          <button
-            className="w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5"
-            onClick={() => {
-              setUserMenuOpen(false);
-              router.push(ROUTES.accountUpdate);
-            }}
-          >
-            Update your details
-          </button>
-          <button
-            className="w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5"
-            onClick={() => {
-              setUserMenuOpen(false);
-              router.push(ROUTES.signOut);
-            }}
-          >
-            Sign out
-          </button>
-        </div>
-      )}
-    </>
-  );
-
   // Logo → home
   const onLogoClick = () => {
     if (typeof window !== 'undefined') localStorage.setItem('activeRole', role);
@@ -264,7 +217,6 @@ function ClientSchedule() {
       activeClientName={displayName}
       onClientChange={onClientChange}
       colors={{ header: palette.header, banner: palette.banner, text: palette.text }}
-      topRight={topRight}
       onLogoClick={onLogoClick}
     >
       {/* Two-column layout; left calendar, right task list/detail */}

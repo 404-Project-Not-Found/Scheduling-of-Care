@@ -60,6 +60,11 @@ export default function BudgetReportPage() {
 function BudgetReportInner() {
   const router = useRouter();
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
+  if (!mounted) return null;
+
   // ===== Role (from mockApi) =====
   const role: Role = getViewerRoleFE();
   const isManagement = role === 'management';
@@ -107,40 +112,6 @@ function BudgetReportInner() {
     writeActiveClientToStorage(id, name);
   };
 
-  // ===== Avatar dropdown (slot to chrome) =====
-  const [openProfileMenu, setOpenProfileMenu] = useState(false);
-  const topRight = (
-    <>
-      <button
-        onClick={() => setOpenProfileMenu(v => !v)}
-        aria-haspopup="menu"
-        aria-expanded={openProfileMenu}
-        className="h-16 w-16 rounded-full overflow-hidden border-2 border-white/80 hover:border-white"
-        title="Account"
-      >
-        <Image src="/default_profile.png" alt="Profile" width={64} height={64} className="h-full w-full object-cover" />
-      </button>
-      {openProfileMenu && (
-        <div className="absolute right-0 mt-3 w-80 rounded-md border border-white/30 bg-white text-black shadow-2xl z-50">
-          <Link
-            href="/management/profile"
-            className="block w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5"
-            onClick={() => setOpenProfileMenu(false)}
-          >
-            Update your details
-          </Link>
-          <Link
-            href="/api/auth/signout"
-            className="block w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5"
-            onClick={() => setOpenProfileMenu(false)}
-          >
-            Sign out
-          </Link>
-        </div>
-      )}
-    </>
-  );
-
   // ===== Logo -> home =====
   const onLogoClick = () => {
     if (typeof window !== 'undefined') localStorage.setItem('activeRole', role);
@@ -177,7 +148,6 @@ function BudgetReportInner() {
       onClientChange={onClientChange}
       activeClientName={displayName}
       colors={colors}
-      topRight={topRight}
       onLogoClick={onLogoClick} 
     >
       <div className="flex-1 h-full bg-[#F8CBA6]/40 overflow-auto">

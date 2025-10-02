@@ -5,21 +5,20 @@
  * File path: src/app/client_list/page.tsx
  * Frontend Author: Qingyue Zhao
  *
- * Purpose & features:
+ * Purpose & uodated features:
  * - Uses <DashboardChrome /> so the top header + pink banner stay consistent.
  * - Maroon section title bar: “Client List”.
  * - Right-side CTA button “Register new client” opens a RIGHT drawer panel
  *   (RegisterClientPanel) instead of navigating to a new page.
  * - Search box filters client names (case-insensitive).
  * - List shows avatar circle + name; clicking a row opens that client’s dashboard
- *   (full vs partial) and preserves your existing palette.
  */
 
 import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import DashboardChrome from '@/components/top_menu/client_schedule';
-import RegisterClientPanel from '@/components/accesscode/registration'; // <-- your drawer panel
+import RegisterClientPanel from '@/components/accesscode/registration'; 
 import { getClientsFE, type Client as ApiClient } from '@/lib/mockApi';
 
 type Client = { id: string; name: string; dashboardType?: 'full' | 'partial' };
@@ -96,7 +95,7 @@ function ClientListInner() {
     >
       {/* Page body */}
       <div className="w-full h-full" style={{ backgroundColor: colors.pageBg }}>
-        <div className="max-w-[1280px] h-[600px] mx-auto px-6">
+        <div className="max-w-[1380px] h-[680px] mx-auto px-6">
           {/* Section title bar */}
           <div
             className="w-full mt-6 rounded-t-xl px-6 py-4 text-white text-2xl md:text-3xl font-extrabold"
@@ -139,7 +138,7 @@ function ClientListInner() {
               <div
                 className="mx-6 rounded-xl overflow-auto h-full"
                 style={{
-                  backgroundColor: '#F2E5D2', // warm beige list bg
+                  backgroundColor: '#F2E5D2', 
                   border: '1px solid rgba(58,0,0,0.25)',
                 }}
               >
