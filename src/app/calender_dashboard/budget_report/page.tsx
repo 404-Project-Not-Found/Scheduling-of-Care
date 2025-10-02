@@ -60,11 +60,6 @@ export default function BudgetReportPage() {
 function BudgetReportInner() {
   const router = useRouter();
 
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
-
-  if (!mounted) return null;
-
   // ===== Role (from mockApi) =====
   const role: Role = getViewerRoleFE();
   const isManagement = role === 'management';

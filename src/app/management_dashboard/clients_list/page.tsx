@@ -112,15 +112,14 @@ function ClientListInner() {
             {/* Controls row */}
             <div className="flex items-center justify-between px-6 py-4 gap-4">
               {/* Search (left) */}
-              <div className="relative flex-1 max-w-[400px]">
+              <div className="relative flex-1 max-w-[350px]">
                 <input
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
                   placeholder="Search for client"
-                  className="w-full h-12 rounded-full bg-white border text-black px-12 focus:outline-none"
+                  className="w-full h-12 rounded-full bg-white border text-black px-10 focus:outline-none"
                   style={{ borderColor: '#3A0000' }}
                 />
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-black/70">🔍</span>
               </div>
 
               {/* CTA (right) */}
@@ -129,7 +128,7 @@ function ClientListInner() {
                 className="rounded-xl px-5 py-3 text-lg font-bold text-white hover:opacity-90"
                 style={{ backgroundColor: colors.header }}
               >
-                Register new client
+                + Register new client
               </button>
             </div>
 

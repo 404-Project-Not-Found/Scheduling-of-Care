@@ -117,6 +117,7 @@ export default function AddTaskPage() {
   const [category, setCategory] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [notes, setNotes] = useState("");
 
   const [frequencyCountStr, setFrequencyCountStr] = useState<string>("");
   const [frequencyUnit, setFrequencyUnit] = useState<Unit>("day");
@@ -182,7 +183,7 @@ export default function AddTaskPage() {
       <div className="w-full min-h-screen bg-[#FAEBDC] flex flex-col">
         {/* Section title bar */}
         <div className="bg-[#3A0000] text-white px-6 py-4 ">
-          <h2 className="text-2xl md:text-3xl font-extrabold">Add New Care Item</h2>
+          <h2 className="text-2xl md:text-3xl font-extrabold px-5">Add New Care Item</h2>
         </div>
 
         {/* Form content */}
@@ -194,6 +195,15 @@ export default function AddTaskPage() {
                 onChange={(e) => setLabel(e.target.value)}
                 className="w-full rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black"
                 placeholder="e.g., Replace Toothbrush Head"
+              />
+            </Field>
+
+            <Field label="Category">
+              <input
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black"
+                placeholder="e.g., Appointments"
               />
             </Field>
 
@@ -254,12 +264,12 @@ export default function AddTaskPage() {
               </select>
             </Field>
 
-            <Field label="Category">
+            <Field label="Notes">
               <input
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
                 className="w-full rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black"
-                placeholder="e.g., Appointments"
+                placeholder="e.g., add notes for this care item here"
               />
             </Field>
 
