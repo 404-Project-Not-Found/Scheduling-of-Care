@@ -180,14 +180,14 @@ export default function AddTaskPage() {
       onLogoClick={onLogoClick}
     >
       {/* Fill entire area below the topbar */}
-      <div className="w-full min-h-screen bg-[#FAEBDC] flex flex-col">
+      <div className="w-full bg-[#FAEBDC] flex flex-col">
         {/* Section title bar */}
-        <div className="bg-[#3A0000] text-white px-6 py-4 ">
-          <h2 className="text-2xl md:text-3xl font-extrabold px-5">Add New Care Item</h2>
+        <div className="bg-[#3A0000] text-white px-6 py-3">
+          <h2 className="text-xl md:text-3xl font-extrabold px-5">Add New Care Item</h2>
         </div>
 
         {/* Form content */}
-        <div className="flex-1 p-18 text-xl">
+        <div className="flex-1 p-16 text-xl">
           <div className="space-y-6 max-w-3xl mx-auto">
             <Field label="Care Item Name">
               <input

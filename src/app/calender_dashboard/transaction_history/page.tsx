@@ -130,7 +130,6 @@ function TransactionHistoryInner() {
             {/* Header */}
             <div className="flex items-center justify-between px-8 py-6" style={{ backgroundColor: colors.header }}>
               <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-                <Image src="/logo.png" alt="Scheduling of Care" width={40} height={40} />
                 Transaction History
               </h1>
 

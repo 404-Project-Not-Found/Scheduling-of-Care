@@ -2,6 +2,7 @@
 
 /**
  * Calendar Dashboard (Schedule)
+ * Frontend Author: Vanessa Teo & Qingyue Zhao
  * ------------------------------------------------------------
  * - Uses the shared <DashboardChrome /> for the top chrome.
  * - Client selection persists via localStorage helpers.
@@ -220,9 +221,9 @@ function ClientSchedule() {
       onLogoClick={onLogoClick}
     >
       {/* Two-column layout; left calendar, right task list/detail */}
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-0 min-h-screen">
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-0">
         {/* LEFT: Square calendar, centered in its area */}
-        <section className="bg-white min-h-screen overflow-auto p-0 flex min-h-screen ">
+        <section className="bg-white overflow-auto p-0 flex">
           <div className="calendar-square">
             <div
               className={`calendar-compact ${
@@ -245,7 +246,7 @@ function ClientSchedule() {
           {!selectedTask ? (
             <>
               {/* Title row: LEFT title, RIGHT search (white bg) */}
-              <div className="px-6 py-6 flex items-center justify-between gap-4">
+              <div className="px-6 py-10 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <h2 className="text-3xl md:text-4xl font-extrabold">Care Items</h2>
                   {noClientSelected && (
@@ -339,7 +340,7 @@ function TaskDetail({
       </div>
 
       {/* Detail body */}
-      <div className="p-6 flex flex-col gap-4 flex-1 text-xl">
+      <div className="p-6 flex flex-col gap-4 text-xl">
         <p>
           <span className="font-extrabold">Frequency:</span> {task.frequency}
         </p>
@@ -421,7 +422,7 @@ function TaskDetail({
         )}
 
         {/* Footer actions */}
-        <div className="flex gap-4 mt-auto flex-wrap">
+        <div className="flex gap-4 py-10 mt-auto flex-wrap">
           {role === 'carer' && (
             <>
               <button

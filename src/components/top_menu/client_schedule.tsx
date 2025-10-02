@@ -24,7 +24,8 @@ type PageKey =
   | 'care-edit'
   | 'care-add'
   | 'category-cost'
-  | 'client-list';
+  | 'client-list'
+  | 'profile';
 
 type ClientLite = { id: string; name: string };
 
@@ -62,6 +63,7 @@ const ROUTES = {
   accountUpdate: '/calender_dashboard/update_details',
   signOut: '/lib/mock/mockSignout',
   homeByRole: '/empty_dashboard',
+  profile: '/client_profile', // ✅ ensure leading slash
 };
 
 function nounForPage(page: PageKey): string {
@@ -75,11 +77,10 @@ function nounForPage(page: PageKey): string {
     case 'category-cost': return 'Category Cost';
     case 'client-list': return 'Client List';
     case 'schedule':
+    case 'profile': return 'Profile';
     default: return 'Schedule';
   }
 }
-
-
 
 function activeUnderline(page: PageKey, key: PageKey | 'care'): string {
   const isActiveCare = (page === 'care-edit' || page === 'care-add') && key === 'care';
@@ -188,7 +189,7 @@ export default function DashboardChrome({
                   </summary>
                   <div className="absolute left-1/2 -translate-x-1/2 mt-3 w-80 rounded-md border border-white/30 bg-white text-black shadow-2xl z-50">
                     <Link href={ROUTES.careEdit} className="block w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5">Manage care item</Link>
-                    <Link href={ROUTES.careAdd} className="block w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5">Add new care item</Link>
+                    <Link href={ROUTES.careAdd} className="block w-full text-left px-5 py-4 text-xl font-semibold hover:bg黑/5">Add new care item</Link>
                   </div>
                 </details>
               </div>
@@ -221,17 +222,17 @@ export default function DashboardChrome({
               </button>
               {userMenuOpen && (
                 <div
-                  className="absolute right-0 mt-3 w-80 rounded-md border border-white/30 bg-white text-black shadow-2xl z-50"
+                  className="absolute right-0 mt-3 w-80 rounded-md border border-white/30 bg白 text-black shadow-2xl z-50"
                   role="menu"
                 >
                   <button
-                    className="w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5"
+                    className="w-full text-left px-5 py-4 text-xl font-semibold hover:bg黑/5"
                     onClick={goProfile}
                   >
                     Update your details
                   </button>
                   <button
-                    className="w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5"
+                    className="w-full text-left px-5 py-4 text-xl font-semibold hover:bg黑/5"
                     onClick={doSignOut}
                   >
                     Sign out
@@ -240,7 +241,6 @@ export default function DashboardChrome({
               )}
             </div>
           )}
-          {/* still allow extra elements next to avatar */}
           {topRight}
         </div>
       </header>
@@ -270,18 +270,38 @@ export default function DashboardChrome({
           <div className="relative">
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
               <div className="flex items-center gap-3 justify-center md:-translate-x-16">
-                <Image src="/default_profile.png" alt="Client avatar" width={40} height={40} className="rounded-full border border-black/20 object-cover" priority />
-                <h1 className="font-extrabold leading-none text-2xl md:text-3xl select-none">{centeredTitle}</h1>
+                <Link
+                  href={ROUTES.profile}
+                  aria-label="Open client profile"
+                  title="Open client profile"
+                  className="rounded-full focus:outline-none focus:ring-2 focus:ring-black/20"
+                >
+                  <Image
+                    src="/default_profile.png"
+                    alt="Client avatar"
+                    width={40}
+                    height={40}
+                    priority
+                    className="rounded-full border border-black/20 object-cover cursor-pointer hover:opacity-90"
+                  />
+                </Link>
+                <h1 className="font-extrabold leading-none text-2xl md:text-3xl select-none">
+                  {centeredTitle}
+                </h1>
               </div>
             </div>
           </div>
 
-          {/* Right: print button */}
+          {/* Right: print button (only on calendar dashboard; keep center fixed) */}
           <div className="justify-self-end">
             <button
               onClick={handlePrint}
-              className="inline-flex items-center px-6 py-3 rounded-2xl border border-black/30 bg-white font-extrabold text-xl hover:bg-black/5"
+              className={`inline-flex items-center px-6 py-3 rounded-2xl border border-black/30 bg-white font-extrabold text-xl hover:bg-black/5 ${
+                page === 'schedule' ? '' : 'invisible'
+              }`}
               title="Print"
+              tabIndex={page === 'schedule' ? 0 : -1}
+              aria-hidden={page !== 'schedule'}
             >
               Print
             </button>

@@ -128,12 +128,22 @@ export default function AddTaskPage() {
     []
   );
 
+  const palette = {
+  danger: "#8B0000",
+  dangerHover: "#a40f0f",
+  };
+
   // ---- keep dropdown logic: Category → Task name ----
   const catalog = useMemo(() => getTaskCatalogFE(), []);
   const tasksInCategory = useMemo(() => {
     const entry = catalog.find((c) => c.category === category);
     return entry ? entry.tasks : [];
   }, [catalog, category]);
+
+  const onDelete = () => {
+    if (!confirm("Discard this new task and go back?")) return;
+    router.back();
+  };
 
   const onCreate = () => {
     const name = label.trim();
@@ -192,14 +202,22 @@ export default function AddTaskPage() {
       onLogoClick={onLogoClick}
     >
       {/* Fill entire area below the topbar */}
-      <div className="w-full min-h-screen bg-[#FAEBDC] flex flex-col">
+      <div className="w-full bg-[#FAEBDC] flex flex-col">
         {/* Section title bar */}
-        <div className="bg-[#3A0000] text-white px-6 py-4">
-          <h2 className="text-2xl md:text-3xl font-extrabold px-5">Edit Care Item</h2>
+        <div className="bg-[#3A0000] text-white px-6 py-3">
+          <h2 className="text-xl md:text-3xl font-extrabold px-5">Edit Care Item</h2>
+        </div>
+
+        {/* Notice bar */}
+        <div className="bg-[#F9C9B1] text-black px-6 py-4">
+          <h3 className="text-lg px-5">
+            IMPORTANT: Deleting the task or editing the frequency and dates 
+            will change the schedule of this care item for the rest of the year. 
+            Be aware of any budget implications before making this change!!</h3>
         </div>
 
         {/* Form content */}
-        <div className="flex-1 p-18 text-xl">
+        <div className="flex-1 p-8 text-xl">
           <div className="space-y-6 max-w-3xl mx-auto">
             {/* Category (dropdown) */}
             <Field label="Category">
@@ -306,7 +324,16 @@ export default function AddTaskPage() {
             </Field>
 
             {/* Footer buttons */}
-            <div className="pt-6 flex items-center justify-center gap-30">
+            <div className="pt-2 flex items-center justify-center gap-30">
+
+             <button
+                onClick={onDelete}
+                className="rounded-full text-white text-xl font-semibold px-6.5 py-2.5 shadow"
+                style={{ backgroundColor: palette.danger }}
+                
+              >
+                Delete
+              </button>
               <button
                 onClick={() => router.push("/calender_dashboard")}
                 className="px-6 py-2.5 rounded-full border border-[#3A0000] text-gray-700 hover:bg-gray-200"
@@ -315,9 +342,9 @@ export default function AddTaskPage() {
               </button>
               <button
                 onClick={onCreate}
-                className="rounded-full bg-[#F39C6B] hover:bg-[#ef8a50] text-[#1c130f] text-xl font-bold px-8 py-2.5 shadow"
+                className="rounded-full bg-[#F39C6B] hover:bg-[#ef8a50] text-[#1c130f] text-xl font-bold px-7.5 py-2.5 shadow"
               >
-                Add
+                Save
               </button>
             </div>
           </div>

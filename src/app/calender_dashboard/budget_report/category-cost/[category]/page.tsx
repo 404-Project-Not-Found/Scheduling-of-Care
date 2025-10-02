@@ -2,7 +2,8 @@
 
 /**
  * File: app/calender_dashboard/category-cost/[category]/page.tsx
- *
+ * Frontend Author: Qingyue Zhao
+ * 
  * Purpose:
  * - Category Budget Report page for a specific category (e.g., Appointments).
  * - Reuses the same chrome (header + pink banner) via <DashboardChrome /> so

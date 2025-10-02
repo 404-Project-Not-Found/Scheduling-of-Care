@@ -1,15 +1,16 @@
-'use client';
-
 /**
- * Budget Report (reusing DashboardChrome)
+ * Budget Report
+ * Frontend Author: Vanessa Teo & Qingyue Zhao
+ * 
  * - Underlines "Budget Report" in the top menu via page="budget".
  * - Pink banner title becomes "<Client>'s Budget" automatically.
  * - Adds "Edit" (management-only) to edit Annual Budget; recalculates Remaining.
  * - Body fills remaining viewport height (same as calendar page).
  */
 
+'use client';
+
 import React, { Suspense, useEffect, useMemo, useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -24,7 +25,7 @@ import {
   type Client as ApiClient,
 } from '@/lib/mockApi';
 
-// ------- Demo rows; replace with real data when integrating -------
+/* --------------------------- Demo table data --------------------------- */
 type Row = { item: string; category: string; allocated: number; spent: number };
 const rows: Row[] = [
   { item: 'Dental Appointments', category: 'Appointments', allocated: 600, spent: 636 },
@@ -39,16 +40,18 @@ const getStatus = (remaining: number): { tone: Tone; label: string } => {
   return { tone: 'green', label: 'Within Limit' };
 };
 
-// ------- Shared palette passed to chrome -------
+/* ------------------------------- Chrome colors ------------------------------- */
 const colors = {
   header: '#3A0000',
   banner: '#F9C9B1',
   text:   '#2b2b2b',
 };
 
+/* ---------------------------------- Types ---------------------------------- */
 type Client = { id: string; name: string };
 type Role = 'carer' | 'family' | 'management';
 
+/* --------------------------------- Page ---------------------------------- */
 export default function BudgetReportPage() {
   return (
     <Suspense fallback={<div className="p-6 text-gray-600">Loading budget report...</div>}>
@@ -60,16 +63,21 @@ export default function BudgetReportPage() {
 function BudgetReportInner() {
   const router = useRouter();
 
-  // ===== Role (from mockApi) =====
-  const role: Role = getViewerRoleFE();
+  /* ===== Role (hydration-safe) =====
+     Default to 'family' so SSR and the first client render match.
+     Then update to the real role after mount to avoid hook-order/mismatch errors. */
+  const [role, setRole] = useState<Role>('family');
+  useEffect(() => {
+    setRole(getViewerRoleFE());
+  }, []);
   const isManagement = role === 'management';
 
-  // ===== Clients (from mockApi) =====
+  /* ===== Clients (from mockApi) ===== */
   const [clients, setClients] = useState<Client[]>([]);
   const [activeClientId, setActiveClientId] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string>('');
 
-  // --- Editing state for Annual Budget override (management only) ---
+  // Editing state for Annual Budget override (management only)
   const [isEditing, setIsEditing] = useState(false);
   const [annualBudgetOverride, setAnnualBudgetOverride] = useState<number | null>(null);
   const [annualBudgetInput, setAnnualBudgetInput] = useState<string>('');
@@ -107,13 +115,13 @@ function BudgetReportInner() {
     writeActiveClientToStorage(id, name);
   };
 
-  // ===== Logo -> home =====
+  /* ===== Logo -> home ===== */
   const onLogoClick = () => {
     if (typeof window !== 'undefined') localStorage.setItem('activeRole', role);
     router.push('/empty_dashboard');
   };
 
-  // ===== Local UI state =====
+  /* ===== Local UI state ===== */
   const [q, setQ] = useState('');
   const [year, setYear] = useState('2025');
 
@@ -135,6 +143,7 @@ function BudgetReportInner() {
   const effectiveAllocated = annualBudgetOverride ?? totals.allocated;
   const effectiveRemaining = effectiveAllocated - totals.spent;
 
+  /* ===== Render ===== */
   return (
     <DashboardChrome
       page="budget"
@@ -143,12 +152,11 @@ function BudgetReportInner() {
       onClientChange={onClientChange}
       activeClientName={displayName}
       colors={colors}
-      onLogoClick={onLogoClick} 
+      onLogoClick={onLogoClick}
     >
       <div className="flex-1 h-full bg-[#F8CBA6]/40 overflow-auto">
         <div className="w-full h-full p-6">
           <div className="w-full h-[600px] rounded-3xl border-[#3A0000] bg-[#FFF4E6] shadow-md flex flex-col overflow-hidden">
-            
             {/* Header with Search + (management-only) Edit */}
             <div className="bg-[#3A0000] px-6 py-4 flex items-center justify-between">
               <h2 className="text-white text-2xl font-semibold">Budget Report</h2>
