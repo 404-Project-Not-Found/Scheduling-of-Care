@@ -2,9 +2,12 @@
 
 /**
  * Calendar Dashboard (Schedule)
- * - Uses the shared DashboardChrome for consistent header/banner/top-menu.
- * - Role-aware actions in the task detail follow your original logic.
- * - Client selection is preserved in storage across pages.
+ * ------------------------------------------------------------
+ * - Uses the shared <DashboardChrome /> for the top chrome.
+ * - Client selection persists via localStorage helpers.
+ * - Right column now has a name filter placed on the same row
+ *   as the "Care Items" title, aligned to the RIGHT.
+ * - The search filters tasks by title only (case-insensitive).
  */
 
 import { Suspense, useEffect, useRef, useState } from 'react';
@@ -26,7 +29,7 @@ import {
   type Client as ApiClient,
 } from '@/lib/mockApi';
 
-// Routes (kept identical)
+/* ------------------------------ Routes ------------------------------ */
 const ROUTES = {
   requestForm: '/family_dashboard/request_of_change_form',
   requestLog: '/management_dashboard/requests',
@@ -39,7 +42,7 @@ const ROUTES = {
   signOut: '/api/auth/signout',
 };
 
-// Palette (matches the calendar look)
+/* ------------------------------ Palette ----------------------------- */
 const palette = {
   header: '#3A0000',
   banner: 'rgba(249, 201, 177, 0.7)',
@@ -63,10 +66,10 @@ function ClientSchedule() {
   const searchParams = useSearchParams();
   const addedFile = searchParams.get('addedFile');
 
-  // Role (read once; chrome may also use role for menu visibility if needed)
+  /* ------------------------------ Role ------------------------------ */
   const role: Role = getViewerRoleFE();
 
-  // Clients
+  /* ---------------------------- Clients ----------------------------- */
   const [clients, setClients] = useState<Client[]>([]);
   const [activeClientId, setActiveClientId] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string>('');
@@ -78,10 +81,11 @@ function ClientSchedule() {
         const mapped: Client[] = list.map((c: ApiClient) => ({ id: c._id, name: c.name }));
         setClients(mapped);
 
+        // Restore last selection
         const { id, name } = readActiveClientFromStorage();
         if (id) {
           setActiveClientId(id);
-          setDisplayName(name || mapped.find(m => m.id === id)?.name || '');
+          setDisplayName(name || mapped.find((m) => m.id === id)?.name || '');
         }
       } catch {
         setClients([]);
@@ -103,10 +107,11 @@ function ClientSchedule() {
     writeActiveClientToStorage(id, name);
   };
 
-  // Tasks
+  /* ------------------------------ Tasks ----------------------------- */
   const [selectedDate, setSelectedDate] = useState('');
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+
   const [isAddingComment, setIsAddingComment] = useState(false);
   const [newComment, setNewComment] = useState('');
 
@@ -121,6 +126,7 @@ function ClientSchedule() {
     })();
   }, []);
 
+  // Persist changes (mock FE storage)
   useEffect(() => {
     if (!tasks) return;
     (async () => {
@@ -130,7 +136,7 @@ function ClientSchedule() {
     })();
   }, [tasks]);
 
-  // Optional: attach file via query (?addedFile=...)
+  // Attach a file via query (?addedFile=...) for carer role
   const hasAddedFile = useRef(false);
   useEffect(() => {
     if (role !== 'carer') return;
@@ -140,28 +146,47 @@ function ClientSchedule() {
     }
   }, [addedFile, selectedTask, role]);
 
-  // Derived
+  /* --------------- Derived: filter by client and date --------------- */
   const noClientSelected = !activeClientId;
   const tasksByClient = noClientSelected
     ? []
-    : tasks.filter((t) => ((t as any).clientId ? (t as any).clientId === activeClientId : true));
-  const filteredTasks = selectedDate ? tasksByClient.filter((t) => t.nextDue === selectedDate) : tasksByClient;
+    : tasks.filter((t) =>
+        (t as any).clientId ? (t as any).clientId === activeClientId : true
+      );
 
-  // Actions
+  const filteredTasks = selectedDate
+    ? tasksByClient.filter((t) => t.nextDue === selectedDate)
+    : tasksByClient;
+
+  /* -------------------- RIGHT PANE: title search -------------------- */
+  const [searchTerm, setSearchTerm] = useState('');
+  const tasksForRightPane = filteredTasks.filter((t) =>
+    t.title.toLowerCase().includes(searchTerm.trim().toLowerCase())
+  );
+
+  /* ----------------------------- Actions ---------------------------- */
   const addComment = (taskId: string, comment: string) => {
     setTasks((prev) =>
-      prev.map((t) => (t.id === taskId ? { ...t, comments: [...(t.comments || []), comment] } : t)),
+      prev.map((t) =>
+        t.id === taskId ? { ...t, comments: [...(t.comments || []), comment] } : t
+      )
     );
-    setSelectedTask((prev) => (prev ? { ...prev, comments: [...(prev.comments || []), comment] } : prev));
+    setSelectedTask((prev) =>
+      prev ? { ...prev, comments: [...(prev.comments || []), comment] } : prev
+    );
     setNewComment('');
     setIsAddingComment(false);
   };
 
   const addFile = (taskId: string, fileName: string) => {
     setTasks((prev) =>
-      prev.map((t) => (t.id === taskId ? { ...t, files: [...(t.files || []), fileName] } : t)),
+      prev.map((t) =>
+        t.id === taskId ? { ...t, files: [...(t.files || []), fileName] } : t
+      )
     );
-    setSelectedTask((prev) => (prev ? { ...prev, files: [...(prev.files || []), fileName] } : prev));
+    setSelectedTask((prev) =>
+      prev ? { ...prev, files: [...(prev.files || []), fileName] } : prev
+    );
   };
 
   const getStatusBadgeClasses = (status?: string) => {
@@ -177,7 +202,7 @@ function ClientSchedule() {
     }
   };
 
-  // Avatar dropdown passed into chrome
+  /* --------------------- Avatar menu (top-right) -------------------- */
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const topRight = (
     <>
@@ -224,13 +249,13 @@ function ClientSchedule() {
     </>
   );
 
-  // Logo → home (same as before)
+  // Logo → home
   const onLogoClick = () => {
     if (typeof window !== 'undefined') localStorage.setItem('activeRole', role);
     router.push(ROUTES.homeByRole);
   };
 
-  // Render with shared chrome
+  /* ------------------------------ Render ---------------------------- */
   return (
     <DashboardChrome
       page="schedule"
@@ -242,33 +267,54 @@ function ClientSchedule() {
       topRight={topRight}
       onLogoClick={onLogoClick}
     >
-      {/* ========= Content: 2 columns (keep area sizes), calendar vertically centered ========= */}
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-0 min-h-0">
-        {/* LEFT: Square calendar, vertically & horizontally centered in its area */}
-        <section className="bg-white h-full overflow-auto p-0 flex items-center justify-center">
-          <div className="calendar-square w-full max-w-full">
-            <div className={`calendar-compact ${noClientSelected ? 'no-highlight' : ''} absolute inset-0 p-4 md:p-6`}>
+      {/* Two-column layout; left calendar, right task list/detail */}
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-0 min-h-screen">
+        {/* LEFT: Square calendar, centered in its area */}
+        <section className="bg-white min-h-screen overflow-auto p-0 flex min-h-screen ">
+          <div className="calendar-square">
+            <div
+              className={`calendar-compact ${
+                noClientSelected ? 'no-highlight' : ''
+              } absolute inset-0 p-4 md:p-6`}
+            >
               <CalendarPanel
-                tasks={filteredTasks /* empty when no client */}
+                tasks={filteredTasks /* empty when no client is selected */}
                 onDateClick={(date: string) => setSelectedDate(date)}
               />
             </div>
           </div>
         </section>
 
-        {/* RIGHT: Tasks (unchanged area size) */}
-        <section className="h-full overflow-auto" style={{ backgroundColor: palette.pageBg }}>
+        {/* RIGHT: Tasks list or task detail */}
+        <section
+          className="h-full overflow-auto"
+          style={{ backgroundColor: palette.pageBg }}
+        >
           {!selectedTask ? (
             <>
-              <div className="px-6 py-6">
-                <h2 className="text-3xl md:text-4xl font-extrabold">Care Items</h2>
-                {noClientSelected && (
-                  <p className="text-lg mt-3 opacity-80">Select a client to view tasks.</p>
-                )}
+              {/* Title row: LEFT title, RIGHT search (white bg) */}
+              <div className="px-6 py-6 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-3xl md:text-4xl font-extrabold">Care Items</h2>
+                  {noClientSelected && (
+                    <p className="text-lg opacity-80">Select a client to view tasks.</p>
+                  )}
+                </div>
+
+                {/* Right-aligned search box */}
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search care items"
+                  className="h-11 w-full max-w-[320px] rounded-lg border px-4 text-black bg-white focus:outline-none focus:ring-2 focus:ring-[#F9C9B1]"
+                />
               </div>
+
+              {/* List area */}
               <div className="px-6 pb-8">
                 <TasksPanel
-                  tasks={filteredTasks}
+                  tasks={tasksForRightPane}
                   onTaskClick={(task: Task) => setSelectedTask(task)}
                 />
               </div>
@@ -290,12 +336,11 @@ function ClientSchedule() {
           )}
         </section>
       </div>
-
     </DashboardChrome>
   );
 }
 
-/* ---------------- Right column: Task details ---------------- */
+/* ---------------------- Right column: Task details ------------------- */
 function TaskDetail({
   role,
   task,
@@ -325,7 +370,11 @@ function TaskDetail({
 
   return (
     <div className="flex flex-col h-full" style={{ color: palette.text }}>
-      <div className="px-6 py-6 flex items-center border-b border-black/10" style={{ backgroundColor: palette.pageBg }}>
+      {/* Detail header */}
+      <div
+        className="px-6 py-6 flex items-center border-b border-black/10"
+        style={{ backgroundColor: palette.pageBg }}
+      >
         <button
           onClick={() => setSelectedTask(null)}
           className="mr-6 text-2xl font-extrabold"
@@ -337,35 +386,57 @@ function TaskDetail({
         <h2 className="text-3xl md:text-4xl font-extrabold">{task.title}</h2>
       </div>
 
+      {/* Detail body */}
       <div className="p-6 flex flex-col gap-4 flex-1 text-xl">
-        <p><span className="font-extrabold">Frequency:</span> {task.frequency}</p>
-        <p><span className="font-extrabold">Last Done:</span> {task.lastDone}</p>
-        <p><span className="font-extrabold">Next Due:</span> {task.nextDue}</p>
+        <p>
+          <span className="font-extrabold">Frequency:</span> {task.frequency}
+        </p>
+        <p>
+          <span className="font-extrabold">Last Done:</span> {task.lastDone}
+        </p>
+        <p>
+          <span className="font-extrabold">Next Due:</span> {task.nextDue}
+        </p>
         <p>
           <span className="font-extrabold">Status:</span>{' '}
-          <span className={`px-3 py-1 rounded-full text-sm font-extrabold ${getStatusBadgeClasses(task.status)}`}>
+          <span
+            className={`px-3 py-1 rounded-full text-sm font-extrabold ${getStatusBadgeClasses(
+              task.status
+            )}`}
+          >
             {task.status}
           </span>
         </p>
 
+        {/* Comments */}
         <div className="mt-2">
           <h3 className="font-extrabold text-2xl mb-2">Comments</h3>
           {task.comments?.length ? (
             <ul className="list-disc pl-6 space-y-1">
-              {task.comments.map((c, idx) => <li key={idx}>{c}</li>)}
+              {task.comments.map((c, idx) => (
+                <li key={idx}>{c}</li>
+              ))}
             </ul>
-          ) : <p className="italic">No comments yet.</p>}
+          ) : (
+            <p className="italic">No comments yet.</p>
+          )}
         </div>
 
+        {/* Files */}
         <div className="mt-2">
           <h3 className="font-extrabold text-2xl mb-2">Files</h3>
           {task.files?.length ? (
             <ul className="list-disc pl-6 space-y-1">
-              {task.files.map((f, idx) => <li key={idx}>{f}</li>)}
+              {task.files.map((f, idx) => (
+                <li key={idx}>{f}</li>
+              ))}
             </ul>
-          ) : <p className="italic">No files uploaded yet.</p>}
+          ) : (
+            <p className="italic">No files uploaded yet.</p>
+          )}
         </div>
 
+        {/* Add comment (carer only) */}
         {!readOnly && isAddingComment && (
           <div className="mt-3 p-4 border rounded bg-white">
             <textarea
@@ -377,14 +448,19 @@ function TaskDetail({
             <div className="flex justify-end gap-3 mt-3">
               <button
                 className="px-4 py-2 border rounded bg-gray-200"
-                onClick={() => { setIsAddingComment(false); setNewComment(''); }}
+                onClick={() => {
+                  setIsAddingComment(false);
+                  setNewComment('');
+                }}
               >
                 Cancel
               </button>
               <button
                 className="px-4 py-2 border rounded text-white"
                 style={{ backgroundColor: palette.header }}
-                onClick={() => { if (newComment.trim()) addComment(task.id, newComment.trim()); }}
+                onClick={() => {
+                  if (newComment.trim()) addComment(task.id, newComment.trim());
+                }}
               >
                 Save
               </button>
@@ -392,6 +468,7 @@ function TaskDetail({
           </div>
         )}
 
+        {/* Footer actions */}
         <div className="flex gap-4 mt-auto flex-wrap">
           {role === 'carer' && (
             <>
@@ -399,7 +476,9 @@ function TaskDetail({
                 className="px-5 py-2 border rounded bg-white"
                 onClick={() => {
                   setTasks((prev) =>
-                    prev.map((t) => (t.id === task.id ? { ...t, status: 'Completed' } : t)),
+                    prev.map((t) =>
+                      t.id === task.id ? { ...t, status: 'Completed' } : t
+                    )
                   );
                 }}
               >
@@ -417,7 +496,8 @@ function TaskDetail({
                   type="file"
                   className="hidden"
                   onChange={(e) => {
-                    if (e.target.files?.length) addFile(task.id, e.target.files[0].name);
+                    if (e.target.files?.length)
+                      addFile(task.id, e.target.files[0].name);
                   }}
                 />
               </label>
@@ -429,7 +509,9 @@ function TaskDetail({
               className="px-5 py-2 border rounded bg-white"
               onClick={() => {
                 setTasks((prev) =>
-                  prev.map((t) => (t.id === task.id ? { ...t, status: 'Completed' } : t)),
+                  prev.map((t) =>
+                    t.id === task.id ? { ...t, status: 'Completed' } : t
+                  )
                 );
               }}
             >

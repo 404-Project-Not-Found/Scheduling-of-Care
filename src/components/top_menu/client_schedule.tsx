@@ -5,6 +5,7 @@
  * - Top menu is rendered here; active page gets an underline.
  * - Pink banner center title changes with page and selected client.
  */
+
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
@@ -15,7 +16,17 @@ import { getViewerRoleFE } from '@/lib/mockApi';
 
 const palette = { header:'#3A0000', banner:'#F9C9B1', text:'#2b2b2b', white:'#FFFFFF', pageBg:'#FAEBDC' };
 
-type PageKey = 'schedule'|'budget'|'transactions'|'request-form'|'request-log'|'care-edit'|'care-add'|'category-cost';
+type PageKey =
+  | 'schedule'
+  | 'budget'
+  | 'transactions'
+  | 'request-form'
+  | 'request-log'
+  | 'care-edit'
+  | 'care-add'
+  | 'category-cost'
+  | 'client-list';  
+
 type ClientLite = { id: string; name: string };
 
 type ChromeProps = {
@@ -41,6 +52,7 @@ const ROUTES = {
   requestLog: '/request-log-page',                
   careEdit: '/management_dashboard/manage_care_item/edit',
   careAdd: '/management_dashboard/manage_care_item/add',
+  clientList: '/management_dashboard/clients_list',   
   defaultHome: '/empty_dashboard',
 };
 
@@ -53,6 +65,7 @@ function nounForPage(page: PageKey): string {
     case 'care-edit':
     case 'care-add': return 'Care Items';
     case 'category-cost': return 'Category Cost';
+    case 'client-list': return 'Client List';
     case 'schedule':
     default: return 'Schedule';
   }
@@ -79,7 +92,6 @@ export default function DashboardChrome({
 }: ChromeProps) {
   const router = useRouter();
 
-  // ✅ 避免 Hydration：等 mounted 后再读取 role 并渲染 role 相关菜单
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
   const role = mounted ? getViewerRoleFE() : 'family';
@@ -92,20 +104,41 @@ export default function DashboardChrome({
     [activeClientName, noun]
   );
 
-  const handleLogoClick = () => { if (onLogoClick) return onLogoClick(); router.push(ROUTES.defaultHome); };
-  const handlePrint = () => { if (onPrint) return onPrint(); if (typeof window !== 'undefined') window.print(); };
+  const handleLogoClick = () => { 
+    if (onLogoClick) return onLogoClick(); 
+    router.push(ROUTES.defaultHome); 
+  };
+  const handlePrint = () => { 
+    if (onPrint) return onPrint(); 
+    if (typeof window !== 'undefined') window.print(); 
+  };
 
   return (
     <div className="min-h-screen flex flex-col" style={{ color: colors.text }}>
       {/* Top Header */}
       <header className="px-8 py-12 flex items-center justify-between text-white" style={{ backgroundColor: colors.header, height: headerHeight }}>
-        <button onClick={handleLogoClick} className="flex items-center gap-8 hover:opacity-90" title="Go to dashboard">
-          <Image src="/logo.png" alt="Logo" width={80} height={30} className="object-contain" priority />
-          <span className="font-extrabold leading-none text-2xl md:text-3xl">Client Schedule</span>
-        </button>
+        
+        {/* 左侧：Logo 和 Client Schedule 分开 */}
+        <div className="flex items-center gap-8">
+          {/* 点击 Logo → empty_dashboard */}
+          <button onClick={handleLogoClick} className="flex items-center gap-3 hover:opacity-90" title="Go to empty dashboard">
+            <Image src="/logo.png" alt="Logo" width={80} height={30} className="object-contain" priority />
+          </button>
+          {/* 点击文字 → calender_dashboard */}
+          <button onClick={() => router.push(ROUTES.schedule)} className="hover:opacity-90" title="Go to schedule dashboard">
+            <span className="font-extrabold leading-none text-2xl md:text-3xl">Client Schedule</span>
+          </button>
+        </div>
 
-        {/* 中间菜单：SSR 阶段先渲染 “budget / transactions” 两项；mounted 后再决定 family/management 菜单 */}
+        {/* 中间菜单 */}
         <nav className="hidden lg:flex items-center gap-20 font-extrabold text-white text-xl">
+          {/* ✅ management 专属 Client List */}
+          {mounted && isManagement && (
+            <Link href={ROUTES.clientList} className={activeUnderline(page, 'client-list')}>
+              Client List
+            </Link>
+          )}
+
           <Link href={ROUTES.budget} className={activeUnderline(page, 'budget')}>Budget Report</Link>
           <Link href={ROUTES.transactions} className={activeUnderline(page, 'transactions')}>View Transactions</Link>
 
@@ -122,7 +155,7 @@ export default function DashboardChrome({
                   </summary>
                   <div className="absolute left-1/2 -translate-x-1/2 mt-3 w-80 rounded-md border border-white/30 bg-white text-black shadow-2xl z-50">
                     <Link href={ROUTES.careEdit} className="block w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5">Manage care item</Link>
-                    <Link href={ROUTES.careAdd} className="block w-full text-left px-5 py-4 text-xl font-semibold hover:bg黑/5">Add new care item</Link>
+                    <Link href={ROUTES.careAdd} className="block w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5">Add new care item</Link>
                   </div>
                 </details>
               </div>

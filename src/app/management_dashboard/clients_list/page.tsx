@@ -1,231 +1,196 @@
-
-/**
- * Filename: /src/app/client_list/page.tsx
- * Frontend Author: Qingyue Zhao
- * 
- * Purpose:
- * - Display a list of clients for family and management
- *  1. family options: edit profile, view dashboard, manage organisation access
- *  2. management options: view profile, view dashboard
- * 
- *
- * Data:
- * - Source: getClientsFE() — mocked frontend API.
- * - Shape: Array<Client> where each item has at least {_id, name, dashboardType}.
- *
- * Navigation:
- * - Profile:   /client_profile?id=<clientId>
- * - Dashboard: /calender_dashboard?id=<clientId> (for dashboardType === 'full')
- *              /partial_dashboard?id=<clientId>  (otherwise)
- * - Register:  /management_dashboard/register_client?new=true
- * - Back:      /empty_dashboard
- *
- * Last Updated: 30/09/2025
- */
-
+// src/app/client_list/page.tsx
 'use client';
 
-export const dynamic = 'force-dynamic';
+/**
+ * File path: src/app/client_list/page.tsx
+ * Frontend Author: Qingyue Zhao
+ *
+ * Purpose & features:
+ * - Uses <DashboardChrome /> so the top header + pink banner stay consistent.
+ * - Maroon section title bar: “Client List”.
+ * - Right-side CTA button “Register new client” opens a RIGHT drawer panel
+ *   (RegisterClientPanel) instead of navigating to a new page.
+ * - Search box filters client names (case-insensitive).
+ * - List shows avatar circle + name; clicking a row opens that client’s dashboard
+ *   (full vs partial) and preserves your existing palette.
+ */
 
-import Image from 'next/image';
-import Link from 'next/link';
+import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
 
-import { getClientsFE, type Client } from '@/lib/mockApi';
+import DashboardChrome from '@/components/top_menu/client_schedule';
+import RegisterClientPanel from '@/components/accesscode/registration'; // <-- your drawer panel
+import { getClientsFE, type Client as ApiClient } from '@/lib/mockApi';
 
-// ----- Color palette -----
-const palette = {
+type Client = { id: string; name: string; dashboardType?: 'full' | 'partial' };
+
+const colors = {
   pageBg: '#ffd9b3',
   cardBg: '#F7ECD9',
+  banner: '#F9C9B1',
   header: '#3A0000',
   text: '#2b2b2b',
-  border: '#3A0000',
   help: '#ff9999',
-  white: '#ffffff',
-  editGreen: '#4CAF50',
-  dashOrange: '#FF9800',
-  organPink: '#E91E63',
 };
 
 export default function ClientListPage() {
-  const router = useRouter();
-  const [clients, setClients] = useState<Client[]>([]);
-
-  // Fetch list from mock data
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const list = await getClientsFE();
-        if (mounted) setClients(Array.isArray(list) ? list : []);
-      } catch (err) {
-        console.error('Load clients failed:', err);
-        if (mounted) setClients([]);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  const goBack = () => router.replace('/empty_dashboard');
-
   return (
-    <main
-      className="min-h-screen relative flex items-start justify-center p-8"
-      style={{ backgroundColor: palette.pageBg }}
-    >
-      {/* scale wrapper (keeps same layout visual size) */}
-      <div className="origin-top w-full flex items-center justify-center">
-        {/* logo */}
-        <div className="absolute top-6 left-6">
-          <Image
-            src="/logo-name.png"
-            alt="Scheduling of Care"
-            width={220}
-            height={80}
-            className="object-contain"
-            priority
-          />
-        </div>
-
-        <div className="w-full scale-[0.8] flex items-center justify-center">
-          {/* card */}
-          <div
-            className="w-full max-w-6xl rounded-3xl shadow-lg overflow-hidden relative"
-            style={{
-              backgroundColor: palette.cardBg,
-              border: `1px solid ${palette.border}`,
-              minHeight: 720,
-            }}
-          >
-            {/* header */}
-            <div
-              className="w-full flex items-center justify-center px-8 py-6 relative"
-              style={{ backgroundColor: palette.header, color: palette.white }}
-            >
-              <button
-                onClick={goBack}
-                aria-label="Go back"
-                className="absolute left-4 top-1/2 -translate-y-1/2 rounded-md px-2 py-2 focus:outline-none focus:ring-2 focus:ring-white/60 flex items-center gap-2"
-                title="Back"
-                style={{ color: palette.white }}
-              >
-                <BackIcon />
-                <span className="text-lg">Back</span>
-              </button>
-              <h1 className="text-3xl md:text-4xl font-bold">Client List</h1>
-            </div>
-
-            {/* content */}
-            <div className="px-10 pb-12 pt-8">
-              <p className="text-2xl md:text-3xl mb-5" style={{ color: palette.text }}>
-                List of registered clients:
-              </p>
-
-              {/* list */}
-              <div
-                className="mx-auto rounded-2xl bg-white overflow-y-auto mb-10"
-                style={{ maxHeight: 520, border: `2px solid ${palette.border}55` }}
-              >
-                <ul className="divide-y divide-black/10">
-                  {clients.map((p) => (
-                    <li
-                      key={p._id}
-                      className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 md:gap-6 px-8 py-5"
-                      style={{ color: palette.text }}
-                    >
-                      <span className="text-2xl">{p.name}</span>
-                      <div className="flex flex-wrap gap-4">
-                        {/* View profile (green) */}
-                        <Link
-                          href={`/client_profile?id=${p._id}`}
-                          className="px-4 py-2 rounded-lg text-lg font-medium"
-                          style={{ backgroundColor: palette.editGreen, color: palette.white }}
-                        >
-                          View profile
-                        </Link>
-
-                        {/* View dashboard (orange) */}
-                        {p.dashboardType === 'full' ? (
-                          <Link
-                            href={`/calender_dashboard?id=${p._id}`}
-                            className="px-4 py-2 rounded-lg text-lg font-medium"
-                            style={{ backgroundColor: palette.dashOrange, color: palette.white }}
-                          >
-                            View dashboard
-                          </Link>
-                        ) : (
-                          <Link
-                            href={`/partial_dashboard?id=${p._id}`}
-                            className="px-4 py-2 rounded-lg text-lg font-medium"
-                            style={{ backgroundColor: palette.dashOrange, color: palette.white }}
-                          >
-                            View dashboard
-                          </Link>
-                        )}
-
-                        {/* optional： Manage carer access */}
-                        {/* <Link
-                          href={`/management_dashboard/assign_carer/manage`}
-                          className="px-4 py-2 rounded-lg text-lg font-medium"
-                          style={{
-                            backgroundColor: palette.organPink,
-                            color: palette.white,
-                          }}
-                        >
-                          Manage carer access
-                        </Link> */}
-                        
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Add new person */}
-              <div className="flex justify-center">
-                <button
-                  onClick={() => router.push('/management_dashboard/register_client?new=true')}
-                  className="px-7 py-4 rounded-xl text-2xl font-semibold"
-                  style={{ backgroundColor: palette.header, color: palette.white }}
-                >
-                  + register new client
-                </button>
-              </div>
-            </div>
-
-            {/* help button */}
-            <button
-              className="absolute bottom-6 right-6 w-10 h-10 rounded-full text-white font-bold"
-              style={{ backgroundColor: palette.help }}
-              aria-label="Help"
-              title="Help"
-            >
-              ?
-            </button>
-          </div>
-        </div>
-      </div>
-    </main>
+    <Suspense fallback={<div className="p-6 text-gray-600">Loading clients…</div>}>
+      <ClientListInner />
+    </Suspense>
   );
 }
 
-function BackIcon({ size = 24 }: { size?: number }) {
+function ClientListInner() {
+  const router = useRouter();
+
+  // ---- Data ----
+  const [clients, setClients] = useState<Client[]>([]);
+  const [q, setQ] = useState('');
+
+  // ---- Drawer state (open/close the registration panel) ----
+  const [showRegister, setShowRegister] = useState(false);
+  const addNewClient = () => setShowRegister(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const list = await getClientsFE();
+        const mapped: Client[] = list.map((c: ApiClient) => ({
+          id: c._id,
+          name: c.name,
+          dashboardType: c.dashboardType,
+        }));
+        setClients(mapped);
+      } catch {
+        setClients([]);
+      }
+    })();
+  }, []);
+
+  // ---- Filter ----
+  const filtered = useMemo(() => {
+    const t = q.trim().toLowerCase();
+    if (!t) return clients;
+    return clients.filter((c) => c.name.toLowerCase().includes(t));
+  }, [clients, q]);
+
+  // ---- Navigation ----
+  const goDashboard = (c: Client) => {
+    if (c.dashboardType === 'full') {
+      router.push(`/calender_dashboard?id=${c.id}`);
+    } else {
+      router.push(`/partial_dashboard?id=${c.id}`);
+    }
+  };
+
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
+    <DashboardChrome
+      page="client-list"
+      clients={[]} // not used on this page
+      activeClientId={null}
+      onClientChange={() => {}}
+      activeClientName={undefined}
+      colors={{ header: colors.header, banner: colors.banner, text: colors.text }}
+      onLogoClick={() => router.push('/empty_dashboard')}
     >
-      <path d="M15 18l-6-6 6-6" />
-    </svg>
+      {/* Page body */}
+      <div className="w-full h-full" style={{ backgroundColor: colors.pageBg }}>
+        <div className="max-w-[1280px] h-[600px] mx-auto px-6">
+          {/* Section title bar */}
+          <div
+            className="w-full mt-6 rounded-t-xl px-6 py-4 text-white text-2xl md:text-3xl font-extrabold"
+            style={{ backgroundColor: colors.header }}
+          >
+            Client List
+          </div>
+
+          {/* Controls row + List area combined in the same card */}
+          <div
+            className="w-full h-[calc(100%-3rem)] rounded-b-xl bg-[#f6efe2] border-x border-b flex flex-col"
+            style={{ borderColor: '#3A000022' }}
+          >
+            {/* Controls row */}
+            <div className="flex items-center justify-between px-6 py-4 gap-4">
+              {/* Search (left) */}
+              <div className="relative flex-1 max-w-[400px]">
+                <input
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="Search for client"
+                  className="w-full h-12 rounded-full bg-white border text-black px-12 focus:outline-none"
+                  style={{ borderColor: '#3A0000' }}
+                />
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-black/70">🔍</span>
+              </div>
+
+              {/* CTA (right) */}
+              <button
+                onClick={addNewClient}
+                className="rounded-xl px-5 py-3 text-lg font-bold text-white hover:opacity-90"
+                style={{ backgroundColor: colors.header }}
+              >
+                Register new client
+              </button>
+            </div>
+
+            {/* List area */}
+            <div className="flex-1 px-0 pb-6">
+              <div
+                className="mx-6 rounded-xl overflow-auto h-full"
+                style={{
+                  backgroundColor: '#F2E5D2', // warm beige list bg
+                  border: '1px solid rgba(58,0,0,0.25)',
+                }}
+              >
+                {filtered.length === 0 ? (
+                  <div className="h-full flex items-center justify-center text-gray-600">
+                    No clients found.
+                  </div>
+                ) : (
+                  <ul className="divide-y divide-[rgba(58,0,0,0.15)]">
+                    {filtered.map((c) => (
+                      <li
+                        key={c.id}
+                        className="flex items-center gap-5 px-6 py-6 cursor-pointer hover:bg-[rgba(255,255,255,0.6)]"
+                        onClick={() => goDashboard(c)}
+                      >
+                        {/* Avatar circle */}
+                        <div
+                          className="shrink-0 rounded-full flex items-center justify-center"
+                          style={{
+                            width: 64,
+                            height: 64,
+                            border: '4px solid #3A0000',
+                            backgroundColor: '#fff',
+                            color: '#3A0000',
+                            fontWeight: 900,
+                            fontSize: 20,
+                          }}
+                          aria-hidden
+                        >
+                          {c.name.charAt(0).toUpperCase()}
+                        </div>
+
+                        {/* Name */}
+                        <div
+                          className="text-xl md:text-2xl font-semibold"
+                          style={{ color: colors.text }}
+                        >
+                          {c.name}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Right-side registration drawer (stays mounted on this page) */}
+      <RegisterClientPanel open={showRegister} onClose={() => setShowRegister(false)} />
+    </DashboardChrome>
   );
 }
