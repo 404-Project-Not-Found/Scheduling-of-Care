@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * File: app/calender_dashboard/category-cost/[category]/page.tsx
  * Frontend Author: Qingyue Zhao
@@ -8,15 +6,10 @@
  * - Category Budget Report page for a specific category (e.g., Appointments).
  * - Uses the SAME full-bleed layout & chrome as the annual Budget Report page.
  * - Reached by clicking a category link on the annual report.
- *
- * Behavior:
- * - Reads `[category]` route param and converts slug -> Title Case.
- * - Loads mock clients and restores active client selection (same as annual).
- * - Top maroon bar: "< Back", page title, year select on the LEFT;
- *   search + management-only Edit/Save/Cancel on the RIGHT.
- * - Overview tiles + items table below, matching the annual page style.
- * - Management can override THIS CATEGORY’s total budget to recompute Remaining.
+ * - Fetches rows via getBudgetRowsFE(activeClientId).
  */
+
+'use client';
 
 import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
@@ -30,18 +23,12 @@ import {
   getClientsFE,
   readActiveClientFromStorage,
   writeActiveClientToStorage,
+  getBudgetRowsFE,   
   type Client as ApiClient,
+  type BudgetRow,
 } from '@/lib/mockApi';
 
-/* --------------------------- Demo data (same source) --------------------------- */
-type Row = { item: string; category: string; allocated: number; spent: number };
-const allRows: Row[] = [
-  { item: 'Dental Appointments', category: 'Appointments', allocated: 600, spent: 636 },
-  { item: 'Toothbrush Heads',    category: 'Hygiene',      allocated: 30,  spent: 28  },
-  { item: 'Socks',               category: 'Clothing',     allocated: 176, spent: 36  },
-];
-
-/* --------------------------------- Helpers --------------------------------- */
+/* ------------------------------- Utils ------------------------------- */
 const unslug = (s: string) =>
   s.split('-').map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
 
@@ -77,18 +64,22 @@ function CategoryCostInner() {
   const categorySlug = params.category;
   const categoryName = unslug(categorySlug);
 
-  /* ===== Role (hydration-safe; same as annual) ===== */
+  /* ===== Role ===== */
   const [role, setRole] = useState<Role>('family');
   useEffect(() => {
     setRole(getViewerRoleFE());
   }, []);
   const isManagement = role === 'management';
 
-  /* ===== Clients (same as annual) ===== */
+  /* ===== Clients ===== */
   const [clients, setClients] = useState<Client[]>([]);
   const [activeClientId, setActiveClientId] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string>('');
 
+  /* ===== Budget rows ===== */
+  const [rowsAll, setRowsAll] = useState<BudgetRow[]>([]);
+
+  /** Load clients */
   useEffect(() => {
     (async () => {
       try {
@@ -107,6 +98,23 @@ function CategoryCostInner() {
     })();
   }, []);
 
+  /** Load budget rows when active client changes */
+  useEffect(() => {
+    if (!activeClientId) {
+      setRowsAll([]);
+      return;
+    }
+    (async () => {
+      try {
+        const budgetRows = await getBudgetRowsFE(activeClientId);
+        setRowsAll(budgetRows);
+      } catch {
+        setRowsAll([]);
+      }
+    })();
+  }, [activeClientId]);
+
+  /** Handle client change in banner */
   const onClientChange = (id: string) => {
     if (!id) {
       setActiveClientId(null);
@@ -121,21 +129,22 @@ function CategoryCostInner() {
     writeActiveClientToStorage(id, name);
   };
 
-  /* ===== Logo -> home (same as annual) ===== */
   const onLogoClick = () => {
     if (typeof window !== 'undefined') localStorage.setItem('activeRole', role);
     router.push('/empty_dashboard');
   };
 
-  /* ===== Local UI state (mirror annual page) ===== */
+  /* ===== Local state ===== */
   const [q, setQ] = useState('');
   const [year, setYear] = useState('2025');
 
-  // Filter to this category, then apply search
+  /** Filter rows for this category */
   const rows = useMemo(
-    () => allRows.filter((r) => r.category.toLowerCase() === categoryName.toLowerCase()),
-    [categoryName]
+    () => rowsAll.filter((r) => r.category.toLowerCase() === categoryName.toLowerCase()),
+    [rowsAll, categoryName]
   );
+
+  /** Apply search */
   const filtered = useMemo(() => {
     const t = q.trim().toLowerCase();
     if (!t) return rows;
@@ -144,23 +153,20 @@ function CategoryCostInner() {
     );
   }, [q, rows]);
 
-  // Base totals for this category
+  /** Totals */
   const baseTotals = useMemo(() => {
     const allocated = filtered.reduce((s, r) => s + r.allocated, 0);
     const spent = filtered.reduce((s, r) => s + r.spent, 0);
     return { allocated, spent, remaining: allocated - spent };
   }, [filtered]);
 
-  // Management-only override for THIS CATEGORY total
   const [isEditing, setIsEditing] = useState(false);
   const [categoryBudgetOverride, setCategoryBudgetOverride] = useState<number | null>(null);
   const [categoryBudgetInput, setCategoryBudgetInput] = useState<string>('');
 
-  // Effective values (apply override if present)
   const effectiveAllocated = categoryBudgetOverride ?? baseTotals.allocated;
   const effectiveRemaining = effectiveAllocated - baseTotals.spent;
 
-  // Simple warning banner if any item exceeded within the category
   const firstExceeded = filtered.find((r) => r.spent > r.allocated);
 
   return (
@@ -173,29 +179,21 @@ function CategoryCostInner() {
       colors={colors}
       onLogoClick={onLogoClick}
     >
-      {/* === FULL-BLEED BODY (identical structure to annual page) === */}
       <div className="flex-1 h-[680px] bg-white/50 overflow-auto">
-        {/* Top maroon bar */}
+        {/* Top bar */}
         <div className="w-full bg-[#3A0000] px-6 py-4 flex items-center justify-between">
-          {/* LEFT: Back + Title + Year select */}
           <div className="flex items-center gap-8">
             <Link
               href="/calender_dashboard/budget_report"
               className="text-white/90 hover:text-white font-semibold"
-              aria-label="Back to Budget Report"
-              title="Back to Budget Report"
             >
               &lt; Back
             </Link>
-
-            <div className="flex items-center gap-10">
-              <h2 className="text-white text-2xl font-semibold">
-                {categoryName} Budget
-              </h2>
-            </div>
+            <h2 className="text-white text-2xl font-semibold">
+              {categoryName} Budget
+            </h2>
           </div>
 
-          {/* RIGHT: Search + Edit controls (same UX as annual) */}
           <div className="flex items-center gap-3">
             <input
               value={q}
@@ -242,7 +240,7 @@ function CategoryCostInner() {
           </div>
         </div>
 
-        {/* Warning banner (full width; only if exceeded) */}
+        {/* Warning banner */}
         {firstExceeded && (
           <div className="w-full bg-[#fde7e4] border-y border-[#f5c2c2] px-6 py-3">
             <p className="text-[#9b2c2c] font-semibold">
@@ -252,11 +250,9 @@ function CategoryCostInner() {
           </div>
         )}
 
-        {/* Main content (same spacing / tiles / table style as annual) */}
+        {/* Content */}
         <div className="w-full px-12 py-10">
-          {/* Overview tiles */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-18 mb-10 text-center">
-            {/* Category Budget (editable) */}
             <div className="rounded-2xl border px-6 py-8 bg-[#F8CBA6]">
               {isManagement && isEditing ? (
                 <>
@@ -280,13 +276,11 @@ function CategoryCostInner() {
               )}
             </div>
 
-            {/* Spent to Date */}
             <div className="rounded-2xl border px-6 py-8 bg-white">
               <div className="text-2xl font-bold">${baseTotals.spent.toLocaleString()}</div>
               <div className="text-sm">Spent to Date</div>
             </div>
 
-            {/* Remaining */}
             <div className="rounded-2xl border px-6 py-8 bg-white">
               <div className={`text-2xl font-bold ${effectiveRemaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
                 {effectiveRemaining < 0
@@ -297,7 +291,6 @@ function CategoryCostInner() {
             </div>
           </div>
 
-          {/* Table: full width */}
           <div className="rounded-2xl border border-[#3A0000] bg-white overflow-hidden">
             <table className="w-full text-left text-sm bg-white">
               <thead className="bg-[#3A0000] text-lg text-white">
@@ -330,7 +323,6 @@ function CategoryCostInner() {
               </tbody>
             </table>
           </div>
-
         </div>
       </div>
     </DashboardChrome>

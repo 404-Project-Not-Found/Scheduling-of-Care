@@ -6,6 +6,7 @@
  * - Pink banner title becomes "<Client>'s Budget" automatically.
  * - Management-only "Edit" to change Annual Budget and recalc Remaining.
  * - Layout: full-bleed (no inner white panel), header + content fill viewport.
+ * - Fetches rows via getBudgetRowsFE(activeClientId).
  */
 
 'use client';
@@ -22,23 +23,14 @@ import {
   getClientsFE,
   readActiveClientFromStorage,
   writeActiveClientToStorage,
+  getBudgetRowsFE,   
   type Client as ApiClient,
+  type BudgetRow,
 } from '@/lib/mockApi';
 
-/* --------------------------- Demo table data --------------------------- */
-type Row = { item: string; category: string; allocated: number; spent: number };
-const rows: Row[] = [
-  { item: 'Dental Appointments', category: 'Appointments', allocated: 600, spent: 636 },
-  { item: 'Toothbrush Heads',    category: 'Hygiene',      allocated: 30,  spent: 28  },
-  { item: 'Socks',               category: 'Clothing',     allocated: 176, spent: 36  },
-];
-
-type Tone = 'green' | 'yellow' | 'red';
-const getStatus = (remaining: number): { tone: Tone; label: string } => {
-  if (remaining < 0) return { tone: 'red',    label: 'Exceeded' };
-  if (remaining <= 5) return { tone: 'yellow', label: 'Nearly Exceeded' };
-  return { tone: 'green', label: 'Within Limit' };
-};
+/* ---------------------------------- Types ---------------------------------- */
+type Client = { id: string; name: string };
+type Role = 'carer' | 'family' | 'management';
 
 /* ------------------------------- Chrome colors ------------------------------- */
 const colors = {
@@ -47,9 +39,13 @@ const colors = {
   text:   '#2b2b2b',
 };
 
-/* ---------------------------------- Types ---------------------------------- */
-type Client = { id: string; name: string };
-type Role = 'carer' | 'family' | 'management';
+/* ---------------------------------- Utils ---------------------------------- */
+type Tone = 'green' | 'yellow' | 'red';
+const getStatus = (remaining: number): { tone: Tone; label: string } => {
+  if (remaining < 0) return { tone: 'red',    label: 'Exceeded' };
+  if (remaining <= 5) return { tone: 'yellow', label: 'Nearly Exceeded' };
+  return { tone: 'green', label: 'Within Limit' };
+};
 
 /* --------------------------------- Page ---------------------------------- */
 export default function BudgetReportPage() {
@@ -63,23 +59,27 @@ export default function BudgetReportPage() {
 function BudgetReportInner() {
   const router = useRouter();
 
-  // ===== Role (hydration-safe) =====
+  // ===== Role =====
   const [role, setRole] = useState<Role>('family');
   useEffect(() => {
     setRole(getViewerRoleFE());
   }, []);
   const isManagement = role === 'management';
 
-  // ===== Clients (from mockApi) =====
+  // ===== Clients =====
   const [clients, setClients] = useState<Client[]>([]);
   const [activeClientId, setActiveClientId] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string>('');
 
-  // Editing state for Annual Budget override (management only)
+  // ===== Budget rows =====
+  const [rows, setRows] = useState<BudgetRow[]>([]);
+
+  // ===== Editing state =====
   const [isEditing, setIsEditing] = useState(false);
   const [annualBudgetOverride, setAnnualBudgetOverride] = useState<number | null>(null);
   const [annualBudgetInput, setAnnualBudgetInput] = useState<string>('');
 
+  /** Load clients */
   useEffect(() => {
     (async () => {
       try {
@@ -98,6 +98,23 @@ function BudgetReportInner() {
     })();
   }, []);
 
+  /** Load budget rows when active client changes */
+  useEffect(() => {
+    if (!activeClientId) {
+      setRows([]);
+      return;
+    }
+    (async () => {
+      try {
+        const budgetRows = await getBudgetRowsFE(activeClientId);
+        setRows(budgetRows);
+      } catch {
+        setRows([]);
+      }
+    })();
+  }, [activeClientId]);
+
+  /** Handle client change in banner */
   const onClientChange = (id: string) => {
     if (!id) {
       setActiveClientId(null);
@@ -112,7 +129,6 @@ function BudgetReportInner() {
     writeActiveClientToStorage(id, name);
   };
 
-  // ===== Logo -> home =====
   const onLogoClick = () => {
     if (typeof window !== 'undefined') localStorage.setItem('activeRole', role);
     router.push('/empty_dashboard');
@@ -122,25 +138,26 @@ function BudgetReportInner() {
   const [q, setQ] = useState('');
   const [year, setYear] = useState('2025');
 
+  /** Filter by search */
   const filtered = useMemo(() => {
     const t = q.trim().toLowerCase();
     if (!t) return rows;
     return rows.filter(
       (r) => r.item.toLowerCase().includes(t) || r.category.toLowerCase().includes(t)
     );
-  }, [q]);
+  }, [q, rows]);
 
+  /** Totals */
   const totals = useMemo(() => {
     const allocated = filtered.reduce((s, r) => s + r.allocated, 0);
     const spent = filtered.reduce((s, r) => s + r.spent, 0);
     return { allocated, spent, remaining: allocated - spent };
   }, [filtered]);
 
-  // Effective values (apply override if present)
   const effectiveAllocated = annualBudgetOverride ?? totals.allocated;
   const effectiveRemaining = effectiveAllocated - totals.spent;
 
-  /* ===== Render (Full-bleed layout) ===== */
+  /* ===== Render ===== */
   return (
     <DashboardChrome
       page="budget"
@@ -151,11 +168,10 @@ function BudgetReportInner() {
       colors={colors}
       onLogoClick={onLogoClick}
     >
-      {/* Full screen body; no inner white card */}
       <div className="flex-1 h-[680px] bg-white/50 overflow-auto">
-        {/* Top maroon bar */}
+        {/* Top bar */}
         <div className="w-full bg-[#3A0000] px-6 py-4 flex items-center justify-between">
-          {/* LEFT: Title + Year select (moved here, side-by-side) */}
+          {/* LEFT: title + year */}
           <div className="flex items-center gap-10">
             <h2 className="text-white text-2xl font-semibold">Annual Budget </h2>
             <div className="flex items-center gap-2">
@@ -163,7 +179,7 @@ function BudgetReportInner() {
               <select
                 value={year}
                 onChange={(e) => setYear(e.target.value)}
-                className="rounded-md font-semibol bg-white text-sm px-3 py-1 border"
+                className="rounded-md bg-white text-sm px-3 py-1 border"
               >
                 <option value="2025">2025</option>
                 <option value="2024">2024</option>
@@ -172,7 +188,7 @@ function BudgetReportInner() {
             </div>
           </div>
 
-          {/* RIGHT: Search + Edit controls (unchanged) */}
+          {/* RIGHT: search + edit */}
           <div className="flex items-center gap-3">
             <input
               value={q}
@@ -219,18 +235,10 @@ function BudgetReportInner() {
           </div>
         </div>
 
-        {/* Warning banner (full width) */}
-        <div className="w-full bg-[#fde7e4] border-y border-[#f5c2c2] px-6 py-3">
-          <p className="text-[#9b2c2c] font-semibold">
-            WARNING: Dental Checkup budget exceeded by <b>$36</b>
-          </p>
-        </div>
-
-        {/* Main content (kept exactly the same, except removed duplicate year select) */}
+        {/* Main content */}
         <div className="w-full px-12 py-10">
-          {/* Overview tiles */}
+          {/* Tiles */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-18 mb-10 text-center">
-            {/* Annual Budget */}
             <div className="rounded-2xl border px-6 py-8 bg-[#F8CBA6]">
               {isManagement && isEditing ? (
                 <>
@@ -254,13 +262,11 @@ function BudgetReportInner() {
               )}
             </div>
 
-            {/* Spent to Date */}
             <div className="rounded-2xl border px-6 py-8 bg-white">
               <div className="text-2xl font-bold">${totals.spent.toLocaleString()}</div>
               <div className="text-sm">Spent to Date</div>
             </div>
 
-            {/* Remaining */}
             <div className="rounded-2xl border px-6 py-8 bg-white">
               <div className={`text-2xl font-bold ${effectiveRemaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
                 {effectiveRemaining < 0
@@ -271,7 +277,7 @@ function BudgetReportInner() {
             </div>
           </div>
 
-          {/* Table: full width */}
+          {/* Table */}
           <div className="rounded-2xl border border-[#3A0000] bg-white overflow-hidden">
             <table className="w-full text-left text-sm bg-white">
               <thead className="bg-[#3A0000] text-lg text-white">
@@ -313,7 +319,6 @@ function BudgetReportInner() {
               </tbody>
             </table>
           </div>
-
         </div>
       </div>
     </DashboardChrome>

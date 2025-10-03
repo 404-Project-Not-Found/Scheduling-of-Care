@@ -15,7 +15,7 @@
  * - Management-only actions:
  *      -> revoked: "Request again" button (enabled).
  *      -> pending: "Request sent" button (disabled).
- * - Added "Mock Cathy" (approved) to demonstrate approved flow.
+ * - Now fetches all mock/demo clients purely from mockApi (no hardcoding here).
  */
 
 import React, { Suspense, useEffect, useMemo, useState } from 'react';
@@ -82,6 +82,7 @@ function ClientListInner() {
     (async () => {
       try {
         const list = await getClientsFE();
+        // Map into local Client type
         let mapped: Client[] = list.map((c: ApiClient) => ({
           id: c._id,
           name: c.name,
@@ -89,18 +90,10 @@ function ClientListInner() {
           orgAccess: (c as any).organisationAccess ?? 'pending',
         }));
 
-        // Force second client into revoked state
+        // Force second client into revoked state (for demo purposes)
         if (mapped[1]) {
           mapped[1] = { ...mapped[1], orgAccess: 'revoked' };
         }
-
-        // Append "Mock Cathy" (approved)
-        mapped.push({
-          id: 'mock-cathy',
-          name: 'Mock Cathy',
-          dashboardType: 'full',
-          orgAccess: 'approved',
-        });
 
         setClients(mapped);
       } catch {
@@ -339,9 +332,9 @@ function ClientListInner() {
 /* ---- Badge component: shows access status visually ---- */
 function AccessBadge({ status }: { status: OrgAccess }) {
   const cfg: Record<OrgAccess, { bg: string; dot: string; label: string; text: string }> = {
-    approved: { bg: 'bg-green-100', dot: 'bg-green-500', label: 'Approved',      text: 'text-green-800' },
-    pending:  { bg: 'bg-yellow-100', dot: 'bg-yellow-500', label: 'Pending', text: 'text-yellow-800' },
-    revoked:  { bg: 'bg-red-100',    dot: 'bg-red-500',    label: 'Revoked',      text: 'text-red-800' },
+    approved: { bg: 'bg-green-100', dot: 'bg-green-500', label: 'Approved', text: 'text-green-800' },
+    pending: { bg: 'bg-yellow-100', dot: 'bg-yellow-500', label: 'Pending', text: 'text-yellow-800' },
+    revoked: { bg: 'bg-red-100', dot: 'bg-red-500', label: 'Revoked', text: 'text-red-800' },
   };
   const c = cfg[status];
   return (

@@ -4,15 +4,17 @@
  * Date Created: 28/09/2025
  *
  * Notes:
- * - This file contains both Client/Organisation APIs and Task APIs.
  * - Frontend mock mode (NEXT_PUBLIC_ENABLE_MOCK=1):
- *     - Clients: returns hardcoded mock list (with optional fields present)
- *     - Tasks:   loads from localStorage('tasks') or seeds demo tasks
- *     - Role:    persisted in sessionStorage/localStorage after mock sign-in
+ *     - Clients: hardcoded mock list
+ *     - Tasks:   localStorage('tasks') or seeded demo tasks
+ *     - Budget:  per-client mock data
+ *     - Txns:    per-client mock data in localStorage('transactions')
+ *     - Role:    session/local storage
  * - Real backend mode:
- *     - Clients: call /api/clients and /api/clients/:id
- *     - Tasks:   call /api/tasks (GET/POST)
- *     - Role:    read from localStorage if present, default 'family'
+ *     - Clients: /api/clients, /api/clients/:id
+ *     - Tasks:   /api/tasks
+ *     - Budget:  /api/clients/:id/budget
+ *     - Txns:    /api/clients/:id/transactions
  */
 
 /* =========================
@@ -21,8 +23,8 @@
 
 export const isMock = process.env.NEXT_PUBLIC_ENABLE_MOCK === '1';
 
-export const FULL_DASH_ID = 'mock1';     // Demo: full dashboard client
-export const PARTIAL_DASH_ID = 'mock2';  // Demo: partial dashboard client
+export const FULL_DASH_ID = 'mock1';     // Mock Alice (full dashboard)
+export const PARTIAL_DASH_ID = 'mock2';  // Mock Bob (partial dashboard)
 
 export const LS_ACTIVE_CLIENT_ID = 'activeClientId';
 export const LS_CURRENT_CLIENT_NAME = 'currentClientName';
@@ -35,25 +37,14 @@ export type ViewerRole = 'family' | 'carer' | 'management';
 export const LS_ACTIVE_ROLE = 'activeRole'; // long-lived
 export const SS_MOCK_ROLE  = 'mockRole';    // session-scoped for mock
 
-/**
- * Persist viewer role (call this right after mock sign-in).
- * Keeps a long-lived copy in localStorage and a session copy.
- */
 export function setViewerRoleFE(role: ViewerRole): void {
   if (typeof window === 'undefined') return;
   localStorage.setItem(LS_ACTIVE_ROLE, role);
   try {
     sessionStorage.setItem(SS_MOCK_ROLE, role);
-  } catch {
-    // ignore storage limitations
-  }
+  } catch {}
 }
 
-/**
- * Read viewer role with sensible priority:
- * - Mock: sessionStorage.mockRole → localStorage.activeRole → 'family'
- * - Real: localStorage.activeRole → 'family'
- */
 export function getViewerRoleFE(): ViewerRole {
   if (typeof window === 'undefined') return 'family';
 
@@ -68,7 +59,6 @@ export function getViewerRoleFE(): ViewerRole {
   return 'family';
 }
 
-/** Optional helper: clear role (e.g., on sign-out) */
 export function clearViewerRoleFE(): void {
   if (typeof window === 'undefined') return;
   localStorage.removeItem(LS_ACTIVE_ROLE);
@@ -86,8 +76,6 @@ export type Client = {
   name: string;
   dob: string;
   dashboardType?: 'full' | 'partial';
-
-  /** Optional fields for UI (safe to read in mock/back-end) */
   accessCode?: string;
   notes?: string[];
   avatarUrl?: string;
@@ -101,11 +89,11 @@ export type Organisation = {
 
 /** Fallback name map (when currentClientName not set) */
 export const NAME_BY_ID: Record<string, string> = {
-  [FULL_DASH_ID]: 'Mock Client A',
-  [PARTIAL_DASH_ID]: 'MockClient B',
+  [FULL_DASH_ID]: 'Mock Alice',
+  [PARTIAL_DASH_ID]: 'Mock Bob',
+  'mock-cathy': 'Mock Cathy',
 };
 
-/** Read active client (id, name) from localStorage with safe fallback */
 export function readActiveClientFromStorage(): { id: string | null; name: string } {
   if (typeof window === 'undefined') return { id: null, name: '' };
   const id = localStorage.getItem(LS_ACTIVE_CLIENT_ID);
@@ -114,7 +102,6 @@ export function readActiveClientFromStorage(): { id: string | null; name: string
   return { id, name };
 }
 
-/** Centralize writing active client to storage */
 export function writeActiveClientToStorage(id: string, name?: string) {
   if (typeof window === 'undefined') return;
   localStorage.setItem(LS_ACTIVE_CLIENT_ID, id);
@@ -124,8 +111,7 @@ export function writeActiveClientToStorage(id: string, name?: string) {
 /** Fetch all clients (mock or backend) */
 export async function getClientsFE(): Promise<Client[]> {
   if (isMock) {
-    // Hardcoded mock list with optional fields present
-    return [
+    const baseClients: (Client & { organisationAccess?: 'approved' | 'pending' | 'revoked' })[] = [
       {
         _id: 'mock1',
         name: 'Mock Alice',
@@ -134,6 +120,7 @@ export async function getClientsFE(): Promise<Client[]> {
         accessCode: '',
         notes: [],
         avatarUrl: '',
+        organisationAccess: 'pending',
       },
       {
         _id: 'mock2',
@@ -143,11 +130,22 @@ export async function getClientsFE(): Promise<Client[]> {
         accessCode: '',
         notes: [],
         avatarUrl: '',
+        organisationAccess: 'pending',
+      },
+      {
+        _id: 'mock-cathy',
+        name: 'Mock Cathy',
+        dob: '1962-11-05',
+        dashboardType: 'full',
+        accessCode: '',
+        notes: [],
+        avatarUrl: '',
+        organisationAccess: 'approved',
       },
     ];
+    return baseClients;
   }
 
-  // Real backend
   const res = await fetch('/api/clients', { cache: 'no-store' });
   if (!res.ok) throw new Error(`Failed to fetch clients (${res.status})`);
   const data = await res.json();
@@ -176,11 +174,19 @@ export async function getClientByIdFE(id: string): Promise<Client | null> {
         notes: [],
         avatarUrl: '',
       },
+      {
+        _id: 'mock-cathy',
+        name: 'Mock Cathy',
+        dob: '1962-11-05',
+        dashboardType: 'full',
+        accessCode: '',
+        notes: [],
+        avatarUrl: '',
+      },
     ];
     return mockData.find((c) => c._id === id) || null;
   }
 
-  // Real backend
   const res = await fetch(`/api/clients/${id}`, { cache: 'no-store' });
   if (!res.ok) return null;
   return (await res.json()) as Client;
@@ -208,10 +214,8 @@ export type Task = {
   files: string[];
 };
 
-
 const TASKS_LS_KEY = 'tasks';
 
-// Demo seed (mock mode only)
 const DEMO_TASKS: Task[] = [
   {
     id: '1',
@@ -251,46 +255,35 @@ const DEMO_TASKS: Task[] = [
   },
 ];
 
-/** Fetch all tasks (mock or backend) */
 export async function getTasksFE(): Promise<Task[]> {
   if (isMock) {
-    // Try localStorage; fallback to demo seed so UI is populated
     try {
       const raw = localStorage.getItem(TASKS_LS_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed as Task[];
       }
-    } catch {
-      // ignore JSON errors
-    }
+    } catch {}
     try {
       localStorage.setItem(TASKS_LS_KEY, JSON.stringify(DEMO_TASKS));
-    } catch {
-      // ignore write errors
-    }
+    } catch {}
     return DEMO_TASKS;
   }
 
-  // Real backend
   const res = await fetch('/api/tasks', { cache: 'no-store' });
   if (!res.ok) throw new Error(`Failed to fetch tasks (${res.status})`);
   const data = await res.json();
   return Array.isArray(data) ? (data as Task[]) : [];
 }
 
-/** Save all tasks (mock -> localStorage; real -> POST to backend) */
 export async function saveTasksFE(tasks: Task[]): Promise<void> {
   if (isMock) {
     try {
       localStorage.setItem(TASKS_LS_KEY, JSON.stringify(tasks));
-    } catch {
-      // ignore storage issues
-    }
+    } catch {}
     return;
   }
 
-  // Real backend: overwrite all
   const res = await fetch('/api/tasks', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -299,15 +292,13 @@ export async function saveTasksFE(tasks: Task[]): Promise<void> {
   if (!res.ok) throw new Error(`Failed to save tasks (${res.status})`);
 }
 
-//mock data for manage client task for management
+/* =================
+ * Task Catalog (FE)
+ * ================= */
 
 export type TaskCatalogItem = { label: string; slug: string };
 export type TaskCatalog = { category: string; tasks: TaskCatalogItem[] }[];
 
-/**
- * Frontend-mock catalog for category -> task names.
- * Hardcoded as requested: Appointments / Hygiene / Clothing
- */
 export function getTaskCatalogFE(): TaskCatalog {
   return [
     {
@@ -338,85 +329,11 @@ export function getTaskCatalogFE(): TaskCatalog {
 }
 
 /* =================
- * Staff API (FE)
+ * Frequency Options
  * ================= */
 
-export type Staff = {
-  _id: string;
-  name: string;
-  email?: string;
-  avatarUrl?: string;
-  role?: 'management' | 'carer';
-  status?: 'active' | 'inactive';
-};
-
-
-export const MOCK_STAFF: Staff[] = [
-  {
-    _id: 's001',
-    name: 'Alice Brown',
-    email: 'alice.brown@example.com',
-    role: 'carer',
-    status: 'active',
-    avatarUrl: '/avatars/alice.png',
-  },
-  {
-    _id: 's002',
-    name: 'Brian Chen',
-    email: 'brian.chen@example.com',
-    role: 'carer',
-    status: 'inactive',
-    avatarUrl: '/avatars/brian.png',
-  },
-  {
-    _id: 's003',
-    name: 'Chloe Davis',
-    email: 'chloe.davis@example.com',
-    role: 'management',
-    status: 'active',
-    avatarUrl: '/avatars/chloe.png',
-  },
-  {
-    _id: 's004',
-    name: 'Diego Evans',
-    email: 'diego.evans@example.com',
-    role: 'carer',
-    status: 'active',
-  },
-  {
-    _id: 's005',
-    name: 'Emma Fox',
-    email: 'emma.fox@example.com',
-    role: 'carer',
-    status: 'active',
-  },
-];
-
-export async function getStaffFE(): Promise<Staff[]> {
-  if (isMock) {
-    return MOCK_STAFF;
-  }
-  const res = await fetch('/api/management/staff', { cache: 'no-store' });
-  if (!res.ok) throw new Error(`Failed to fetch staff (${res.status})`);
-  const data = await res.json();
-  return Array.isArray(data) ? (data as Staff[]) : [];
-}
-
-
- // ========== Frequency options for Manage Care Item (FE mock only) ==========
-
-/**
- * Canonical time unit used by the frequency selector.
- * If you already have a Unit type in your app, delete this duplicate.
- */
 export type Unit = 'day' | 'week' | 'month' | 'year';
 
-/**
- * One selectable frequency option in the dropdown.
- * - id: stable string for <option value>, avoids number+unit tuples in DOM values
- * - label: human-friendly text (what the user sees)
- * - count + unit: the actual semantic value used by your logic
- */
 export type FrequencyOption = {
   id: string;
   label: string;
@@ -424,10 +341,6 @@ export type FrequencyOption = {
   unit: Unit;
 };
 
-/**
- * Fallback options used when a task slug has no specific template.
- * Keep this generic so the UI always has something to render.
- */
 const DEFAULT_FREQUENCY_OPTIONS: FrequencyOption[] = [
   { id: '1w', label: 'Every week',       count: 1, unit: 'week'  },
   { id: '2w', label: 'Every 2 weeks',    count: 2, unit: 'week'  },
@@ -437,15 +350,7 @@ const DEFAULT_FREQUENCY_OPTIONS: FrequencyOption[] = [
   { id: '1y', label: 'Every year',       count: 1, unit: 'year'  },
 ];
 
-/**
- * Lightweight per-task templates for FE mock.
- */
-const TASK_TEMPLATES: Record<
-  string,
-  {
-    frequencyOptions: FrequencyOption[];
-  }
-> = {
+const TASK_TEMPLATES: Record<string, { frequencyOptions: FrequencyOption[] }> = {
   'dental-appointment': {
     frequencyOptions: [
       { id: '1m', label: 'Every month',      count: 1, unit: 'month' },
@@ -513,71 +418,217 @@ const TASK_TEMPLATES: Record<
   },
 };
 
-/**
- * Public helper for UI: returns frequency dropdown options for a given task slug.
- * - If the slug is unknown or missing, DEFAULT_FREQUENCY_OPTIONS are returned.
- * - This is FE-only and intentionally does not touch backend APIs.
- */
 export function getFrequencyOptionsByTaskSlugFE(slug?: string): FrequencyOption[] {
   if (!slug) return DEFAULT_FREQUENCY_OPTIONS;
   return TASK_TEMPLATES[slug]?.frequencyOptions ?? DEFAULT_FREQUENCY_OPTIONS;
 }
 
-/* ========= Change Requests (Request Log) ========= */
+/* =================
+ * Budget API (FE)
+ * ================= */
 
-export type ChangeRequest = {
-  id: string;
-  clientId: string;                 // 必须和 getClientsFE() 返回的 _id 对齐（mock1/mock2）
-  task: string;
-  change: string;
-  requestedBy: string;              // e.g. "John (Family)" | "Mary (POA)"
-  dateRequested: string;            // "28 Jun 2025" 或 ISO
-  status: "Pending" | "Approved";
-  resolutionDate: string;           // "-" 或日期
+export type BudgetRow = { item: string; category: string; allocated: number; spent: number };
+
+/** Per-client demo budget (IDs aligned with getClientsFE) */
+const MOCK_BUDGET_BY_CLIENT: Record<string, BudgetRow[]> = {
+  [FULL_DASH_ID]: [
+    { item: 'Dental Appointments', category: 'Appointments', allocated: 600, spent: 636 },
+    { item: 'Toothbrush Heads',    category: 'Hygiene',      allocated: 30,  spent: 28  },
+    { item: 'Socks',               category: 'Clothing',     allocated: 176, spent: 36  },
+  ],
+  [PARTIAL_DASH_ID]: [
+    { item: 'GP Checkup',          category: 'Appointments', allocated: 400, spent: 300 },
+    { item: 'Shampoo',             category: 'Hygiene',      allocated: 50,  spent: 45  },
+    { item: 'Jacket',              category: 'Clothing',     allocated: 200, spent: 120 },
+  ],
+  'mock-cathy': [
+    { item: 'Eye Test',            category: 'Appointments', allocated: 500, spent: 100 },
+    { item: 'Body Wash',           category: 'Hygiene',      allocated: 40,  spent: 15  },
+    { item: 'Shoes',               category: 'Clothing',     allocated: 300, spent: 280 },
+  ],
 };
 
-// ✅ 给 Mock Alice (mock1) 放一些请求；Mock Bob (mock2) 留空
-const CHANGE_REQUESTS_DB: ChangeRequest[] = [
-  {
-    id: "r1",
-    clientId: "mock1",
-    task: "Replace Toothbrush Head",
-    change: "Change frequency to every 2 months",
-    requestedBy: "John (Family)",
-    dateRequested: "28 Jun 2025",
-    status: "Pending",
-    resolutionDate: "-",
-  },
-  {
-    id: "r2",
-    clientId: "mock1",
-    task: "Dental Appointments",
-    change: "Add oral cancer screening on 6 Jun 2025",
-    requestedBy: "Mary (POA)",
-    dateRequested: "19 May 2025",
-    status: "Approved",
-    resolutionDate: "25 May 2025",
-  },
-  {
-    id: "r3",
-    clientId: "mock1",
-    task: "Daily Medication",
-    change: "Add Vitamin D supplement in mornings",
-    requestedBy: "John (Family)",
-    dateRequested: "10 May 2025",
-    status: "Pending",
-    resolutionDate: "-",
-  },
-  // 注意：mock2（Bob）不放数据，页面自然显示为空
+export async function getBudgetRowsFE(clientId: string): Promise<BudgetRow[]> {
+  if (isMock) {
+    await new Promise((r) => setTimeout(r, 80));
+    return MOCK_BUDGET_BY_CLIENT[clientId] ?? [];
+  }
+
+  const res = await fetch(`/api/clients/${clientId}/budget`, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`Failed to fetch budget rows (${res.status})`);
+  const data = await res.json();
+  return Array.isArray(data) ? (data as BudgetRow[]) : [];
+}
+
+/* =================
+ * Transactions API (FE)
+ * ================= */
+
+export type Transaction = {
+  id: string;
+  clientId: string;  
+  type: string;
+  date: string;
+  madeBy: string;
+  items: string[];
+  receipt: string;
+};
+
+const TRANSACTIONS_LS_KEY = 'transactions';
+
+/** Per-client demo transactions (IDs aligned) */
+const DEMO_TRANSACTIONS: Transaction[] = [
+  // Mock Alice (mock1)
+  { id: 't1', clientId: 'mock1', type: 'Purchase', date: '2025-09-20', madeBy: 'Carer John', items: ['Dental Appointments'], receipt: 'receipt1.pdf' },
+  { id: 't2', clientId: 'mock1', type: 'Refund', date: '2025-09-21', madeBy: 'Family Alice', items: ['Toothbrush Heads'], receipt: 'receipt2.jpg' },
+  { id: 't3', clientId: 'mock1', type: 'Purchase', date: '2025-09-28', madeBy: 'Carer Mary', items: ['Mouthwash', 'Toothpaste'], receipt: 'receipt3.pdf' },
+
+  // Mock Bob (mock2)
+  { id: 't4', clientId: 'mock2', type: 'Purchase', date: '2025-09-22', madeBy: 'Family Bob', items: ['Socks'], receipt: 'receipt4.pdf' },
+  { id: 't5', clientId: 'mock2', type: 'Purchase', date: '2025-09-24', madeBy: 'Carer David', items: ['Shampoo', 'Soap'], receipt: 'receipt5.jpg' },
+
+  // Mock Cathy (mock-cathy) no data
 ];
 
-export async function getRequestsByClientFE(clientId: string): Promise<ChangeRequest[]> {
+
+export async function getTransactionsFE(clientId: string): Promise<Transaction[]> {
   if (isMock) {
-    await new Promise((r) => setTimeout(r, 120)); // 模拟网络延迟
-    return CHANGE_REQUESTS_DB.filter((r) => r.clientId === clientId);
+    try {
+      const raw = localStorage.getItem(TRANSACTIONS_LS_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          return DEMO_TRANSACTIONS.filter(tx => tx.clientId === clientId);
+        }
+      }
+    } catch {}
+
+    try {
+      localStorage.setItem(TRANSACTIONS_LS_KEY, JSON.stringify(DEMO_TRANSACTIONS));
+    } catch {}
+    return DEMO_TRANSACTIONS.filter((tx) => tx.clientId === clientId);
   }
-  const res = await fetch(`/api/requests?clientId=${encodeURIComponent(clientId)}`, { cache: "no-store" });
+
+  const res = await fetch(`/api/clients/${clientId}/transactions`, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`Failed to fetch transactions (${res.status})`);
+  const data = await res.json();
+  return Array.isArray(data) ? (data as Transaction[]) : [];
+}
+
+export async function addTransactionFE(tx: Transaction): Promise<void> {
+  if (isMock) {
+    // read all
+    let all: Transaction[] = [];
+    try {
+      const raw = localStorage.getItem(TRANSACTIONS_LS_KEY);
+      all = raw ? (JSON.parse(raw) as Transaction[]) : [];
+    } catch {
+      all = [];
+    }
+
+    // append with generated id
+    const withId = { ...tx, id: `t${Date.now()}` };
+    const merged = [...all, withId];
+
+    try {
+      localStorage.setItem(TRANSACTIONS_LS_KEY, JSON.stringify(merged));
+    } catch {}
+    return;
+  }
+
+  const res = await fetch('/api/transactions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(tx),
+  });
+  if (!res.ok) throw new Error(`Failed to save transaction (${res.status})`);
+}
+
+/* =================
+ * Requests API (FE)
+ * ================= */
+
+export type RequestLog = {
+  id: string;
+  clientId: string;
+  task: string;
+  change: string;
+  requestedBy: string;
+  dateRequested: string;
+  status: 'Pending' | 'Approved';
+  resolutionDate: string;
+};
+
+const REQUESTS_LS_KEY = 'requests';
+
+const DEMO_REQUESTS: RequestLog[] = [
+  {
+    id: 'r1',
+    clientId: FULL_DASH_ID, // 'mock1'
+    task: 'Toothbrush Heads',
+    change: 'Change supplier to Colgate',
+    requestedBy: 'Carer John',
+    dateRequested: '12 Sep 2025',
+    status: 'Pending',
+    resolutionDate: '-',
+  },
+  {
+    id: 'r2',
+    clientId: FULL_DASH_ID,
+    task: 'Dental Appointments',
+    change: 'Reschedule to 25th Sep',
+    requestedBy: 'Family Alice',
+    dateRequested: '10 Sep 2025',
+    status: 'Approved',
+    resolutionDate: '15 Sep 2025',
+  },
+  {
+    id: 'r3',
+    clientId: FULL_DASH_ID,
+    task: 'Socks',
+    change: 'Request larger size',
+    requestedBy: 'Carer Mary',
+    dateRequested: '08 Sep 2025',
+    status: 'Pending',
+    resolutionDate: '-',
+  },
+];
+
+export async function getRequestsByClientFE(clientId: string): Promise<RequestLog[]> {
+  if (isMock) {
+    try {
+      const raw = localStorage.getItem(REQUESTS_LS_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((r: RequestLog) => r.clientId === clientId);
+        }
+      }
+    } catch {}
+
+    try {
+      localStorage.setItem(REQUESTS_LS_KEY, JSON.stringify(DEMO_REQUESTS));
+    } catch {}
+    return DEMO_REQUESTS.filter((r) => r.clientId === clientId);
+  }
+
+  const res = await fetch(`/api/clients/${clientId}/requests`, { cache: 'no-store' });
   if (!res.ok) throw new Error(`Failed to fetch requests (${res.status})`);
   const data = await res.json();
-  return Array.isArray(data) ? (data as ChangeRequest[]) : [];
+  return Array.isArray(data) ? (data as RequestLog[]) : [];
+}
+
+export async function saveRequestsFE(requests: RequestLog[]): Promise<void> {
+  if (isMock) {
+    try {
+      localStorage.setItem(REQUESTS_LS_KEY, JSON.stringify(requests));
+    } catch {}
+    return;
+  }
+  const res = await fetch('/api/requests', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(requests),
+  });
+  if (!res.ok) throw new Error(`Failed to save requests (${res.status})`);
 }
