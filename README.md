@@ -238,25 +238,9 @@ http://localhost:3000
 
 
 ```
-Source files in /src/lib/clientApi.ts
+Source files in /src/lib/mock/mockApi.ts which include more details
 ```
 
 pages import from `@/lib/mock/mockApi`. 
-
-
-### Common exports expected by pages
-
-- **Environment & Role**
-  - `isMock`
-  - `setViewerRoleFE(role)` / `getViewerRoleFE()` / `clearViewerRoleFE()`
-- **Clients**
-  - `getClientsFE()` / `getClientByIdFE(id)`
-  - `readActiveClientFromStorage()` / `writeActiveClientToStorage(id,name?)`
-  - Demo constants: `FULL_DASH_ID`, `NAME_BY_ID`
-- **Tasks**
-  - `getTasksFE()` / `saveTasksFE(tasks)`
-  - Dropdown helpers: `getTaskCatalogFE()` / `getFrequencyOptionsByTaskSlugFE(slug)`
-
-> If an import fails with `@/lib/mock/mockApi`, prefer adding the **path alias** above.
 
 ---

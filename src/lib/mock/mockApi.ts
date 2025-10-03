@@ -17,6 +17,31 @@
  *     - Txns:    /api/clients/:id/transactions
  */
 
+// ### Common exports expected by pages
+
+// - **Environment & Role**
+//   - `isMock`
+//   - `setViewerRoleFE(role)` / `getViewerRoleFE()` / `clearViewerRoleFE()`
+
+// - **Clients**
+//   - `getClientsFE()` / `getClientByIdFE(id)`
+//   - `readActiveClientFromStorage()` / `writeActiveClientToStorage(id, name?)`
+//   - Demo constants: `FULL_DASH_ID`, `PARTIAL_DASH_ID`, `NAME_BY_ID`
+
+// - **Tasks**
+//   - `getTasksFE()` / `saveTasksFE(tasks)`
+//   - Dropdown helpers: `getTaskCatalogFE()` / `getFrequencyOptionsByTaskSlugFE(slug)`
+
+// - **Budget**
+//   - `getBudgetRowsFE(clientId)`
+
+// - **Transactions**
+//   - `getTransactionsFE(clientId)` / `addTransactionFE(tx)`
+
+// - **Requests (Change Log)**
+//   - `getRequestsByClientFE(clientId)` / `saveRequestsFE(requests)`
+
+
 /* =========================
  * Flags & Shared Constants
  * ========================= */
