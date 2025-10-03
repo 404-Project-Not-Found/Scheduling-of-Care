@@ -1,8 +1,11 @@
-/* Author: Qingyue Zhao
+/* 
+ * File: top_menu/client_schedule
+ * Author: Qingyue Zhao
  * Purpose: Reusable header chrome for all calendar/budget/transactions/request pages.
  * - Role detection is handled here (family / carer / management).
  * - Top navigation menu is rendered here; active page gets an underline style.
  * - Pink banner with the centered title changes depending on the page and selected client.
+ * - Allows overriding the banner title (e.g. for "X’s Organisation Access").
  */
 
 'use client';
@@ -12,9 +15,15 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getViewerRoleFE } from '@/lib/mock/mockApi';
-import { mockSignOut } from '@/lib/mock/mockSignout'; 
+import { mockSignOut } from '@/lib/mock/mockSignout';
 
-const palette = { header:'#3A0000', banner:'#F9C9B1', text:'#2b2b2b', white:'#FFFFFF', pageBg:'#FAEBDC' };
+const palette = {
+  header: '#3A0000',
+  banner: '#F9C9B1',
+  text: '#2b2b2b',
+  white: '#FFFFFF',
+  pageBg: '#FAEBDC',
+};
 
 type PageKey =
   | 'schedule'
@@ -27,7 +36,8 @@ type PageKey =
   | 'category-cost'
   | 'client-list'
   | 'people-list'
-  | 'profile';
+  | 'profile'
+  | 'organisation-access';
 
 type ClientLite = { id: string; name: string };
 
@@ -37,7 +47,7 @@ type ChromeProps = {
   activeClientId: string | null;
   onClientChange: (id: string) => void;
   activeClientName?: string;
-  topRight?: React.ReactNode; // still supported; will render next to avatar
+  topRight?: React.ReactNode; 
   colors: { header: string; banner: string; text: string };
   children: React.ReactNode;
   headerHeight?: number;
@@ -46,10 +56,12 @@ type ChromeProps = {
   onLogoClick?: () => void;
 
   /** Avatar controls */
-  showAvatar?: boolean;               
-  avatarSrc?: string;                 
-  onProfile?: () => void;             
-  onSignOut?: () => void;             
+  showAvatar?: boolean;
+  avatarSrc?: string;
+  onProfile?: () => void;
+  onSignOut?: () => void;
+
+
 };
 
 const ROUTES = {
@@ -65,9 +77,13 @@ const ROUTES = {
   defaultHome: '/empty_dashboard',
   accountUpdate: '/calender_dashboard/update_details',
   homeByRole: '/empty_dashboard',
-  profile: '/client_profile', 
+  profile: '/client_profile',
+  organisationAccess: '/family_dashboard/manage_organisation_access/${id}',
 };
 
+/** 
+ * Maps each page to its noun form for banner display. 
+ */
 function nounForPage(page: PageKey): string {
   switch (page) {
     case 'budget': return 'Budget Report';
@@ -78,19 +94,39 @@ function nounForPage(page: PageKey): string {
     case 'care-add': return 'Care Items';
     case 'category-cost': return 'Budget Report';
     case 'client-list': return 'Client List';
+    case 'people-list': return 'People List';
     case 'schedule':
     case 'profile': return 'Profile';
-    case 'people-list': return 'People List'
+    case 'organisation-access': return 'Organisation'
     default: return 'Schedule';
   }
 }
 
-function activeUnderline(page: PageKey, key: PageKey | 'care'): string {
+/** 
+ * underline helper:
+ * - normal: underline when page === key
+ * - care group: (care-edit|care-add) highlights 'care'
+ * - special: on profile, family→people-list, management→client-list
+ */
+function activeUnderline(
+  page: PageKey,
+  key: PageKey | 'care',
+  role?: 'family' | 'carer' | 'management'
+): string {
   const isActiveCare = (page === 'care-edit' || page === 'care-add') && key === 'care';
+  const profileMappedTarget =
+    role === 'family' ? 'people-list' : role === 'management' ? 'client-list' : null;
+  const isProfileMapped = page === 'profile' && key === profileMappedTarget;
   const isActiveDirect = page === key;
-  return (isActiveCare || isActiveDirect) ? 'underline underline-offset-4' : 'hover:underline';
+
+  return isActiveCare || isActiveDirect || isProfileMapped
+    ? 'underline underline-offset-4'
+    : 'hover:underline text-white';
 }
 
+/** 
+ * Converts HEX to RGBA (used for banner background transparency).
+ */
 function hexToRgba(hex: string, alpha = 1) {
   const h = hex.replace('#', '');
   const r = parseInt(h.slice(0, 2), 16);
@@ -100,9 +136,18 @@ function hexToRgba(hex: string, alpha = 1) {
 }
 
 export default function DashboardChrome({
-  page, clients, activeClientId, onClientChange, activeClientName,
-  topRight, colors, children, headerHeight = 64, bannerHeight = 64,
-  onPrint, onLogoClick,
+  page,
+  clients,
+  activeClientId,
+  onClientChange,
+  activeClientName,
+  topRight,
+  colors,
+  children,
+  headerHeight = 64,
+  bannerHeight = 64,
+  onPrint,
+  onLogoClick,
   showAvatar = true,
   avatarSrc = '/default_profile.png',
   onProfile,
@@ -112,15 +157,18 @@ export default function DashboardChrome({
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
-  const role = mounted ? getViewerRoleFE() : 'family';
+
+  const role: 'family' | 'carer' | 'management' = mounted ? getViewerRoleFE() : 'family';
   const isFamily = role === 'family';
   const isManagement = role === 'management';
 
+  // Default noun title (e.g. "Alice’s Budget Report")
   const noun = nounForPage(page);
   const centeredTitle = useMemo(
     () => (activeClientName ? `${activeClientName}’s ${noun}` : `Client ${noun}`),
     [activeClientName, noun]
   );
+
 
   const handleLogoClick = () => {
     if (onLogoClick) return onLogoClick();
@@ -144,9 +192,13 @@ export default function DashboardChrome({
     mockSignOut();
   };
 
+  // hide banner for management client-list & family people-list
+  const shouldShowBanner =
+    page !== 'client-list' && !(page === 'people-list' && role === 'family');
+
   return (
     <div className="min-h-screen flex flex-col" style={{ color: colors.text }}>
-      {/* Top Header */}
+      {/* ---------- Top Header ---------- */}
       <header
         className="px-8 py-12 flex items-center justify-between text-white"
         style={{ backgroundColor: colors.header, height: headerHeight }}
@@ -163,9 +215,7 @@ export default function DashboardChrome({
           <button
             onClick={() => router.push(ROUTES.schedule)}
             className={`font-extrabold leading-none text-2xl md:text-3xl ${
-                page === 'schedule' || page === 'profile'
-                ? 'underline'
-                : 'text-white hover:underline'
+              page === 'schedule' ? 'underline' : 'text-white hover:underline'
             }`}
             title="Go to schedule dashboard"
           >
@@ -176,28 +226,38 @@ export default function DashboardChrome({
         {/* Center: navigation menu */}
         <nav className="hidden lg:flex items-center gap-10 font-extrabold text-white text-xl">
           {mounted && isManagement && (
-            <Link href={ROUTES.clientList} className={activeUnderline(page, 'client-list')}>
+            <Link href={ROUTES.clientList} className={activeUnderline(page, 'client-list', role)}>
               Client List
             </Link>
           )}
-
           {mounted && isFamily && (
-            <Link href={ROUTES.peopleList} className={activeUnderline(page, 'people-list')}>My PWSN</Link>
+            <>
+                <Link href={ROUTES.peopleList} 
+                    className={activeUnderline(page, 'people-list', role)}>
+                My PWSN
+                </Link>
+                <Link href={ROUTES.organisationAccess}
+                    className={activeUnderline(page, 'organisation-access', role)}>
+                Organisation
+                </Link>
+            </>
           )}
-          <Link href={ROUTES.budget} className={activeUnderline(page, 'budget')}>Budget Report</Link>
-          <Link href={ROUTES.transactions} className={activeUnderline(page, 'transactions')}>View Transactions</Link>
+          <Link href={ROUTES.budget} className={activeUnderline(page, 'budget', role)}>
+            Budget Report
+          </Link>
+          <Link href={ROUTES.transactions} className={activeUnderline(page, 'transactions', role)}>
+            View Transactions
+          </Link>
           {mounted && isFamily && (
-            <Link href={ROUTES.requestForm} className={activeUnderline(page, 'request-form')}>
+            <Link href={ROUTES.requestForm} className={activeUnderline(page, 'request-form', role)}>
               Request Form
             </Link>
           )}
-            
-
           {mounted && isManagement && (
             <>
               <div className="relative">
                 <details className="group">
-                  <summary className={`inline-flex items-center gap-2 list-none cursor-pointer ${activeUnderline(page, 'care')}`}>
+                  <summary className={`inline-flex items-center gap-2 list-none cursor-pointer ${activeUnderline(page, 'care', role)}`}>
                     Care Items <span className="text-white/90">▼</span>
                   </summary>
                   <div className="absolute left-1/2 -translate-x-1/2 mt-3 w-80 rounded-md border border-white/30 bg-white text-black shadow-2xl z-50">
@@ -206,7 +266,7 @@ export default function DashboardChrome({
                   </div>
                 </details>
               </div>
-              <Link href={ROUTES.requestLog} className={activeUnderline(page, 'request-log')}>
+              <Link href={ROUTES.requestLog} className={activeUnderline(page, 'request-log', role)}>
                 Request Log
               </Link>
             </>
@@ -224,32 +284,12 @@ export default function DashboardChrome({
                 aria-expanded={userMenuOpen}
                 title="Account"
               >
-                <Image
-                  src={avatarSrc}
-                  alt="Profile"
-                  width={64}
-                  height={64}
-                  className="h-full w-full object-cover"
-                  priority
-                />
+                <Image src={avatarSrc} alt="Profile" width={64} height={64} className="h-full w-full object-cover" priority />
               </button>
               {userMenuOpen && (
-                <div
-                  className="absolute right-0 mt-3 w-80 rounded-md border border-white/30 bg-white text-black shadow-2xl z-50"
-                  role="menu"
-                >
-                  <button
-                    className="w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5"
-                    onClick={goProfile}
-                  >
-                    Update your details
-                  </button>
-                  <button
-                    className="w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5"
-                    onClick={doSignOut}
-                  >
-                    Sign out
-                  </button>
+                <div className="absolute right-0 mt-3 w-80 rounded-md border border-white/30 bg-white text-black shadow-2xl z-50" role="menu">
+                  <button className="w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5" onClick={goProfile}>Update your details</button>
+                  <button className="w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5" onClick={doSignOut}>Sign out</button>
                 </div>
               )}
             </div>
@@ -258,8 +298,8 @@ export default function DashboardChrome({
         </div>
       </header>
 
-      {/* Pink banner */}
-      {page !== 'client-list' && (
+      {/* ---------- Pink banner ---------- */}
+      {shouldShowBanner && (
         <div
           className="px-4 md:px-8 py-2 md:py-4 grid grid-cols-[auto_1fr_auto] items-center"
           style={{ backgroundColor: hexToRgba(palette.banner, 0.8) }}
@@ -274,38 +314,41 @@ export default function DashboardChrome({
               aria-label="Select client"
             >
               <option value="">{'- Select a client -'}</option>
-              {clients.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
+              {clients.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
             </select>
             <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-black/60 text-xl">▾</span>
           </div>
 
-          {/* Center title */}
-          <div className="relative">
+        {/* Center title */}
+        <div className="relative">
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-              <div className="flex items-center gap-3 justify-center md:-translate-x-16">
+                <div className="flex items-center gap-3 justify-center md:-translate-x-16">
                 <Link
-                  href={ROUTES.profile}
-                  aria-label="Open client profile"
-                  title="Open client profile"
-                  className="rounded-full focus:outline-none focus:ring-2 focus:ring-black/20"
+                    href={ROUTES.profile}
+                    aria-label="Open client profile"
+                    title="Open client profile"
+                    className="rounded-full focus:outline-none focus:ring-2 focus:ring-black/20"
                 >
-                  <Image
+                    <Image
                     src="/default_profile.png"
                     alt="Client avatar"
                     width={40}
                     height={40}
                     priority
                     className="rounded-full border border-black/20 object-cover cursor-pointer hover:opacity-90"
-                  />
+                    />
                 </Link>
                 <h1 className="font-extrabold leading-none text-2xl md:text-3xl select-none">
-                  {centeredTitle}
+                    {centeredTitle}
                 </h1>
-              </div>
+                </div>
             </div>
-          </div>
+        </div>
 
-          {/* Print button */}
+
+          {/* Print button (visible only on schedule) */}
           <div className="justify-self-end">
             <button
               onClick={handlePrint}
@@ -326,3 +369,4 @@ export default function DashboardChrome({
     </div>
   );
 }
+

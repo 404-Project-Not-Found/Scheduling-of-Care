@@ -74,7 +74,7 @@ function FamilyClientListInner() {
 
   return (
     <DashboardChrome
-      page="client-list"
+      page="people-list"
       clients={[]} // not needed here
       activeClientId={null}
       activeClientName={undefined}

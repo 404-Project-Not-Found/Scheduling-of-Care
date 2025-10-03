@@ -19,11 +19,12 @@ import DashboardChrome from '@/components/top_menu/client_schedule';
 import CalendarPanel from '@/components/dashboard/CalendarPanel';
 import TasksPanel from '@/components/tasks/TasksPanel';
 
+import type { Task } from '@/lib/mock/mockApi'; 
+
 import {
   getViewerRoleFE,
   getTasksFE,
   saveTasksFE,
-  type Task,
   getClientsFE,
   readActiveClientFromStorage,
   writeActiveClientToStorage,
@@ -39,6 +40,7 @@ const ROUTES = {
   transactions: '/calender_dashboard/add_tran',
   mgmtCareEdit: '/management_dashboard/manage_care_item/edit',
   mgmtCareAdd: '/management_dashboard/manage_care_item/add',
+  myPWSN: 'family_dashboard/people_list',
   accountUpdate: '/client_profile',
   signOut: '/calender_dashboard/update_details',
 };
@@ -255,7 +257,7 @@ function ClientSchedule() {
                     <div className="px-6 pb-8">
                     <TasksPanel
                         tasks={tasksForRightPane}
-                        onTaskClick={(task: Task) => setSelectedTask(task)}
+                        onTaskClick={(task) => setSelectedTask(task)}
                     />
                     </div>
                 </>

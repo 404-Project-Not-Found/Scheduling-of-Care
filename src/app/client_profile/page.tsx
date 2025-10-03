@@ -223,18 +223,14 @@ function ClientProfilePageInner() {
           <div className="text-xl md:text-2xl font-extrabold">{pageTitle}</div>
           <button
             onClick={() => router.push(backHref)}
-            className="text-white/95 hover:underline font-semibold text-lg"
+            className="text-base md:text-lg font-semibold bg-white/10 px-4 py-1.5 rounded hover:bg-white/20 transition"
             aria-label="Back"
           >
             &lt; Back
           </button>
         </div>
 
-        {/* Content: two columns
-            IMPORTANT:
-            - flex-none: do NOT consume remaining height (keeps buttons close)
-            - management gets extra top padding using arbitrary value class
-        */}
+        {/* Content: two columns*/}
         <div
           className={`max-w-[1100px] w-full mx-auto px-8 ${
             isManagement ? 'pt-30 pb-6' : 'pt-10 pb-6'
