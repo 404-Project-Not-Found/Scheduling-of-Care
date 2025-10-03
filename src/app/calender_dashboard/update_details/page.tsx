@@ -77,13 +77,7 @@ export default function UpdateDetailsPage() {
         role = null;
       }
     }
-
-    // Route based on role
-    if (role === 'carer') {
-      router.push('/calender_dashboard');
-    } else {
-      router.push('/empty_dashboard');
-    }
+    router.push('/calender_dashboard');
   };
 
   // -------------------------------

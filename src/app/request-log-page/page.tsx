@@ -1,159 +1,310 @@
-// src/app/request-log/page.tsx
-// Author: Devni Wijesinghe
+
+/**
+ * File name: Request Log 
+ * File path: src/app/request-log-page/page.tsx
+ * Frontend Author: Devni Wijesinghe
+ * 
+ * - Uses <DashboardChrome /> to keep the same header + pink banner across the app.
+ * - Loads the active client (from localStorage) and fetches that client's requests
+ *   via getRequestsByClientFE(clientId). Switching the client in the pink banner
+ *   reloads the table for the newly selected client.
+ * - Management users can change the Status inline; the <select> is color-coded.
+ * - The table section is flush to the white panel’s edges (no inner horizontal padding).
+ */
 "use client";
 
-import { useState } from "react";
+import React, { useState, useEffect, Suspense, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import DashboardChrome from "@/components/top_menu/client_schedule";
 
-type Request = {
+import {
+  getViewerRoleFE,
+  getClientsFE,
+  readActiveClientFromStorage,
+  writeActiveClientToStorage,
+  type Client as ApiClient,
+  getRequestsByClientFE,
+} from "@/lib/mock/mockApi";
+
+/** Data shape returned by getRequestsByClientFE() */
+type ApiRequest = {
+  id: string;
+  clientId: string;
   task: string;
   change: string;
-  requestedBy: "John (Family)" | "Mary (POA)";
-  dateRequested: string; 
+  requestedBy: string;
+  dateRequested: string;
   status: "Pending" | "Approved";
   resolutionDate: string;
 };
 
-const initialRequests: Request[] = [
-  { task: "Replace Toothbrush Head", change: "Change frequency to every 2 months", requestedBy: "John (Family)", dateRequested: "28th June 2025", status: "Pending", resolutionDate: "-" },
-  { task: "Dental Appointments", change: "Add an oral cancer screening appointment on the 6th June 2025", requestedBy: "Mary (POA)", dateRequested: "19th May 2025", status: "Approved", resolutionDate: "25th May 2025" },
-  { task: "Daily Medication", change: "Add Vitamin D supplement in mornings", requestedBy: "John (Family)", dateRequested: "10th May 2025", status: "Pending", resolutionDate: "-" },
-  { task: "Dietary Plan", change: "Reduce sugar intake and add more vegetables", requestedBy: "Mary (POA)", dateRequested: "5th May 2025", status: "Approved", resolutionDate: "12th May 2025" },
-  { task: "Exercise Schedule", change: "Add yoga sessions twice weekly", requestedBy: "John (Family)", dateRequested: "1st May 2025", status: "Pending", resolutionDate: "-" },
-];
-
-// Convert to Date object
-const parseDateString = (dateStr: string) => {
-  if (dateStr === "-") return new Date(0);
-  const cleanStr = dateStr.replace(/(\d+)(st|nd|rd|th)/, "$1");
-  return new Date(cleanStr);
+const colors = {
+  header: "#3A0000",
+  banner: "#F9C9B1",
+  text: "#000000",
 };
 
+/* ---------------------------- Page wrapper ---------------------------- */
 export default function RequestLogPage() {
-  const [requests] = useState<Request[]>(initialRequests);
+  return (
+    <Suspense fallback={<div className="p-6 text-gray-600">Loading requests…</div>}>
+      <RequestLogInner />
+    </Suspense>
+  );
+}
+
+/* ----------------------------- Utilities ----------------------------- */
+const parseDateString = (dateStr: string) => {
+  if (!dateStr || dateStr === "-") return new Date(0);
+  const cleanStr = dateStr.replace(/(\d+)(st|nd|rd|th)/i, "$1");
+  const d = new Date(cleanStr);
+  return isNaN(d.getTime()) ? new Date(0) : d;
+};
+
+/** Utility for status color classes */
+const statusClasses = (value: "Pending" | "Approved") =>
+  value === "Pending"
+    ? "bg-yellow-100 text-yellow-800 border-yellow-300"
+    : "bg-green-100 text-green-800 border-green-300";
+
+/* ------------------------------ Content ------------------------------ */
+function RequestLogInner() {
+  const router = useRouter();
+  const role = getViewerRoleFE();
+  const isManagement = role === "management";
+
+  // Clients for pink banner select
+  const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
+  const [activeClientId, setActiveClientId] = useState<string | null>(null);
+  const [activeClientName, setActiveClientName] = useState<string>("");
+
+  // Requests
+  const [requests, setRequests] = useState<ApiRequest[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [errorText, setErrorText] = useState<string>("");
+
+  // Filters
   const [search, setSearch] = useState<string>("");
-  const [sortKey, setSortKey] = useState<keyof Request | null>(null);
+  const [sortKey, setSortKey] = useState<keyof ApiRequest | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
-  const filteredRequests = requests.filter((req) =>
-    Object.values(req).some((val) =>
-      val.toLowerCase().includes(search.toLowerCase())
-    )
-  );
+  /** Load clients */
+  useEffect(() => {
+    (async () => {
+      try {
+        const list = await getClientsFE();
+        const mapped = list.map((c: ApiClient) => ({ id: c._id, name: c.name }));
+        setClients(mapped);
 
-  const sortedRequests = [...filteredRequests].sort((a, b) => {
-    if (!sortKey) return 0;
+        const { id, name } = readActiveClientFromStorage();
+        const useId = id || mapped[0]?.id || null;
+        const useName = name || (mapped.find((m) => m.id === useId)?.name ?? "");
+        setActiveClientId(useId);
+        setActiveClientName(useName);
+      } catch {
+        setClients([]);
+      }
+    })();
+  }, []);
 
-    let valA: string | number;
-    let valB: string | number;
-
-    if (sortKey === "dateRequested" || sortKey === "resolutionDate") {
-      valA = parseDateString(a[sortKey]).getTime();
-      valB = parseDateString(b[sortKey]).getTime();
-    } else {
-      valA = a[sortKey].toString().toLowerCase();
-      valB = b[sortKey].toString().toLowerCase();
+  /** Load requests when active client changes */
+  useEffect(() => {
+    if (!activeClientId) {
+      setRequests([]);
+      return;
     }
+    (async () => {
+      setLoading(true);
+      setErrorText("");
+      try {
+        const data = await getRequestsByClientFE(activeClientId);
+        setRequests(Array.isArray(data) ? data : []);
+      } catch {
+        setErrorText("Failed to load requests for this client.");
+        setRequests([]);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [activeClientId]);
 
-    if (valA < valB) return sortDir === "asc" ? -1 : 1;
-    if (valA > valB) return sortDir === "asc" ? 1 : -1;
-    return 0;
-  });
+  /** Pink banner select */
+  const onClientChange = (id: string) => {
+    const c = clients.find((x) => x.id === id) || null;
+    const name = c?.name || "";
+    setActiveClientId(id || null);
+    setActiveClientName(name);
+    writeActiveClientToStorage(id || "", name);
+  };
 
-  const toggleSort = (key: keyof Request) => {
-    if (sortKey === key) {
-      setSortDir(sortDir === "asc" ? "desc" : "asc");
-    } else {
+  /** Filter + sort */
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return requests;
+    return requests.filter((r) =>
+      [r.task, r.change, r.requestedBy, r.dateRequested, r.status, r.resolutionDate]
+        .join(" ")
+        .toLowerCase()
+        .includes(q)
+    );
+  }, [requests, search]);
+
+  const sorted = useMemo(() => {
+    if (!sortKey) return filtered;
+    const arr = [...filtered];
+    arr.sort((a, b) => {
+      let va: string | number;
+      let vb: string | number;
+
+      if (sortKey === "dateRequested" || sortKey === "resolutionDate") {
+        va = parseDateString(a[sortKey]).getTime();
+        vb = parseDateString(b[sortKey]).getTime();
+      } else {
+        va = String(a[sortKey]).toLowerCase();
+        vb = String(b[sortKey]).toLowerCase();
+      }
+      if (va < vb) return sortDir === "asc" ? -1 : 1;
+      if (va > vb) return sortDir === "asc" ? 1 : -1;
+      return 0;
+    });
+    return arr;
+  }, [filtered, sortKey, sortDir]);
+
+  const toggleSort = (key: keyof ApiRequest) => {
+    if (sortKey === key) setSortDir(sortDir === "asc" ? "desc" : "asc");
+    else {
       setSortKey(key);
       setSortDir("asc");
     }
   };
 
+  /** Inline status change (Management only) */
+  const handleStatusChange = (reqId: string, next: "Pending" | "Approved") => {
+    if (!isManagement) return;
+    setRequests((prev) =>
+      prev.map((r) =>
+        r.id !== reqId
+          ? r
+          : {
+              ...r,
+              status: next,
+              resolutionDate:
+                next === "Approved"
+                  ? new Date().toLocaleDateString("en-GB", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    })
+                  : "-",
+            }
+      )
+    );
+  };
+
   return (
-    <>
-      <div className="min-h-screen bg-[#ffd9b3] flex flex-col items-center p-6">
-        {/* Header */}
-        <div className="w-full max-w-6xl flex justify-between items-center bg-[#5a0f0f] text-white px-4 py-3 rounded-t-2xl shadow">
-          <h1 className="text-xl font-bold">Request Log</h1>
-          <div className="flex items-center gap-2 bg-white rounded-lg px-2 py-1">
-            <span className="text-gray-500">🔍</span>
+    <DashboardChrome
+      page="request-log"
+      clients={clients}
+      activeClientId={activeClientId}
+      onClientChange={onClientChange}
+      activeClientName={activeClientName}
+      colors={colors}
+      onLogoClick={() => router.push("/empty_dashboard")}
+    >
+      {/* Main content: 铺满全屏 */}
+      <div className="flex-1 h-[680px] bg-white/80 overflow-auto">
+        {/* Header bar */}
+        <div
+          className="w-full flex items-center justify-between px-6 py-5"
+          style={{ backgroundColor: colors.header }}
+        >
+          <h1 className="text-2xl font-bold text-white">Request Log</h1>
+          <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2">
             <input
               type="text"
               placeholder="Search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="border-none focus:outline-none w-40 text-black text-sm"
+              className="border-none focus:outline-none w-56 text-black text-sm"
             />
           </div>
         </div>
 
-        {/* Notification banner */}
-        <div className="w-full max-w-6xl bg-[#ff9999] text-[#5a0f0f] px-4 py-2 text-sm font-medium mt-2">
-          You requested a change on the 28th June 2025
-        </div>
-
-        {/* Requests Table */}
-        <div className="w-full max-w-6xl bg-[#fff4e6] rounded-b-2xl shadow-lg overflow-hidden mt-2">
-          <div className="overflow-y-auto max-h-[400px]">
+        {/* Table full width */}
+        <div className="w-full overflow-auto">
+          {loading ? (
+            <div className="p-6 text-gray-600">Loading requests…</div>
+          ) : errorText ? (
+            <div className="p-6 text-red-600">{errorText}</div>
+          ) : (
             <table className="w-full border-collapse text-sm text-black">
-              <thead className="sticky top-0 bg-white shadow-sm">
+              <thead className="sticky top-0 bg-[#F9C9B1] shadow-sm">
                 <tr className="text-left">
-                  <th className="p-3 cursor-pointer whitespace-nowrap" onClick={() => toggleSort("task")}>
+                  <th className="p-5 cursor-pointer" onClick={() => toggleSort("task")}>
                     Task {sortKey === "task" ? (sortDir === "asc" ? "⬆" : "⬇") : "⬍"}
                   </th>
-                  <th className="p-3 whitespace-nowrap">Requested Change</th>
-                  <th className="p-3 cursor-pointer whitespace-nowrap" onClick={() => toggleSort("requestedBy")}>
+                  <th className="p-5">Requested Change</th>
+                  <th className="p-5 cursor-pointer" onClick={() => toggleSort("requestedBy")}>
                     Requested By {sortKey === "requestedBy" ? (sortDir === "asc" ? "⬆" : "⬇") : "⬍"}
                   </th>
-                  <th className="p-3 cursor-pointer whitespace-nowrap" onClick={() => toggleSort("dateRequested")}>
-                    Date Requested {sortKey === "dateRequested" ? (sortDir === "asc" ? "⬆" : "⬇") : "⬍"}
+                  <th className="p-5 cursor-pointer" onClick={() => toggleSort("dateRequested")}>
+                    Date Requested{" "}
+                    {sortKey === "dateRequested" ? (sortDir === "asc" ? "⬆" : "⬇") : "⬍"}
                   </th>
-                  <th className="p-3 cursor-pointer whitespace-nowrap" onClick={() => toggleSort("status")}>
+                  <th className="p-5 cursor-pointer" onClick={() => toggleSort("status")}>
                     Status {sortKey === "status" ? (sortDir === "asc" ? "⬆" : "⬇") : "⬍"}
                   </th>
-                  <th className="p-3 whitespace-nowrap">Resolution Date</th>
+                  <th className="p-5">Resolution Date</th>
                 </tr>
               </thead>
+
               <tbody>
-                {sortedRequests.length > 0 ? (
-                  sortedRequests.map((req, idx) => (
-                    <tr key={idx} className="border-b hover:bg-[#ffeedd] transition">
-                      <td className="p-3 font-medium">{req.task}</td>
-                      <td className="p-3">{req.change}</td>
-                      <td className="p-3">{req.requestedBy}</td>
-                      <td className="p-3">{req.dateRequested}</td>
-                      <td className="p-3">
-                        {req.status === "Pending" ? (
-                          <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs font-semibold">Pending</span>
+                {sorted.length > 0 ? (
+                  sorted.map((req) => (
+                    <tr key={req.id} className="border-b hover:bg-[#fff6ea] transition">
+                      <td className="p-5 font-semibold">{req.task}</td>
+                      <td className="p-5">{req.change}</td>
+                      <td className="p-5">{req.requestedBy}</td>
+                      <td className="p-5">{req.dateRequested}</td>
+                      <td className="p-5">
+                        {isManagement ? (
+                          <select
+                            value={req.status}
+                            onChange={(e) =>
+                              handleStatusChange(req.id, e.target.value as "Pending" | "Approved")
+                            }
+                            className={`rounded-full border px-3 py-1.5 text-xs font-bold ${statusClasses(
+                              req.status
+                            )}`}
+                          >
+                            <option value="Pending">Pending</option>
+                            <option value="Approved">Approved</option>
+                          </select>
+                        ) : req.status === "Pending" ? (
+                          <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-bold">
+                            Pending
+                          </span>
                         ) : (
-                          <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-semibold">Approved</span>
+                          <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold">
+                            Approved
+                          </span>
                         )}
                       </td>
-                      <td className="p-3">{req.resolutionDate}</td>
+                      <td className="p-5">{req.resolutionDate}</td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={6} className="p-6 text-center text-gray-500">No matching requests found.</td>
+                    <td colSpan={6} className="p-8 text-center text-gray-500">
+                      No requests for this client.
+                    </td>
                   </tr>
                 )}
               </tbody>
             </table>
-          </div>
+          )}
         </div>
       </div>
-
-      {/* Help Button */}
-      <div className="fixed bottom-6 right-6 group">
-        <button className="bg-[#ff9999] text-white w-12 h-12 rounded-full shadow-lg text-lg flex items-center justify-center">?</button>
-        <div className="absolute bottom-14 right-0 w-64 bg-white text-black text-sm rounded-lg shadow-lg p-3 opacity-0 group-hover:opacity-100 transition">
-          <h2 className="font-bold mb-1">Help</h2>
-          <p className="text-gray-600 text-xs">
-            - Use the search box to filter requests.
-            <br />- Click table headers to sort ascending/descending.
-            <br />- Status badges show pending/approved.
-          </p>
-        </div>
-      </div>
-    </>
+    </DashboardChrome>
   );
 }

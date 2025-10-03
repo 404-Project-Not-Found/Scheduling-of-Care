@@ -43,6 +43,8 @@ export default function CalendarPanel({
       headerToolbar={{ left: 'prev', center: 'title', right: 'next' }}
       height="auto"
       events={[]}
+      fixedWeekCount={false}       
+      showNonCurrentDates={false}  
       dateClick={(info) => {
         const clickedDate = formatDateToYMD(info.date);
         if (taskDatesSet.has(clickedDate)) onDateClick(clickedDate);

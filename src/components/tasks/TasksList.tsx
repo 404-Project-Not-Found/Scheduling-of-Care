@@ -1,6 +1,6 @@
 'use client';
 
-import { Task } from '@/app/dashboards/calendar_dashboard/types'; // import from types
+import { Task } from '@/app/calender_dashboard/types'; // import from types
 
 type TasksListProps = {
   tasks: Task[];

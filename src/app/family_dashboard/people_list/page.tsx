@@ -1,231 +1,207 @@
-
-
+// src/app/family_client_list/page.tsx
 'use client';
 
-export const dynamic = 'force-dynamic';
+/**
+ * File path: src/app/family_client_list/page.tsx
+ * Frontend Author: Qingyue Zhao
+ *
+ * Features (family-only):
+ * - Displays all clients (fetched from mockApi).
+ * - For each client row:
+ *    -> Avatar + Name
+ *    -> Right-side buttons:
+ *         - View profile
+ *         - View dashboard (full / partial)
+ *         - Manage organisation access
+ * - No organisation access status shown (unlike management view).
+ */
 
-import Image from 'next/image';
-import Link from 'next/link';
+import React, { Suspense, useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
 
-import { getClientsFE, type Client } from '@/lib/mockApi';
+import DashboardChrome from '@/components/top_menu/client_schedule';
+import { getClientsFE, type Client as ApiClient } from '@/lib/mock/mockApi';
 
-// ----- Color palette -----
-const palette = {
-  pageBg: '#ffd9b3',
-  cardBg: '#F7ECD9',
-  header: '#3A0000',
-  text: '#2b2b2b',
-  border: '#3A0000',
-  help: '#ff9999',
-  white: '#ffffff',
-  editGreen: '#4CAF50', // green
-  dashOrange: '#FF9800', // orange
-  organPink: '#E91E63', // pink
+type Client = {
+  id: string;
+  name: string;
+  dashboardType?: 'full' | 'partial';
 };
 
-export default function FamilyPOAListPage() {
-  const router = useRouter();
-  const [clients, setClients] = useState<Client[]>([]);
+const colors = {
+  pageBg: '#ffd9b3',
+  cardBg: '#F7ECD9',
+  banner: '#F9C9B1',
+  header: '#3A0000',
+  text: '#2b2b2b',
+  help: '#ff9999',
+};
 
-  // Fetches client list from API
-    useEffect(() => {
-        let mounted = true;
-
-        (async () => {
-        try {
-            const list = await getClientsFE();
-            if (mounted) setClients(Array.isArray(list) ? list : []);
-        } catch (err) {
-            console.error('Load clients failed:', err);
-            if (mounted) setClients([]); 
-        }
-    })();
-
-    return () => {
-    mounted = false;
-    };
-}, []);
-
-  const goBack = () => router.replace('/empty_dashboard');
-
+export default function FamilyClientListPage() {
   return (
-    <main
-      className="min-h-screen relative flex items-start justify-center p-8"
-      style={{ backgroundColor: palette.pageBg }}
-    >
-      {/* === Scale wrapper: shrink everything inside by 20% (0.8) ===
-          Use origin-top to keep the layout anchored to the top while scaling */}
-      <div className="origin-top w-full flex items-center justify-center">
-        {/* logo */}
-        <div className="absolute top-6 left-6">
-          <Image
-            src="/logo-name.png"
-            alt="Scheduling of Care"
-            width={220}
-            height={80}
-            className="object-contain"
-            priority
-          />
-        </div>
-
-        <div className="w-full scale-[0.8] flex items-center justify-center">
-          {/* card */}
-          <div
-            className="w-full max-w-6xl rounded-3xl shadow-lg overflow-hidden relative"
-            style={{
-              backgroundColor: palette.cardBg,
-              border: `1px solid ${palette.border}`,
-              minHeight: 720,
-            }}
-          >
-            {/* header */}
-            <div
-              className="w-full flex items-center justify-center px-8 py-6 relative"
-              style={{ backgroundColor: palette.header, color: palette.white }}
-            >
-              <button
-                onClick={goBack}
-                aria-label="Go back"
-                className="absolute left-4 top-1/2 -translate-y-1/2 rounded-md px-2 py-2 focus:outline-none focus:ring-2 focus:ring-white/60 flex items-center gap-2"
-                title="Back"
-                style={{ color: palette.white }}
-              >
-                <BackIcon />
-                {/* Add Back text next to the arrow */}
-                <span className="text-lg">Back</span>
-              </button>
-              <h1 className="text-3xl md:text-4xl font-bold">
-                Manage People with Special Needs
-              </h1>
-            </div>
-
-            {/* content */}
-            <div className="px-10 pb-12 pt-8">
-              <p
-                className="text-2xl md:text-3xl mb-5"
-                style={{ color: palette.text }}
-              >
-                List of registered family members:
-              </p>
-
-              {/* list */}
-              <div
-                className="mx-auto rounded-2xl bg-white overflow-y-auto mb-10"
-                style={{
-                  maxHeight: 520,
-                  border: `2px solid ${palette.border}55`,
-                }}
-              >
-                <ul className="divide-y divide-black/10">
-                  {clients.map((m) => (
-                    <li
-                      key={m._id}
-                      className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 md:gap-6 px-8 py-5"
-                      style={{ color: palette.text }}
-                    >
-                      <span className="text-2xl">{m.name}</span>
-                      <div className="flex flex-wrap gap-4">
-                        {/* Edit profile → green */}
-                        <Link
-                          href={`/client_profile?id=${m._id}`}
-                          className="px-4 py-2 rounded-lg text-lg font-medium"
-                          style={{
-                            backgroundColor: palette.editGreen,
-                            color: palette.white,
-                          }}
-                        >
-                          Edit profile
-                        </Link>
-
-                        {/* View dashboard → orange */}
-                        {m.dashboardType === 'full' ? (
-                            <Link
-                                href={`/calender_dashboard?id=${m._id}`}
-                                className="px-4 py-2 rounded-lg text-lg font-medium"
-                                style={{
-                                    backgroundColor: palette.dashOrange,
-                                    color: palette.white,
-                                }}
-                            >
-                                View dashboard
-                            </Link>
-                            ) : (
-                            <Link
-                                href={`/partial_dashboard?id=${m._id}`}
-                                className="px-4 py-2 rounded-lg text-lg font-medium"
-                                style={{
-                                    backgroundColor: palette.dashOrange,
-                                    color: palette.white,
-                                }}
-                            >
-                                View dashboard
-                            </Link>
-                        )}
-
-                        {/* Manage organisation access → pink (now passes both name + dob) */}
-                        <Link
-                          href={`/family_dashboard/manage_organisation_access/${m._id}`}
-                          className="px-4 py-2 rounded-lg text-lg font-medium"
-                          style={{
-                            backgroundColor: palette.organPink,
-                            color: palette.white,
-                          }}
-                        >
-                          Manage organisation access
-                        </Link>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Add new client */}
-              <div className="flex justify-center">
-                <button
-                  onClick={() => router.push('/client_profile?new=true')}
-                  className="px-7 py-4 rounded-xl text-2xl font-semibold"
-                  style={{
-                    backgroundColor: palette.header,
-                    color: palette.white,
-                  }}
-                >
-                  + Add new person
-                </button>
-              </div>
-            </div>
-
-            {/* help button */}
-            <button
-              className="absolute bottom-6 right-6 w-10 h-10 rounded-full text-white font-bold"
-              style={{ backgroundColor: palette.help }}
-              aria-label="Help"
-              title="Help"
-            >
-              ?
-            </button>
-          </div>
-        </div>
-      </div>
-    </main>
+    <Suspense fallback={<div className="p-6 text-gray-600">Loading clients…</div>}>
+      <FamilyClientListInner />
+    </Suspense>
   );
 }
 
-function BackIcon({ size = 24 }: { size?: number }) {
+function FamilyClientListInner() {
+  const router = useRouter();
+  const [clients, setClients] = useState<Client[]>([]);
+  const [q, setQ] = useState('');
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const list = await getClientsFE();
+        const mapped: Client[] = list.map((c: ApiClient) => ({
+          id: c._id,
+          name: c.name,
+          dashboardType: c.dashboardType,
+        }));
+        setClients(mapped);
+      } catch {
+        setClients([]);
+      }
+    })();
+  }, []);
+
+  const filtered = useMemo(() => {
+    const t = q.trim().toLowerCase();
+    if (!t) return clients;
+    return clients.filter((c) => c.name.toLowerCase().includes(t));
+  }, [clients, q]);
+
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
+    <DashboardChrome
+      page="people-list"
+      clients={[]} // not needed here
+      activeClientId={null}
+      activeClientName={undefined}
+      onClientChange={() => {}}
+      colors={{ header: colors.header, banner: colors.banner, text: colors.text }}
+      onLogoClick={() => router.push('/empty_dashboard')}
     >
-      <path d="M15 18l-6-6 6-6" />
-    </svg>
+      <div className="w-full h-full" style={{ backgroundColor: colors.pageBg }}>
+        <div className="max-w-[1380px] h-[680px] mx-auto px-6">
+          {/* Section header */}
+          <div
+            className="w-full mt-6 rounded-t-xl px-6 py-4 text-white text-2xl md:text-3xl font-extrabold"
+            style={{ backgroundColor: colors.header }}
+          >
+            My PWSN List
+          </div>
+
+          {/* Content */}
+          <div
+            className="w-full h-[calc(100%-3rem)] rounded-b-xl bg-[#f6efe2] border-x border-b flex flex-col"
+            style={{ borderColor: '#3A000022' }}
+          >
+            {/* Search + add new */}
+            <div className="flex items-center justify-between px-6 py-4 gap-4">
+              <div className="relative flex-1 max-w-[350px]">
+                <input
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="Search for client"
+                  className="w-full h-12 rounded-full bg-white border text-black px-10 focus:outline-none"
+                  style={{ borderColor: '#3A0000' }}
+                />
+              </div>
+              <button
+                onClick={() => router.push('/client_profile?new=true')}
+                className="rounded-xl px-5 py-3 text-lg font-bold text-white hover:opacity-90"
+                style={{ backgroundColor: colors.header }}
+              >
+                + Add new PWSN
+              </button>
+            </div>
+
+            {/* List */}
+            <div className="flex-1 px-0 pb-6">
+              <div
+                className="mx-6 rounded-xl overflow-auto h-full"
+                style={{
+                  backgroundColor: '#F2E5D2',
+                  border: '1px solid rgba(58,0,0,0.25)',
+                }}
+              >
+                {filtered.length === 0 ? (
+                  <div className="h-full flex items-center justify-center text-gray-600">
+                    No clients found.
+                  </div>
+                ) : (
+                  <ul className="divide-y divide-[rgba(58,0,0,0.15)]">
+                    {filtered.map((c) => (
+                      <li
+                        key={c.id}
+                        className="flex items-center justify-between gap-5 px-6 py-6 hover:bg-[rgba(255,255,255,0.6)]"
+                      >
+                        {/* Left: avatar + name (clickable → dashboard) */}
+                        <div
+                        className="flex items-center gap-5 cursor-pointer"
+                        onClick={() =>
+                            router.push(
+                            c.dashboardType === 'full'
+                                ? `/calender_dashboard?id=${c.id}`
+                                : `/partial_dashboard?id=${c.id}`
+                            )
+                        }
+                        >
+                        <div
+                            className="shrink-0 rounded-full flex items-center justify-center"
+                            style={{
+                            width: 64,
+                            height: 64,
+                            border: '4px solid #3A0000',
+                            backgroundColor: '#fff',
+                            color: '#3A0000',
+                            fontWeight: 900,
+                            fontSize: 20,
+                            }}
+                        >
+                            {c.name.charAt(0).toUpperCase()}
+                        </div>
+                            <div
+                                className="text-xl md:text-2xl font-semibold"
+                                style={{ color: colors.text }}
+                            >
+                                {c.name}
+                            </div>
+                        </div>
+
+
+                        {/* Right: action buttons */}
+                        <div className="shrink-0 flex items-center gap-2">
+                          {/* View profile */}
+                          <button
+                            onClick={() => router.push(`/client_profile?id=${c.id}`)}
+                            className="px-4 py-2 rounded-lg text-white text-sm font-semibold hover:opacity-90"
+                            style={{ backgroundColor: '#4CAF50' }}
+                          >
+                            Edit profile
+                          </button>
+
+                          {/* Manage org access */}
+                          <button
+                            onClick={() =>
+                              router.push(`/family_dashboard/manage_organisation_access/${c.id}`)
+                            }
+                            className="px-4 py-2 rounded-lg text-white text-sm font-semibold hover:opacity-90"
+                            style={{ backgroundColor: '#E91E63' }}
+                          >
+                            Manage organisation access
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </DashboardChrome>
   );
 }
