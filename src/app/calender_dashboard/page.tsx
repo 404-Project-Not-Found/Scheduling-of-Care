@@ -28,7 +28,7 @@ import {
   readActiveClientFromStorage,
   writeActiveClientToStorage,
   type Client as ApiClient,
-} from '@/lib/mockApi';
+} from '@/lib/mock/mockApi';
 
 /* ------------------------------ Routes ------------------------------ */
 const ROUTES = {

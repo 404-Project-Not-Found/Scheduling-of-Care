@@ -26,7 +26,7 @@ import {
   NAME_BY_ID,
   getTaskCatalogFE, // keep dropdown logic
   type Client as ApiClient,
-} from "@/lib/mockApi";
+} from "@/lib/mock/mockApi";
 
 type Unit = "day" | "week" | "month" | "year";
 

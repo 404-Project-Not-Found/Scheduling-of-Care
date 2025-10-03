@@ -29,7 +29,7 @@ import {
   isMock,
   getViewerRoleFE,
   type Client as ApiClient,
-} from '@/lib/mockApi';
+} from '@/lib/mock/mockApi';
 
 // ----- Types -----
 type Client = {

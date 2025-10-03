@@ -11,7 +11,7 @@ import {
   writeActiveClientToStorage,
   type Client as ApiClient,
   getTransactionsFE,
-} from '@/lib/mockApi';
+} from '@/lib/mock/mockApi';
 
 /** Data shape returned by getTransactionsFE() */
 type ApiTransaction = {

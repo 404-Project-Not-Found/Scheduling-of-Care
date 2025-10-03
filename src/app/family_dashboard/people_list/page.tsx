@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-import { getClientsFE, type Client } from '@/lib/mockApi';
+import { getClientsFE, type Client } from '@/lib/mock/mockApi';
 
 // ----- Color palette -----
 const palette = {

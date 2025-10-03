@@ -241,7 +241,7 @@ http://localhost:3000
 Source files in /src/lib/clientApi.ts
 ```
 
-pages import from `@/lib/mockApi`. 
+pages import from `@/lib/mock/mockApi`. 
 
 
 ### Common exports expected by pages
@@ -257,6 +257,6 @@ pages import from `@/lib/mockApi`.
   - `getTasksFE()` / `saveTasksFE(tasks)`
   - Dropdown helpers: `getTaskCatalogFE()` / `getFrequencyOptionsByTaskSlugFE(slug)`
 
-> If an import fails with `@/lib/mockApi`, prefer adding the **path alias** above.
+> If an import fails with `@/lib/mock/mockApi`, prefer adding the **path alias** above.
 
 ---

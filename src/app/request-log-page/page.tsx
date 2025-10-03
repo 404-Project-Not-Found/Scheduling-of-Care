@@ -24,7 +24,7 @@ import {
   writeActiveClientToStorage,
   type Client as ApiClient,
   getRequestsByClientFE,
-} from "@/lib/mockApi";
+} from "@/lib/mock/mockApi";
 
 /** Data shape returned by getRequestsByClientFE() */
 type ApiRequest = {

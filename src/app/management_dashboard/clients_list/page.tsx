@@ -27,7 +27,7 @@ import {
   getClientsFE,
   getViewerRoleFE,
   type Client as ApiClient,
-} from '@/lib/mockApi';
+} from '@/lib/mock/mockApi';
 
 type OrgAccess = 'approved' | 'pending' | 'revoked';
 type Client = {

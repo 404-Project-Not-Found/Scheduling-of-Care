@@ -1,5 +1,5 @@
 /**
- * Filename: /src/lib/mockApi.ts
+ * Filename: /src/lib/mock/mockApi.ts
  * Author: Qingyue Zhao
  * Date Created: 28/09/2025
  *
@@ -205,77 +205,98 @@ export const MOCK_ORGS: Organisation[] = [
 
 export type Task = {
   id: string;
+  clientId: string; // which client this task belongs to
   title: string;
+  category?: string; // optional: auto derived from catalog
   frequency: string;
   lastDone: string; // YYYY-MM-DD
-  nextDue: string;  // YYYY-MM-DD
-  status: 'Pending' | 'Due' | 'Completed';
+  nextDue: string; // YYYY-MM-DD
+  status: "Pending" | "Due" | "Completed";
   comments: string[];
   files: string[];
 };
 
-const TASKS_LS_KEY = 'tasks';
+const TASKS_LS_KEY = "tasks";
 
+/** Demo tasks pre-seeded */
 const DEMO_TASKS: Task[] = [
+  // Alice
   {
-    id: '1',
-    title: 'Dental Appointment',
-    frequency: 'Monthly',
-    lastDone: '2025-09-15',
-    nextDue:  '2025-10-01',
-    status:   'Pending',
-    comments: [
-      'Carer note: Arrived on time, patient was calm.',
-      'Reminder: Bring Medicare card next visit.',
-    ],
-    files: ['dental_referral.pdf', 'visit_photo_20250915.jpg'],
+    id: "1",
+    clientId: FULL_DASH_ID,
+    title: "Dental Appointment",
+    category: "Appointments",
+    frequency: "Monthly",
+    lastDone: "2025-09-15",
+    nextDue: "2025-10-01",
+    status: "Pending",
+    comments: ["Carer note: Arrived on time, patient was calm."],
+    files: ["dental_referral.pdf"],
   },
   {
-    id: '2',
-    title: 'Replace Toothbrush Head',
-    frequency: 'Every 3 months',
-    lastDone: '2025-07-13',
-    nextDue:  '2025-10-13',
-    status:   'Pending',
-    comments: [
-      'Carer note: Current head slightly worn.',
-      'Suggested brand: OralCare Soft-Head (blue).',
-    ],
-    files: ['toothbrush_receipt.png', 'instruction_sheet.pdf'],
+    id: "2",
+    clientId: FULL_DASH_ID,
+    title: "Replace Toothbrush Head",
+    category: "Hygiene",
+    frequency: "Every 3 months",
+    lastDone: "2025-07-13",
+    nextDue: "2025-10-13",
+    status: "Pending",
+    comments: ["Carer note: Current head slightly worn."],
+    files: ["toothbrush_receipt.png"],
   },
+
+  // Bob
   {
-    id: '3',
-    title: 'Submit Report',
-    frequency: 'Weekly',
-    lastDone: '2025-09-18',
-    nextDue:  '2025-09-25',
-    status:   'Due',
+    id: "3",
+    clientId: PARTIAL_DASH_ID,
+    title: "Submit Report",
+    category: "Administration",
+    frequency: "Weekly",
+    lastDone: "2025-09-18",
+    nextDue: "2025-09-25",
+    status: "Due",
     comments: [],
     files: [],
   },
 ];
 
+/** Fetch all tasks (mock or backend) */
 export async function getTasksFE(): Promise<Task[]> {
   if (isMock) {
     try {
       const raw = localStorage.getItem(TASKS_LS_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed as Task[];
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // 🛠️ Ensure clientId is present (migrate old data)
+          const hydrated = parsed.map((t: any, idx: number) => ({
+            ...t,
+            clientId: t.clientId ?? FULL_DASH_ID, // default assign Alice
+            title: typeof t.title === "string" ? t.title : `Task ${idx + 1}`,
+          }));
+          localStorage.setItem(TASKS_LS_KEY, JSON.stringify(hydrated));
+          return hydrated as Task[];
+        }
       }
-    } catch {}
+    } catch {
+      // ignore
+    }
+    // fallback: seed with demo tasks
     try {
       localStorage.setItem(TASKS_LS_KEY, JSON.stringify(DEMO_TASKS));
     } catch {}
     return DEMO_TASKS;
   }
 
-  const res = await fetch('/api/tasks', { cache: 'no-store' });
+  // real backend
+  const res = await fetch("/api/tasks", { cache: "no-store" });
   if (!res.ok) throw new Error(`Failed to fetch tasks (${res.status})`);
   const data = await res.json();
   return Array.isArray(data) ? (data as Task[]) : [];
 }
 
+/** Save tasks (mock or backend) */
 export async function saveTasksFE(tasks: Task[]): Promise<void> {
   if (isMock) {
     try {
@@ -284,9 +305,9 @@ export async function saveTasksFE(tasks: Task[]): Promise<void> {
     return;
   }
 
-  const res = await fetch('/api/tasks', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  const res = await fetch("/api/tasks", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(tasks),
   });
   if (!res.ok) throw new Error(`Failed to save tasks (${res.status})`);
@@ -327,6 +348,7 @@ export function getTaskCatalogFE(): TaskCatalog {
     },
   ];
 }
+
 
 /* =================
  * Frequency Options

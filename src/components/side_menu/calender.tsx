@@ -1,4 +1,6 @@
 /**
+ * IMPORTANT: THIS FILE ISN NO LONGER IN USED, CHANGE TO components/top_menu INSTEAD
+ * 
  * Filename: /app/menu/page.tsx
  * Author: Qingyue Zhao
  * Date Created: 01/10/2025

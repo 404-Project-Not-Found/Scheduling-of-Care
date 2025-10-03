@@ -10,7 +10,7 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 //load mock data from frontend document
-import { isMock, MOCK_ORGS, Organisation } from '@/lib/mockApi';
+import { isMock, MOCK_ORGS, Organisation } from '@/lib/mock/mockApi';
 
 type OrgStatus = 'active' | 'pending' | 'revoked';
 

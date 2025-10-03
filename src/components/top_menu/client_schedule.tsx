@@ -11,8 +11,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { getViewerRoleFE } from '@/lib/mockApi';
-import { mockSignOut } from '@/lib/mock/mockSignout'; // ✅ import the function, not a route
+import { getViewerRoleFE } from '@/lib/mock/mockApi';
+import { mockSignOut } from '@/lib/mock/mockSignout'; 
 
 const palette = { header:'#3A0000', banner:'#F9C9B1', text:'#2b2b2b', white:'#FFFFFF', pageBg:'#FAEBDC' };
 
@@ -26,6 +26,7 @@ type PageKey =
   | 'care-add'
   | 'category-cost'
   | 'client-list'
+  | 'people-list'
   | 'profile';
 
 type ClientLite = { id: string; name: string };
@@ -55,11 +56,12 @@ const ROUTES = {
   schedule: '/calender_dashboard',
   budget: '/calender_dashboard/budget_report',
   transactions: '/calender_dashboard/transaction_history',
-  requestForm: '/family_dashboard/request_of_change_form',
+  requestForm: '/family_dashboard/request_of_change_page',
   requestLog: '/request-log-page',
   careEdit: '/management_dashboard/manage_care_item/edit',
   careAdd: '/management_dashboard/manage_care_item/add',
   clientList: '/management_dashboard/clients_list',
+  peopleList: '/family_dashboard/people_list',
   defaultHome: '/empty_dashboard',
   accountUpdate: '/calender_dashboard/update_details',
   homeByRole: '/empty_dashboard',
@@ -70,7 +72,7 @@ function nounForPage(page: PageKey): string {
   switch (page) {
     case 'budget': return 'Budget Report';
     case 'transactions': return 'Transactions';
-    case 'request-form': return 'Request';
+    case 'request-form': return 'Request Form';
     case 'request-log': return 'Requests';
     case 'care-edit':
     case 'care-add': return 'Care Items';
@@ -78,6 +80,7 @@ function nounForPage(page: PageKey): string {
     case 'client-list': return 'Client List';
     case 'schedule':
     case 'profile': return 'Profile';
+    case 'people-list': return 'People List'
     default: return 'Schedule';
   }
 }
@@ -138,7 +141,7 @@ export default function DashboardChrome({
   const doSignOut = () => {
     setUserMenuOpen(false);
     if (onSignOut) return onSignOut();
-    mockSignOut(); // ✅ now calls function, not router.push
+    mockSignOut();
   };
 
   return (
@@ -177,6 +180,10 @@ export default function DashboardChrome({
               Client List
             </Link>
           )}
+
+          {mounted && isFamily && (
+            <Link href={ROUTES.peopleList} className={activeUnderline(page, 'people-list')}>My PWSN</Link>
+          )}
           <Link href={ROUTES.budget} className={activeUnderline(page, 'budget')}>Budget Report</Link>
           <Link href={ROUTES.transactions} className={activeUnderline(page, 'transactions')}>View Transactions</Link>
           {mounted && isFamily && (
@@ -184,6 +191,8 @@ export default function DashboardChrome({
               Request Form
             </Link>
           )}
+            
+
           {mounted && isManagement && (
             <>
               <div className="relative">

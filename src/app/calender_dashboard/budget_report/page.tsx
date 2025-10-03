@@ -26,7 +26,7 @@ import {
   getBudgetRowsFE,   
   type Client as ApiClient,
   type BudgetRow,
-} from '@/lib/mockApi';
+} from '@/lib/mock/mockApi';
 
 /* ---------------------------------- Types ---------------------------------- */
 type Client = { id: string; name: string };

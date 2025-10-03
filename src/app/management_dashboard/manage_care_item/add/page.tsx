@@ -25,7 +25,7 @@ import {
   FULL_DASH_ID,
   NAME_BY_ID,
   type Client as ApiClient,
-} from "@/lib/mockApi";
+} from "@/lib/mock/mockApi";
 
 type Unit = "day" | "week" | "month" | "year";
 
