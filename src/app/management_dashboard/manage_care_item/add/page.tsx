@@ -180,7 +180,7 @@ export default function AddTaskPage() {
       onLogoClick={onLogoClick}
     >
       {/* Fill entire area below the topbar */}
-      <div className="w-full bg-[#FAEBDC] flex flex-col">
+      <div className="w-full h-[720px] bg-[#FAEBDC] flex flex-col">
         {/* Section title bar */}
         <div className="bg-[#3A0000] text-white px-6 py-3">
           <h2 className="text-xl md:text-3xl font-extrabold px-5">Add New Care Item</h2>

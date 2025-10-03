@@ -276,7 +276,7 @@ export default function DashboardChrome({
                   </summary>
                   <div className="absolute left-1/2 -translate-x-1/2 mt-3 w-80 rounded-md border border-white/30 bg-white text-black shadow-2xl z-50">
                     <Link href={ROUTES.careEdit} className="block w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5">
-                      Manage care item
+                      Edit care item
                     </Link>
                     <Link href={ROUTES.careAdd} className="block w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5">
                       Add new care item
