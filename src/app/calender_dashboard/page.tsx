@@ -43,6 +43,7 @@ const ROUTES = {
   myPWSN: 'family_dashboard/people_list',
   accountUpdate: '/client_profile',
   signOut: '/calender_dashboard/update_details',
+  transaction: '/calender_dashboard/transaction_history'
 };
 
 /* ------------------------------ Palette ----------------------------- */
@@ -461,6 +462,17 @@ function TaskDetail({
               Mark as completed
             </button>
           )}
+
+          {/* Carer only: quick link to transaction history */}
+            {role === 'carer' && (
+            <p className="mt-4 text-base">
+                Need to add a receipt/view a receipt?{' '}
+                <a href={ROUTES.transaction} className="underline">
+                Go to transactions
+                </a>
+            </p>
+            )}
+
         </div>
       </div>
     </div>

@@ -285,62 +285,67 @@ function ClientProfilePageInner() {
             {/* Right: fields (family editable; management static) */}
             <div className="w-full">
               {/* Name */}
-              <FormRow label="Name">
-                {isManagement ? (
-                  <StaticText value={name} placeholder="This information is not provided" />
+            <FormRow label="Name">
+                {(isManagement || isCarer) ? (
+                    <StaticText value={name} placeholder="This information is not provided" />
                 ) : (
-                  <input
+                    <input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     className="w-full h-12 rounded-md bg-white border px-3 outline-none text-black"
                     style={{ borderColor: colors.fieldBorder }}
-                  />
+                    />
                 )}
-              </FormRow>
+                </FormRow>
 
-              {/* DOB */}
-              <FormRow label="Date of Birth">
-                {isManagement ? (
-                  <StaticText value={dob} placeholder="This information is not provided" />
+                {/* DOB */}
+                <FormRow label="Date of Birth">
+                {(isManagement || isCarer) ? (
+                    <StaticText value={dob} placeholder="This information is not provided" />
                 ) : (
-                  <input
+                    <input
                     type="date"
                     value={dob}
                     onChange={(e) => setDob(e.target.value)}
                     className="w-full h-12 rounded-md bg-white border px-3 outline-none text-black"
                     style={{ borderColor: colors.fieldBorder }}
-                  />
+                    />
                 )}
-              </FormRow>
+            </FormRow>
 
-              {/* Access Code */}
-              <FormRow label="Access Code">
+
+
+            {/* Access Code — hidden for carers */}
+            {!isCarer && (
+            <FormRow label="Access Code">
                 {isManagement ? (
-                  <StaticText value={accessCode} placeholder="This information is hidden" />
+                <StaticText value={accessCode} placeholder="This information is hidden" />
                 ) : (
-                  <>
+                <>
                     <input
-                      value={accessCode}
-                      onChange={(e) => setAccessCode(e.target.value)}
-                      className="w-full h-12 rounded-md bg-white border px-3 outline-none text-black"
-                      style={{ borderColor: colors.fieldBorder }}
+                    value={accessCode}
+                    onChange={(e) => setAccessCode(e.target.value)}
+                    className="w-full h-12 rounded-md bg-white border px-3 outline-none text-black"
+                    style={{ borderColor: colors.fieldBorder }}
                     />
                     <div className="text-[15px] mt-2 text-black/80">
-                      Don’t have an access code?{' '}
-                      <button
+                    Don’t have an access code?{' '}
+                    <button
                         type="button"
                         className="underline"
                         onClick={() => setShowAccessCodeDrawer(true)}
-                      >
+                    >
                         Create one here
-                      </button>
+                    </button>
                     </div>
-                  </>
+                </>
                 )}
-              </FormRow>
+            </FormRow>
+            )}
+
 
               {/* Notes */}
-              <FormRow label="Client Notes">
+              <FormRow label="Notes">
                 {isManagement ? (
                   <div className="text-[16px] text-black/80 whitespace-pre-wrap">
                     {savedNotes.length ? savedNotes.join('\n') : 'This information is not provided'}

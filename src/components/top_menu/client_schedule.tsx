@@ -163,9 +163,15 @@ export default function DashboardChrome({
   );
 
   const handleLogoClick = () => {
-    if (onLogoClick) return onLogoClick();
+  if (onLogoClick) return onLogoClick();
+
+  if (role === 'carer') {
+    router.push(ROUTES.schedule); 
+  } else {
     router.push(ROUTES.defaultHome);
-  };
+  }
+};
+
   const handlePrint = () => {
     if (onPrint) return onPrint();
     if (typeof window !== 'undefined') window.print();
@@ -197,23 +203,37 @@ export default function DashboardChrome({
       >
         {/* Left: Logo + Client Schedule link */}
         <div className="flex items-center gap-8">
-          <button
-            onClick={handleLogoClick}
-            className="flex items-center gap-3 hover:opacity-90"
-            title="Go to empty dashboard"
-          >
-            <Image src="/logo.png" alt="Logo" width={80} height={30} className="object-contain" priority />
-          </button>
-          <button
-            onClick={() => router.push(ROUTES.schedule)}
-            className={`font-extrabold leading-none text-2xl md:text-3xl ${
-              page === 'schedule' ? 'underline' : 'text-white hover:underline'
-            }`}
-            title="Go to schedule dashboard"
-          >
-            <span className="font-extrabold leading-none text-2xl md:text-3xl">Client Schedule</span>
-          </button>
+            <button
+                onClick={handleLogoClick}
+                className="flex items-center gap-3 hover:opacity-90"
+                title="Go to empty dashboard"
+            >
+                <Image
+                src="/logo.png"
+                alt="Logo"
+                width={80}
+                height={30}
+                className="object-contain"
+                priority
+                />
+            </button>
+            <button
+                onClick={() => router.push(ROUTES.schedule)}
+                className={`font-extrabold leading-none text-2xl md:text-3xl ${
+                page === 'schedule' ? 'underline' : 'text-white hover:underline'
+                }`}
+                title="Go to schedule dashboard"
+            >
+                <span className="font-extrabold leading-none text-2xl md:text-3xl">
+                {isFamily
+                    ? 'PWSN Schedule'
+                    : isCarer
+                    ? 'Carer Dashboard'
+                    : 'Client Schedule'}
+                </span>
+            </button>
         </div>
+
 
         {/* Center: navigation menu */}
         <nav className="hidden lg:flex items-center gap-10 font-extrabold text-white text-xl">
@@ -226,7 +246,7 @@ export default function DashboardChrome({
           {mounted && isFamily && (
             <>
               <Link href={ROUTES.peopleList} className={activeUnderline(page, 'people-list', role)}>
-                My PWSN
+                My PWSNs
               </Link>
               <Link href={ROUTES.organisationAccess} className={activeUnderline(page, 'organisation-access', role)}>
                 Organisation
