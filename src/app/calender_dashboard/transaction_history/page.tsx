@@ -138,28 +138,35 @@ function TransactionHistoryInner() {
       <div className="flex-1 h-[680px] bg-white/80 overflow-auto">
         {/* Header bar */}
         <div
-          className="w-full flex items-center justify-between px-6 py-5"
-          style={{ backgroundColor: colors.header }}
-        >
-          <h1 className="text-2xl font-bold text-white">Transaction History</h1>
-          <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2">
-            {isCarer && (
-              <button
-                className="px-3 py-1.5 rounded-md font-semibold text-black border hover:bg-black/10"
-                onClick={() => router.push('/add_transaction')}
-              >
-                Add new transaction
-              </button>
-            )}
-            <input
-              type="text"
-              placeholder="Search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="border-none focus:outline-none w-56 text-black text-sm"
-            />
-          </div>
+            className="w-full flex items-center justify-between px-6 py-5"
+            style={{ backgroundColor: colors.header }}
+            >
+            {/* Left side: Title */}
+            <h1 className="text-2xl font-bold text-white">Transaction History</h1>
+
+            {/* Right side: Add button + Search bar */}
+            <div className="flex items-center gap-7">
+                {isCarer && (
+                <button
+                    className="px-4 py-2 rounded-md font-semibold text-black"
+                    style={{ backgroundColor: '#FFA94D' }} 
+                    onClick={() => router.push('/calender_dashboard/budget_report/add_transaction')}
+                >
+                    Add new transaction
+                </button>
+                )}
+                <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2">
+                <input
+                    type="text"
+                    placeholder="Search"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="border-none focus:outline-none w-56 text-black text-sm"
+                />
+                </div>
+            </div>
         </div>
+
 
         {/* Table full width */}
         <div className="w-full overflow-auto">
@@ -196,11 +203,11 @@ function TransactionHistoryInner() {
                                   className="px-2 py-1 text-xs bg-[#3d0000] text-white rounded"
                                   onClick={() =>
                                     router.push(
-                                      `/carer_dashboard?addedFile=${encodeURIComponent(t.receipt)}`
+                                      `/calender_dashboard?addedFile=${encodeURIComponent(t.receipt)}`
                                     )
                                   }
                                 >
-                                  Add to Task
+                                  View Care Item
                                 </button>
                               )}
                             </div>

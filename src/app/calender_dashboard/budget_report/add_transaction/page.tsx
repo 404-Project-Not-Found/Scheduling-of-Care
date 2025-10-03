@@ -1,197 +1,303 @@
 /*
-* Frontend Author: Devni Wijesinghe 
-* 
-*/
+ * File: /calender_dashboard/add_transaction/page.tsx
+ * Frontend Author: Devni Wijesinghe (refactor to use DashboardChrome by QY)
+ */
 
 'use client';
 
-import React, { useState } from 'react';
-import Image from 'next/image';
+import React, { useEffect, useMemo, useRef, useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
+import DashboardChrome from '@/components/top_menu/client_schedule';
 import { useTransactions } from '@/context/TransactionContext';
 
+import {
+  getClientsFE,
+  readActiveClientFromStorage,
+  writeActiveClientToStorage,
+  type Client as ApiClient,
+  getTaskCatalogFE,
+  getTasksFE,
+  type Task as ApiTask,
+} from '@/lib/mock/mockApi';
+
 const colors = {
-  pageBg: '#ffd9b3',
-  cardBg: '#fff4e6',
-  header: '#3d0000',
-  text: '#000000',
-  orange: '#f6a56f',
-  help: '#ed5f4f',
+  pageBg: '#FAEBDC',
+  sectionBar: '#3A0000',
+  label: '#000000',
+  inputBorder: '#6C2B2B',
+  banner: '#F9C9B1',
+  header: '#3A0000',
+  help: '#ED5F4F',
+  btnPill: '#D2BCAF',
+  btnPillHover: '#C7AEA0',
+  fileBtn: '#E8D8CE',
 };
 
 export default function AddTransactionPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-gray-600">Loading…</div>}>
+      <AddTransactionInner />
+    </Suspense>
+  );
+}
+
+function AddTransactionInner() {
   const router = useRouter();
   const { addTransaction } = useTransactions();
 
-  const [type, setType] = useState('');
+  /* ---------- Top bar client dropdown ---------- */
+  const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
+  const [activeClientId, setActiveClientId] = useState<string | null>(null);
+  const [activeClientName, setActiveClientName] = useState<string>('');
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const list = await getClientsFE();
+        const mapped = list.map((c: ApiClient) => ({ id: c._id, name: c.name }));
+        setClients(mapped);
+
+        const { id, name } = readActiveClientFromStorage();
+        const useId = id || mapped[0]?.id || null;
+        const useName = name || (mapped.find((m) => m.id === useId)?.name ?? '');
+        setActiveClientId(useId);
+        setActiveClientName(useName);
+      } catch {
+        setClients([]);
+      }
+    })();
+  }, []);
+
+  const onClientChange = (id: string) => {
+    const c = clients.find((x) => x.id === id) || null;
+    const name = c?.name || '';
+    setActiveClientId(id || null);
+    setActiveClientName(name);
+    writeActiveClientToStorage(id || '', name);
+  };
+
+  /* ---------- Care Item Catalog + Tasks ---------- */
+  const [allTasks, setAllTasks] = useState<ApiTask[]>([]);
+  const catalog = useMemo(() => getTaskCatalogFE(), []); // 返回 [{category, tasks:[{label}]}]
+
+  const labelToCategory = useMemo(() => {
+    const m = new Map<string, string>();
+    catalog.forEach((c) => c.tasks.forEach((t) => m.set(t.label, c.category)));
+    return m;
+  }, [catalog]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const list = await getTasksFE();
+        setAllTasks(list || []);
+      } catch {
+        setAllTasks([]);
+      }
+    })();
+  }, []);
+
+  /* ---------- Form state ---------- */
+  const [category, setCategory] = useState('');
+  const [taskName, setTaskName] = useState('');
   const [date, setDate] = useState('');
   const [carer, setCarer] = useState('');
-  const [items, setItems] = useState('');
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [showHelp, setShowHelp] = useState(false);
 
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // 根据 clientId + category 过滤 tasks
+  const tasksForClient = useMemo(() => {
+    if (!activeClientId) return [];
+    return (allTasks || []).filter((t) => t.clientId === activeClientId);
+  }, [allTasks, activeClientId]);
+
+  const tasksForClientAndCategory = useMemo(() => {
+    if (!category) return [];
+    return tasksForClient.filter((t: any) => {
+      const cat = t.category || labelToCategory.get(t.title) || '';
+      return cat.toLowerCase() === category.toLowerCase();
+    });
+  }, [tasksForClient, category, labelToCategory]);
+
   const handleSubmit = () => {
-    if (!type || !date || !carer || !items || !receiptFile) {
-      alert('Please fill in all fields and upload a receipt.');
+    if (!activeClientId) {
+      alert('Please select a client in the pink banner first.');
+      return;
+    }
+    if (!category || !taskName || !date || !carer || !receiptFile) {
+      alert('Please complete Category, Name, Date, Carer, and upload a receipt.');
       return;
     }
 
     addTransaction({
-      type,
+      type: category,
       date,
       madeBy: carer,
-      receipt: receiptFile.name, // store file name
-      items: items.split(',').map((i) => i.trim()),
+      receipt: receiptFile.name,
+      items: [taskName],
     });
 
-    router.push('/transaction_history');
+    router.push('/calender_dashboard/transaction_history');
   };
 
-  const instructions = [
-    'Enter the transaction type (e.g., Purchase or Refund).',
-    'Select the date the transaction occurred.',
-    "Enter the carer's name who made the transaction.",
-    'List associated care items, separated by commas.',
-    'Upload a receipt (image or PDF) for the transaction.',
-    "Click 'Submit' to save the transaction.",
-    "Click 'Cancel' to return to Transaction History without saving.",
-  ];
+  const inputCls =
+    'h-12 w-[600px] rounded-sm px-3 bg-white text-black outline-none border';
+  const inputStyle = { borderColor: colors.inputBorder };
 
   return (
-    <main
-      className="min-h-screen w-full flex items-center justify-center px-6 py-12 relative"
-      style={{ backgroundColor: colors.pageBg }}
+    <DashboardChrome
+      page="transactions"
+      clients={clients}
+      activeClientId={activeClientId}
+      onClientChange={onClientChange}
+      activeClientName={activeClientName}
+      colors={{ header: colors.header, banner: colors.banner, text: '#000' }}
+      onLogoClick={() => router.push('/empty_dashboard')}
     >
-      {/* Logo */}
-      <div className="absolute top-6 left-6">
-        <Image
-          src="/logo-name.png"
-          alt="Scheduling of Care"
-          width={220}
-          height={80}
-          className="object-contain"
-          priority
-        />
-      </div>
-
-      {/* Card */}
-      <div
-        className="w-full max-w-2xl rounded-2xl shadow-lg overflow-hidden"
-        style={{ backgroundColor: colors.cardBg }}
-      >
-        {/* Header */}
+      <div className="flex-1 h-[680px] overflow-auto" style={{ backgroundColor: colors.pageBg }}>
+        {/* Section bar */}
         <div
-          className="w-full flex items-center justify-center px-6 py-4"
-          style={{ backgroundColor: colors.header }}
+          className="w-full flex items-center justify-between px-8 py-4 text-white text-3xl font-extrabold"
+          style={{ backgroundColor: colors.sectionBar }}
         >
-          <h1 className="text-2xl font-bold text-white">Add New Transaction</h1>
+          <span>Add Transaction</span>
+          <button
+            onClick={() => router.push('/calender_dashboard/transaction_history')}
+            className="text-lg font-semibold text-white hover:underline"
+          >
+            &lt; Back
+          </button>
         </div>
 
-        {/* Form */}
-        <div className="px-8 py-8 space-y-5 text-black">
-          <input
-            type="text"
-            placeholder="Type (e.g. Purchase or Refund)"
-            value={type}
-            onChange={(e) => setType(e.target.value)}
-            className="w-full border rounded-md px-4 py-3"
-          />
-          <input
-            type="date"
-            placeholder="Date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="w-full border rounded-md px-4 py-3"
-          />
-          <input
-            type="text"
-            placeholder="Carer Name"
-            value={carer}
-            onChange={(e) => setCarer(e.target.value)}
-            className="w-full border rounded-md px-4 py-3"
-          />
-          <input
-            type="text"
-            placeholder="Associated Care Items (comma separated)"
-            value={items}
-            onChange={(e) => setItems(e.target.value)}
-            className="w-full border rounded-md px-4 py-3"
-          />
-
-          {/* Upload Receipt */}
-          <div className="flex flex-col gap-2">
-            <label className="font-semibold">Upload Receipt:</label>
-            <input
-              type="file"
-              accept="image/*,.pdf"
+        {/* Form area */}
+        <div className="w-full max-w-[1120px] mx-auto px-25 py-15">
+          <div className="grid grid-cols-[280px_1fr] gap-y-8 gap-x-10">
+            {/* Category */}
+            <label className="self-center text-2xl font-extrabold" style={{ color: colors.label }}>
+              Care Item Category
+            </label>
+            <select
+              value={category}
               onChange={(e) => {
-                if (e.target.files?.length) {
-                  setReceiptFile(e.target.files[0]);
-                }
+                setCategory(e.target.value);
+                setTaskName('');
               }}
-              className="border rounded-md px-3 py-2"
+              className={`${inputCls} appearance-none`}
+              style={inputStyle}
+            >
+              <option value="">- Select a category -</option>
+              {catalog.map((c) => (
+                <option key={c.category} value={c.category}>
+                  {c.category}
+                </option>
+              ))}
+            </select>
+
+            {/* Care Item Name */}
+            <label className="self-center text-2xl font-extrabold" style={{ color: colors.label }}>
+              Care Item Name
+            </label>
+            <select
+              value={taskName}
+              onChange={(e) => setTaskName(e.target.value)}
+              disabled={!activeClientId || !category}
+              className={`${inputCls} appearance-none`}
+              style={inputStyle}
+            >
+              {!category ? (
+                <option value="">- Select a category first -</option>
+              ) : tasksForClientAndCategory.length === 0 ? (
+                <option value="">No tasks available</option>
+              ) : (
+                <>
+                  <option value="">Select a Care Item</option>
+                  {tasksForClientAndCategory.map((t: any) => (
+                    <option key={t.id} value={t.title}>
+                      {t.title}
+                    </option>
+                  ))}
+                </>
+              )}
+            </select>
+
+            {/* Date */}
+            <label className="self-center text-2xl font-extrabold" style={{ color: colors.label }}>
+              Date
+            </label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className={inputCls}
+              style={inputStyle}
             />
-            {receiptFile && (
-              <span className="text-sm text-gray-700">
-                Selected file: {receiptFile.name}
+
+            {/* Carer Name */}
+            <label className="self-center text-2xl font-extrabold" style={{ color: colors.label }}>
+              Carer Name
+            </label>
+            <input
+              type="text"
+              value={carer}
+              onChange={(e) => setCarer(e.target.value)}
+              className={inputCls}
+              style={inputStyle}
+              placeholder="Enter carer name"
+            />
+
+            {/* Upload Receipt */}
+            <label className="self-center text-2xl font-extrabold" style={{ color: colors.label }}>
+              Upload Receipt
+            </label>
+            <div className="flex items-center gap-4">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,.pdf"
+                className="hidden"
+                onChange={(e) => {
+                  if (e.target.files?.length) setReceiptFile(e.target.files[0]);
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="px-4 py-2 rounded-md font-semibold"
+                style={{
+                  backgroundColor: colors.fileBtn,
+                  border: `1px solid ${colors.inputBorder}`,
+                  color: '#1a1a1a',
+                }}
+              >
+                Choose file
+              </button>
+              <span className="text-black">
+                {receiptFile ? receiptFile.name : 'No file chosen'}
               </span>
-            )}
+            </div>
           </div>
 
-          {/* Buttons */}
-          <div className="flex items-center justify-end gap-6 mt-4">
+          {/* Footer buttons */}
+          <div className="mt-14 flex items-center justify-center gap-40">
             <button
-              type="button"
-              className="px-6 py-2.5 rounded-full border text-gray-700 hover:bg-gray-200"
-              onClick={() => router.push('/transaction_history')}
+              className="px-8 py-3 rounded-2xl text-2xl font-extrabold"
+              style={{ backgroundColor: colors.btnPill, color: '#1a1a1a' }}
+              onClick={() => router.push('/calender_dashboard/transaction_history')}
             >
               Cancel
             </button>
-
             <button
-              type="button"
-              className="px-7 py-2.5 rounded-full font-semibold border"
-              style={{
-                backgroundColor: 'white',
-                borderColor: '#ccc',
-                color: colors.header,
-              }}
+              className="px-10 py-3 rounded-2xl text-2xl font-extrabold hover:opacity-95"
+              style={{ backgroundColor: colors.btnPill, color: '#1a1a1a' }}
               onClick={handleSubmit}
             >
-              Submit
+              Add
             </button>
           </div>
         </div>
-
-        <div className="h-4" />
       </div>
-
-      {/* Help Button */}
-      <div
-        className="fixed bottom-6 right-6 z-50"
-        onMouseEnter={() => setShowHelp(true)}
-        onMouseLeave={() => setShowHelp(false)}
-      >
-        <div className="relative">
-          <button
-            className="w-10 h-10 rounded-full text-white font-bold text-lg"
-            style={{ backgroundColor: colors.help }}
-          >
-            ?
-          </button>
-
-          {showHelp && (
-            <div className="absolute bottom-14 right-0 w-80 p-4 bg-white border border-gray-400 rounded shadow-lg text-black text-sm">
-              <h3 className="font-bold mb-2">Add Transaction Help</h3>
-              <ul className="list-disc list-inside space-y-1">
-                {instructions.map((instr, idx) => (
-                  <li key={idx}>{instr}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      </div>
-    </main>
+    </DashboardChrome>
   );
 }

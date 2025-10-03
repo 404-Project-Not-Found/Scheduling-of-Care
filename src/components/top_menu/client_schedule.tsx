@@ -5,7 +5,7 @@
  * - Role detection is handled here (family / carer / management).
  * - Top navigation menu is rendered here; active page gets an underline style.
  * - Pink banner with the centered title changes depending on the page and selected client.
- * - Allows overriding the banner title (e.g. for "X’s Organisation Access").
+ * - Carer users DO NOT see the client select dropdown in the banner.
  */
 
 'use client';
@@ -37,7 +37,8 @@ type PageKey =
   | 'client-list'
   | 'people-list'
   | 'profile'
-  | 'organisation-access';
+  | 'organisation-access'
+  | 'new-transaction';
 
 type ClientLite = { id: string; name: string };
 
@@ -47,7 +48,7 @@ type ChromeProps = {
   activeClientId: string | null;
   onClientChange: (id: string) => void;
   activeClientName?: string;
-  topRight?: React.ReactNode; 
+  topRight?: React.ReactNode;
   colors: { header: string; banner: string; text: string };
   children: React.ReactNode;
   headerHeight?: number;
@@ -60,8 +61,6 @@ type ChromeProps = {
   avatarSrc?: string;
   onProfile?: () => void;
   onSignOut?: () => void;
-
-
 };
 
 const ROUTES = {
@@ -78,12 +77,11 @@ const ROUTES = {
   accountUpdate: '/calender_dashboard/update_details',
   homeByRole: '/empty_dashboard',
   profile: '/client_profile',
-  organisationAccess: '/family_dashboard/manage_organisation_access/${id}',
+  organisationAccess: '/family_dashboard/manage_organisation_access', 
+  newTransaction: '/calender_dashboard/budget_report/add_transaction',
 };
 
-/** 
- * Maps each page to its noun form for banner display. 
- */
+/** Maps each page to a noun title for the banner. */
 function nounForPage(page: PageKey): string {
   switch (page) {
     case 'budget': return 'Budget Report';
@@ -97,17 +95,13 @@ function nounForPage(page: PageKey): string {
     case 'people-list': return 'People List';
     case 'schedule':
     case 'profile': return 'Profile';
-    case 'organisation-access': return 'Organisation'
+    case 'organisation-access': return 'Organisation';
+    case 'new-transaction': return 'New Transaction'
     default: return 'Schedule';
   }
 }
 
-/** 
- * underline helper:
- * - normal: underline when page === key
- * - care group: (care-edit|care-add) highlights 'care'
- * - special: on profile, family→people-list, management→client-list
- */
+/** Underline helper for top nav. */
 function activeUnderline(
   page: PageKey,
   key: PageKey | 'care',
@@ -124,9 +118,7 @@ function activeUnderline(
     : 'hover:underline text-white';
 }
 
-/** 
- * Converts HEX to RGBA (used for banner background transparency).
- */
+/** Converts HEX to RGBA (used for banner background). */
 function hexToRgba(hex: string, alpha = 1) {
   const h = hex.replace('#', '');
   const r = parseInt(h.slice(0, 2), 16);
@@ -145,7 +137,7 @@ export default function DashboardChrome({
   colors,
   children,
   headerHeight = 64,
-  bannerHeight = 64,
+  bannerHeight = 64, // (currently unused, kept for API compatibility)
   onPrint,
   onLogoClick,
   showAvatar = true,
@@ -160,15 +152,15 @@ export default function DashboardChrome({
 
   const role: 'family' | 'carer' | 'management' = mounted ? getViewerRoleFE() : 'family';
   const isFamily = role === 'family';
+  const isCarer = role === 'carer';
   const isManagement = role === 'management';
 
-  // Default noun title (e.g. "Alice’s Budget Report")
+  // Banner title, e.g. "Alice’s Budget Report"
   const noun = nounForPage(page);
   const centeredTitle = useMemo(
     () => (activeClientName ? `${activeClientName}’s ${noun}` : `Client ${noun}`),
     [activeClientName, noun]
   );
-
 
   const handleLogoClick = () => {
     if (onLogoClick) return onLogoClick();
@@ -192,7 +184,7 @@ export default function DashboardChrome({
     mockSignOut();
   };
 
-  // hide banner for management client-list & family people-list
+  // Hide banner for management client-list & family people-list (unchanged from your logic)
   const shouldShowBanner =
     page !== 'client-list' && !(page === 'people-list' && role === 'family');
 
@@ -230,29 +222,31 @@ export default function DashboardChrome({
               Client List
             </Link>
           )}
+
           {mounted && isFamily && (
             <>
-                <Link href={ROUTES.peopleList} 
-                    className={activeUnderline(page, 'people-list', role)}>
+              <Link href={ROUTES.peopleList} className={activeUnderline(page, 'people-list', role)}>
                 My PWSN
-                </Link>
-                <Link href={ROUTES.organisationAccess}
-                    className={activeUnderline(page, 'organisation-access', role)}>
+              </Link>
+              <Link href={ROUTES.organisationAccess} className={activeUnderline(page, 'organisation-access', role)}>
                 Organisation
-                </Link>
+              </Link>
             </>
           )}
+
           <Link href={ROUTES.budget} className={activeUnderline(page, 'budget', role)}>
             Budget Report
           </Link>
           <Link href={ROUTES.transactions} className={activeUnderline(page, 'transactions', role)}>
             View Transactions
           </Link>
+
           {mounted && isFamily && (
             <Link href={ROUTES.requestForm} className={activeUnderline(page, 'request-form', role)}>
               Request Form
             </Link>
           )}
+
           {mounted && isManagement && (
             <>
               <div className="relative">
@@ -261,8 +255,12 @@ export default function DashboardChrome({
                     Care Items <span className="text-white/90">▼</span>
                   </summary>
                   <div className="absolute left-1/2 -translate-x-1/2 mt-3 w-80 rounded-md border border-white/30 bg-white text-black shadow-2xl z-50">
-                    <Link href={ROUTES.careEdit} className="block w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5">Manage care item</Link>
-                    <Link href={ROUTES.careAdd} className="block w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5">Add new care item</Link>
+                    <Link href={ROUTES.careEdit} className="block w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5">
+                      Manage care item
+                    </Link>
+                    <Link href={ROUTES.careAdd} className="block w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5">
+                      Add new care item
+                    </Link>
                   </div>
                 </details>
               </div>
@@ -288,8 +286,12 @@ export default function DashboardChrome({
               </button>
               {userMenuOpen && (
                 <div className="absolute right-0 mt-3 w-80 rounded-md border border-white/30 bg-white text-black shadow-2xl z-50" role="menu">
-                  <button className="w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5" onClick={goProfile}>Update your details</button>
-                  <button className="w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5" onClick={doSignOut}>Sign out</button>
+                  <button className="w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5" onClick={goProfile}>
+                    Update your details
+                  </button>
+                  <button className="w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5" onClick={doSignOut}>
+                    Sign out
+                  </button>
                 </div>
               )}
             </div>
@@ -304,63 +306,69 @@ export default function DashboardChrome({
           className="px-4 md:px-8 py-2 md:py-4 grid grid-cols-[auto_1fr_auto] items-center"
           style={{ backgroundColor: hexToRgba(palette.banner, 0.8) }}
         >
-          {/* Client dropdown */}
-          <div className="relative justify-self-start">
-            <label className="sr-only">Select Client</label>
-            <select
-              className="appearance-none h-12 w-56 md:w-64 pl-8 pr-12 rounded-2xl border border-black/30 bg-white font-extrabold text-xl shadow-sm focus:outline-none"
-              value={activeClientId || ''}
-              onChange={(e) => onClientChange(e.target.value)}
-              aria-label="Select client"
-            >
-              <option value="">{'- Select a client -'}</option>
-              {clients.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-            <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-black/60 text-xl">▾</span>
-          </div>
+          {/* Left cell: Client dropdown (HIDDEN for carers) */}
+          {!isCarer ? (
+            <div className="relative justify-self-start">
+              <label className="sr-only">Select Client</label>
+              <select
+                className="appearance-none h-12 w-56 md:w-64 pl-8 pr-12 rounded-2xl border border-black/30 bg-white font-extrabold text-xl shadow-sm focus:outline-none"
+                value={activeClientId || ''}
+                onChange={(e) => onClientChange(e.target.value)}
+                aria-label="Select client"
+              >
+                <option value="">{'- Select a client -'}</option>
+                {clients.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+              <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-black/60 text-xl">▾</span>
+            </div>
+          ) : (
+            // Spacer to preserve grid layout when dropdown is hidden for carers
+            <div className="h-12 w-56 md:w-64" aria-hidden />
+          )}
 
-        {/* Center title */}
-        <div className="relative">
+          {/* Center title */}
+          <div className="relative">
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-                <div className="flex items-center gap-3 justify-center md:-translate-x-16">
-                <Link
-                    href={ROUTES.profile}
-                    aria-label="Open client profile"
-                    title="Open client profile"
-                    className="rounded-full focus:outline-none focus:ring-2 focus:ring-black/20"
+              <div
+                className={`flex items-center gap-3 justify-center ${
+                    isCarer ? '-translate-x-8 md:-translate-x-32' : 'md:-translate-x-16'
+                }`}
                 >
-                    <Image
+                <Link
+                  href={ROUTES.profile}
+                  aria-label="Open client profile"
+                  title="Open client profile"
+                  className="rounded-full focus:outline-none focus:ring-2 focus:ring-black/20"
+                >
+                  <Image
                     src="/default_profile.png"
                     alt="Client avatar"
                     width={40}
                     height={40}
                     priority
                     className="rounded-full border border-black/20 object-cover cursor-pointer hover:opacity-90"
-                    />
+                  />
                 </Link>
                 <h1 className="font-extrabold leading-none text-2xl md:text-3xl select-none">
-                    {centeredTitle}
+                  {centeredTitle}
                 </h1>
-                </div>
+              </div>
             </div>
-        </div>
+          </div>
 
-
-          {/* Print button (visible only on schedule) */}
+          {/* Right: Print button — ONLY management on Schedule */}
           <div className="justify-self-end">
-            <button
-              onClick={handlePrint}
-              className={`inline-flex items-center px-6 py-3 rounded-2xl border border-black/30 bg-white font-extrabold text-xl hover:bg-black/5 ${
-                page === 'schedule' ? '' : 'invisible'
-              }`}
-              title="Print"
-              tabIndex={page === 'schedule' ? 0 : -1}
-              aria-hidden={page !== 'schedule'}
-            >
-              Print
-            </button>
+            {page === 'schedule' && isManagement && (
+              <button
+                onClick={handlePrint}
+                className="inline-flex items-center px-6 py-3 rounded-2xl border border-black/30 bg-white font-extrabold text-xl hover:bg-black/5"
+                title="Print"
+              >
+                Print
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -369,4 +377,3 @@ export default function DashboardChrome({
     </div>
   );
 }
-
