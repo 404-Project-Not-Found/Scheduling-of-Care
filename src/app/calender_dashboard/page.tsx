@@ -2,7 +2,7 @@
 
 /**
  * Calendar Dashboard (Schedule)
- * Frontend Author: Vanessa Teo & Qingyue Zhao
+ * Frontend Author: Vanessa Teo & Devni Wijesinghe & Qingyue Zhao
  * ------------------------------------------------------------
  * - Uses the shared <DashboardChrome /> for the top chrome.
  * - Client selection persists via localStorage helpers.
@@ -221,74 +221,62 @@ function ClientSchedule() {
       onLogoClick={onLogoClick}
     >
       {/* Two-column layout; left calendar, right task list/detail */}
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-0">
-        {/* LEFT: Square calendar, centered in its area */}
-        <section className="bg-white overflow-auto p-0 flex">
-          <div className="calendar-square">
-            <div
-              className={`calendar-compact ${
-                noClientSelected ? 'no-highlight' : ''
-              } absolute inset-0 p-4 md:p-6`}
-            >
-              <CalendarPanel
+        <div className="flex flex-1 h-[680px]">
+            {/* LEFT: Calendar */}
+            <section className="flex-1 bg-white overflow-auto p-4">
+                <CalendarPanel
                 tasks={filteredTasks /* empty when no client is selected */}
                 onDateClick={(date: string) => setSelectedDate(date)}
-              />
-            </div>
-          </div>
-        </section>
-
-        {/* RIGHT: Tasks list or task detail */}
-        <section
-          className="h-full overflow-auto"
-          style={{ backgroundColor: palette.pageBg }}
-        >
-          {!selectedTask ? (
-            <>
-              {/* Title row: LEFT title, RIGHT search (white bg) */}
-              <div className="px-6 py-10 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <h2 className="text-3xl md:text-4xl font-extrabold">Care Items</h2>
-                  {noClientSelected && (
-                    <p className="text-lg opacity-80">Select a client to view tasks.</p>
-                  )}
-                </div>
-
-                {/* Right-aligned search box */}
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search care items"
-                  className="h-11 w-full max-w-[320px] rounded-lg border px-4 text-black bg-white focus:outline-none focus:ring-2 focus:ring-[#F9C9B1]"
                 />
-              </div>
+            </section>
 
-              {/* List area */}
-              <div className="px-6 pb-8">
-                <TasksPanel
-                  tasks={tasksForRightPane}
-                  onTaskClick={(task: Task) => setSelectedTask(task)}
+            {/* RIGHT: Tasks */}
+            <section className="flex-1 overflow-auto" style={{ backgroundColor: palette.pageBg }}>
+                {!selectedTask ? (
+                <>
+                    {/* Title row */}
+                    <div className="px-6 py-10 flex flex-col gap-4">
+                    <div className="flex items-center justify-between gap-4">
+                        <h2 className="text-3xl md:text-4xl font-extrabold">Care Items</h2>
+                        <input
+                        type="text"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder="Search care items"
+                        className="h-11 w-full max-w-[320px] rounded-lg border px-4 text-black bg-white focus:outline-none focus:ring-2 focus:ring-[#F9C9B1]"
+                        />
+                    </div>
+                    {noClientSelected && (
+                        <p className="text-lg opacity-80">Select a client to view tasks.</p>
+                    )}
+                    </div>
+
+                    {/* Task list */}
+                    <div className="px-6 pb-8">
+                    <TasksPanel
+                        tasks={tasksForRightPane}
+                        onTaskClick={(task: Task) => setSelectedTask(task)}
+                    />
+                    </div>
+                </>
+                ) : (
+                <TaskDetail
+                    role={role}
+                    task={selectedTask}
+                    setTasks={setTasks}
+                    setSelectedTask={setSelectedTask}
+                    addComment={addComment}
+                    addFile={addFile}
+                    getStatusBadgeClasses={getStatusBadgeClasses}
+                    newComment={newComment}
+                    setNewComment={setNewComment}
+                    isAddingComment={isAddingComment}
+                    setIsAddingComment={setIsAddingComment}
                 />
-              </div>
-            </>
-          ) : (
-            <TaskDetail
-              role={role}
-              task={selectedTask}
-              setTasks={setTasks}
-              setSelectedTask={setSelectedTask}
-              addComment={addComment}
-              addFile={addFile}
-              getStatusBadgeClasses={getStatusBadgeClasses}
-              newComment={newComment}
-              setNewComment={setNewComment}
-              isAddingComment={isAddingComment}
-              setIsAddingComment={setIsAddingComment}
-            />
-          )}
-        </section>
-      </div>
+                )}
+            </section>
+        </div>
+
     </DashboardChrome>
   );
 }

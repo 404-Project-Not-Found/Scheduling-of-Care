@@ -98,11 +98,16 @@ export default function RegisterClientPanel({
         </div>
 
         {/* Notice bar */}
-        <div className="w-full px-6 md:px-8 py-5 md:py-6" style={{ backgroundColor: palette.notice }}>
-          <p className="text-sm sm:text-base md:text-lg leading-relaxed font-semibold" style={{ color: '#000' }}>
-            Notice: Please request a client access code from the family member in charge of the client’s account 
-            to register a new client.
-          </p>
+        <div
+            className="w-full px-6 md:px-8 py-5 md:py-6"
+            style={{ backgroundColor: palette.notice }}
+            >
+            <p className="text-sm sm:text-base md:text-lg leading-relaxed text-black">
+                <span className="font-bold">Notice:</span>{' '}
+                Please request a client access code from the family member in charge of the client’s account to register a new client. 
+                Once registered, the system will automatically send an access request to the client’s family member/POA. 
+                After their approval, you will be able to access all information related to that client.
+            </p>
         </div>
 
         {/* Body */}

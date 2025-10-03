@@ -5,23 +5,37 @@
  * File path: src/app/client_list/page.tsx
  * Frontend Author: Qingyue Zhao
  *
- * Purpose & uodated features:
- * - Uses <DashboardChrome /> so the top header + pink banner stay consistent.
- * - Maroon section title bar: “Client List”.
- * - Right-side CTA button “Register new client” opens a RIGHT drawer panel
- *   (RegisterClientPanel) instead of navigating to a new page.
- * - Search box filters client names (case-insensitive).
- * - List shows avatar circle + name; clicking a row opens that client’s dashboard
+ * Features (latest update):
+ * - Displays client list with avatar, name, and organisation access status.
+ * - Organisation access statuses: approved / pending / revoked.
+ * - Approved client rows:
+ *      -> show "View profile" button (navigates to dashboard).
+ * - Pending / Revoked client rows:
+ *      -> clicking row opens a centered modal explaining why access is denied.
+ * - Management-only actions:
+ *      -> revoked: "Request again" button (enabled).
+ *      -> pending: "Request sent" button (disabled).
+ * - Added "Mock Cathy" (approved) to demonstrate approved flow.
  */
 
 import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import DashboardChrome from '@/components/top_menu/client_schedule';
-import RegisterClientPanel from '@/components/accesscode/registration'; 
-import { getClientsFE, type Client as ApiClient } from '@/lib/mockApi';
+import RegisterClientPanel from '@/components/accesscode/registration';
+import {
+  getClientsFE,
+  getViewerRoleFE,
+  type Client as ApiClient,
+} from '@/lib/mockApi';
 
-type Client = { id: string; name: string; dashboardType?: 'full' | 'partial' };
+type OrgAccess = 'approved' | 'pending' | 'revoked';
+type Client = {
+  id: string;
+  name: string;
+  dashboardType?: 'full' | 'partial';
+  orgAccess: OrgAccess;
+};
 
 const colors = {
   pageBg: '#ffd9b3',
@@ -43,23 +57,51 @@ export default function ClientListPage() {
 function ClientListInner() {
   const router = useRouter();
 
-  // ---- Data ----
+  // ---- Current viewer role (carer / family / management) ----
+  const [role, setRole] = useState<'carer' | 'family' | 'management'>('family');
+  useEffect(() => {
+    setRole(getViewerRoleFE());
+  }, []);
+  const isManagement = role === 'management';
+
+  // ---- Clients state ----
   const [clients, setClients] = useState<Client[]>([]);
   const [q, setQ] = useState('');
 
-  // ---- Drawer state (open/close the registration panel) ----
+  // ---- Modal: access denied ----
+  const [denyOpen, setDenyOpen] = useState(false);
+  const [denyTarget, setDenyTarget] = useState<string>('');
+  const [denyReason, setDenyReason] = useState<OrgAccess>('pending');
+
+  // ---- Drawer: register new client ----
   const [showRegister, setShowRegister] = useState(false);
   const addNewClient = () => setShowRegister(true);
 
+  // ---- Load mock clients ----
   useEffect(() => {
     (async () => {
       try {
         const list = await getClientsFE();
-        const mapped: Client[] = list.map((c: ApiClient) => ({
+        let mapped: Client[] = list.map((c: ApiClient) => ({
           id: c._id,
           name: c.name,
           dashboardType: c.dashboardType,
+          orgAccess: (c as any).organisationAccess ?? 'pending',
         }));
+
+        // Force second client into revoked state
+        if (mapped[1]) {
+          mapped[1] = { ...mapped[1], orgAccess: 'revoked' };
+        }
+
+        // Append "Mock Cathy" (approved)
+        mapped.push({
+          id: 'mock-cathy',
+          name: 'Mock Cathy',
+          dashboardType: 'full',
+          orgAccess: 'approved',
+        });
+
         setClients(mapped);
       } catch {
         setClients([]);
@@ -67,15 +109,21 @@ function ClientListInner() {
     })();
   }, []);
 
-  // ---- Filter ----
+  // ---- Search filter ----
   const filtered = useMemo(() => {
     const t = q.trim().toLowerCase();
     if (!t) return clients;
     return clients.filter((c) => c.name.toLowerCase().includes(t));
   }, [clients, q]);
 
-  // ---- Navigation ----
-  const goDashboard = (c: Client) => {
+  // ---- Navigation guard ----
+  const tryOpenClient = (c: Client) => {
+    if (c.orgAccess !== 'approved') {
+      setDenyTarget(c.name);
+      setDenyReason(c.orgAccess);
+      setDenyOpen(true);
+      return;
+    }
     if (c.dashboardType === 'full') {
       router.push(`/calender_dashboard?id=${c.id}`);
     } else {
@@ -83,10 +131,19 @@ function ClientListInner() {
     }
   };
 
+  // ---- Management: request access again ----
+  const requestAccess = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation(); // avoid row navigation
+    setClients((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, orgAccess: 'pending' } : c))
+    );
+    // Real backend: POST /organisations/:orgId/clients/:id/request-access
+  };
+
   return (
     <DashboardChrome
       page="client-list"
-      clients={[]} // not used on this page
+      clients={[]} // not used here
       activeClientId={null}
       onClientChange={() => {}}
       activeClientName={undefined}
@@ -96,7 +153,7 @@ function ClientListInner() {
       {/* Page body */}
       <div className="w-full h-full" style={{ backgroundColor: colors.pageBg }}>
         <div className="max-w-[1380px] h-[680px] mx-auto px-6">
-          {/* Section title bar */}
+          {/* Section title */}
           <div
             className="w-full mt-6 rounded-t-xl px-6 py-4 text-white text-2xl md:text-3xl font-extrabold"
             style={{ backgroundColor: colors.header }}
@@ -104,14 +161,14 @@ function ClientListInner() {
             Client List
           </div>
 
-          {/* Controls row + List area combined in the same card */}
+          {/* Controls + List */}
           <div
             className="w-full h-[calc(100%-3rem)] rounded-b-xl bg-[#f6efe2] border-x border-b flex flex-col"
             style={{ borderColor: '#3A000022' }}
           >
-            {/* Controls row */}
+            {/* Controls */}
             <div className="flex items-center justify-between px-6 py-4 gap-4">
-              {/* Search (left) */}
+              {/* Search bar */}
               <div className="relative flex-1 max-w-[350px]">
                 <input
                   value={q}
@@ -121,8 +178,7 @@ function ClientListInner() {
                   style={{ borderColor: '#3A0000' }}
                 />
               </div>
-
-              {/* CTA (right) */}
+              {/* CTA: Register new client */}
               <button
                 onClick={addNewClient}
                 className="rounded-xl px-5 py-3 text-lg font-bold text-white hover:opacity-90"
@@ -137,7 +193,7 @@ function ClientListInner() {
               <div
                 className="mx-6 rounded-xl overflow-auto h-full"
                 style={{
-                  backgroundColor: '#F2E5D2', 
+                  backgroundColor: '#F2E5D2',
                   border: '1px solid rgba(58,0,0,0.25)',
                 }}
               >
@@ -150,32 +206,85 @@ function ClientListInner() {
                     {filtered.map((c) => (
                       <li
                         key={c.id}
-                        className="flex items-center gap-5 px-6 py-6 cursor-pointer hover:bg-[rgba(255,255,255,0.6)]"
-                        onClick={() => goDashboard(c)}
+                        className="flex items-center justify-between gap-5 px-6 py-6 hover:bg-[rgba(255,255,255,0.6)]"
                       >
-                        {/* Avatar circle */}
+                        {/* Left: avatar + name */}
                         <div
-                          className="shrink-0 rounded-full flex items-center justify-center"
-                          style={{
-                            width: 64,
-                            height: 64,
-                            border: '4px solid #3A0000',
-                            backgroundColor: '#fff',
-                            color: '#3A0000',
-                            fontWeight: 900,
-                            fontSize: 20,
-                          }}
-                          aria-hidden
+                          className="flex items-center gap-5 cursor-pointer"
+                          onClick={() => tryOpenClient(c)}
                         >
-                          {c.name.charAt(0).toUpperCase()}
+                          {/* Avatar circle */}
+                          <div
+                            className="shrink-0 rounded-full flex items-center justify-center"
+                            style={{
+                              width: 64,
+                              height: 64,
+                              border: '4px solid #3A0000',
+                              backgroundColor: '#fff',
+                              color: '#3A0000',
+                              fontWeight: 900,
+                              fontSize: 20,
+                            }}
+                            aria-hidden
+                          >
+                            {c.name.charAt(0).toUpperCase()}
+                          </div>
+
+                          {/* Name + access badge */}
+                          <div className="flex flex-col">
+                            <div
+                              className="text-xl md:text-2xl font-semibold"
+                              style={{ color: colors.text }}
+                            >
+                              {c.name}
+                            </div>
+                            <div className="mt-1 text-sm flex items-center gap-2 text-black/70">
+                              <span className="opacity-80">Organisation access:</span>
+                              <AccessBadge status={c.orgAccess} />
+                            </div>
+                          </div>
                         </div>
 
-                        {/* Name */}
-                        <div
-                          className="text-xl md:text-2xl font-semibold"
-                          style={{ color: colors.text }}
-                        >
-                          {c.name}
+                        {/* Right-side actions */}
+                        <div className="shrink-0 flex items-center gap-2">
+                          {/* Approved -> View profile */}
+                          {c.orgAccess === 'approved' && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                tryOpenClient(c);
+                              }}
+                              className="px-4 py-2 rounded-lg text-white text-sm font-semibold hover:opacity-90"
+                              style={{ backgroundColor: colors.header }}
+                            >
+                              View profile
+                            </button>
+                          )}
+
+                          {/* Management actions (non-approved only) */}
+                          {isManagement && c.orgAccess !== 'approved' && (
+                            <>
+                              {c.orgAccess === 'revoked' && (
+                                <button
+                                  onClick={(e) => requestAccess(e, c.id)}
+                                  className="px-4 py-2 rounded-lg text-white text-sm font-semibold hover:opacity-90"
+                                  style={{ backgroundColor: colors.header }}
+                                >
+                                  Request
+                                </button>
+                              )}
+                              {c.orgAccess === 'pending' && (
+                                <button
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="px-4 py-2 rounded-lg text-sm font-semibold cursor-not-allowed"
+                                  style={{ backgroundColor: '#b07b7b', color: 'white', opacity: 0.9 }}
+                                  disabled
+                                >
+                                  Request sent
+                                </button>
+                              )}
+                            </>
+                          )}
                         </div>
                       </li>
                     ))}
@@ -187,8 +296,60 @@ function ClientListInner() {
         </div>
       </div>
 
-      {/* Right-side registration drawer (stays mounted on this page) */}
+      {/* ---- Access denied modal ---- */}
+      {denyOpen && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-2xl shadow-2xl w-[92%] max-w-[520px] p-6 text-center">
+            <h3 className="text-xl font-bold mb-2" style={{ color: colors.header }}>
+              Access required
+            </h3>
+            {denyReason === 'pending' && (
+              <p className="text-black/80">
+                Your request to access <b>{denyTarget}</b>’s profile is still pending.
+                <br />
+                Please wait until the family approves your request.
+              </p>
+            )}
+            {denyReason === 'revoked' && (
+              <p className="text-black/80">
+                Your access to <b>{denyTarget}</b> has been revoked.
+                <br />
+                To regain access, please submit a new request.
+              </p>
+            )}
+            <div className="mt-6 flex justify-center gap-3">
+              <button
+                className="px-4 py-2 rounded-lg text-white font-semibold"
+                style={{ backgroundColor: colors.header }}
+                onClick={() => setDenyOpen(false)}
+              >
+                Got it
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Right-side registration drawer */}
       <RegisterClientPanel open={showRegister} onClose={() => setShowRegister(false)} />
     </DashboardChrome>
+  );
+}
+
+/* ---- Badge component: shows access status visually ---- */
+function AccessBadge({ status }: { status: OrgAccess }) {
+  const cfg: Record<OrgAccess, { bg: string; dot: string; label: string; text: string }> = {
+    approved: { bg: 'bg-green-100', dot: 'bg-green-500', label: 'Approved',      text: 'text-green-800' },
+    pending:  { bg: 'bg-yellow-100', dot: 'bg-yellow-500', label: 'Pending', text: 'text-yellow-800' },
+    revoked:  { bg: 'bg-red-100',    dot: 'bg-red-500',    label: 'Revoked',      text: 'text-red-800' },
+  };
+  const c = cfg[status];
+  return (
+    <span
+      className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-semibold ${c.bg} ${c.text}`}
+    >
+      <span className={`inline-block w-2 h-2 rounded-full ${c.dot}`} />
+      {c.label}
+    </span>
   );
 }

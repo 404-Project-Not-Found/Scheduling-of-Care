@@ -12,6 +12,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getViewerRoleFE } from '@/lib/mockApi';
+import { mockSignOut } from '@/lib/mock/mockSignout'; // ✅ import the function, not a route
 
 const palette = { header:'#3A0000', banner:'#F9C9B1', text:'#2b2b2b', white:'#FFFFFF', pageBg:'#FAEBDC' };
 
@@ -43,11 +44,11 @@ type ChromeProps = {
   onPrint?: () => void;
   onLogoClick?: () => void;
 
-  /** New: avatar controls */
-  showAvatar?: boolean;               // default true
-  avatarSrc?: string;                 // default '/default_profile.png'
-  onProfile?: () => void;             // click "Update your details"
-  onSignOut?: () => void;             // click "Sign out"
+  /** Avatar controls */
+  showAvatar?: boolean;               
+  avatarSrc?: string;                 
+  onProfile?: () => void;             
+  onSignOut?: () => void;             
 };
 
 const ROUTES = {
@@ -61,9 +62,8 @@ const ROUTES = {
   clientList: '/management_dashboard/clients_list',
   defaultHome: '/empty_dashboard',
   accountUpdate: '/calender_dashboard/update_details',
-  signOut: '/lib/mock/mockSignout',
   homeByRole: '/empty_dashboard',
-  profile: '/client_profile', // ensure leading slash
+  profile: '/client_profile', 
 };
 
 function nounForPage(page: PageKey): string {
@@ -138,7 +138,7 @@ export default function DashboardChrome({
   const doSignOut = () => {
     setUserMenuOpen(false);
     if (onSignOut) return onSignOut();
-    router.push(ROUTES.signOut);
+    mockSignOut(); // ✅ now calls function, not router.push
   };
 
   return (
@@ -161,7 +161,7 @@ export default function DashboardChrome({
             onClick={() => router.push(ROUTES.schedule)}
             className={`font-extrabold leading-none text-2xl md:text-3xl ${
                 page === 'schedule' || page === 'profile'
-                ? 'underline'   // 粉色文字
+                ? 'underline'
                 : 'text-white hover:underline'
             }`}
             title="Go to schedule dashboard"
@@ -193,7 +193,7 @@ export default function DashboardChrome({
                   </summary>
                   <div className="absolute left-1/2 -translate-x-1/2 mt-3 w-80 rounded-md border border-white/30 bg-white text-black shadow-2xl z-50">
                     <Link href={ROUTES.careEdit} className="block w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5">Manage care item</Link>
-                    <Link href={ROUTES.careAdd} className="block w-full text-left px-5 py-4 text-xl font-semibold hover:bg黑/5">Add new care item</Link>
+                    <Link href={ROUTES.careAdd} className="block w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5">Add new care item</Link>
                   </div>
                 </details>
               </div>
@@ -204,7 +204,7 @@ export default function DashboardChrome({
           )}
         </nav>
 
-        {/* Right: Avatar + (optional) extra content */}
+        {/* Right: Avatar */}
         <div className="relative flex items-center gap-4">
           {showAvatar && (
             <div className="relative">
@@ -249,13 +249,13 @@ export default function DashboardChrome({
         </div>
       </header>
 
-      {/* Pink banner (removed on client-list page) */}
+      {/* Pink banner */}
       {page !== 'client-list' && (
         <div
           className="px-4 md:px-8 py-2 md:py-4 grid grid-cols-[auto_1fr_auto] items-center"
           style={{ backgroundColor: hexToRgba(palette.banner, 0.8) }}
         >
-          {/* Left: client dropdown */}
+          {/* Client dropdown */}
           <div className="relative justify-self-start">
             <label className="sr-only">Select Client</label>
             <select
@@ -270,7 +270,7 @@ export default function DashboardChrome({
             <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-black/60 text-xl">▾</span>
           </div>
 
-          {/* Center: avatar + title */}
+          {/* Center title */}
           <div className="relative">
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
               <div className="flex items-center gap-3 justify-center md:-translate-x-16">
@@ -296,7 +296,7 @@ export default function DashboardChrome({
             </div>
           </div>
 
-          {/* Right: print button (only on calendar dashboard; keep center fixed) */}
+          {/* Print button */}
           <div className="justify-self-end">
             <button
               onClick={handlePrint}
