@@ -3,14 +3,12 @@
  * Authors:
  * - Frontend UI Build: Devni Wijesinghe
  * - Backend logic: Denise Alexander
- * Date Created: 10/09/2025
- * ====================================================================================================
+ * Last Update by Qingyue Zhao: 2025-10-03
  *
- * Frontend notes (latest update on 03/10/2025 by Qingyue Zhao):
- *
- * - Layout update: fields stacked vertically (one per row), all centered; avatar centered at the top.
- * - Permissions same as before.
- * ====================================================================================================
+ * Notes:
+ * - Fixed-height viewport section (h-[680px]) to avoid bottom gutters.
+ * - Family view: two-column editable; Management: same layout, read-only.
+ * - "Create one here" triggers AddAccessCodePanel.
  */
 
 'use client';
@@ -26,29 +24,18 @@ import DashboardChrome from '@/components/top_menu/client_schedule';
 import {
   getClientsFE,
   getClientByIdFE,
-  isMock,
   getViewerRoleFE,
   type Client as ApiClient,
 } from '@/lib/mock/mockApi';
 
-// ----- Types -----
-type Client = {
-  _id?: string;
-  name: string;
-  dob: string;
-  accessCode?: string;
-  notes?: string[];
-  avatarUrl?: string;
-};
 type Role = 'family' | 'carer' | 'management';
 
-// ----- Colors -----
-const palette = {
-  pageBg: '#F7ECD9', // full-screen warm background
+const colors = {
+  pageBg: '#F7ECD9',
   header: '#3A0000',
   banner: '#F9C9B1',
   text: '#2b2b2b',
-  white: '#FFFFFF',
+  fieldBorder: 'rgba(58,0,0,0.45)',
 };
 
 export default function ClientProfilePage() {
@@ -61,53 +48,72 @@ export default function ClientProfilePage() {
 
 function ClientProfilePageInner() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const sp = useSearchParams();
 
-  const clientIdParam = searchParams.get('id') || null;
+  const clientIdParam = sp.get('id') || null;
+  const isNew = sp.get('new') === 'true';
 
+  // ---- role ----
   const [role, setRole] = useState<Role>('family');
   useEffect(() => {
     const r = getViewerRoleFE();
     if (r === 'family' || r === 'carer' || r === 'management') setRole(r);
   }, []);
-  const canEditAll = role === 'family';
-  const canAddNotesOnly = role === 'carer';
-  const readOnly = role === 'management';
+  const isFamily = role === 'family';
+  const isManagement = role === 'management';
+  const isCarer = role === 'carer';
 
   const backHref =
-    role === 'management'
-      ? '/management_dashboard/clients_list'
-      : role === 'carer'
-      ? '/calender_dashboard'
-      : '/family_dashboard/people_list';
+    isManagement ? '/management_dashboard/clients_list'
+    : isCarer ? '/calender_dashboard'
+    : '/family_dashboard/people_list';
 
+  // ---- top chrome client switcher ----
   const [clients, setClients] = useState<Array<{ id: string; name: string }>>([]);
   const [activeClientId, setActiveClientId] = useState<string | null>(clientIdParam);
   const [displayName, setDisplayName] = useState<string>('');
 
-  // profile states
-  const [name, setName] = useState<string>('');
-  const [dob, setDob] = useState<string>('');
-  const [accessCode, setAccessCode] = useState<string>('');
-  const [avatarUrl, setAvatarUrl] = useState<string>('');
-  const [notesInput, setNotesInput] = useState<string>('');
+  // ---- profile fields ----
+  const [name, setName] = useState('');
+  const [dob, setDob] = useState('');
+  const [accessCode, setAccessCode] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [notesInput, setNotesInput] = useState('');
   const [savedNotes, setSavedNotes] = useState<string[]>([]);
 
-  const [loading, setLoading] = useState<boolean>(!!activeClientId);
-  const [error, setError] = useState<string>('');
-  const [formError, setFormError] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(!!activeClientId && !isNew);
+  const [error, setError] = useState('');
 
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  // ---- access-code drawer ----
   const [showAccessCodeDrawer, setShowAccessCodeDrawer] = useState(false);
 
+  // ---- avatar upload ----
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const openFilePicker = () => fileInputRef.current?.click();
+  const handleFileChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => setAvatarUrl(reader.result as string);
+    reader.readAsDataURL(f);
+    e.target.value = '';
+  };
+
+  // ---- load clients ----
   useEffect(() => {
     (async () => {
       try {
         const list = await getClientsFE();
-        const mapped = (list as ApiClient[]).map((c) => ({ id: c._id as string, name: c.name }));
+        const mapped = (list as ApiClient[]).map(c => ({ id: c._id as string, name: c.name }));
         setClients(mapped);
+
+        if (isNew) {
+          setActiveClientId(null);
+          setDisplayName('New Client');
+          return;
+        }
         if (clientIdParam) {
-          const found = mapped.find((m) => m.id === clientIdParam);
+          const found = mapped.find(m => m.id === clientIdParam);
           if (found) {
             setActiveClientId(found.id);
             setDisplayName(found.name);
@@ -120,78 +126,83 @@ function ClientProfilePageInner() {
         setClients([]);
       }
     })();
-  }, [clientIdParam]);
+  }, [clientIdParam, isNew]);
 
+  // ---- load one client (skip when new) ----
   useEffect(() => {
-    if (!activeClientId) {
+    if (isNew) {
+      setName(''); setDob(''); setAccessCode(''); setAvatarUrl('');
+      setSavedNotes([]); setNotesInput('');
       setLoading(false);
       return;
     }
+    if (!activeClientId) { setLoading(false); return; }
+
     let alive = true;
     (async () => {
       setLoading(true);
       try {
         const client = await getClientByIdFE(activeClientId);
-        if (!client) throw new Error('Mock client not found');
         if (!alive) return;
-        setName(client.name);
-        setDob(client.dob);
+        if (!client) throw new Error('Client not found');
+        setName(client.name || '');
+        setDob(client.dob || '');
         setAccessCode(client.accessCode || '');
-        setSavedNotes(client.notes || []);
+        setSavedNotes(
+        Array.isArray(client.notes)
+            ? client.notes
+            : client.notes
+            ? [client.notes]
+            : []
+        );
         setAvatarUrl(client.avatarUrl || '');
         setDisplayName(client.name || displayName);
-      } catch (err) {
+      } catch {
         if (alive) setError('Failed to load client data.');
       } finally {
         if (alive) setLoading(false);
       }
     })();
     return () => { alive = false; };
-  }, [activeClientId]);
+  }, [activeClientId, isNew]);
 
-  const openFilePicker = () => fileInputRef.current?.click();
-  const handleFileChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => setAvatarUrl(reader.result as string);
-    reader.readAsDataURL(file);
-    e.target.value = '';
-  };
+  const onCancel = () => { setNotesInput(''); router.push(backHref); };
+  const onSave = () => { router.push(backHref); };
 
-//   if (loading) {
-//     return (
-//       <DashboardChrome
-//         page="profile"
-//         clients={clients}
-//         activeClientId={activeClientId}
-//         onClientChange={(id) => router.push(`/client_profile?id=${id}`)}
-//         activeClientName={displayName || name || 'Client'}
-//         colors={{ header: palette.header, banner: palette.banner, text: palette.text }}
-//       >
-//         <div className="flex-1 flex items-center justify-center" style={{ backgroundColor: palette.pageBg }}>
-//           <h2 className="text-4xl font-extrabold">Loading client profile...</h2>
-//         </div>
-//       </DashboardChrome>
-//     );
-//   }
+  if (loading) {
+    return (
+      <DashboardChrome
+        page="profile"
+        clients={clients}
+        activeClientId={activeClientId}
+        onClientChange={(id) => router.push(`/client_profile?id=${id}`)}
+        activeClientName={displayName || name || 'Client'}
+        colors={{ header: colors.header, banner: colors.banner, text: colors.text }}
+      >
+        <div className="flex-1 flex items-center justify-center" style={{ backgroundColor: colors.pageBg }}>
+          <h2 className="text-2xl md:text-3xl font-extrabold">Loading client profile…</h2>
+        </div>
+      </DashboardChrome>
+    );
+  }
+  if (error) {
+    return (
+      <DashboardChrome
+        page="profile"
+        clients={clients}
+        activeClientId={activeClientId}
+        onClientChange={(id) => router.push(`/client_profile?id=${id}`)}
+        activeClientName={displayName || name || 'Client'}
+        colors={{ header: colors.header, banner: colors.banner, text: colors.text }}
+      >
+        <div className="flex-1 flex items-center justify-center" style={{ backgroundColor: colors.pageBg, color: 'red' }}>
+          {error}
+        </div>
+      </DashboardChrome>
+    );
+  }
 
-//   if (error) {
-//     return (
-//       <DashboardChrome
-//         page="profile"
-//         clients={clients}
-//         activeClientId={activeClientId}
-//         onClientChange={(id) => router.push(`/client_profile?id=${id}`)}
-//         activeClientName={displayName || name || 'Client'}
-//         colors={{ header: palette.header, banner: palette.banner, text: palette.text }}
-//       >
-//         <div className="flex-1 flex items-center justify-center" style={{ backgroundColor: palette.pageBg, color: 'red' }}>
-//           {error}
-//         </div>
-//       </DashboardChrome>
-//     );
-//   }
+  const pageTitle = isNew ? "New Client’s Profile" : `${displayName || name || 'Client'}’s Profile`;
 
   return (
     <DashboardChrome
@@ -200,94 +211,208 @@ function ClientProfilePageInner() {
       activeClientId={activeClientId}
       onClientChange={(id) => router.push(`/client_profile?id=${id}`)}
       activeClientName={displayName || name || 'Client'}
-      colors={{ header: palette.header, banner: palette.banner, text: palette.text }}
+      colors={{ header: colors.header, banner: colors.banner, text: colors.text }}
     >
-      <div
-        className="h-[670px] flex flex-col items-center justify-start gap-10 px-6 py-20"
-        style={{ backgroundColor: palette.pageBg, color: palette.text }}
-      >
-        {/* Center avatar */}
-        <div className="flex flex-col items-center gap-10">
-          <div className="w-[140px] h-[140px] rounded-full overflow-hidden border flex items-center justify-center bg-gray-200">
-            {avatarUrl ? (
-              <Image src={avatarUrl} alt="Profile avatar" width={140} height={140} className="object-cover rounded-full" />
-            ) : (
-              <div className="text-gray-500">No Photo</div>
-            )}
-          </div>
-          {canEditAll && (
-            <>
-              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-              <button
-                onClick={openFilePicker}
-                className="px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 transition"
-                style={{ backgroundColor: palette.header, color: palette.white }}
+      {/* Fixed-height body to avoid page gutter */}
+      <div className="w-full h-[680px] flex flex-col" style={{ backgroundColor: colors.pageBg, color: colors.text }}>
+        {/* Section bar */}
+        <div
+          className="w-full flex items-center justify-between px-6 py-3 text-white"
+          style={{ backgroundColor: colors.header }}
+        >
+          <div className="text-xl md:text-2xl font-extrabold">{pageTitle}</div>
+          <button
+            onClick={() => router.push(backHref)}
+            className="text-white/95 hover:underline font-semibold text-lg"
+            aria-label="Back"
+          >
+            &lt; Back
+          </button>
+        </div>
+
+        {/* Content: two columns
+            IMPORTANT:
+            - flex-none: do NOT consume remaining height (keeps buttons close)
+            - management gets extra top padding using arbitrary value class
+        */}
+        <div
+          className={`max-w-[1100px] w-full mx-auto px-8 ${
+            isManagement ? 'pt-30 pb-6' : 'pt-10 pb-6'
+          } flex-none`}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-[380px_1fr] gap-10 items-start">
+            {/* Left: avatar */}
+            <div className="flex flex-col items-center gap-6">
+              <div
+                className="rounded-full flex items-center justify-center overflow-hidden"
+                style={{
+                  width: 260,
+                  height: 260,
+                  border: `10px solid ${colors.header}`,
+                  backgroundColor: '#fff',
+                }}
               >
-                Upload photo
-              </button>
-            </>
-          )}
-        </div>
+                {avatarUrl ? (
+                  <Image
+                    src={avatarUrl}
+                    alt="Profile avatar"
+                    width={260}
+                    height={260}
+                    className="object-cover rounded-full"
+                  />
+                ) : (
+                  <div className="text-[64px]" style={{ color: colors.header }}>•</div>
+                )}
+              </div>
 
-        {/* Fields - stacked rows, centered */}
-        <div className="w-full max-w-2xl flex flex-col gap-4 items-center text-lg">
-          <div><span className="font-semibold">Name:</span> {name || '—'}</div>
-          <div><span className="font-semibold">Date of Birth:</span> {dob || '—'}</div>
-          <div><span className="font-semibold">Access Code:</span> {accessCode || '—'}</div>
-        </div>
-
-        {/* Notes */}
-        <div className="w-full max-w-2xl flex flex-col items-center gap-4">
-          <p className="text-lg font-semibold">Client Notes:</p>
-          {savedNotes.length === 0 && <div className="text-black/60">No notes yet.</div>}
-          {savedNotes.map((note, idx) => (
-            <div key={idx} className="w-full p-3 bg-white/70 rounded-md text-center">
-              {note}
+              {/* Upload only for family */}
+              {isFamily && (
+                <>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+                  <button
+                    onClick={openFilePicker}
+                    className="px-6 py-3 rounded-xl text-xl font-bold"
+                    style={{ backgroundColor: '#D6C0B1', color: '#1b0b07' }}
+                  >
+                    Upload photo
+                  </button>
+                </>
+              )}
             </div>
-          ))}
-          {(canEditAll || canAddNotesOnly) && (
-            <textarea
-              value={notesInput}
-              onChange={(e) => setNotesInput(e.target.value)}
-              placeholder="Write client notes here…"
-              className="w-full min-h-[100px] p-3 rounded-md focus:outline-none focus:ring-2"
-              style={{ backgroundColor: palette.white }}
-            />
-          )}
+
+            {/* Right: fields (family editable; management static) */}
+            <div className="w-full">
+              {/* Name */}
+              <FormRow label="Name">
+                {isManagement ? (
+                  <StaticText value={name} placeholder="This information is not provided" />
+                ) : (
+                  <input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full h-12 rounded-md bg-white border px-3 outline-none text-black"
+                    style={{ borderColor: colors.fieldBorder }}
+                  />
+                )}
+              </FormRow>
+
+              {/* DOB */}
+              <FormRow label="Date of Birth">
+                {isManagement ? (
+                  <StaticText value={dob} placeholder="This information is not provided" />
+                ) : (
+                  <input
+                    type="date"
+                    value={dob}
+                    onChange={(e) => setDob(e.target.value)}
+                    className="w-full h-12 rounded-md bg-white border px-3 outline-none text-black"
+                    style={{ borderColor: colors.fieldBorder }}
+                  />
+                )}
+              </FormRow>
+
+              {/* Access Code */}
+              <FormRow label="Access Code">
+                {isManagement ? (
+                  <StaticText value={accessCode} placeholder="This information is hidden" />
+                ) : (
+                  <>
+                    <input
+                      value={accessCode}
+                      onChange={(e) => setAccessCode(e.target.value)}
+                      className="w-full h-12 rounded-md bg-white border px-3 outline-none text-black"
+                      style={{ borderColor: colors.fieldBorder }}
+                    />
+                    <div className="text-[15px] mt-2 text-black/80">
+                      Don’t have an access code?{' '}
+                      <button
+                        type="button"
+                        className="underline"
+                        onClick={() => setShowAccessCodeDrawer(true)}
+                      >
+                        Create one here
+                      </button>
+                    </div>
+                  </>
+                )}
+              </FormRow>
+
+              {/* Notes */}
+              <FormRow label="Client Notes">
+                {isManagement ? (
+                  <div className="text-[16px] text-black/80 whitespace-pre-wrap">
+                    {savedNotes.length ? savedNotes.join('\n') : 'This information is not provided'}
+                  </div>
+                ) : (
+                  <textarea
+                    value={notesInput}
+                    onChange={(e) => setNotesInput(e.target.value)}
+                    className="w-full min-h-[180px] rounded-md bg-white border px-3 py-2 outline-none text-black"
+                    style={{ borderColor: colors.fieldBorder }}
+                  />
+                )}
+              </FormRow>
+            </div>
+          </div>
         </div>
 
-        {/* Bottom action button(s) */}
-        <div className="w-full flex justify-center">
-            {readOnly ? (
-                // management: centered back button
-                <button
-                onClick={() => router.push('/calender_dashboard')}
-                className="px-8 py-3 rounded-lg text-lg hover:opacity-90 transition"
-                style={{ backgroundColor: palette.header, color: palette.white }}
-                title="Back to Client Schedule"
-                >
-                Back to Client Schedule
-                </button>
-            ) : (
-                // family / carer: save
-                (canEditAll || canAddNotesOnly) && (
-                <button
-                    onClick={() => router.push(backHref)} 
-                    className="px-8 py-3 rounded-lg text-lg hover:opacity-90 transition disabled:opacity-50"
-                    style={{ backgroundColor: palette.header, color: palette.white }}
-                    disabled={canAddNotesOnly && notesInput.trim().length === 0}
-                >
-                    {canAddNotesOnly ? 'Save Notes' : 'Save'}
-                </button>
-                )
-            )}
-        </div>
-
+        {/* Footer buttons: hidden for management.
+           NOTE: no bottom padding, no big top margin; stays close to content. */}
+        {!isManagement && (
+          <div className="flex items-center justify-center gap-20">
+            <button
+              onClick={onCancel}
+              className="px-8 py-3 rounded-2xl text-2xl font-extrabold"
+              style={{ backgroundColor: '#D6C0B1', color: '#1b0b07' }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onSave}
+              className="px-8 py-3 rounded-2xl text-2xl font-extrabold disabled:opacity-50"
+              style={{ backgroundColor: '#D6C0B1', color: '#1b0b07' }}
+              disabled={isCarer && notesInput.trim().length === 0}
+            >
+              {isCarer ? 'Save Notes' : 'Save'}
+            </button>
+          </div>
+        )}
       </div>
 
-      {canEditAll && (
-        <AddAccessCodePanel open={showAccessCodeDrawer} onClose={() => setShowAccessCodeDrawer(false)} />
+      {/* Access Code Drawer */}
+      {isFamily && (
+        <AddAccessCodePanel
+          open={showAccessCodeDrawer}
+          onClose={() => setShowAccessCodeDrawer(false)}
+        />
       )}
     </DashboardChrome>
+  );
+}
+
+/* ----- helpers ----- */
+function FormRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="grid grid-cols-[220px_1fr] items-start gap-6 mb-6">
+      <div className="text-[24px] font-black" style={{ color: '#1b0b07' }}>
+        {label}
+      </div>
+      <div>{children}</div>
+    </div>
+  );
+}
+
+function StaticText({ value, placeholder }: { value?: string; placeholder: string }) {
+  const shown = (value ?? '').trim();
+  return (
+    <div className="text-[16px] text-black/80 min-h-12 flex items-center">
+      {shown || placeholder}
+    </div>
   );
 }

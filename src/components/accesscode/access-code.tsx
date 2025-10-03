@@ -113,7 +113,7 @@ export default function AddAccessCodePanel({
         <div className="w-full px-6 md:px-8 py-5 md:py-6" style={{ backgroundColor: palette.notice }}>
           <p className="text-sm sm:text-base md:text-lg leading-relaxed font-semibold" style={{ color: '#000' }}>
             IMPORTANT: Generate an access code, copy it and use it when you fill out{' '}
-            <span className="underline">Add New Person</span>. Then, email the access code to the care organisation
+            <span className="underline">Add New PWSN</span>. Then, email the access code to the care organisation
             management team to register the client.
           </p>
         </div>
