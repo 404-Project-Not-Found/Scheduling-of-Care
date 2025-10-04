@@ -1,6 +1,7 @@
 /**
  * Filename: /app/management_dashboard/manage_care_item/add/page.tsx
  * Frontend Author: Qingyue Zhao
+ * Backend Author: Zahra Rizqita
  * Last Update: 2025-10-02
  *
  * Description:
