@@ -46,6 +46,8 @@ type Task = {
   dateTo?: string;
 };
 
+// Helper for frontend
+/*
 function saveTasks(tasks: Task[]) {
   if (typeof window === "undefined") return;
   localStorage.setItem("tasks", JSON.stringify(tasks));
@@ -58,6 +60,7 @@ function loadTasks(): Task[] {
     return [];
   }
 }
+  */
 
 const unitToDays: Record<Unit, number> = { day: 1, week: 7, month: 30, year: 365 };
 const toDays = (count: number, unit: Unit) => Math.max(1, Math.floor(count || 1)) * unitToDays[unit];
@@ -128,42 +131,54 @@ export default function AddTaskPage() {
     []
   );
 
-  const onCreate = () => {
+  // Updated for backend
+  const onCreate = async () => {
     const name = label.trim();
     if (!name) {
       alert("Please enter the task name.");
       return;
     }
-    const tasks = loadTasks();
-
-    const base = slugify(name) || "task";
-    let slug = base;
-    let i = 2;
-    while (tasks.some((t) => t.slug === slug)) slug = `${base}-${i++}`;
 
     const countNum = parseInt(frequencyCountStr, 10);
     const hasFrequency = Number.isFinite(countNum) && countNum > 0;
-    const frequencyDays = hasFrequency ? toDays(countNum, frequencyUnit) : undefined;
-    const legacyStr = hasFrequency ? `${countNum} ${frequencyUnit}${countNum > 1 ? "s" : ""}` : undefined;
 
-    const newTask: Task = {
-      clientName: activeName,
-      label: name,
-      slug,
+    const payload: Partial<Task>= {
+      label:name,
       status: status.trim(),
       category: category.trim(),
+      clientName: activeName.trim() || undefined,
       frequencyCount: hasFrequency ? countNum : undefined,
-      frequencyUnit: hasFrequency ? frequencyUnit : undefined,
-      frequencyDays,
+      frequencyUnit: hasFrequency ? frequencyUnit: undefined,
       dateFrom: dateFrom || undefined,
       dateTo: dateTo || undefined,
-      frequency: legacyStr,
+      frequency: hasFrequency ? `${countNum} ${frequencyUnit}${countNum > 1 ? "s" : ""}` : undefined,
       lastDone: dateFrom && dateTo ? `${dateFrom} to ${dateTo}` : "",
       deleted: false,
     };
+    try {
+      const res = await fetch("/api/tasks", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(payload),
+      });
 
-    saveTasks([...(tasks || []), newTask]);
-    router.push("/calender_dashboard");
+      if(res.status == 409) {
+        const msg = await res.text().catch(() => "");
+        alert(msg || "A care item with that name already exist.")
+      }
+
+      if(!res.ok) {
+        const msg = await res.json().catch(() => ({}));
+        alert(`Adding care item failed: ${msg?.error || res.statusText}`);
+        return;
+      }
+
+      router.push("/calendar_dashboard");
+      
+    } catch(e: unknown) {
+      const message = e instanceof Error? e.message: String(e);
+      alert(`Network error: ${message}`);
+    }
   };
 
   const onLogoClick = () => {
