@@ -35,7 +35,7 @@ export default function FamilyPOAListPage() {
   // Fetches client list from API
   useEffect(() => {
     async function fetchClients() {
-      const res = await fetch('/api/clients');
+      const res = await fetch('/api/v1/clients');
       const data = await res.json();
       // Saves client list to state so they can be displayed in the UI
       setClients(data);

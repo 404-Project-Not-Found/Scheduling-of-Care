@@ -35,7 +35,7 @@ export default function ClientListPage() {
 
     (async () => {
       try {
-        const res = await fetch('/api/management/clients', {
+        const res = await fetch('/api/v1/management/clients', {
           cache: 'no-store',
         });
         if (!res.ok) throw new Error(`Failed to load clients (${res.status})`);

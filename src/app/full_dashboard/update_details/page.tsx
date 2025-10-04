@@ -33,7 +33,7 @@ export default function UpdateDetailsPage() {
   useEffect(() => {
     async function fetchUser() {
       try {
-        const res = await fetch('/api/user/profile');
+        const res = await fetch('/api/v1/user/profile');
         if (!res.ok) {
           throw new Error('Failed to load profile');
         }

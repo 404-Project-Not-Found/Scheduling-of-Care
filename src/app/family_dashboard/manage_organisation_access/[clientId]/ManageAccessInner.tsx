@@ -50,7 +50,7 @@ export default function ManageAccessInner({
     setLoading(true);
     try {
       const res = await fetch(
-        `/api/clients/${client.id}/organisations/${orgId}`,
+        `/api/v1/clients/${client.id}/organisations/${orgId}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

@@ -32,7 +32,7 @@ export default function RegisterClientPage() {
       }
 
       // Call the api endpoint to register the client
-      const res = await fetch('/api/management/register_client', {
+      const res = await fetch('/api/v1/management/register_client', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ accessCode }),

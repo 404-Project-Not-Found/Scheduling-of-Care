@@ -77,7 +77,7 @@ export default function SignupPage() {
 
     try {
       // Call signup API route
-      const res = await fetch('/api/signup', {
+      const res = await fetch('/api/v1/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -23,7 +23,7 @@ export default function ResetPasswordEmailPage() {
     }
 
     try {
-      const res = await fetch('/api/request_reset', {
+      const res = await fetch('/api/v1/request_reset', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),

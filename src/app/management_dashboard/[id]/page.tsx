@@ -28,7 +28,7 @@ export default function ClientDashboardPage({ params }: PageProps) {
     let alive = true;
     (async () => {
       try {
-        const res = await fetch(`/api/clients/${id}`, {
+        const res = await fetch(`/api/v1/clients/${id}`, {
           cache: 'no-store',
         });
         if (!res.ok) throw new Error(`Failed to load client (${res.status})`);

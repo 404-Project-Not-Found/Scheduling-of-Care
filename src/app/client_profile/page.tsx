@@ -84,7 +84,7 @@ function ClientProfilePageInner() {
   // Fetches client list from API
   useEffect(() => {
     async function fetchClients() {
-      const res = await fetch('/api/clients');
+      const res = await fetch('/api/v1/clients');
       const data = await res.json();
       // Saves client list to state so they can be displayed in the UI
       setClients(data);
@@ -99,7 +99,7 @@ function ClientProfilePageInner() {
     const fetchClient = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/clients/${clientId}`);
+        const res = await fetch(`/api/v1/clients/${clientId}`);
         if (!res.ok) {
           throw new Error('Failed to fetch client');
         }
@@ -184,14 +184,14 @@ function ClientProfilePageInner() {
     try {
       if (isNew) {
         // Create new client record
-        await fetch('/api/clients', {
+        await fetch('/api/v1/clients', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
       } else if (clientId) {
         // Update existing client record
-        await fetch(`/api/clients/${clientId}`, {
+        await fetch(`/api/v1/clients/${clientId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
