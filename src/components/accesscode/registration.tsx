@@ -1,5 +1,5 @@
 /**
- * Filename: /components/accesscode/Registration.tsx
+ * File path: /components/accesscode/Registration.tsx
  * Author: Qingyue Zhao
  * Date Created: 02/10/2025
  *
@@ -46,7 +46,9 @@ export default function RegisterClientPanel({
     if (!open) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = prev; };
+    return () => {
+      document.body.style.overflow = prev;
+    };
   }, [open]);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -66,7 +68,9 @@ export default function RegisterClientPanel({
         aria-label="Close overlay"
         onClick={onClose}
         className={`fixed inset-0 z-[90] bg-black/40 transition-opacity duration-300 ${
-          open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          open
+            ? 'opacity-100 pointer-events-auto'
+            : 'opacity-0 pointer-events-none'
         }`}
       />
 
@@ -99,15 +103,17 @@ export default function RegisterClientPanel({
 
         {/* Notice bar */}
         <div
-            className="w-full px-6 md:px-8 py-5 md:py-6"
-            style={{ backgroundColor: palette.notice }}
-            >
-            <p className="text-sm sm:text-base md:text-lg leading-relaxed text-black">
-                <span className="font-bold">Notice:</span>{' '}
-                Please request a client access code from the family member in charge of the client’s account to register a new client. 
-                Once registered, the system will automatically send an access request to the client’s family member/POA. 
-                After their approval, you will be able to access all information related to that client.
-            </p>
+          className="w-full px-6 md:px-8 py-5 md:py-6"
+          style={{ backgroundColor: palette.notice }}
+        >
+          <p className="text-sm sm:text-base md:text-lg leading-relaxed text-black">
+            <span className="font-bold">Notice:</span> Please request a client
+            access code from the family member in charge of the client’s account
+            to register a new client. Once registered, the system will
+            automatically send an access request to the client’s family
+            member/POA. After their approval, you will be able to access all
+            information related to that client.
+          </p>
         </div>
 
         {/* Body */}
@@ -121,12 +127,14 @@ export default function RegisterClientPanel({
               onChange={(e) => setAccessCode(e.target.value)}
               placeholder="Enter access code"
               className="h-12 w-full text-lg text-center rounded border outline-none"
-              style={{ borderColor: palette.inputBorder, color: palette.text, background: 'white' }}
+              style={{
+                borderColor: palette.inputBorder,
+                color: palette.text,
+                background: 'white',
+              }}
             />
 
-            {error && (
-              <span className="text-sm text-red-600">{error}</span>
-            )}
+            {error && <span className="text-sm text-red-600">{error}</span>}
 
             <button
               type="submit"

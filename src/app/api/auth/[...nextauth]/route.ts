@@ -1,5 +1,5 @@
 /**
- * Filename: /auth/[...nextauth]/route.ts
+ * File path: /auth/[...nextauth]/route.ts
  * Author: Denise Alexander
  * Date Created: 22/09/2025
  */

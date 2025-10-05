@@ -1,5 +1,5 @@
 /**
- * Filename: /family_dashboard/manage_organisation_access/[clientId]/page.tsx
+ * File path: /family_dashboard/manage_organisation_access/[clientId]/page.tsx
  * Author: Denise Alexander
  * Date Created: 17/09/2025
  */

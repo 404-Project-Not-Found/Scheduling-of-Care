@@ -1,6 +1,6 @@
 /**
- * Filename: /empty_dashboard/page.tsx
- * Function: empty dashboard for family member and management before they selecting a client
+ * File path: /empty_dashboard/page.tsx
+ * Function: empty dashboard for family member and management before they select a client
  * Author: Denise Alexander
  * Date Created: 25/09/2025
  */

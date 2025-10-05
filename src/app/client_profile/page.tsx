@@ -1,5 +1,5 @@
 /**
- * Filename: /client_profile/page.tsx
+ * File path: /client_profile/page.tsx
  * Authors:
  * - Frontend UI Build: Devni Wijesinghe
  * - Backend logic: Denise Alexander
@@ -40,7 +40,9 @@ const colors = {
 
 export default function ClientProfilePage() {
   return (
-    <Suspense fallback={<div style={{ padding: 24 }}>Loading client profile...</div>}>
+    <Suspense
+      fallback={<div style={{ padding: 24 }}>Loading client profile...</div>}
+    >
       <ClientProfilePageInner />
     </Suspense>
   );
@@ -63,14 +65,19 @@ function ClientProfilePageInner() {
   const isManagement = role === 'management';
   const isCarer = role === 'carer';
 
-  const backHref =
-    isManagement ? '/management_dashboard/clients_list'
-    : isCarer ? '/calender_dashboard'
-    : '/family_dashboard/people_list';
+  const backHref = isManagement
+    ? '/management_dashboard/clients_list'
+    : isCarer
+      ? '/calendar_dashboard'
+      : '/family_dashboard/people_list';
 
   // ---- top chrome client switcher ----
-  const [clients, setClients] = useState<Array<{ id: string; name: string }>>([]);
-  const [activeClientId, setActiveClientId] = useState<string | null>(clientIdParam);
+  const [clients, setClients] = useState<Array<{ id: string; name: string }>>(
+    []
+  );
+  const [activeClientId, setActiveClientId] = useState<string | null>(
+    clientIdParam
+  );
   const [displayName, setDisplayName] = useState<string>('');
 
   // ---- profile fields ----
@@ -104,7 +111,10 @@ function ClientProfilePageInner() {
     (async () => {
       try {
         const list = await getClientsFE();
-        const mapped = (list as ApiClient[]).map(c => ({ id: c._id as string, name: c.name }));
+        const mapped = (list as ApiClient[]).map((c) => ({
+          id: c._id as string,
+          name: c.name,
+        }));
         setClients(mapped);
 
         if (isNew) {
@@ -113,7 +123,7 @@ function ClientProfilePageInner() {
           return;
         }
         if (clientIdParam) {
-          const found = mapped.find(m => m.id === clientIdParam);
+          const found = mapped.find((m) => m.id === clientIdParam);
           if (found) {
             setActiveClientId(found.id);
             setDisplayName(found.name);
@@ -131,12 +141,19 @@ function ClientProfilePageInner() {
   // ---- load one client (skip when new) ----
   useEffect(() => {
     if (isNew) {
-      setName(''); setDob(''); setAccessCode(''); setAvatarUrl('');
-      setSavedNotes([]); setNotesInput('');
+      setName('');
+      setDob('');
+      setAccessCode('');
+      setAvatarUrl('');
+      setSavedNotes([]);
+      setNotesInput('');
       setLoading(false);
       return;
     }
-    if (!activeClientId) { setLoading(false); return; }
+    if (!activeClientId) {
+      setLoading(false);
+      return;
+    }
 
     let alive = true;
     (async () => {
@@ -149,11 +166,11 @@ function ClientProfilePageInner() {
         setDob(client.dob || '');
         setAccessCode(client.accessCode || '');
         setSavedNotes(
-        Array.isArray(client.notes)
+          Array.isArray(client.notes)
             ? client.notes
             : client.notes
-            ? [client.notes]
-            : []
+              ? [client.notes]
+              : []
         );
         setAvatarUrl(client.avatarUrl || '');
         setDisplayName(client.name || displayName);
@@ -163,11 +180,18 @@ function ClientProfilePageInner() {
         if (alive) setLoading(false);
       }
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [activeClientId, isNew]);
 
-  const onCancel = () => { setNotesInput(''); router.push(backHref); };
-  const onSave = () => { router.push(backHref); };
+  const onCancel = () => {
+    setNotesInput('');
+    router.push(backHref);
+  };
+  const onSave = () => {
+    router.push(backHref);
+  };
 
   if (loading) {
     return (
@@ -177,10 +201,19 @@ function ClientProfilePageInner() {
         activeClientId={activeClientId}
         onClientChange={(id) => router.push(`/client_profile?id=${id}`)}
         activeClientName={displayName || name || 'Client'}
-        colors={{ header: colors.header, banner: colors.banner, text: colors.text }}
+        colors={{
+          header: colors.header,
+          banner: colors.banner,
+          text: colors.text,
+        }}
       >
-        <div className="flex-1 flex items-center justify-center" style={{ backgroundColor: colors.pageBg }}>
-          <h2 className="text-2xl md:text-3xl font-extrabold">Loading client profile…</h2>
+        <div
+          className="flex-1 flex items-center justify-center"
+          style={{ backgroundColor: colors.pageBg }}
+        >
+          <h2 className="text-2xl md:text-3xl font-extrabold">
+            Loading client profile…
+          </h2>
         </div>
       </DashboardChrome>
     );
@@ -193,16 +226,25 @@ function ClientProfilePageInner() {
         activeClientId={activeClientId}
         onClientChange={(id) => router.push(`/client_profile?id=${id}`)}
         activeClientName={displayName || name || 'Client'}
-        colors={{ header: colors.header, banner: colors.banner, text: colors.text }}
+        colors={{
+          header: colors.header,
+          banner: colors.banner,
+          text: colors.text,
+        }}
       >
-        <div className="flex-1 flex items-center justify-center" style={{ backgroundColor: colors.pageBg, color: 'red' }}>
+        <div
+          className="flex-1 flex items-center justify-center"
+          style={{ backgroundColor: colors.pageBg, color: 'red' }}
+        >
           {error}
         </div>
       </DashboardChrome>
     );
   }
 
-  const pageTitle = isNew ? "New Client’s Profile" : `${displayName || name || 'Client'}’s Profile`;
+  const pageTitle = isNew
+    ? 'New Client’s Profile'
+    : `${displayName || name || 'Client'}’s Profile`;
 
   return (
     <DashboardChrome
@@ -211,10 +253,17 @@ function ClientProfilePageInner() {
       activeClientId={activeClientId}
       onClientChange={(id) => router.push(`/client_profile?id=${id}`)}
       activeClientName={displayName || name || 'Client'}
-      colors={{ header: colors.header, banner: colors.banner, text: colors.text }}
+      colors={{
+        header: colors.header,
+        banner: colors.banner,
+        text: colors.text,
+      }}
     >
       {/* Fixed-height body to avoid page gutter */}
-      <div className="w-full h-[680px] flex flex-col" style={{ backgroundColor: colors.pageBg, color: colors.text }}>
+      <div
+        className="w-full h-[680px] flex flex-col"
+        style={{ backgroundColor: colors.pageBg, color: colors.text }}
+      >
         {/* Section bar */}
         <div
           className="w-full flex items-center justify-between px-6 py-3 text-white"
@@ -257,7 +306,9 @@ function ClientProfilePageInner() {
                     className="object-cover rounded-full"
                   />
                 ) : (
-                  <div className="text-[64px]" style={{ color: colors.header }}>•</div>
+                  <div className="text-[64px]" style={{ color: colors.header }}>
+                    •
+                  </div>
                 )}
               </div>
 
@@ -285,70 +336,78 @@ function ClientProfilePageInner() {
             {/* Right: fields (family editable; management static) */}
             <div className="w-full">
               {/* Name */}
-            <FormRow label="Name">
-                {(isManagement || isCarer) ? (
-                    <StaticText value={name} placeholder="This information is not provided" />
+              <FormRow label="Name">
+                {isManagement || isCarer ? (
+                  <StaticText
+                    value={name}
+                    placeholder="This information is not provided"
+                  />
                 ) : (
-                    <input
+                  <input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     className="w-full h-12 rounded-md bg-white border px-3 outline-none text-black"
                     style={{ borderColor: colors.fieldBorder }}
-                    />
+                  />
                 )}
-                </FormRow>
+              </FormRow>
 
-                {/* DOB */}
-                <FormRow label="Date of Birth">
-                {(isManagement || isCarer) ? (
-                    <StaticText value={dob} placeholder="This information is not provided" />
+              {/* DOB */}
+              <FormRow label="Date of Birth">
+                {isManagement || isCarer ? (
+                  <StaticText
+                    value={dob}
+                    placeholder="This information is not provided"
+                  />
                 ) : (
-                    <input
+                  <input
                     type="date"
                     value={dob}
                     onChange={(e) => setDob(e.target.value)}
                     className="w-full h-12 rounded-md bg-white border px-3 outline-none text-black"
                     style={{ borderColor: colors.fieldBorder }}
-                    />
+                  />
                 )}
-            </FormRow>
+              </FormRow>
 
-
-
-            {/* Access Code — hidden for carers */}
-            {!isCarer && (
-            <FormRow label="Access Code">
-                {isManagement ? (
-                <StaticText value={accessCode} placeholder="This information is hidden" />
-                ) : (
-                <>
-                    <input
-                    value={accessCode}
-                    onChange={(e) => setAccessCode(e.target.value)}
-                    className="w-full h-12 rounded-md bg-white border px-3 outline-none text-black"
-                    style={{ borderColor: colors.fieldBorder }}
+              {/* Access Code — hidden for carers */}
+              {!isCarer && (
+                <FormRow label="Access Code">
+                  {isManagement ? (
+                    <StaticText
+                      value={accessCode}
+                      placeholder="This information is hidden"
                     />
-                    <div className="text-[15px] mt-2 text-black/80">
-                    Don’t have an access code?{' '}
-                    <button
-                        type="button"
-                        className="underline"
-                        onClick={() => setShowAccessCodeDrawer(true)}
-                    >
-                        Create one here
-                    </button>
-                    </div>
-                </>
-                )}
-            </FormRow>
-            )}
-
+                  ) : (
+                    <>
+                      <input
+                        value={accessCode}
+                        onChange={(e) => setAccessCode(e.target.value)}
+                        className="w-full h-12 rounded-md bg-white border px-3 outline-none text-black"
+                        style={{ borderColor: colors.fieldBorder }}
+                      />
+                      <div className="text-[15px] mt-2 text-black/80">
+                        Don’t have an access code?{' '}
+                        <button
+                          type="button"
+                          className="underline"
+                          onClick={() => setShowAccessCodeDrawer(true)}
+                        >
+                          Create one here
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </FormRow>
+              )}
 
               {/* Notes */}
               <FormRow label="Notes">
                 {isManagement ? (
                   <div className="text-[16px] text-black/80 whitespace-pre-wrap">
-                    {savedNotes.length ? savedNotes.join('\n') : 'This information is not provided'}
+                    {savedNotes.length
+                      ? savedNotes.join('\n')
+                      : 'This information is not provided'}
                   </div>
                 ) : (
                   <textarea
@@ -398,7 +457,13 @@ function ClientProfilePageInner() {
 }
 
 /* ----- helpers ----- */
-function FormRow({ label, children }: { label: string; children: React.ReactNode }) {
+function FormRow({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="grid grid-cols-[220px_1fr] items-start gap-6 mb-6">
       <div className="text-[24px] font-black" style={{ color: '#1b0b07' }}>
@@ -409,7 +474,13 @@ function FormRow({ label, children }: { label: string; children: React.ReactNode
   );
 }
 
-function StaticText({ value, placeholder }: { value?: string; placeholder: string }) {
+function StaticText({
+  value,
+  placeholder,
+}: {
+  value?: string;
+  placeholder: string;
+}) {
   const shown = (value ?? '').trim();
   return (
     <div className="text-[16px] text-black/80 min-h-12 flex items-center">

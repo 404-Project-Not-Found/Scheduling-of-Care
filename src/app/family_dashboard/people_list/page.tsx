@@ -1,6 +1,3 @@
-// src/app/family_client_list/page.tsx
-'use client';
-
 /**
  * File path: src/app/family_client_list/page.tsx
  * Frontend Author: Qingyue Zhao
@@ -15,6 +12,8 @@
  *         - Manage organisation access
  * - No organisation access status shown (unlike management view).
  */
+
+'use client';
 
 import React, { Suspense, useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
@@ -39,7 +38,9 @@ const colors = {
 
 export default function FamilyClientListPage() {
   return (
-    <Suspense fallback={<div className="p-6 text-gray-600">Loading clients…</div>}>
+    <Suspense
+      fallback={<div className="p-6 text-gray-600">Loading clients…</div>}
+    >
       <FamilyClientListInner />
     </Suspense>
   );
@@ -79,7 +80,11 @@ function FamilyClientListInner() {
       activeClientId={null}
       activeClientName={undefined}
       onClientChange={() => {}}
-      colors={{ header: colors.header, banner: colors.banner, text: colors.text }}
+      colors={{
+        header: colors.header,
+        banner: colors.banner,
+        text: colors.text,
+      }}
       onLogoClick={() => router.push('/empty_dashboard')}
     >
       <div className="w-full h-full" style={{ backgroundColor: colors.pageBg }}>
@@ -139,43 +144,44 @@ function FamilyClientListInner() {
                       >
                         {/* Left: avatar + name (clickable → dashboard) */}
                         <div
-                        className="flex items-center gap-5 cursor-pointer"
-                        onClick={() =>
+                          className="flex items-center gap-5 cursor-pointer"
+                          onClick={() =>
                             router.push(
-                            c.dashboardType === 'full'
-                                ? `/calender_dashboard?id=${c.id}`
+                              c.dashboardType === 'full'
+                                ? `/calendar_dashboard?id=${c.id}`
                                 : `/partial_dashboard?id=${c.id}`
                             )
-                        }
+                          }
                         >
-                        <div
+                          <div
                             className="shrink-0 rounded-full flex items-center justify-center"
                             style={{
-                            width: 64,
-                            height: 64,
-                            border: '4px solid #3A0000',
-                            backgroundColor: '#fff',
-                            color: '#3A0000',
-                            fontWeight: 900,
-                            fontSize: 20,
+                              width: 64,
+                              height: 64,
+                              border: '4px solid #3A0000',
+                              backgroundColor: '#fff',
+                              color: '#3A0000',
+                              fontWeight: 900,
+                              fontSize: 20,
                             }}
-                        >
+                          >
                             {c.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div
+                            className="text-xl md:text-2xl font-semibold"
+                            style={{ color: colors.text }}
+                          >
+                            {c.name}
+                          </div>
                         </div>
-                            <div
-                                className="text-xl md:text-2xl font-semibold"
-                                style={{ color: colors.text }}
-                            >
-                                {c.name}
-                            </div>
-                        </div>
-
 
                         {/* Right: action buttons */}
                         <div className="shrink-0 flex items-center gap-2">
                           {/* View profile */}
                           <button
-                            onClick={() => router.push(`/client_profile?id=${c.id}`)}
+                            onClick={() =>
+                              router.push(`/client_profile?id=${c.id}`)
+                            }
                             className="px-4 py-2 rounded-lg text-white text-sm font-semibold hover:opacity-90"
                             style={{ backgroundColor: '#4CAF50' }}
                           >
@@ -185,7 +191,9 @@ function FamilyClientListInner() {
                           {/* Manage org access */}
                           <button
                             onClick={() =>
-                              router.push(`/family_dashboard/manage_organisation_access/${c.id}`)
+                              router.push(
+                                `/family_dashboard/manage_organisation_access/${c.id}`
+                              )
                             }
                             className="px-4 py-2 rounded-lg text-white text-sm font-semibold hover:opacity-90"
                             style={{ backgroundColor: '#E91E63' }}

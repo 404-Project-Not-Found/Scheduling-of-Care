@@ -1,5 +1,5 @@
 /**
- * Filename: /models/User.ts
+ * File path: /models/User.ts
  * Author: Denise Alexander
  * Date Created: 16/09/2025
  */

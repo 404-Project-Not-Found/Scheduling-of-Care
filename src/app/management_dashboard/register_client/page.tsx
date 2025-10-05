@@ -1,34 +1,32 @@
 /**
- * Filename: /management_dashboard/register_client/page.tsx
+ * File path: /management_dashboard/register_client/page.tsx
  * Authors: Vanessa Teo & Denise Alexander
  * Date Created: 22/09/2025
  */
 
-"use client";
+'use client';
 
-import React, { useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
+import React, { useState } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 // ----- Color palette -----
 const palette = {
-  pageBg: "#ffd9b3",
-  cardBg: "#F7ECD9",
-  header: "#3A0000",
-  text: "#2b2b2b",
-  border: "#3A0000",
-  help: "#ff9999",
-  white: "#ffffff",
+  pageBg: '#ffd9b3',
+  cardBg: '#F7ECD9',
+  header: '#3A0000',
+  text: '#2b2b2b',
+  border: '#3A0000',
+  help: '#ff9999',
+  white: '#ffffff',
 };
 
 export default function RegisterClientPage() {
-  const [accessCode, setAccessCode] = useState("");
+  const [accessCode, setAccessCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  const router = useRouter();
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -37,29 +35,29 @@ export default function RegisterClientPage() {
 
     const code = accessCode.trim();
     if (!code) {
-      setError("Access code cannot be empty.");
+      setError('Access code cannot be empty.');
       return;
     }
 
     try {
       setLoading(true);
-      const res = await fetch("/api/management/register_client", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/v1/management/register_client', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ accessCode: code }), // Keep original payload
       });
 
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        throw new Error(data?.error || "Failed to register client.");
+        throw new Error(data?.error || 'Failed to register client.');
       }
 
       // success
-      setMessage(data?.message || "Client registered successfully.");
-      setAccessCode("");
+      setMessage(data?.message || 'Client registered successfully.');
+      setAccessCode('');
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
+      setError(err instanceof Error ? err.message : 'Something went wrong.');
     } finally {
       setLoading(false);
     }
@@ -82,7 +80,10 @@ export default function RegisterClientPage() {
       </header>
 
       {/* Banner (maroon) */}
-      <div className="w-full text-white" style={{ backgroundColor: palette.header }}>
+      <div
+        className="w-full text-white"
+        style={{ backgroundColor: palette.header }}
+      >
         <div className="px-6 py-5 relative">
           <Link
             href="/empty_dashboard"
@@ -90,7 +91,7 @@ export default function RegisterClientPage() {
             className="absolute left-6 top-1/2 -translate-y-1/2 font-semibold tracking-wide
                        text-lg md:text-xl lg:text-2xl px-2 py-1 text-white"
           >
-            {"<"} back
+            {'<'} back
           </Link>
 
           <h1 className="text-3xl md:text-4xl font-extrabold tracking-wide text-center">
@@ -107,7 +108,11 @@ export default function RegisterClientPage() {
             <div
               role="alert"
               className="mx-auto w-full max-w-2xl rounded-xl border px-4 py-3 shadow-sm"
-              style={{ backgroundColor: palette.cardBg, borderColor: palette.border, color: palette.text }}
+              style={{
+                backgroundColor: palette.cardBg,
+                borderColor: palette.border,
+                color: palette.text,
+              }}
             >
               {error}
             </div>
@@ -116,7 +121,11 @@ export default function RegisterClientPage() {
             <div
               role="status"
               className="mx-auto w-full max-w-2xl rounded-xl border px-4 py-3 shadow-sm"
-              style={{ backgroundColor: palette.cardBg, borderColor: palette.border, color: palette.text }}
+              style={{
+                backgroundColor: palette.cardBg,
+                borderColor: palette.border,
+                color: palette.text,
+              }}
             >
               {message}
             </div>
@@ -157,7 +166,7 @@ export default function RegisterClientPage() {
                          disabled:opacity-60 min-w-[200px]"
               style={{ backgroundColor: palette.header }}
             >
-              {loading ? "Registering…" : "Register"}
+              {loading ? 'Registering…' : 'Register'}
             </button>
           </div>
         </form>

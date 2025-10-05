@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useEffect } from "react";
-import Link from "next/link";
-import { signOut } from "next-auth/react";
+import { useEffect } from 'react';
+import Link from 'next/link';
+import { signOut } from 'next-auth/react';
 
 type Item = { href: string; label: string };
 
@@ -13,31 +13,36 @@ type SideMenuProps = {
 };
 
 const palette = {
-  pageBg: "#FAEBDC",
-  panelBg: "#fdf4e7",
-  header: "#3A0000",
-  banner: "#F9C9B1",
-  text: "#2b2b2b",
-  white: "#FFFFFF",
+  pageBg: '#FAEBDC',
+  panelBg: '#fdf4e7',
+  header: '#3A0000',
+  banner: '#F9C9B1',
+  text: '#2b2b2b',
+  white: '#FFFFFF',
 };
 
 const defaultItems: Item[] = [
-  { href: "/calender_dashboard/update_details", label: "Manage your account" },
+  { href: '/calendar_dashboard/update_details', label: 'Manage your account' },
 
   // decision need to be made:
-  
+
   // option 1. path before select client: need to search carer first (or via search from staff list)
-  { href: "/management_dashboard/assign_carer/search", label: "Manage Carer Assignment" },
+  {
+    href: '/management_dashboard/assign_carer/search',
+    label: 'Manage Carer Assignment',
+  },
 
   // option 2. path after select client: don't need the search page ( or could add 'manage carer access' button on the client list page)
   // { href: "/management_dashboard/assign_carer/manage", label: "Manage Carer access" },
 
-  { href: "/management_dashboard/register_client", label: "Register new client" },
-  { href: "/management_dashboard/clients_list", label: "List of clients" },
-   { href: "/calender_dashboard", label: "Clients Schedule" },
-  { href: "/management_dashboard/staff_list", label: "List of staff" },
-  { href: "/request-log-page", label: "request log" },
-  
+  {
+    href: '/management_dashboard/register_client',
+    label: 'Register new client',
+  },
+  { href: '/management_dashboard/clients_list', label: 'List of clients' },
+  { href: '/calendar_dashboard', label: 'Clients Schedule' },
+  { href: '/management_dashboard/staff_list', label: 'List of staff' },
+  { href: '/request-log-page', label: 'request log' },
 ];
 
 export default function SideMenu({
@@ -48,10 +53,10 @@ export default function SideMenu({
   // Close on ESC
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === 'Escape') onClose();
     };
-    if (open) document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    if (open) document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
   }, [open, onClose]);
 
   function handleBackdropClick(e: React.MouseEvent<HTMLDivElement>) {
@@ -60,12 +65,12 @@ export default function SideMenu({
 
   // sign-out (mock first, else next-auth)
   const handleSignOut = async () => {
-    const isMockEnv = process.env.NEXT_PUBLIC_ENABLE_MOCK === "1";
+    const isMockEnv = process.env.NEXT_PUBLIC_ENABLE_MOCK === '1';
     const hasMockRole =
-      typeof window !== "undefined" &&
-      (!!sessionStorage.getItem("mockRole") ||
-        ["family", "carer", "management"].includes(
-          (localStorage.getItem("activeRole") || "").toLowerCase()
+      typeof window !== 'undefined' &&
+      (!!sessionStorage.getItem('mockRole') ||
+        ['family', 'carer', 'management'].includes(
+          (localStorage.getItem('activeRole') || '').toLowerCase()
         ));
 
     if (isMockEnv || hasMockRole) {
@@ -73,14 +78,14 @@ export default function SideMenu({
         localStorage.clear();
         sessionStorage.clear();
       } catch {}
-      window.location.replace("/");
+      window.location.replace('/');
       return;
     }
 
     try {
-      await signOut({ callbackUrl: "/" });
+      await signOut({ callbackUrl: '/' });
     } catch {
-      window.location.replace("/");
+      window.location.replace('/');
     }
   };
 
@@ -91,7 +96,7 @@ export default function SideMenu({
         aria-hidden
         onClick={handleBackdropClick}
         className={`fixed inset-0 z-40 bg-black/40 transition-opacity ${
-          open ? "opacity-100" : "opacity-0 pointer-events-none"
+          open ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
       />
 
@@ -101,7 +106,7 @@ export default function SideMenu({
         aria-modal="true"
         aria-label="Menu"
         className={`fixed left-0 top-0 z-50 h-full w-[300px] max-w-[85vw] transform transition-transform duration-200 ease-out ${
-          open ? "translate-x-0" : "-translate-x-full"
+          open ? 'translate-x-0' : '-translate-x-full'
         }`}
         style={{
           backgroundColor: palette.panelBg,
@@ -146,7 +151,7 @@ export default function SideMenu({
               Sign out
             </button>
           </div>
-       </nav>
+        </nav>
       </aside>
     </>
   );
@@ -175,7 +180,7 @@ function MenuItem({
           <span
             aria-hidden="true"
             className="inline-block w-3 h-3 rounded-full shrink-0 mt-[6px]"
-            style={{ backgroundColor: "#FF5C5C" }}
+            style={{ backgroundColor: '#FF5C5C' }}
           />
           <div className="text-lg font-medium leading-7">{label}</div>
         </div>

@@ -1,4 +1,4 @@
-/* 
+/*
  * File: top_menu/client_schedule
  * Author: Qingyue Zhao
  * Purpose: Reusable header chrome for all calendar/budget/transactions/request pages.
@@ -64,9 +64,9 @@ type ChromeProps = {
 };
 
 const ROUTES = {
-  schedule: '/calender_dashboard',
-  budget: '/calender_dashboard/budget_report',
-  transactions: '/calender_dashboard/transaction_history',
+  schedule: '/calendar_dashboard',
+  budget: '/calendar_dashboard/budget_report',
+  transactions: '/calendar_dashboard/transaction_history',
   requestForm: '/family_dashboard/request_of_change_page',
   requestLog: '/request-log-page',
   careEdit: '/management_dashboard/manage_care_item/edit',
@@ -74,30 +74,42 @@ const ROUTES = {
   clientList: '/management_dashboard/clients_list',
   peopleList: '/family_dashboard/people_list',
   defaultHome: '/empty_dashboard',
-  accountUpdate: '/calender_dashboard/update_details',
+  accountUpdate: '/calendar_dashboard/update_details',
   homeByRole: '/empty_dashboard',
   profile: '/client_profile',
-  organisationAccess: '/family_dashboard/manage_organisation_access', 
-  newTransaction: '/calender_dashboard/budget_report/add_transaction',
+  organisationAccess: '/family_dashboard/manage_organisation_access',
+  newTransaction: '/calendar_dashboard/budget_report/add_transaction',
 };
 
 /** Maps each page to a noun title for the banner. */
 function nounForPage(page: PageKey): string {
   switch (page) {
-    case 'budget': return 'Budget Report';
-    case 'transactions': return 'Transactions';
-    case 'request-form': return 'Request Form';
-    case 'request-log': return 'Requests';
+    case 'budget':
+      return 'Budget Report';
+    case 'transactions':
+      return 'Transactions';
+    case 'request-form':
+      return 'Request Form';
+    case 'request-log':
+      return 'Requests';
     case 'care-edit':
-    case 'care-add': return 'Care Items';
-    case 'category-cost': return 'Budget Report';
-    case 'client-list': return 'Client List';
-    case 'people-list': return 'People List';
+    case 'care-add':
+      return 'Care Items';
+    case 'category-cost':
+      return 'Budget Report';
+    case 'client-list':
+      return 'Client List';
+    case 'people-list':
+      return 'People List';
     case 'schedule':
-    case 'profile': return 'Profile';
-    case 'organisation-access': return 'Organisation';
-    case 'new-transaction': return 'New Transaction'
-    default: return 'Schedule';
+    case 'profile':
+      return 'Profile';
+    case 'organisation-access':
+      return 'Organisation';
+    case 'new-transaction':
+      return 'New Transaction';
+    default:
+      return 'Schedule';
   }
 }
 
@@ -107,9 +119,14 @@ function activeUnderline(
   key: PageKey | 'care',
   role?: 'family' | 'carer' | 'management'
 ): string {
-  const isActiveCare = (page === 'care-edit' || page === 'care-add') && key === 'care';
+  const isActiveCare =
+    (page === 'care-edit' || page === 'care-add') && key === 'care';
   const profileMappedTarget =
-    role === 'family' ? 'people-list' : role === 'management' ? 'client-list' : null;
+    role === 'family'
+      ? 'people-list'
+      : role === 'management'
+        ? 'client-list'
+        : null;
   const isProfileMapped = page === 'profile' && key === profileMappedTarget;
   const isActiveDirect = page === key;
 
@@ -148,9 +165,13 @@ export default function DashboardChrome({
   const router = useRouter();
 
   const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  const role: 'family' | 'carer' | 'management' = mounted ? getViewerRoleFE() : 'family';
+  const role: 'family' | 'carer' | 'management' = mounted
+    ? getViewerRoleFE()
+    : 'family';
   const isFamily = role === 'family';
   const isCarer = role === 'carer';
   const isManagement = role === 'management';
@@ -158,19 +179,20 @@ export default function DashboardChrome({
   // Banner title, e.g. "Alice’s Budget Report"
   const noun = nounForPage(page);
   const centeredTitle = useMemo(
-    () => (activeClientName ? `${activeClientName}’s ${noun}` : `Client ${noun}`),
+    () =>
+      activeClientName ? `${activeClientName}’s ${noun}` : `Client ${noun}`,
     [activeClientName, noun]
   );
 
   const handleLogoClick = () => {
-  if (onLogoClick) return onLogoClick();
+    if (onLogoClick) return onLogoClick();
 
-  if (role === 'carer') {
-    router.push(ROUTES.schedule); 
-  } else {
-    router.push(ROUTES.defaultHome);
-  }
-};
+    if (role === 'carer') {
+      router.push(ROUTES.schedule);
+    } else {
+      router.push(ROUTES.defaultHome);
+    }
+  };
 
   const handlePrint = () => {
     if (onPrint) return onPrint();
@@ -203,66 +225,83 @@ export default function DashboardChrome({
       >
         {/* Left: Logo + Client Schedule link */}
         <div className="flex items-center gap-8">
-            <button
-                onClick={handleLogoClick}
-                className="flex items-center gap-3 hover:opacity-90"
-                title="Go to empty dashboard"
-            >
-                <Image
-                src="/logo.png"
-                alt="Logo"
-                width={80}
-                height={30}
-                className="object-contain"
-                priority
-                />
-            </button>
-            <button
-                onClick={() => router.push(ROUTES.schedule)}
-                className={`font-extrabold leading-none text-2xl md:text-3xl ${
-                page === 'schedule' ? 'underline' : 'text-white hover:underline'
-                }`}
-                title="Go to schedule dashboard"
-            >
-                <span className="font-extrabold leading-none text-2xl md:text-3xl">
-                {isFamily
-                    ? 'PWSN Schedule'
-                    : isCarer
-                    ? 'Carer Dashboard'
-                    : 'Client Schedule'}
-                </span>
-            </button>
+          <button
+            onClick={handleLogoClick}
+            className="flex items-center gap-3 hover:opacity-90"
+            title="Go to empty dashboard"
+          >
+            <Image
+              src="/logo.png"
+              alt="Logo"
+              width={80}
+              height={30}
+              className="object-contain"
+              priority
+            />
+          </button>
+          <button
+            onClick={() => router.push(ROUTES.schedule)}
+            className={`font-extrabold leading-none text-2xl md:text-3xl ${
+              page === 'schedule' ? 'underline' : 'text-white hover:underline'
+            }`}
+            title="Go to schedule dashboard"
+          >
+            <span className="font-extrabold leading-none text-2xl md:text-3xl">
+              {isFamily
+                ? 'PWSN Schedule'
+                : isCarer
+                  ? 'Carer Dashboard'
+                  : 'Client Schedule'}
+            </span>
+          </button>
         </div>
-
 
         {/* Center: navigation menu */}
         <nav className="hidden lg:flex items-center gap-10 font-extrabold text-white text-xl">
           {mounted && isManagement && (
-            <Link href={ROUTES.clientList} className={activeUnderline(page, 'client-list', role)}>
+            <Link
+              href={ROUTES.clientList}
+              className={activeUnderline(page, 'client-list', role)}
+            >
               Client List
             </Link>
           )}
 
           {mounted && isFamily && (
             <>
-              <Link href={ROUTES.peopleList} className={activeUnderline(page, 'people-list', role)}>
+              <Link
+                href={ROUTES.peopleList}
+                className={activeUnderline(page, 'people-list', role)}
+              >
                 My PWSNs
               </Link>
-              <Link href={ROUTES.organisationAccess} className={activeUnderline(page, 'organisation-access', role)}>
+              <Link
+                href={ROUTES.organisationAccess}
+                className={activeUnderline(page, 'organisation-access', role)}
+              >
                 Organisation
               </Link>
             </>
           )}
 
-          <Link href={ROUTES.budget} className={activeUnderline(page, 'budget', role)}>
+          <Link
+            href={ROUTES.budget}
+            className={activeUnderline(page, 'budget', role)}
+          >
             Budget Report
           </Link>
-          <Link href={ROUTES.transactions} className={activeUnderline(page, 'transactions', role)}>
+          <Link
+            href={ROUTES.transactions}
+            className={activeUnderline(page, 'transactions', role)}
+          >
             View Transactions
           </Link>
 
           {mounted && isFamily && (
-            <Link href={ROUTES.requestForm} className={activeUnderline(page, 'request-form', role)}>
+            <Link
+              href={ROUTES.requestForm}
+              className={activeUnderline(page, 'request-form', role)}
+            >
               Request Form
             </Link>
           )}
@@ -271,20 +310,31 @@ export default function DashboardChrome({
             <>
               <div className="relative">
                 <details className="group">
-                  <summary className={`inline-flex items-center gap-2 list-none cursor-pointer ${activeUnderline(page, 'care', role)}`}>
+                  <summary
+                    className={`inline-flex items-center gap-2 list-none cursor-pointer ${activeUnderline(page, 'care', role)}`}
+                  >
                     Care Items <span className="text-white/90">▼</span>
                   </summary>
                   <div className="absolute left-1/2 -translate-x-1/2 mt-3 w-80 rounded-md border border-white/30 bg-white text-black shadow-2xl z-50">
-                    <Link href={ROUTES.careEdit} className="block w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5">
+                    <Link
+                      href={ROUTES.careEdit}
+                      className="block w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5"
+                    >
                       Edit care item
                     </Link>
-                    <Link href={ROUTES.careAdd} className="block w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5">
+                    <Link
+                      href={ROUTES.careAdd}
+                      className="block w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5"
+                    >
                       Add new care item
                     </Link>
                   </div>
                 </details>
               </div>
-              <Link href={ROUTES.requestLog} className={activeUnderline(page, 'request-log', role)}>
+              <Link
+                href={ROUTES.requestLog}
+                className={activeUnderline(page, 'request-log', role)}
+              >
                 Request Log
               </Link>
             </>
@@ -302,14 +352,30 @@ export default function DashboardChrome({
                 aria-expanded={userMenuOpen}
                 title="Account"
               >
-                <Image src={avatarSrc} alt="Profile" width={64} height={64} className="h-full w-full object-cover" priority />
+                <Image
+                  src={avatarSrc}
+                  alt="Profile"
+                  width={64}
+                  height={64}
+                  className="h-full w-full object-cover"
+                  priority
+                />
               </button>
               {userMenuOpen && (
-                <div className="absolute right-0 mt-3 w-80 rounded-md border border-white/30 bg-white text-black shadow-2xl z-50" role="menu">
-                  <button className="w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5" onClick={goProfile}>
+                <div
+                  className="absolute right-0 mt-3 w-80 rounded-md border border-white/30 bg-white text-black shadow-2xl z-50"
+                  role="menu"
+                >
+                  <button
+                    className="w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5"
+                    onClick={goProfile}
+                  >
                     Update your details
                   </button>
-                  <button className="w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5" onClick={doSignOut}>
+                  <button
+                    className="w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5"
+                    onClick={doSignOut}
+                  >
                     Sign out
                   </button>
                 </div>
@@ -338,10 +404,14 @@ export default function DashboardChrome({
               >
                 <option value="">{'- Select a client -'}</option>
                 {clients.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
                 ))}
               </select>
-              <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-black/60 text-xl">▾</span>
+              <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-black/60 text-xl">
+                ▾
+              </span>
             </div>
           ) : (
             // Spacer to preserve grid layout when dropdown is hidden for carers
@@ -353,9 +423,11 @@ export default function DashboardChrome({
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
               <div
                 className={`flex items-center gap-3 justify-center ${
-                    isCarer ? '-translate-x-8 md:-translate-x-32' : 'md:-translate-x-16'
+                  isCarer
+                    ? '-translate-x-8 md:-translate-x-32'
+                    : 'md:-translate-x-16'
                 }`}
-                >
+              >
                 <Link
                   href={ROUTES.profile}
                   aria-label="Open client profile"

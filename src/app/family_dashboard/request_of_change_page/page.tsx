@@ -1,5 +1,5 @@
 /**
- * Filename: /app/request_form/page.tsx
+ * File path: /app/request_form/page.tsx
  * Frontend Author: Devni Wijesinghe
  * Last Update by Qingyue Zhao: 2025-10-03
  *
@@ -65,7 +65,10 @@ export default function RequestChangeFormPage() {
     (async () => {
       try {
         const list = await getClientsFE();
-        const mapped: Client[] = list.map((c: ApiClient) => ({ id: c._id, name: c.name }));
+        const mapped: Client[] = list.map((c: ApiClient) => ({
+          id: c._id,
+          name: c.name,
+        }));
         setClients(mapped);
 
         const stored = readActiveClientFromStorage();
@@ -95,8 +98,8 @@ export default function RequestChangeFormPage() {
 
   /* ---------- Form state ---------- */
   const [allTasks, setAllTasks] = useState<ApiTask[]>([]);
-  const [taskName, setTaskName] = useState('');   // Care Item Name
-  const [category, setCategory] = useState('');   // Care Item Category
+  const [taskName, setTaskName] = useState(''); // Care Item Name
+  const [category, setCategory] = useState(''); // Care Item Category
   const [details, setDetails] = useState('');
   const [reason, setReason] = useState('');
   const [submitMessage, setSubmitMessage] = useState('');
@@ -126,14 +129,14 @@ export default function RequestChangeFormPage() {
   // Compute tasks by current client
   const tasksForClient = useMemo(() => {
     if (!activeId) return [];
-    return (allTasks || []).filter((t: any) => t.clientId === activeId);
+    return (allTasks || []).filter((t: ApiTask) => t.clientId === activeId);
   }, [allTasks, activeId]);
 
   // Category-filtered tasks (fallback to catalog mapping if task.category is missing)
   const tasksForClientAndCategory = useMemo(() => {
     if (!category) return [];
     const target = norm(category);
-    return tasksForClient.filter((t: any) => {
+    return tasksForClient.filter((t: ApiTask) => {
       const cat = t.category || labelToCategory.get(t.title) || '';
       return norm(cat) === target;
     });
@@ -150,11 +153,16 @@ export default function RequestChangeFormPage() {
   };
 
   const handleSubmit = () => {
-    if (!taskName.trim() || !category.trim() || !details.trim() || !reason.trim()) {
+    if (
+      !taskName.trim() ||
+      !category.trim() ||
+      !details.trim() ||
+      !reason.trim()
+    ) {
       setSubmitMessage('Please fill in all fields before submitting.');
       return;
     }
-    router.push('/calender_dashboard');
+    router.push('/calendar_dashboard');
   };
 
   const handleCancel = () => {
@@ -163,7 +171,7 @@ export default function RequestChangeFormPage() {
     setDetails('');
     setReason('');
     setSubmitMessage('');
-    router.push('/calender_dashboard');
+    router.push('/calendar_dashboard');
   };
 
   return (
@@ -177,17 +185,25 @@ export default function RequestChangeFormPage() {
       onClientChange={onClientChange}
     >
       {/* Fill entire area below the top bar */}
-      <div className="w-full h-[680px]" style={{ backgroundColor: palette.pageBg, color: palette.text }}>
+      <div
+        className="w-full h-[680px]"
+        style={{ backgroundColor: palette.pageBg, color: palette.text }}
+      >
         {/* Section header */}
-        <div className="px-6 py-3 text-white" style={{ backgroundColor: palette.sectionHeader }}>
-          <h2 className="text-xl md:text-3xl font-extrabold px-5">Request of Change Form</h2>
+        <div
+          className="px-6 py-3 text-white"
+          style={{ backgroundColor: palette.sectionHeader }}
+        >
+          <h2 className="text-xl md:text-3xl font-extrabold px-5">
+            Request of Change Form
+          </h2>
         </div>
 
         {/* Notice banner */}
         <div className="px-6 py-4" style={{ backgroundColor: palette.notice }}>
           <h3 className="text-base md:text-lg px-5 text-black">
-            Notice: Please describe what you’d like to change about the care item.
-            Management will review your request and respond accordingly.
+            Notice: Please describe what you’d like to change about the care
+            item. Management will review your request and respond accordingly.
           </h3>
         </div>
 
@@ -233,7 +249,7 @@ export default function RequestChangeFormPage() {
                 ) : (
                   <>
                     <option value="">Select a task…</option>
-                    {tasksForClientAndCategory.map((t: any) => (
+                    {tasksForClientAndCategory.map((t: ApiTask) => (
                       <option key={t.id} value={t.title}>
                         {t.title}
                       </option>
@@ -288,7 +304,9 @@ export default function RequestChangeFormPage() {
             </div>
 
             {/* Validation message */}
-            {submitMessage && <div className="font-semibold text-red-600">{submitMessage}</div>}
+            {submitMessage && (
+              <div className="font-semibold text-red-600">{submitMessage}</div>
+            )}
           </div>
         </div>
       </div>
@@ -304,8 +322,9 @@ export default function RequestChangeFormPage() {
             ?
           </button>
           <div className="absolute bottom-12 right-0 hidden w-64 max-w-[90vw] rounded bg-white border p-2 text-sm text-black group-hover:block shadow-lg">
-            Fill in the task and category, describe the change, and provide a reason.
-            Click <b>Submit</b> to send, or <b>Cancel</b> to return to the menu.
+            Fill in the task and category, describe the change, and provide a
+            reason. Click <b>Submit</b> to send, or <b>Cancel</b> to return to
+            the menu.
           </div>
         </div>
       </div>
@@ -314,7 +333,13 @@ export default function RequestChangeFormPage() {
 }
 
 /* Field wrapper */
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="grid grid-cols-[240px_1fr] items-center gap-4">
       <div className="text-lg md:text-xl font-semibold text-[#1c130f] whitespace-nowrap">

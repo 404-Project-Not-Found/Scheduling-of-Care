@@ -81,7 +81,7 @@ jobs:
   backend:
     name: Backend · Lint / Test
     runs-on: ubuntu-latest
-    needs: detect   # don't depend on frontend to avoid dead-wait when FE is skipped
+    needs: detect # don't depend on frontend to avoid dead-wait when FE is skipped
     if: ${{ needs.detect.outputs.has_backend == 'true' }}
     defaults:
       run:

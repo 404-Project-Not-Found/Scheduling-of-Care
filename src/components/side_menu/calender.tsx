@@ -1,7 +1,7 @@
 /**
  * IMPORTANT: THIS FILE ISN NO LONGER IN USED, CHANGE TO components/top_menu INSTEAD
- * 
- * Filename: /app/menu/page.tsx
+ *
+ * File path: /app/menu/page.tsx
  * Author: Qingyue Zhao
  * Date Created: 01/10/2025
  *
@@ -64,7 +64,8 @@ export function MenuDrawer({
   const isManagementViewer =
     viewer === 'management' ||
     (typeof window !== 'undefined' &&
-      (localStorage.getItem('activeRole') || '').toLowerCase() === 'management');
+      (localStorage.getItem('activeRole') || '').toLowerCase() ===
+        'management');
 
   // Detect "management" viewer
   const isCarerViewer =
@@ -115,19 +116,18 @@ export function MenuDrawer({
             {/* Existing items for all user */}
 
             <MenuItem
-              href="/calender_dashboard/budget_report"
+              href="/calendar_dashboard/budget_report"
               label="Budget Report"
             />
             <MenuItem
-              href="/calender_dashboard/transaction_history"
+              href="/calendar_dashboard/transaction_history"
               label="View Transactions"
             />
-
 
             {/* Extra entries only for CARER viewer */}
             {isCarerViewer && (
               <MenuItem
-                href="/calender_dashboard/update_details"
+                href="/calendar_dashboard/update_details"
                 label="Manage your account"
               />
             )}
@@ -135,36 +135,30 @@ export function MenuDrawer({
             {/* Extra entries only for FAMILY viewer */}
             {isFamilyViewer && (
               <>
-
-            
                 {/* <MenuItem
                   href="/people_list" 
                   label="Manage people with special needs"
                 /> */}
-
               </>
             )}
 
             {/* Extra entry only for MANAGEMENT viewer */}
             {isManagementViewer && (
-             <>
-
+              <>
                 {/* <MenuItem
                   href="/assign_carer"
                   label="Manage carer assignment"
                 /> */}
-             
-              <MenuItem
-                href="/management_dashboard/manage_care_item/edit"
-                label="Manage care item"
-              />
-              <MenuItem
-                href="/management_dashboard/manage_care_item/add"
-                label="add new care item"
-              />
+
+                <MenuItem
+                  href="/management_dashboard/manage_care_item/edit"
+                  label="Manage care item"
+                />
+                <MenuItem
+                  href="/management_dashboard/manage_care_item/add"
+                  label="add new care item"
+                />
               </>
-              
-              
             )}
           </ul>
 

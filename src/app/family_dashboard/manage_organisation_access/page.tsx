@@ -1,6 +1,6 @@
 /**
- * Filename: /family_dashboard/manage_organisation_access/page.tsx
- * Author: Qingyue Zhao & Denise Alexander
+ * File path: /family_dashboard/manage_organisation_access/page.tsx
+ * Authors: Qingyue Zhao & Denise Alexander
  * Last Update: 2025-10-03
  *
  * NOTE:
@@ -15,15 +15,14 @@
  * - On client change, updates activeClient in storage and reloads orgs.
  * - Organisation access workflow is still stubbed with mock data (MOCK_ORGS);
  *   backend fetch should be integrated once available.
- * 
+ *
  * Old files move to: app/old_organisation_access
- * 
+ *
  */
 
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import DashboardChrome from '@/components/top_menu/client_schedule';
 
 import {
@@ -36,8 +35,6 @@ import {
   writeActiveClientToStorage,
 } from '@/lib/mock/mockApi';
 
-type OrgStatus = 'active' | 'pending' | 'revoked';
-
 const colors = {
   pageBg: '#ffd9b3',
   header: '#3A0000',
@@ -48,8 +45,6 @@ const colors = {
 type ClientLite = { id: string; name: string };
 
 export default function ManageOrganisationAccessPage() {
-  const router = useRouter();
-
   // ---------- Clients & Selection ----------
   const [clients, setClients] = useState<ClientLite[]>([]);
   const [activeClientId, setActiveClientId] = useState<string | null>(null);
@@ -65,12 +60,16 @@ export default function ManageOrganisationAccessPage() {
     (async () => {
       try {
         const list = await getClientsFE(); // Returns ApiClient[]
-        const mapped: ClientLite[] = list.map((c: ApiClient) => ({ id: c._id, name: c.name }));
+        const mapped: ClientLite[] = list.map((c: ApiClient) => ({
+          id: c._id,
+          name: c.name,
+        }));
         setClients(mapped);
 
         const { id, name } = readActiveClientFromStorage();
         const useId = id || mapped[0]?.id || null;
-        const useName = name || (mapped.find((m) => m.id === useId)?.name ?? '');
+        const useName =
+          name || (mapped.find((m) => m.id === useId)?.name ?? '');
         setActiveClientId(useId);
         setActiveClientName(useName);
       } catch {
@@ -93,7 +92,7 @@ export default function ManageOrganisationAccessPage() {
           setOrgs(MOCK_ORGS);
         } else {
           // TODO: Replace with backend API once available
-          // const res = await fetch(`/api/clients/${activeClientId}/organisations`, { cache: 'no-store' });
+          // const res = await fetch(`/api/v1/clients/${activeClientId}/organisations`, { cache: 'no-store' });
           // const data = await res.json();
           // setOrgs(data as Organisation[]);
           setOrgs([]);
@@ -117,12 +116,17 @@ export default function ManageOrganisationAccessPage() {
   };
 
   // Update org status (approve/reject/revoke)
-  async function updateOrgStatus(orgId: string, action: 'approve' | 'reject' | 'revoke') {
+  async function updateOrgStatus(
+    orgId: string,
+    action: 'approve' | 'reject' | 'revoke'
+  ) {
     if (!activeClientId) return;
     if (isMock) {
       setOrgs((prev) =>
         prev.map((o) =>
-          o.id === orgId ? { ...o, status: action === 'approve' ? 'active' : 'revoked' } : o
+          o.id === orgId
+            ? { ...o, status: action === 'approve' ? 'active' : 'revoked' }
+            : o
         )
       );
       return;
@@ -130,14 +134,16 @@ export default function ManageOrganisationAccessPage() {
     try {
       setLoading(true);
       // TODO: Integrate backend call once ready
-      // await fetch(`/api/clients/${activeClientId}/organisations/${orgId}`, {
+      // await fetch(`/api/v1/clients/${activeClientId}/organisations/${orgId}`, {
       //   method: 'POST',
       //   headers: { 'Content-Type': 'application/json' },
       //   body: JSON.stringify({ action }),
       // });
       setOrgs((prev) =>
         prev.map((o) =>
-          o.id === orgId ? { ...o, status: action === 'approve' ? 'active' : 'revoked' } : o
+          o.id === orgId
+            ? { ...o, status: action === 'approve' ? 'active' : 'revoked' }
+            : o
         )
       );
     } catch {
@@ -156,7 +162,11 @@ export default function ManageOrganisationAccessPage() {
       activeClientId={activeClientId}
       onClientChange={onClientChange}
       activeClientName={activeClientName}
-      colors={{ header: colors.header, banner: colors.notice, text: colors.text }}
+      colors={{
+        header: colors.header,
+        banner: colors.notice,
+        text: colors.text,
+      }}
     >
       {/* Page body */}
       <div className="w-full h-full" style={{ backgroundColor: colors.pageBg }}>
@@ -175,9 +185,13 @@ export default function ManageOrganisationAccessPage() {
             style={{ borderColor: 'transparent' }}
           >
             {/* Notice bar */}
-            <div className="w-full px-5 py-3 text-black" style={{ backgroundColor: colors.notice }}>
+            <div
+              className="w-full px-5 py-3 text-black"
+              style={{ backgroundColor: colors.notice }}
+            >
               <p className="text-center font-semibold">
-                Privacy Notice: This information is visible only to you (family / POA) and will not be shared with anyone.
+                Privacy Notice: This information is visible only to you (family
+                / POA) and will not be shared with anyone.
               </p>
             </div>
 
@@ -241,7 +255,10 @@ function Group({
       ) : (
         <ul className="space-y-2">
           {items.map((item) => (
-            <li key={item.id} className="flex text-lg items-center justify-between">
+            <li
+              key={item.id}
+              className="flex text-lg items-center justify-between"
+            >
               <div>{item.name}</div>
               <div className="flex items-center gap-3 ">
                 {item.status === 'active' && onRevoke && (

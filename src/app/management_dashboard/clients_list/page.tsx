@@ -1,6 +1,3 @@
-// src/app/client_list/page.tsx
-'use client';
-
 /**
  * File path: src/app/client_list/page.tsx
  * Frontend Author: Qingyue Zhao
@@ -17,6 +14,8 @@
  *      -> pending: "Request sent" button (disabled).
  * - Now fetches all mock/demo clients purely from mockApi (no hardcoding here).
  */
+
+'use client';
 
 import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -48,7 +47,9 @@ const colors = {
 
 export default function ClientListPage() {
   return (
-    <Suspense fallback={<div className="p-6 text-gray-600">Loading clients…</div>}>
+    <Suspense
+      fallback={<div className="p-6 text-gray-600">Loading clients…</div>}
+    >
       <ClientListInner />
     </Suspense>
   );
@@ -83,11 +84,15 @@ function ClientListInner() {
       try {
         const list = await getClientsFE();
         // Map into local Client type
-        let mapped: Client[] = list.map((c: ApiClient) => ({
+        const mapped: Client[] = list.map((c: ApiClient) => ({
           id: c._id,
           name: c.name,
           dashboardType: c.dashboardType,
-          orgAccess: (c as any).organisationAccess ?? 'pending',
+          orgAccess:
+            'organisationAccess' in c
+              ? ((c as { organisationAccess?: OrgAccess }).organisationAccess ??
+                'pending')
+              : 'pending',
         }));
 
         // Force second client into revoked state (for demo purposes)
@@ -118,7 +123,7 @@ function ClientListInner() {
       return;
     }
     if (c.dashboardType === 'full') {
-      router.push(`/calender_dashboard?id=${c.id}`);
+      router.push(`/calendar_dashboard?id=${c.id}`);
     } else {
       router.push(`/partial_dashboard?id=${c.id}`);
     }
@@ -140,7 +145,11 @@ function ClientListInner() {
       activeClientId={null}
       onClientChange={() => {}}
       activeClientName={undefined}
-      colors={{ header: colors.header, banner: colors.banner, text: colors.text }}
+      colors={{
+        header: colors.header,
+        banner: colors.banner,
+        text: colors.text,
+      }}
       onLogoClick={() => router.push('/empty_dashboard')}
     >
       {/* Page body */}
@@ -232,7 +241,9 @@ function ClientListInner() {
                               {c.name}
                             </div>
                             <div className="mt-1 text-sm flex items-center gap-2 text-black/70">
-                              <span className="opacity-80">Organisation access:</span>
+                              <span className="opacity-80">
+                                Organisation access:
+                              </span>
                               <AccessBadge status={c.orgAccess} />
                             </div>
                           </div>
@@ -270,7 +281,11 @@ function ClientListInner() {
                                 <button
                                   onClick={(e) => e.stopPropagation()}
                                   className="px-4 py-2 rounded-lg text-sm font-semibold cursor-not-allowed"
-                                  style={{ backgroundColor: '#b07b7b', color: 'white', opacity: 0.9 }}
+                                  style={{
+                                    backgroundColor: '#b07b7b',
+                                    color: 'white',
+                                    opacity: 0.9,
+                                  }}
                                   disabled
                                 >
                                   Request sent
@@ -293,12 +308,16 @@ function ClientListInner() {
       {denyOpen && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
           <div className="bg-white rounded-2xl shadow-2xl w-[92%] max-w-[520px] p-6 text-center">
-            <h3 className="text-xl font-bold mb-2" style={{ color: colors.header }}>
+            <h3
+              className="text-xl font-bold mb-2"
+              style={{ color: colors.header }}
+            >
               Access required
             </h3>
             {denyReason === 'pending' && (
               <p className="text-black/80">
-                Your request to access <b>{denyTarget}</b>’s profile is still pending.
+                Your request to access <b>{denyTarget}</b>’s profile is still
+                pending.
                 <br />
                 Please wait until the family approves your request.
               </p>
@@ -324,17 +343,38 @@ function ClientListInner() {
       )}
 
       {/* Right-side registration drawer */}
-      <RegisterClientPanel open={showRegister} onClose={() => setShowRegister(false)} />
+      <RegisterClientPanel
+        open={showRegister}
+        onClose={() => setShowRegister(false)}
+      />
     </DashboardChrome>
   );
 }
 
 /* ---- Badge component: shows access status visually ---- */
 function AccessBadge({ status }: { status: OrgAccess }) {
-  const cfg: Record<OrgAccess, { bg: string; dot: string; label: string; text: string }> = {
-    approved: { bg: 'bg-green-100', dot: 'bg-green-500', label: 'Approved', text: 'text-green-800' },
-    pending: { bg: 'bg-yellow-100', dot: 'bg-yellow-500', label: 'Pending', text: 'text-yellow-800' },
-    revoked: { bg: 'bg-red-100', dot: 'bg-red-500', label: 'Revoked', text: 'text-red-800' },
+  const cfg: Record<
+    OrgAccess,
+    { bg: string; dot: string; label: string; text: string }
+  > = {
+    approved: {
+      bg: 'bg-green-100',
+      dot: 'bg-green-500',
+      label: 'Approved',
+      text: 'text-green-800',
+    },
+    pending: {
+      bg: 'bg-yellow-100',
+      dot: 'bg-yellow-500',
+      label: 'Pending',
+      text: 'text-yellow-800',
+    },
+    revoked: {
+      bg: 'bg-red-100',
+      dot: 'bg-red-500',
+      label: 'Revoked',
+      text: 'text-red-800',
+    },
   };
   const c = cfg[status];
   return (
