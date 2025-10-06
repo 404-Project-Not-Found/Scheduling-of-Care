@@ -1,7 +1,9 @@
 /**
  * Filename: /lib/care-item-helpers/date-helpers.ts
  * Author: Zahra Rizqita
- * Date Created: 24
+ * Date Created: 24/09/2025
+ * 
+ * Functions to help with date for care items
  */
 
 import {

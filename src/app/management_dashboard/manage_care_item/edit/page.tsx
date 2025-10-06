@@ -12,6 +12,7 @@
  * - Tasks are stored in localStorage (mock mode) and persisted across reloads.
  * - Buttons at the bottom support Cancel (navigate back) and Add (save task).
  */
+import {slugify} from "@/lib/slug";
 
 'use client';
 
@@ -61,8 +62,6 @@ function loadTasks(): Task[] {
 
 const unitToDays: Record<Unit, number> = { day: 1, week: 7, month: 30, year: 365 };
 const toDays = (count: number, unit: Unit) => Math.max(1, Math.floor(count || 1)) * unitToDays[unit];
-const slugify = (s: string) =>
-  s.trim().toLowerCase().replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-").replace(/-+/g, "-");
 
 const chromeColors = {
   header: "#3A0000",

@@ -2,9 +2,12 @@
  * Filename: /models/CareItem.ts
  * Author: Zahra Rizqita
  * Date Created: 22/09/2025
+ * Updated at: 03/09/2025
+ * 
+ * Schema for Care Items in the database
  */
 
-import mongoose, { Schema, model, models} from "mongoose";
+import mongoose, { Schema, model, models, type Model, Types} from "mongoose";
 
 export type Unit = "day" | "week" | "month" | "year";
 
@@ -12,12 +15,12 @@ export function isUnit(u: unknown): u is Unit {
     return u === "day" || u === "week" || u === "month" || u === "year";
 }
 
-
 export interface CareItemDoc extends mongoose.Document {
     label: string;
     slug: string;
     status: string;
     category: string;
+    categoryId: Types.ObjectId | null;
     clientName: string;
     deleted: boolean;
 
@@ -41,6 +44,7 @@ const CareItemSchema = new Schema<CareItemDoc> ({
     slug: {type: String, required: true, unique: true, index: true, lowercase: true},
     status: {type: String, required: true, trim: true},
     category: {type: String, required: true, trim: true},
+    categoryId: {type: Schema.Types.ObjectId, ref: "Category", default: null},
     clientName: {type: String, trim: true},
     deleted: {type: Boolean, default: false},
 

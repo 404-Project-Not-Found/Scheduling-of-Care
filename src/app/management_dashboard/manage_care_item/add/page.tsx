@@ -46,27 +46,6 @@ type Task = {
   dateTo?: string;
 };
 
-// Helper for frontend
-/*
-function saveTasks(tasks: Task[]) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem("tasks", JSON.stringify(tasks));
-}
-function loadTasks(): Task[] {
-  if (typeof window === "undefined") return [];
-  try {
-    return JSON.parse(localStorage.getItem("tasks") || "[]") as Task[];
-  } catch {
-    return [];
-  }
-}
-  */
-
-const unitToDays: Record<Unit, number> = { day: 1, week: 7, month: 30, year: 365 };
-const toDays = (count: number, unit: Unit) => Math.max(1, Math.floor(count || 1)) * unitToDays[unit];
-const slugify = (s: string) =>
-  s.trim().toLowerCase().replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-").replace(/-+/g, "-");
-
 const chromeColors = {
   header: "#3A0000",
   banner: "#F9C9B1",
