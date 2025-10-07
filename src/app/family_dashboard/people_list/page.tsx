@@ -1,5 +1,5 @@
 /**
- * File path: src/app/family_client_list/page.tsx
+ * File path: src/app/family_dashboard/people_list/page.tsx
  * Frontend Author: Qingyue Zhao
  *
  * Features (family-only):
@@ -11,6 +11,9 @@
  *         - View dashboard (full / partial)
  *         - Manage organisation access
  * - No organisation access status shown (unlike management view).
+ *
+ * Last Updated by Denise Alexander - 7/10/2025: back-end integrated to fetch family
+ * client lists from DB.
  */
 
 'use client';
@@ -19,7 +22,8 @@ import React, { Suspense, useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 
 import DashboardChrome from '@/components/top_menu/client_schedule';
-import { getClientsFE, type Client as ApiClient } from '@/lib/mock/mockApi';
+import * as data from '@/lib/data';
+import { useActiveClient } from '@/context/ActiveClientContext';
 
 type Client = {
   id: string;
@@ -50,12 +54,14 @@ function FamilyClientListInner() {
   const router = useRouter();
   const [clients, setClients] = useState<Client[]>([]);
   const [q, setQ] = useState('');
+  const { client: activeClient, handleClientChange } = useActiveClient();
+  const [loadingClientId, setLoadingClientId] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
       try {
-        const list = await getClientsFE();
-        const mapped: Client[] = list.map((c: ApiClient) => ({
+        const list = await data.getClients();
+        const mapped: Client[] = list.map((c) => ({
           id: c._id,
           name: c.name,
           dashboardType: c.dashboardType,
@@ -73,13 +79,23 @@ function FamilyClientListInner() {
     return clients.filter((c) => c.name.toLowerCase().includes(t));
   }, [clients, q]);
 
+  const goToOrgAccess = async (c: Client) => {
+    if (c && activeClient?.id !== c.id) {
+      handleClientChange(c.id, c.name);
+    }
+    router.push(`/family_dashboard/manage_org_access/${c.id}`);
+  };
+
   return (
     <DashboardChrome
       page="people-list"
-      clients={[]} // not needed here
-      activeClientId={null}
-      activeClientName={undefined}
-      onClientChange={() => {}}
+      clients={clients}
+      onClientChange={(id) => {
+        const c = clients.find((cl) => cl.id === id);
+        if (c) {
+          goToOrgAccess(c);
+        }
+      }}
       colors={{
         header: colors.header,
         banner: colors.banner,
@@ -125,7 +141,7 @@ function FamilyClientListInner() {
             {/* List */}
             <div className="flex-1 px-0 pb-6">
               <div
-                className="mx-6 rounded-xl overflow-auto h-full"
+                className="mx-6 rounded-xl overflow-auto max-h-[500px]"
                 style={{
                   backgroundColor: '#F2E5D2',
                   border: '1px solid rgba(58,0,0,0.25)',
@@ -133,7 +149,7 @@ function FamilyClientListInner() {
               >
                 {filtered.length === 0 ? (
                   <div className="h-full flex items-center justify-center text-gray-600">
-                    No clients found.
+                    Loading clients...
                   </div>
                 ) : (
                   <ul className="divide-y divide-[rgba(58,0,0,0.15)]">
@@ -179,22 +195,25 @@ function FamilyClientListInner() {
                         <div className="shrink-0 flex items-center gap-2">
                           {/* View profile */}
                           <button
-                            onClick={() =>
-                              router.push(`/client_profile?id=${c.id}`)
-                            }
+                            onClick={async () => {
+                              setLoadingClientId(c.id);
+                              if (c && activeClient?.id !== c.id) {
+                                handleClientChange(c.id, c.name);
+                              }
+                              router.push(`/client_profile?id=${c.id}`);
+                            }}
                             className="px-4 py-2 rounded-lg text-white text-sm font-semibold hover:opacity-90"
                             style={{ backgroundColor: '#4CAF50' }}
+                            disabled={loadingClientId === c.id}
                           >
-                            Edit profile
+                            {loadingClientId === c.id
+                              ? `Loading ${c.name}'s profile...`
+                              : 'Edit profile'}
                           </button>
 
                           {/* Manage org access */}
                           <button
-                            onClick={() =>
-                              router.push(
-                                `/family_dashboard/manage_organisation_access/${c.id}`
-                              )
-                            }
+                            onClick={() => goToOrgAccess(c)}
                             className="px-4 py-2 rounded-lg text-white text-sm font-semibold hover:opacity-90"
                             style={{ backgroundColor: '#E91E63' }}
                           >

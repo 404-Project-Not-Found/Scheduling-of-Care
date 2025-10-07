@@ -1,4 +1,7 @@
 /**
+ * IMPORTANT: This page is no longer in use, refer to /components/accesscode/Registration.tsx
+ * for the updated use and design.
+ *
  * File path: /management_dashboard/register_client/page.tsx
  * Authors: Vanessa Teo & Denise Alexander
  * Date Created: 22/09/2025
@@ -107,7 +110,7 @@ export default function RegisterClientPage() {
           {error && (
             <div
               role="alert"
-              className="mx-auto w-full max-w-2xl rounded-xl border px-4 py-3 shadow-sm"
+              className="mx-auto w-full max-w-2xl rounded-xl border px-4 py-3 shadow-sm text-xl"
               style={{
                 backgroundColor: palette.cardBg,
                 borderColor: palette.border,
@@ -120,7 +123,7 @@ export default function RegisterClientPage() {
           {message && (
             <div
               role="status"
-              className="mx-auto w-full max-w-2xl rounded-xl border px-4 py-3 shadow-sm"
+              className="mx-auto w-full max-w-2xl rounded-xl border px-4 py-3 shadow-sm text-xl"
               style={{
                 backgroundColor: palette.cardBg,
                 borderColor: palette.border,

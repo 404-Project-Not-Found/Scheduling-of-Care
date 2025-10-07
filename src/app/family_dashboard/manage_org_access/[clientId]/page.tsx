@@ -1,7 +1,10 @@
 /**
- * File path: /family_dashboard/manage_organisation_access/page.tsx
+ * File path: /family_dashboard/manage_org_access/[clientId]/page.tsx
  * Authors: Qingyue Zhao & Denise Alexander
- * Last Update: 2025-10-03
+ * Last Update: 2025-10-07
+ *
+ * Last Updated by Denise Alexander - 7/10/2025: back-end integrated to implement
+ * organisation access workflow.
  *
  * NOTE:
  * This page has been refactored to allow families to select the active client
@@ -24,16 +27,9 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import DashboardChrome from '@/components/top_menu/client_schedule';
-
-import {
-  isMock,
-  MOCK_ORGS,
-  type Organisation,
-  type Client as ApiClient,
-  getClientsFE,
-  readActiveClientFromStorage,
-  writeActiveClientToStorage,
-} from '@/lib/mock/mockApi';
+import { useRouter } from 'next/navigation';
+import { useActiveClient } from '@/context/ActiveClientContext';
+import { getClients, type Client as ApiClient } from '@/lib/data';
 
 const colors = {
   pageBg: '#ffd9b3',
@@ -44,11 +40,18 @@ const colors = {
 
 type ClientLite = { id: string; name: string };
 
+type Organisation = {
+  id: string;
+  name: string;
+  status: 'approved' | 'pending' | 'revoked';
+};
+
 export default function ManageOrganisationAccessPage() {
-  // ---------- Clients & Selection ----------
+  const router = useRouter();
+  const { client: activeClient, handleClientChange } = useActiveClient();
+
+  // ---------- Clients ----------
   const [clients, setClients] = useState<ClientLite[]>([]);
-  const [activeClientId, setActiveClientId] = useState<string | null>(null);
-  const [activeClientName, setActiveClientName] = useState<string>('');
 
   // ---------- Organisations ----------
   const [orgs, setOrgs] = useState<Organisation[]>([]);
@@ -59,20 +62,10 @@ export default function ManageOrganisationAccessPage() {
   useEffect(() => {
     (async () => {
       try {
-        const list = await getClientsFE(); // Returns ApiClient[]
-        const mapped: ClientLite[] = list.map((c: ApiClient) => ({
-          id: c._id,
-          name: c.name,
-        }));
-        setClients(mapped);
-
-        const { id, name } = readActiveClientFromStorage();
-        const useId = id || mapped[0]?.id || null;
-        const useName =
-          name || (mapped.find((m) => m.id === useId)?.name ?? '');
-        setActiveClientId(useId);
-        setActiveClientName(useName);
-      } catch {
+        const list: ApiClient[] = await getClients();
+        setClients(list.map((c) => ({ id: c._id, name: c.name })));
+      } catch (err) {
+        console.error('Failed to load clients:', err);
         setClients([]);
       }
     })();
@@ -80,78 +73,85 @@ export default function ManageOrganisationAccessPage() {
 
   // Load organisation access list for current client
   useEffect(() => {
-    if (!activeClientId) {
+    if (!activeClient?.id) {
       setOrgs([]);
+      setErrorText('No client selected yet.');
+      setLoading(false);
       return;
     }
+
+    setLoading(true);
+    setErrorText(null);
+
     (async () => {
-      setLoading(true);
-      setErrorText(null);
       try {
-        if (isMock) {
-          setOrgs(MOCK_ORGS);
-        } else {
-          // TODO: Replace with backend API once available
-          // const res = await fetch(`/api/v1/clients/${activeClientId}/organisations`, { cache: 'no-store' });
-          // const data = await res.json();
-          // setOrgs(data as Organisation[]);
-          setOrgs([]);
+        const res = await fetch(
+          `/api/v1/clients/${activeClient.id}/organisations`,
+          { cache: 'no-store' }
+        );
+        if (!res.ok) {
+          throw new Error('Failed to fetch organisations.');
         }
-      } catch {
+        const data = await res.json();
+        setOrgs(data);
+      } catch (err) {
+        console.error(err);
         setErrorText('Failed to load organisations.');
         setOrgs([]);
       } finally {
         setLoading(false);
       }
     })();
-  }, [activeClientId]);
-
-  // Handle client change from dropdown
-  const onClientChange = (id: string) => {
-    const c = clients.find((x) => x.id === id) || null;
-    const name = c?.name || '';
-    setActiveClientId(id || null);
-    setActiveClientName(name);
-    writeActiveClientToStorage(id || '', name);
-  };
+  }, [activeClient]);
 
   // Update org status (approve/reject/revoke)
   async function updateOrgStatus(
     orgId: string,
     action: 'approve' | 'reject' | 'revoke'
   ) {
-    if (!activeClientId) return;
-    if (isMock) {
-      setOrgs((prev) =>
-        prev.map((o) =>
-          o.id === orgId
-            ? { ...o, status: action === 'approve' ? 'active' : 'revoked' }
-            : o
-        )
-      );
-      return;
-    }
+    if (!activeClient?.id) return;
+
+    setLoading(true);
+    setErrorText(null);
+
     try {
-      setLoading(true);
-      // TODO: Integrate backend call once ready
-      // await fetch(`/api/v1/clients/${activeClientId}/organisations/${orgId}`, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ action }),
-      // });
-      setOrgs((prev) =>
-        prev.map((o) =>
-          o.id === orgId
-            ? { ...o, status: action === 'approve' ? 'active' : 'revoked' }
-            : o
-        )
+      const res = await fetch(
+        `/api/v1/clients/${activeClient.id}/organisations/${orgId}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action }),
+        }
       );
-    } catch {
+      if (!res.ok) {
+        throw new Error('Failed to update organisation.');
+      }
+
+      const orgRes = await fetch(
+        `/api/v1/clients/${activeClient.id}/organisations`,
+        { cache: 'no-store' }
+      );
+      if (!orgRes.ok) {
+        throw new Error('Failed to fetch organisations.');
+      }
+      const orgData = await orgRes.json();
+      setOrgs(orgData);
+    } catch (err) {
+      console.error(err);
       setErrorText('Failed to update organisation.');
     } finally {
       setLoading(false);
     }
   }
+
+  // Handle client change from dropdown
+  const onClientChange = (id: string) => {
+    const selected = clients.find((c) => c.id === id);
+    if (!selected) return;
+    if (selected && activeClient?.id !== selected.id) {
+      handleClientChange(selected.id, selected.name);
+    }
+  };
 
   const chromeClients = useMemo(() => clients, [clients]);
 
@@ -159,9 +159,7 @@ export default function ManageOrganisationAccessPage() {
     <DashboardChrome
       page="organisation-access"
       clients={chromeClients}
-      activeClientId={activeClientId}
       onClientChange={onClientChange}
-      activeClientName={activeClientName}
       colors={{
         header: colors.header,
         banner: colors.notice,
@@ -177,6 +175,13 @@ export default function ManageOrganisationAccessPage() {
             style={{ backgroundColor: colors.header }}
           >
             <span>Manage Organisation Access</span>
+            <button
+              onClick={() => router.push('/family_dashboard/people_list')}
+              className="text-base md:text-lg font-semibold bg-white/10 px-4 py-1.5 rounded hover:bg-white/20 transition"
+              aria-label="Back"
+            >
+              &lt; Back
+            </button>
           </div>
 
           {/* Content area */}
@@ -205,7 +210,7 @@ export default function ManageOrganisationAccessPage() {
                 <>
                   <Group
                     title="Organisations with Access"
-                    items={orgs.filter((o) => o.status === 'active')}
+                    items={orgs.filter((o) => o.status === 'approved')}
                     onRevoke={(id) => updateOrgStatus(id, 'revoke')}
                   />
                   <hr className="my-5 border-black" />
@@ -261,7 +266,7 @@ function Group({
             >
               <div>{item.name}</div>
               <div className="flex items-center gap-3 ">
-                {item.status === 'active' && onRevoke && (
+                {item.status === 'approved' && onRevoke && (
                   <button
                     onClick={() => onRevoke(item.id)}
                     className="px-4 py-1.5 rounded-xl text-lg font-medium text-white bg-orange-500 hover:bg-orange-600 transition-colors"

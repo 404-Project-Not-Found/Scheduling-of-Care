@@ -7,6 +7,9 @@
  * - Right column now has a name filter placed on the same row
  *   as the "Care Items" title, aligned to the RIGHT.
  * - The search filters tasks by title only (case-insensitive).
+ *
+ * Last Updated by Denise Alexander - 7/10/2025: back-end integrated for
+ * fetching user role and clients.
  */
 
 'use client';
@@ -25,8 +28,8 @@ import {
   getTasks,
   saveTasks,
   getClients,
-  readActiveClientFromStorage,
-  writeActiveClientToStorage,
+  getActiveClient,
+  setActiveClient,
   type Client as ApiClient,
 } from '@/lib/data';
 
@@ -53,8 +56,18 @@ const palette = {
   pageBg: '#FAEBDC',
 };
 
+// --------- Type Definitions ---------
 type Role = 'carer' | 'family' | 'management';
-type Client = { id: string; name: string };
+
+type ClientLite = {
+  id: string;
+  name: string;
+  orgAccess?: 'approved' | 'pending' | 'revoked';
+};
+
+type ApiClientWithAccess = ApiClient & {
+  orgAccess?: 'approved' | 'pending' | 'revoked';
+};
 
 // Extends Task type to safely access clientId, files and comments
 type ClientTask = Task & {
@@ -92,45 +105,54 @@ function ClientSchedule() {
   }, []);
 
   /* ---------------------------- Clients ----------------------------- */
-  const [clients, setClients] = useState<Client[]>([]);
+  const [clients, setClients] = useState<ClientLite[]>([]);
   const [activeClientId, setActiveClientId] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string>('');
 
+  // Loads clients and active client on component mount
   useEffect(() => {
     (async () => {
       try {
+        // Fetches all clients
         const list: ApiClient[] = await getClients(); // ApiClient[]
-        const mapped: Client[] = list.map((c: ApiClient) => ({
-          id: c._id,
-          name: c.name,
-        }));
+        // Maps API response to simpler ClientLite objects with orgAccess
+        const mapped: ClientLite[] = (list as ApiClientWithAccess[]).map(
+          (c) => ({
+            id: c._id,
+            name: c.name,
+            orgAccess: c.orgAccess,
+          })
+        );
         setClients(mapped);
 
-        // Restore last selection
-        const { id, name } = readActiveClientFromStorage();
-        if (id) {
-          setActiveClientId(id);
-          setDisplayName(name || mapped.find((m) => m.id === id)?.name || '');
-        }
+        // Fetches the currently active client from context
+        const active = await getActiveClient();
+        setActiveClientId(active.id);
+        setDisplayName(active.name || '');
       } catch (err) {
         console.error('Failed to fetch clients.', err);
         setClients([]);
+        setActiveClientId(null);
+        setDisplayName('');
       }
     })();
   }, []);
 
-  const onClientChange = (id: string) => {
+  // Handler for changing active client
+  const onClientChange = async (id: string) => {
     if (!id) {
       setActiveClientId(null);
       setDisplayName('');
-      writeActiveClientToStorage('', '');
+      await setActiveClient(null);
       return;
     }
+
+    // Find selected client in current list
     const c = clients.find((x) => x.id === id);
     const name = c?.name || '';
     setActiveClientId(id);
     setDisplayName(name);
-    writeActiveClientToStorage(id, name);
+    await setActiveClient(id, name);
   };
 
   /* ------------------------------ Tasks ----------------------------- */
@@ -234,8 +256,7 @@ function ClientSchedule() {
 
   // Logo → home
   const onLogoClick = () => {
-    if (typeof window !== 'undefined') localStorage.setItem('activeRole', role);
-    router.push(ROUTES.homeByRole);
+    router.push('/schedule_dashboard');
   };
 
   /* ------------------------------ Render ---------------------------- */
@@ -243,8 +264,6 @@ function ClientSchedule() {
     <DashboardChrome
       page="schedule"
       clients={clients}
-      activeClientId={activeClientId}
-      activeClientName={displayName}
       onClientChange={onClientChange}
       colors={{
         header: palette.header,

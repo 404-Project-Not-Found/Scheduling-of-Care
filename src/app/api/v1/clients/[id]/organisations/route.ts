@@ -11,6 +11,7 @@ import Client from '@/models/Client';
 import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 
+// --------- Type Definitions ---------
 interface OrgHistoryItem {
   organisation: { _id: string; name: string };
   status: 'pending' | 'approved' | 'revoked';

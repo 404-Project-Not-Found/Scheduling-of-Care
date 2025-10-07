@@ -7,6 +7,8 @@
  * - Uses the SAME full-bleed layout & chrome as the annual Budget Report page.
  * - Reached by clicking a category link on the annual report.
  * - Fetches rows via getBudgetRowsFE(activeClientId).
+ *
+ * TO DO: requires back-end integration
  */
 
 'use client';
@@ -19,14 +21,13 @@ import DashboardChrome from '@/components/top_menu/client_schedule';
 import Badge from '@/components/ui/Badge';
 
 import {
-  getViewerRoleFE,
-  getClientsFE,
-  readActiveClientFromStorage,
-  writeActiveClientToStorage,
-  getBudgetRowsFE,
+  getViewerRole,
+  getClients,
+  getActiveClient,
+  setActiveClient,
   type Client as ApiClient,
-  type BudgetRow,
-} from '@/lib/mock/mockApi';
+} from '@/lib/data';
+import { getBudgetRowsFE, type BudgetRow } from '@/lib/mock/mockApi';
 
 /* ------------------------------- Utils ------------------------------- */
 const unslug = (s: string) =>
@@ -72,7 +73,10 @@ function CategoryCostInner() {
   /* ===== Role ===== */
   const [role, setRole] = useState<Role>('family');
   useEffect(() => {
-    setRole(getViewerRoleFE());
+    (async () => {
+      const r = await getViewerRole();
+      setRole(r);
+    })();
   }, []);
   const isManagement = role === 'management';
 
@@ -88,17 +92,19 @@ function CategoryCostInner() {
   useEffect(() => {
     (async () => {
       try {
-        const list = await getClientsFE();
+        const list = await getClients();
         const mapped: Client[] = list.map((c: ApiClient) => ({
           id: c._id,
           name: c.name,
         }));
         setClients(mapped);
 
-        const { id, name } = readActiveClientFromStorage();
-        if (id) {
-          setActiveClientId(id);
-          setDisplayName(name || mapped.find((m) => m.id === id)?.name || '');
+        const active = await getActiveClient();
+        if (active.id) {
+          setActiveClientId(active.id);
+          setDisplayName(
+            active.name || mapped.find((m) => m.id === active.id)?.name || ''
+          );
         }
       } catch {
         setClients([]);
@@ -123,23 +129,22 @@ function CategoryCostInner() {
   }, [activeClientId]);
 
   /** Handle client change in banner */
-  const onClientChange = (id: string) => {
+  const onClientChange = async (id: string) => {
     if (!id) {
       setActiveClientId(null);
       setDisplayName('');
-      writeActiveClientToStorage('', '');
+      await setActiveClient(null);
       return;
     }
     const c = clients.find((x) => x.id === id);
     const name = c?.name || '';
     setActiveClientId(id);
     setDisplayName(name);
-    writeActiveClientToStorage(id, name);
+    await setActiveClient(id, name);
   };
 
   const onLogoClick = () => {
-    if (typeof window !== 'undefined') localStorage.setItem('activeRole', role);
-    router.push('/empty_dashboard');
+    router.push('/schedule_dashboard');
   };
 
   /* ===== Local state ===== */
@@ -187,9 +192,7 @@ function CategoryCostInner() {
     <DashboardChrome
       page="budget"
       clients={clients}
-      activeClientId={activeClientId}
       onClientChange={onClientChange}
-      activeClientName={displayName}
       colors={colors}
       onLogoClick={onLogoClick}
     >

@@ -202,8 +202,9 @@ export default function RequestChangeFormPage() {
         {/* Notice banner */}
         <div className="px-6 py-4" style={{ backgroundColor: palette.notice }}>
           <h3 className="text-base md:text-lg px-5 text-black">
-            Notice: Please describe what you’d like to change about the care
-            item. Management will review your request and respond accordingly.
+            <strong>Notice:</strong> Please describe what you’d like to change
+            about the care item. Management will review your request and respond
+            accordingly.
           </h3>
         </div>
 

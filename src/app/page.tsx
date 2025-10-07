@@ -2,6 +2,7 @@
  * File path: /app/page.tsx
  * Authors: Qingyue Zhao & Denise Alexander
  * Date Created: 05/09/2025
+ * Last Updated by Denise Alexander - 7/10/2025: redirection after login changed to /schedule_dashboard.
  */
 
 'use client';
@@ -66,16 +67,7 @@ export default function Home() {
         if (staySigned) localStorage.setItem('rememberMe', '1');
         else localStorage.removeItem('rememberMe');
 
-        const role = isCarer ? 'carer' : isMgmt ? 'management' : 'family';
-        sessionStorage.setItem('mockRole', role);
-
-        if (role === 'carer') {
-          window.location.href = '/calendar_dashboard';
-          return;
-        } else {
-          window.location.href = '/empty_dashboard';
-          return;
-        }
+        window.location.href = '/schedule_dashboard';
       }
 
       setError('Invalid mock credentials');
@@ -99,28 +91,7 @@ export default function Home() {
         return;
       }
 
-      const session = await getSession();
-      if (!session?.user?.role) {
-        setError('Could not determine user role');
-        setLoading(false);
-        return;
-      }
-
-      switch (session.user.role) {
-        case 'carer':
-          window.location.href = '/calendar_dashboard';
-          break;
-        case 'management':
-          window.location.href = '/empty_dashboard';
-          break;
-        case 'family':
-          window.location.href = '/empty_dashboard';
-          break;
-        default:
-          setError('Unknown role');
-          setLoading(false);
-          return;
-      }
+      window.location.href = '/schedule_dashboard';
     } catch (err: unknown) {
       setError(
         err instanceof Error ? err.message : 'An unexpected error occurred'

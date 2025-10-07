@@ -1,5 +1,5 @@
 /**
- * IMPORTANT: THIS FILE ISN NO LONGER IN USED, CHANGE TO components/top_menu INSTEAD
+ * IMPORTANT: THIS FILE ISN NO LONGER IN USE, CHANGE TO components/top_menu INSTEAD
  *
  * File path: /app/menu/page.tsx
  * Author: Qingyue Zhao
@@ -149,14 +149,13 @@ export function MenuDrawer({
                   href="/assign_carer"
                   label="Manage carer assignment"
                 /> */}
-
-                <MenuItem
-                  href="/management_dashboard/manage_care_item/edit"
-                  label="Manage care item"
-                />
                 <MenuItem
                   href="/management_dashboard/manage_care_item/add"
-                  label="add new care item"
+                  label="Add new care item"
+                />
+                <MenuItem
+                  href="/management_dashboard/manage_care_item/edit"
+                  label="Edit care item"
                 />
               </>
             )}

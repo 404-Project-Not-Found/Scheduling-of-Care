@@ -2,6 +2,9 @@
  * File path: calendar_dashboard/update_details/page.tsx
  * Authors: Devni Wijesinghe & Denise Alexander
  * Date Created: 22/09/2025
+ *
+ * Last Updated by Denise Alexander - 7/10/2025: back-end integration
+ * added.
  */
 
 'use client';
@@ -79,7 +82,7 @@ export default function UpdateDetailsPage() {
         role = null;
       }
     }
-    router.push('/calendar_dashboard');
+    router.back();
   };
 
   // -------------------------------

@@ -1,4 +1,7 @@
 /**
+ * IMPORTANT: this page is no longer in use!!
+ * Updated version in under /family_dashboard_manage_org_access/[clientId]
+ *
  * File path: /family_dashboard/manage_organisation_access/[clientId]/ManageAccessInner.tsx
  * Authors: Qingyue Zhao and Denise Alexander
  * Last Update: 2025-10-03

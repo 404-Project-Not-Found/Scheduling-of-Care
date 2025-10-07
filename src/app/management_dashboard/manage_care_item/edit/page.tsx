@@ -4,7 +4,7 @@
  * Last Update: 2025-10-02
  *
  * Description:
- * - This page provides the "Add New Care Item" form for management users.
+ * - This page provides the "Edit Care Item" form for management users.
  * - Built on top of the shared <DashboardChrome /> component to ensure consistent
  *   layout and navigation across the application.
  * - Allows selecting the active client, and creating a new care task with details:
@@ -234,9 +234,10 @@ export default function AddTaskPage() {
         {/* Notice bar */}
         <div className="bg-[#F9C9B1] text-black px-6 py-4">
           <h3 className="text-lg px-5">
-            IMPORTANT: Deleting the task or editing the frequency and dates will
-            change the schedule of this care item for the rest of the year. Be
-            aware of any budget implications before making this change!!
+            <strong>IMPORTANT:</strong> Deleting the task or editing the
+            frequency and dates will change the schedule of this care item for
+            the rest of the year. Be aware of any budget implications before
+            making this change!!
           </h3>
         </div>
 

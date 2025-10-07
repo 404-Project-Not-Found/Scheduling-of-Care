@@ -66,6 +66,7 @@ export async function PUT(
   //Update the client and return the updated document
   const updated = await Client.findByIdAndUpdate(id, data, {
     new: true,
+    runValidators: true,
   });
   return NextResponse.json(updated);
 }

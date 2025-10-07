@@ -172,9 +172,7 @@ function BudgetReportInner() {
     <DashboardChrome
       page="budget"
       clients={clients}
-      activeClientId={activeClientId}
       onClientChange={onClientChange}
-      activeClientName={displayName}
       colors={colors}
       onLogoClick={onLogoClick}
     >

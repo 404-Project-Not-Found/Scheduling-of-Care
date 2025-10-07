@@ -8,6 +8,8 @@
  * - Layout identical to AddAccessCodePanel.
  * - Notice bar text replaced with client registration instruction.
  * - Blocks background scrolling when open, closes on ESC key or overlay click.
+ *
+ * Last Updated by Denise Alexander - 7/10/2025: added back-end integration to register new client.
  */
 
 'use client';
@@ -33,6 +35,8 @@ export default function RegisterClientPanel({
 }) {
   const [accessCode, setAccessCode] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -51,15 +55,48 @@ export default function RegisterClientPanel({
     };
   }, [open]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    setError(null);
+    setSuccess(null);
+
+    // Ensure access code is not empty!!
     if (!accessCode.trim()) {
       setError('Access code cannot be empty.');
       return;
     }
-    setError(null);
-    // TODO: backend request
-    console.log('Submitting access code:', accessCode);
+
+    setLoading(true);
+
+    try {
+      // Registers the client using the provided access code
+      const res = await fetch('/api/v1/management/register_client', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accessCode }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to register client.');
+      }
+
+      // Show success message from server
+      setSuccess(data.message);
+      setAccessCode('');
+
+      // Automatically close the modal after 5 seconds
+      setTimeout(() => {
+        setSuccess(null);
+        onClose();
+      }, 5000);
+    } catch (err) {
+      // Handle errors by gracefully displaying error messages
+      setError(err instanceof Error ? err.message : 'Something went wrong.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -116,6 +153,32 @@ export default function RegisterClientPanel({
           </p>
         </div>
 
+        {error && (
+          <div
+            className="w-full text-center rounded-md border px-4 py-2 text-sm font-medium"
+            style={{
+              borderColor: '#ff4d4d',
+              color: '#b30000',
+              backgroundColor: '#ffe6e6',
+            }}
+          >
+            {error}
+          </div>
+        )}
+
+        {success && (
+          <div
+            className="w-full text-center rounded-md border px-4 py-2 text-sm font-medium"
+            style={{
+              borderColor: '#3bb273',
+              color: '#155724',
+              backgroundColor: '#e6f4ea',
+            }}
+          >
+            {success}
+          </div>
+        )}
+
         {/* Body */}
         <section className="flex-1 flex flex-col items-center justify-start">
           <form
@@ -133,8 +196,6 @@ export default function RegisterClientPanel({
                 background: 'white',
               }}
             />
-
-            {error && <span className="text-sm text-red-600">{error}</span>}
 
             <button
               type="submit"

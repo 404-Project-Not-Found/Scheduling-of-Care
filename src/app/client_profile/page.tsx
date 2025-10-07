@@ -3,7 +3,8 @@
  * Authors:
  * - Frontend UI Build: Devni Wijesinghe
  * - Backend logic: Denise Alexander
- * Last Update by Qingyue Zhao: 2025-10-03
+ * Updated by Qingyue Zhao: 03-10-2025
+ * Last Updated by Denise Alexander: 07-10-2025 (back-end integration)
  *
  * Notes:
  * - Fixed-height viewport section (h-[680px]) to avoid bottom gutters.
@@ -20,13 +21,14 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import AddAccessCodePanel from '@/components/accesscode/access-code';
 import DashboardChrome from '@/components/top_menu/client_schedule';
+import { useActiveClient } from '@/context/ActiveClientContext';
 
 import {
-  getClientsFE,
-  getClientByIdFE,
-  getViewerRoleFE,
+  getClients,
+  getClientById,
+  getViewerRole,
   type Client as ApiClient,
-} from '@/lib/mock/mockApi';
+} from '@/lib/data';
 
 type Role = 'family' | 'carer' | 'management';
 
@@ -52,19 +54,24 @@ function ClientProfilePageInner() {
   const router = useRouter();
   const sp = useSearchParams();
 
+  // --- Extract query parameters ---
   const clientIdParam = sp.get('id') || null;
   const isNew = sp.get('new') === 'true';
 
-  // ---- role ----
+  // ---- Logged-in user role state ----
   const [role, setRole] = useState<Role>('family');
   useEffect(() => {
-    const r = getViewerRoleFE();
-    if (r === 'family' || r === 'carer' || r === 'management') setRole(r);
+    (async () => {
+      const r = await getViewerRole();
+      if (r === 'family' || r === 'carer' || r === 'management') setRole(r);
+    })();
   }, []);
+
   const isFamily = role === 'family';
   const isManagement = role === 'management';
   const isCarer = role === 'carer';
 
+  // --- Back navigation based on role ---
   const backHref = isManagement
     ? '/management_dashboard/clients_list'
     : isCarer
@@ -75,10 +82,7 @@ function ClientProfilePageInner() {
   const [clients, setClients] = useState<Array<{ id: string; name: string }>>(
     []
   );
-  const [activeClientId, setActiveClientId] = useState<string | null>(
-    clientIdParam
-  );
-  const [displayName, setDisplayName] = useState<string>('');
+  const { client: activeClient, handleClientChange } = useActiveClient();
 
   // ---- profile fields ----
   const [name, setName] = useState('');
@@ -88,7 +92,7 @@ function ClientProfilePageInner() {
   const [notesInput, setNotesInput] = useState('');
   const [savedNotes, setSavedNotes] = useState<string[]>([]);
 
-  const [loading, setLoading] = useState<boolean>(!!activeClientId && !isNew);
+  const [loading, setLoading] = useState<boolean>(!!clientIdParam && !isNew);
   const [error, setError] = useState('');
 
   // ---- access-code drawer ----
@@ -110,37 +114,36 @@ function ClientProfilePageInner() {
   useEffect(() => {
     (async () => {
       try {
-        const list = await getClientsFE();
+        const list = await getClients();
         const mapped = (list as ApiClient[]).map((c) => ({
           id: c._id as string,
           name: c.name,
         }));
         setClients(mapped);
 
+        // Skip pre-filling for new client creation
         if (isNew) {
-          setActiveClientId(null);
-          setDisplayName('New Client');
           return;
         }
-        if (clientIdParam) {
-          const found = mapped.find((m) => m.id === clientIdParam);
-          if (found) {
-            setActiveClientId(found.id);
-            setDisplayName(found.name);
-          }
-        } else if (mapped.length > 0) {
-          setActiveClientId(mapped[0].id);
-          setDisplayName(mapped[0].name);
+
+        // Determine selected client
+        const selectedClient = clientIdParam
+          ? mapped.find((c) => c.id === clientIdParam)
+          : mapped[0];
+
+        // Update active client based on selected client
+        if (selectedClient && activeClient?.id !== selectedClient.id) {
+          handleClientChange(selectedClient.id, selectedClient.name);
         }
       } catch {
         setClients([]);
       }
     })();
-  }, [clientIdParam, isNew]);
+  }, [clientIdParam, isNew, handleClientChange, activeClient?.id]);
 
   // ---- load one client (skip when new) ----
   useEffect(() => {
-    if (isNew) {
+    if (isNew || !activeClient?.id) {
       setName('');
       setDob('');
       setAccessCode('');
@@ -148,20 +151,20 @@ function ClientProfilePageInner() {
       setSavedNotes([]);
       setNotesInput('');
       setLoading(false);
-      return;
-    }
-    if (!activeClientId) {
-      setLoading(false);
+      setError('');
       return;
     }
 
+    const clientId = activeClient.id;
     let alive = true;
+
     (async () => {
-      setLoading(true);
       try {
-        const client = await getClientByIdFE(activeClientId);
+        // Fetch client from API
+        const client = await getClientById(clientId);
         if (!alive) return;
         if (!client) throw new Error('Client not found');
+        // Populate fields from API response
         setName(client.name || '');
         setDob(client.dob || '');
         setAccessCode(client.accessCode || '');
@@ -173,7 +176,6 @@ function ClientProfilePageInner() {
               : []
         );
         setAvatarUrl(client.avatarUrl || '');
-        setDisplayName(client.name || displayName);
       } catch {
         if (alive) setError('Failed to load client data.');
       } finally {
@@ -183,24 +185,66 @@ function ClientProfilePageInner() {
     return () => {
       alive = false;
     };
-  }, [activeClientId, isNew]);
+  }, [activeClient, isNew]);
+
+  // ---- save client ----
+  const saveClient = async () => {
+    try {
+      const payload = {
+        name,
+        dob,
+        accessCode,
+        avatarUrl,
+        notes: isCarer
+          ? [...savedNotes, notesInput].filter(Boolean)
+          : [notesInput, ...savedNotes].filter(Boolean),
+      };
+
+      // Either create new entry or update current entry
+      const url = isNew
+        ? '/api/v1/clients'
+        : `/api/v1/clients/${activeClient.id}`;
+      const method = isNew ? 'POST' : 'PUT';
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to save client');
+      }
+
+      const saved = await res.json();
+
+      // If new client, set as active in context
+      if (isNew) {
+        handleClientChange(saved._id, saved.name);
+      }
+
+      // Navigate back to appropriate list page
+      router.push(backHref);
+    } catch (err) {
+      console.error(err);
+      setError(
+        'Failed to save client. Please check your inputs and try again.'
+      );
+    }
+  };
 
   const onCancel = () => {
     setNotesInput('');
     router.push(backHref);
   };
-  const onSave = () => {
-    router.push(backHref);
-  };
+  const onSave = saveClient;
 
   if (loading) {
     return (
       <DashboardChrome
         page="profile"
         clients={clients}
-        activeClientId={activeClientId}
         onClientChange={(id) => router.push(`/client_profile?id=${id}`)}
-        activeClientName={displayName || name || 'Client'}
         colors={{
           header: colors.header,
           banner: colors.banner,
@@ -223,9 +267,7 @@ function ClientProfilePageInner() {
       <DashboardChrome
         page="profile"
         clients={clients}
-        activeClientId={activeClientId}
         onClientChange={(id) => router.push(`/client_profile?id=${id}`)}
-        activeClientName={displayName || name || 'Client'}
         colors={{
           header: colors.header,
           banner: colors.banner,
@@ -244,15 +286,19 @@ function ClientProfilePageInner() {
 
   const pageTitle = isNew
     ? 'New Client’s Profile'
-    : `${displayName || name || 'Client'}’s Profile`;
+    : `${activeClient?.name || 'Client'}’s Profile`;
 
   return (
     <DashboardChrome
       page="profile"
       clients={clients}
-      activeClientId={activeClientId}
-      onClientChange={(id) => router.push(`/client_profile?id=${id}`)}
-      activeClientName={displayName || name || 'Client'}
+      onClientChange={(id) => {
+        const selected = clients.find((c) => c.id === id);
+        if (selected && activeClient?.id !== selected.id) {
+          handleClientChange(selected.id, selected.name);
+          router.push(`/client_profile?id=${id}`);
+        }
+      }}
       colors={{
         header: colors.header,
         banner: colors.banner,
@@ -278,6 +324,8 @@ function ClientProfilePageInner() {
             &lt; Back
           </button>
         </div>
+
+        {error && <div className="text-red-600 text-lg mb-4">{error}</div>}
 
         {/* Content: two columns*/}
         <div

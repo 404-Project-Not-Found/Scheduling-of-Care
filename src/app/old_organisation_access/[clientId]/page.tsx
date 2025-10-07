@@ -1,4 +1,7 @@
 /**
+ * IMPORTANT: this page is no longer in use!!
+ * Updated version in under /family_dashboard_manage_org_access/[clientId]
+ *
  * File path: /family_dashboard/manage_organisation_access/[clientId]/page.tsx
  * Author: Denise Alexander
  * Date Created: 17/09/2025

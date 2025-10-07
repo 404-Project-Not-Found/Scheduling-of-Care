@@ -1,3 +1,9 @@
+/**
+ * IMPORTANT: this component is no longer in use!!
+ *
+ * File path: /components/side_menu/management.tsx
+ */
+
 'use client';
 
 import { useEffect } from 'react';

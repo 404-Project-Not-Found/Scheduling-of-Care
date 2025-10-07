@@ -1,5 +1,7 @@
 /**
- * File path: /components/family.tsx
+ * IMPORTANT: this component is no longer in use!!
+ *
+ * File path: /components/side_menu/family.tsx
  * Author: Denise Alexander
  * Date Created: 25/09/2025
  */
