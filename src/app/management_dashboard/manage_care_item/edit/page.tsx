@@ -1,7 +1,8 @@
 /**
  * Filename: /app/management_dashboard/manage_care_item/edit/page.tsx
  * Frontend Author: Qingyue Zhao
- * Last Update: 2025-10-02
+ * Backend Author: Zahra Rizqita
+ * Last Update: 2025-10-04
  *
  * Description:
  * - This page provides the "Add New Care Item" form for management users.
