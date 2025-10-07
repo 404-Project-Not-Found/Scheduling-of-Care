@@ -1,11 +1,15 @@
-/* 
+/*
  * File: top_menu/client_schedule
  * Author: Qingyue Zhao
+ *
  * Purpose: Reusable header chrome for all calendar/budget/transactions/request pages.
  * - Role detection is handled here (family / carer / management).
  * - Top navigation menu is rendered here; active page gets an underline style.
  * - Pink banner with the centered title changes depending on the page and selected client.
  * - Carer users DO NOT see the client select dropdown in the banner.
+ *
+ * Last Updated by Denise Alexander - 7/10/2025: active client logic implemented to render the
+ * correct client details across pages.
  */
 
 'use client';
@@ -14,8 +18,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { getViewerRoleFE } from '@/lib/mock/mockApi';
-import { mockSignOut } from '@/lib/mock/mockSignout';
+import { getViewerRole, signOutUser } from '@/lib/data';
+import { useActiveClient } from '@/context/ActiveClientContext';
 
 const palette = {
   header: '#3A0000',
@@ -40,14 +44,17 @@ type PageKey =
   | 'organisation-access'
   | 'new-transaction';
 
-type ClientLite = { id: string; name: string };
+// Client object passed from parent component
+type ClientLite = {
+  id: string;
+  name: string;
+  orgAccess?: 'approved' | 'pending' | 'revoked';
+};
 
 type ChromeProps = {
   page: PageKey;
   clients: ClientLite[];
-  activeClientId: string | null;
   onClientChange: (id: string) => void;
-  activeClientName?: string;
   topRight?: React.ReactNode;
   colors: { header: string; banner: string; text: string };
   children: React.ReactNode;
@@ -64,9 +71,9 @@ type ChromeProps = {
 };
 
 const ROUTES = {
-  schedule: '/calender_dashboard',
-  budget: '/calender_dashboard/budget_report',
-  transactions: '/calender_dashboard/transaction_history',
+  schedule: '/calendar_dashboard',
+  budget: '/calendar_dashboard/budget_report',
+  transactions: '/calendar_dashboard/transaction_history',
   requestForm: '/family_dashboard/request_of_change_page',
   requestLog: '/request-log-page',
   careEdit: '/management_dashboard/manage_care_item/edit',
@@ -74,30 +81,43 @@ const ROUTES = {
   clientList: '/management_dashboard/clients_list',
   peopleList: '/family_dashboard/people_list',
   defaultHome: '/empty_dashboard',
-  accountUpdate: '/calender_dashboard/update_details',
+  accountUpdate: '/calendar_dashboard/update_details',
   homeByRole: '/empty_dashboard',
   profile: '/client_profile',
-  organisationAccess: '/family_dashboard/manage_organisation_access', 
-  newTransaction: '/calender_dashboard/budget_report/add_transaction',
+  organisationAccess: (clientId: string) =>
+    '/family_dashboard/manage_org_access/${clientId}',
+  newTransaction: '/calendar_dashboard/budget_report/add_transaction',
 };
 
 /** Maps each page to a noun title for the banner. */
 function nounForPage(page: PageKey): string {
   switch (page) {
-    case 'budget': return 'Budget Report';
-    case 'transactions': return 'Transactions';
-    case 'request-form': return 'Request Form';
-    case 'request-log': return 'Requests';
+    case 'budget':
+      return 'Budget Report';
+    case 'transactions':
+      return 'Transactions';
+    case 'request-form':
+      return 'Request Form';
+    case 'request-log':
+      return 'Requests';
     case 'care-edit':
-    case 'care-add': return 'Care Items';
-    case 'category-cost': return 'Budget Report';
-    case 'client-list': return 'Client List';
-    case 'people-list': return 'People List';
+    case 'care-add':
+      return 'Care Items';
+    case 'category-cost':
+      return 'Budget Report';
+    case 'client-list':
+      return 'Client List';
+    case 'people-list':
+      return 'People List';
     case 'schedule':
-    case 'profile': return 'Profile';
-    case 'organisation-access': return 'Organisation';
-    case 'new-transaction': return 'New Transaction'
-    default: return 'Schedule';
+    case 'profile':
+      return 'Profile';
+    case 'organisation-access':
+      return 'Organisation';
+    case 'new-transaction':
+      return 'New Transaction';
+    default:
+      return 'Schedule';
   }
 }
 
@@ -107,9 +127,14 @@ function activeUnderline(
   key: PageKey | 'care',
   role?: 'family' | 'carer' | 'management'
 ): string {
-  const isActiveCare = (page === 'care-edit' || page === 'care-add') && key === 'care';
+  const isActiveCare =
+    (page === 'care-edit' || page === 'care-add') && key === 'care';
   const profileMappedTarget =
-    role === 'family' ? 'people-list' : role === 'management' ? 'client-list' : null;
+    role === 'family'
+      ? 'people-list'
+      : role === 'management'
+        ? 'client-list'
+        : null;
   const isProfileMapped = page === 'profile' && key === profileMappedTarget;
   const isActiveDirect = page === key;
 
@@ -130,47 +155,71 @@ function hexToRgba(hex: string, alpha = 1) {
 export default function DashboardChrome({
   page,
   clients,
-  activeClientId,
   onClientChange,
-  activeClientName,
   topRight,
   colors,
   children,
   headerHeight = 64,
   bannerHeight = 64, // (currently unused, kept for API compatibility)
   onPrint,
-  onLogoClick,
   showAvatar = true,
   avatarSrc = '/default_profile.png',
   onProfile,
   onSignOut,
 }: ChromeProps) {
   const router = useRouter();
+  const [isSignOut, setIsSignOut] = useState(false);
+  const [role, setRole] = useState<'family' | 'carer' | 'management' | null>(
+    null
+  );
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
+  // Active client context - used to track and update currently selected client
+  const {
+    client: activeClient,
+    handleClientChange,
+    resetClient,
+  } = useActiveClient();
 
-  const role: 'family' | 'carer' | 'management' = mounted ? getViewerRoleFE() : 'family';
-  const isFamily = role === 'family';
+  // Fetches user role on mount
+  useEffect(() => {
+    const loadRole = async () => {
+      try {
+        const r = await getViewerRole();
+        setRole(r);
+      } catch {
+        setRole(null);
+        router.replace('/');
+      }
+    };
+    loadRole();
+  }, [router]);
+
+  // When a new client is selected from dropdown, updates active client data
+  const onSelectClientChange = (id: string) => {
+    const selected = clients.find((c) => c.id === id);
+    if (!selected) return;
+    handleClientChange(selected.id, selected.name);
+    onClientChange(id);
+  };
+
+  // Role flags for conditional rendering
   const isCarer = role === 'carer';
+  const isFamily = role === 'family';
   const isManagement = role === 'management';
 
   // Banner title, e.g. "Alice’s Budget Report"
   const noun = nounForPage(page);
-  const centeredTitle = useMemo(
-    () => (activeClientName ? `${activeClientName}’s ${noun}` : `Client ${noun}`),
-    [activeClientName, noun]
-  );
+  const centeredTitle = useMemo(() => {
+    return activeClient.id && activeClient.name
+      ? `${activeClient.name}'s ${noun}`
+      : 'No Client Selected';
+  }, [activeClient, noun]);
 
+  // When user clicks on logo returns to schedule options page
   const handleLogoClick = () => {
-  if (onLogoClick) return onLogoClick();
-
-  if (role === 'carer') {
-    router.push(ROUTES.schedule); 
-  } else {
-    router.push(ROUTES.defaultHome);
-  }
-};
+    router.push('/schedule_dashboard');
+  };
 
   const handlePrint = () => {
     if (onPrint) return onPrint();
@@ -178,17 +227,43 @@ export default function DashboardChrome({
   };
 
   // Avatar menu
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const goProfile = () => {
     setUserMenuOpen(false);
     if (onProfile) return onProfile();
     router.push(ROUTES.accountUpdate);
   };
-  const doSignOut = () => {
+
+  const doSignOut = async () => {
+    setIsSignOut(true);
     setUserMenuOpen(false);
-    if (onSignOut) return onSignOut();
-    mockSignOut();
+    if (onSignOut) {
+      return onSignOut();
+    } else {
+      await resetClient();
+      await signOutUser();
+    }
+    router.push('/');
   };
+
+  if (!role) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center bg-[#F3E9D9] text-zinc-900">
+        <div className="text-center">
+          <h2 className="text-4xl font-extrabold mb-4">Loading...</h2>
+        </div>
+      </div>
+    );
+  }
+
+  if (isSignOut) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center bg-[#F3E9D9] text-zinc-900">
+        <div className="text-center">
+          <h2 className="text-4xl font-extrabold mb-4">Logging out...</h2>
+        </div>
+      </div>
+    );
+  }
 
   // Hide banner for management client-list & family people-list (unchanged from your logic)
   const shouldShowBanner =
@@ -203,88 +278,127 @@ export default function DashboardChrome({
       >
         {/* Left: Logo + Client Schedule link */}
         <div className="flex items-center gap-8">
-            <button
-                onClick={handleLogoClick}
-                className="flex items-center gap-3 hover:opacity-90"
-                title="Go to empty dashboard"
-            >
-                <Image
-                src="/logo.png"
-                alt="Logo"
-                width={80}
-                height={30}
-                className="object-contain"
-                priority
-                />
-            </button>
-            <button
-                onClick={() => router.push(ROUTES.schedule)}
-                className={`font-extrabold leading-none text-2xl md:text-3xl ${
-                page === 'schedule' ? 'underline' : 'text-white hover:underline'
-                }`}
-                title="Go to schedule dashboard"
-            >
-                <span className="font-extrabold leading-none text-2xl md:text-3xl">
-                {isFamily
-                    ? 'PWSN Schedule'
-                    : isCarer
-                    ? 'Carer Dashboard'
-                    : 'Client Schedule'}
-                </span>
-            </button>
+          <button
+            onClick={handleLogoClick}
+            className="flex items-center gap-3 hover:opacity-90"
+            title="Go to empty dashboard"
+          >
+            <Image
+              src="/logo.png"
+              alt="Logo"
+              width={80}
+              height={30}
+              className="object-contain"
+              priority
+            />
+          </button>
+          <button
+            onClick={() => router.push(ROUTES.schedule)}
+            className={`font-extrabold leading-none text-2xl md:text-3xl ${
+              page === 'schedule' ? 'underline' : 'text-white hover:underline'
+            }`}
+            title="Go to schedule dashboard"
+          >
+            <span className="font-extrabold leading-none text-2xl md:text-3xl">
+              {isFamily
+                ? 'PWSN Schedule'
+                : isCarer
+                  ? 'Carer Dashboard'
+                  : 'Client Schedule'}
+            </span>
+          </button>
         </div>
-
 
         {/* Center: navigation menu */}
         <nav className="hidden lg:flex items-center gap-10 font-extrabold text-white text-xl">
-          {mounted && isManagement && (
-            <Link href={ROUTES.clientList} className={activeUnderline(page, 'client-list', role)}>
+          {isManagement && (
+            <Link
+              href={ROUTES.clientList}
+              className={activeUnderline(page, 'client-list', role)}
+            >
               Client List
             </Link>
           )}
 
-          {mounted && isFamily && (
+          {isFamily && (
             <>
-              <Link href={ROUTES.peopleList} className={activeUnderline(page, 'people-list', role)}>
+              <Link
+                href={ROUTES.peopleList}
+                className={activeUnderline(page, 'people-list', role)}
+              >
                 My PWSNs
               </Link>
-              <Link href={ROUTES.organisationAccess} className={activeUnderline(page, 'organisation-access', role)}>
+              <Link
+                href={
+                  activeClient.id
+                    ? ROUTES.organisationAccess(activeClient.id)
+                    : '#'
+                }
+                className={
+                  activeClient.id
+                    ? activeUnderline(page, 'organisation-access', role)
+                    : 'cursor-not-allowed opacity-50'
+                }
+                onClick={(e) => {
+                  if (!activeClient.id) e.preventDefault();
+                }}
+              >
                 Organisation
               </Link>
             </>
           )}
 
-          <Link href={ROUTES.budget} className={activeUnderline(page, 'budget', role)}>
+          <Link
+            href={ROUTES.budget}
+            className={activeUnderline(page, 'budget', role)}
+          >
             Budget Report
           </Link>
-          <Link href={ROUTES.transactions} className={activeUnderline(page, 'transactions', role)}>
+          <Link
+            href={ROUTES.transactions}
+            className={activeUnderline(page, 'transactions', role)}
+          >
             View Transactions
           </Link>
 
-          {mounted && isFamily && (
-            <Link href={ROUTES.requestForm} className={activeUnderline(page, 'request-form', role)}>
+          {isFamily && (
+            <Link
+              href={ROUTES.requestForm}
+              className={activeUnderline(page, 'request-form', role)}
+            >
               Request Form
             </Link>
           )}
 
-          {mounted && isManagement && (
+          {isManagement && (
             <>
               <div className="relative">
                 <details className="group">
-                  <summary className={`inline-flex items-center gap-2 list-none cursor-pointer ${activeUnderline(page, 'care', role)}`}>
+                  <summary
+                    className={`inline-flex items-center gap-2 list-none cursor-pointer ${activeUnderline(page, 'care', role)}`}
+                  >
                     Care Items <span className="text-white/90">▼</span>
                   </summary>
                   <div className="absolute left-1/2 -translate-x-1/2 mt-3 w-80 rounded-md border border-white/30 bg-white text-black shadow-2xl z-50">
-                    <Link href={ROUTES.careEdit} className="block w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5">
-                      Edit care item
+                    <Link
+                      href={ROUTES.careAdd}
+                      className="block w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5"
+                    >
+                      Add a new care item
                     </Link>
-                    <Link href={ROUTES.careAdd} className="block w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5">
-                      Add new care item
+                    <Link
+                      href={ROUTES.careEdit}
+                      className="block w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5"
+                    >
+                      Edit a care item
                     </Link>
                   </div>
                 </details>
               </div>
-              <Link href={ROUTES.requestLog} className={activeUnderline(page, 'request-log', role)}>
+              <Link
+                href={ROUTES.requestLog}
+                className={activeUnderline(page, 'request-log', role)}
+              >
                 Request Log
               </Link>
             </>
@@ -302,15 +416,31 @@ export default function DashboardChrome({
                 aria-expanded={userMenuOpen}
                 title="Account"
               >
-                <Image src={avatarSrc} alt="Profile" width={64} height={64} className="h-full w-full object-cover" priority />
+                <Image
+                  src={avatarSrc}
+                  alt="Profile"
+                  width={64}
+                  height={64}
+                  className="h-full w-full object-cover"
+                  priority
+                />
               </button>
               {userMenuOpen && (
-                <div className="absolute right-0 mt-3 w-80 rounded-md border border-white/30 bg-white text-black shadow-2xl z-50" role="menu">
-                  <button className="w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5" onClick={goProfile}>
+                <div
+                  className="absolute right-0 mt-3 w-80 rounded-md border border-white/30 bg-white text-black shadow-2xl z-50"
+                  role="menu"
+                >
+                  <button
+                    className="w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5"
+                    onClick={goProfile}
+                  >
                     Update your details
                   </button>
-                  <button className="w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5" onClick={doSignOut}>
-                    Sign out
+                  <button
+                    className="w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5"
+                    onClick={doSignOut}
+                  >
+                    Log out
                   </button>
                 </div>
               )}
@@ -332,16 +462,26 @@ export default function DashboardChrome({
               <label className="sr-only">Select Client</label>
               <select
                 className="appearance-none h-12 w-56 md:w-64 pl-8 pr-12 rounded-2xl border border-black/30 bg-white font-extrabold text-xl shadow-sm focus:outline-none"
-                value={activeClientId || ''}
-                onChange={(e) => onClientChange(e.target.value)}
+                value={activeClient.id || ''}
+                onChange={(e) => {
+                  onSelectClientChange(e.target.value);
+                }}
                 aria-label="Select client"
               >
                 <option value="">{'- Select a client -'}</option>
-                {clients.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
+                {clients
+                  .filter((c) =>
+                    isManagement ? c.orgAccess === 'approved' : true
+                  )
+                  .map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
               </select>
-              <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-black/60 text-xl">▾</span>
+              <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-black/60 text-xl">
+                ▾
+              </span>
             </div>
           ) : (
             // Spacer to preserve grid layout when dropdown is hidden for carers
@@ -353,9 +493,11 @@ export default function DashboardChrome({
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
               <div
                 className={`flex items-center gap-3 justify-center ${
-                    isCarer ? '-translate-x-8 md:-translate-x-32' : 'md:-translate-x-16'
+                  isCarer
+                    ? '-translate-x-8 md:-translate-x-32'
+                    : 'md:-translate-x-16'
                 }`}
-                >
+              >
                 <Link
                   href={ROUTES.profile}
                   aria-label="Open client profile"

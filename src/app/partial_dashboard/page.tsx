@@ -1,4 +1,4 @@
-/* Partial client dashboard before the management finfished the registration process */
+/* Partial client dashboard before the management finishes the registration process */
 
 'use client';
 

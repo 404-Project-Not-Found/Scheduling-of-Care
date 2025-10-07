@@ -1,6 +1,3 @@
-// src/app/client_list/page.tsx
-'use client';
-
 /**
  * File path: src/app/client_list/page.tsx
  * Frontend Author: Qingyue Zhao
@@ -16,25 +13,46 @@
  *      -> revoked: "Request again" button (enabled).
  *      -> pending: "Request sent" button (disabled).
  * - Now fetches all mock/demo clients purely from mockApi (no hardcoding here).
+ *
+ * Last Updated by Denise Alexander - 7/10/2025: back-end integrated to fetch client lists
+ * from DB.
  */
+
+'use client';
 
 import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { getSession } from 'next-auth/react';
 
 import DashboardChrome from '@/components/top_menu/client_schedule';
 import RegisterClientPanel from '@/components/accesscode/registration';
+import { useActiveClient } from '@/context/ActiveClientContext';
 import {
-  getClientsFE,
-  getViewerRoleFE,
+  getViewerRole,
+  getClients,
   type Client as ApiClient,
-} from '@/lib/mock/mockApi';
+} from '@/lib/data';
 
+// ------------------ Type Definitions ------------------
 type OrgAccess = 'approved' | 'pending' | 'revoked';
+
+// Client type for front-end usage
 type Client = {
   id: string;
   name: string;
   dashboardType?: 'full' | 'partial';
   orgAccess: OrgAccess;
+};
+// Organisation history entry returned by API
+type OrgHistEntry = {
+  status: OrgAccess;
+  createdAt: string;
+  updatedAt: string;
+  organisation?: { _id: string; name: string };
+};
+// Extended client type with optional organisation history
+type ClientWithOrgHist = ApiClient & {
+  organisationHistory?: OrgHistEntry[];
 };
 
 const colors = {
@@ -48,7 +66,9 @@ const colors = {
 
 export default function ClientListPage() {
   return (
-    <Suspense fallback={<div className="p-6 text-gray-600">Loading clients…</div>}>
+    <Suspense
+      fallback={<div className="p-6 text-gray-600">Loading clients…</div>}
+    >
       <ClientListInner />
     </Suspense>
   );
@@ -56,13 +76,10 @@ export default function ClientListPage() {
 
 function ClientListInner() {
   const router = useRouter();
+  const { handleClientChange } = useActiveClient();
 
   // ---- Current viewer role (carer / family / management) ----
   const [role, setRole] = useState<'carer' | 'family' | 'management'>('family');
-  useEffect(() => {
-    setRole(getViewerRoleFE());
-  }, []);
-  const isManagement = role === 'management';
 
   // ---- Clients state ----
   const [clients, setClients] = useState<Client[]>([]);
@@ -77,36 +94,73 @@ function ClientListInner() {
   const [showRegister, setShowRegister] = useState(false);
   const addNewClient = () => setShowRegister(true);
 
-  // ---- Load mock clients ----
+  const [orgId, setOrgId] = useState<string | undefined>();
+
+  // ---- Load clients ----
+  const loadClients = async (orgId: string) => {
+    try {
+      // Current user's role
+      const viewerRole = await getViewerRole();
+      setRole(viewerRole);
+
+      // Fetches all clients
+      const list: ClientWithOrgHist[] = await getClients();
+
+      // Maps clients to include their latest organisation status
+      const mapped: Client[] = await Promise.all(
+        list.map(async (c) => {
+          const res = await fetch(
+            `/api/v1/clients/${c._id}/organisations/${orgId}`
+          );
+          const history = (await res.json()) as OrgHistEntry[];
+
+          // Sort by updatedAt or createdAt descending
+          const latestOrg = history.sort((a, b) => {
+            const aTime = new Date(a.updatedAt ?? a.createdAt).getTime();
+            const bTime = new Date(b.updatedAt ?? b.createdAt).getTime();
+            return bTime - aTime;
+          })[0];
+          return {
+            id: c._id,
+            name: c.name,
+            dashboardType: c.dashboardType,
+            orgAccess: latestOrg?.status ?? 'pending',
+          };
+        })
+      );
+      // Update state with mapped clients
+      setClients(mapped);
+    } catch (err) {
+      console.error('Error loading clients.', err);
+      setClients([]);
+    }
+  };
+
+  // --- Fetches oragnisation ID and loads clients on mount ---
   useEffect(() => {
-    (async () => {
-      try {
-        const list = await getClientsFE();
-        // Map into local Client type
-        let mapped: Client[] = list.map((c: ApiClient) => ({
-          id: c._id,
-          name: c.name,
-          dashboardType: c.dashboardType,
-          orgAccess: (c as any).organisationAccess ?? 'pending',
-        }));
+    const fetchOrgId = async () => {
+      const session = await getSession();
+      const orgId = session?.user?.organisation as string | undefined;
 
-        // Force second client into revoked state (for demo purposes)
-        if (mapped[1]) {
-          mapped[1] = { ...mapped[1], orgAccess: 'revoked' };
-        }
-
-        setClients(mapped);
-      } catch {
-        setClients([]);
+      if (!orgId) {
+        console.error('No organisation linked to this account.');
+        return;
       }
-    })();
+
+      setOrgId(orgId);
+
+      await loadClients(orgId);
+    };
+
+    fetchOrgId();
   }, []);
 
   // ---- Search filter ----
   const filtered = useMemo(() => {
     const t = q.trim().toLowerCase();
-    if (!t) return clients;
-    return clients.filter((c) => c.name.toLowerCase().includes(t));
+    return t
+      ? clients.filter((c) => c.name.toLowerCase().includes(t))
+      : clients;
   }, [clients, q]);
 
   // ---- Navigation guard ----
@@ -117,30 +171,46 @@ function ClientListInner() {
       setDenyOpen(true);
       return;
     }
-    if (c.dashboardType === 'full') {
-      router.push(`/calender_dashboard?id=${c.id}`);
-    } else {
-      router.push(`/partial_dashboard?id=${c.id}`);
-    }
+
+    handleClientChange(c.id, c.name);
+
+    router.push(`/client_profile?id=${c.id}`);
   };
 
   // ---- Management: request access again ----
-  const requestAccess = (e: React.MouseEvent, id: string) => {
+  const requestAccess = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation(); // avoid row navigation
-    setClients((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, orgAccess: 'pending' } : c))
-    );
-    // Real backend: POST /organisations/:orgId/clients/:id/request-access
+    if (!orgId) {
+      console.error('No organisation linked to this account.');
+      return;
+    }
+    try {
+      await fetch(`/api/v1/clients/${id}/organisations/${orgId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'request' }),
+      });
+      await loadClients(orgId);
+    } catch (err) {
+      console.error('Failed to request access.', err);
+    }
   };
 
   return (
     <DashboardChrome
       page="client-list"
       clients={[]} // not used here
-      activeClientId={null}
-      onClientChange={() => {}}
-      activeClientName={undefined}
-      colors={{ header: colors.header, banner: colors.banner, text: colors.text }}
+      onClientChange={(id) => {
+        const c = clients.find((cl) => cl.id === id);
+        if (c) {
+          handleClientChange(c.id, c.name);
+        }
+      }}
+      colors={{
+        header: colors.header,
+        banner: colors.banner,
+        text: colors.text,
+      }}
       onLogoClick={() => router.push('/empty_dashboard')}
     >
       {/* Page body */}
@@ -184,7 +254,7 @@ function ClientListInner() {
             {/* List area */}
             <div className="flex-1 px-0 pb-6">
               <div
-                className="mx-6 rounded-xl overflow-auto h-full"
+                className="mx-6 rounded-xl overflow-auto max-h-[500px]"
                 style={{
                   backgroundColor: '#F2E5D2',
                   border: '1px solid rgba(58,0,0,0.25)',
@@ -192,7 +262,7 @@ function ClientListInner() {
               >
                 {filtered.length === 0 ? (
                   <div className="h-full flex items-center justify-center text-gray-600">
-                    No clients found.
+                    Loading clients...
                   </div>
                 ) : (
                   <ul className="divide-y divide-[rgba(58,0,0,0.15)]">
@@ -232,7 +302,9 @@ function ClientListInner() {
                               {c.name}
                             </div>
                             <div className="mt-1 text-sm flex items-center gap-2 text-black/70">
-                              <span className="opacity-80">Organisation access:</span>
+                              <span className="opacity-80">
+                                Organisation access:
+                              </span>
                               <AccessBadge status={c.orgAccess} />
                             </div>
                           </div>
@@ -255,7 +327,7 @@ function ClientListInner() {
                           )}
 
                           {/* Management actions (non-approved only) */}
-                          {isManagement && c.orgAccess !== 'approved' && (
+                          {c.orgAccess !== 'approved' && (
                             <>
                               {c.orgAccess === 'revoked' && (
                                 <button
@@ -270,7 +342,11 @@ function ClientListInner() {
                                 <button
                                   onClick={(e) => e.stopPropagation()}
                                   className="px-4 py-2 rounded-lg text-sm font-semibold cursor-not-allowed"
-                                  style={{ backgroundColor: '#b07b7b', color: 'white', opacity: 0.9 }}
+                                  style={{
+                                    backgroundColor: '#b07b7b',
+                                    color: 'white',
+                                    opacity: 0.9,
+                                  }}
                                   disabled
                                 >
                                   Request sent
@@ -293,12 +369,16 @@ function ClientListInner() {
       {denyOpen && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
           <div className="bg-white rounded-2xl shadow-2xl w-[92%] max-w-[520px] p-6 text-center">
-            <h3 className="text-xl font-bold mb-2" style={{ color: colors.header }}>
+            <h3
+              className="text-xl font-bold mb-2"
+              style={{ color: colors.header }}
+            >
               Access required
             </h3>
             {denyReason === 'pending' && (
               <p className="text-black/80">
-                Your request to access <b>{denyTarget}</b>’s profile is still pending.
+                Your request to access <b>{denyTarget}</b>’s profile is still
+                pending.
                 <br />
                 Please wait until the family approves your request.
               </p>
@@ -324,17 +404,38 @@ function ClientListInner() {
       )}
 
       {/* Right-side registration drawer */}
-      <RegisterClientPanel open={showRegister} onClose={() => setShowRegister(false)} />
+      <RegisterClientPanel
+        open={showRegister}
+        onClose={() => setShowRegister(false)}
+      />
     </DashboardChrome>
   );
 }
 
 /* ---- Badge component: shows access status visually ---- */
 function AccessBadge({ status }: { status: OrgAccess }) {
-  const cfg: Record<OrgAccess, { bg: string; dot: string; label: string; text: string }> = {
-    approved: { bg: 'bg-green-100', dot: 'bg-green-500', label: 'Approved', text: 'text-green-800' },
-    pending: { bg: 'bg-yellow-100', dot: 'bg-yellow-500', label: 'Pending', text: 'text-yellow-800' },
-    revoked: { bg: 'bg-red-100', dot: 'bg-red-500', label: 'Revoked', text: 'text-red-800' },
+  const cfg: Record<
+    OrgAccess,
+    { bg: string; dot: string; label: string; text: string }
+  > = {
+    approved: {
+      bg: 'bg-green-100',
+      dot: 'bg-green-500',
+      label: 'Approved',
+      text: 'text-green-800',
+    },
+    pending: {
+      bg: 'bg-yellow-100',
+      dot: 'bg-yellow-500',
+      label: 'Pending',
+      text: 'text-yellow-800',
+    },
+    revoked: {
+      bg: 'bg-red-100',
+      dot: 'bg-red-500',
+      label: 'Revoked',
+      text: 'text-red-800',
+    },
   };
   const c = cfg[status];
   return (

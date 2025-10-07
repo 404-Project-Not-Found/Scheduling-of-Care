@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Task } from '@/app/calender_dashboard/types';
+import { Task } from '@/app/calendar_dashboard/types';
 
 type TasksPanelProps = {
   tasks: Task[];

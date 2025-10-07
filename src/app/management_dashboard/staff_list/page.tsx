@@ -1,5 +1,5 @@
 /**
- * Filename: /management_dashboard/staff_list/page.tsx
+ * File path: /management_dashboard/staff_list/page.tsx
  * Author: Denise Alexander
  * Date Created: 26/09/2025
  */
@@ -42,7 +42,7 @@ export default function StaffListPage() {
 
     (async () => {
       try {
-        const res = await fetch('/api/management/staff', {
+        const res = await fetch('/api/v1/management/staff', {
           cache: 'no-store',
         });
         if (!res.ok) throw new Error(`Failed to load staff (${res.status})`);

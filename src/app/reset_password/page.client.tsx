@@ -1,5 +1,5 @@
 /**
- * Filename: /reset_password/page.client.tsx
+ * File path: /reset_password/page.client.tsx
  * Authors: Devni Wijesinghe & Denise Alexander
  * Date Created: 17/09/2025
  */
@@ -42,7 +42,7 @@ export default function ResetPasswordPage() {
       return;
     }
     try {
-      const res = await fetch('/api/reset_password', {
+      const res = await fetch('/api/v1/reset_password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, newPassword }),

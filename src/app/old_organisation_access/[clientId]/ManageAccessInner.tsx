@@ -1,5 +1,8 @@
 /**
- * Filename: /family_dashboard/manage_organisation_access/[clientId]/ManageAccessInner.tsx
+ * IMPORTANT: this page is no longer in use!!
+ * Updated version in under /family_dashboard_manage_org_access/[clientId]
+ *
+ * File path: /family_dashboard/manage_organisation_access/[clientId]/ManageAccessInner.tsx
  * Authors: Qingyue Zhao and Denise Alexander
  * Last Update: 2025-10-03
  *
@@ -16,8 +19,6 @@ import React, { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardChrome from '@/components/top_menu/client_schedule';
 import { isMock, type Organisation } from '@/lib/mock/mockApi';
-
-type OrgStatus = 'active' | 'pending' | 'revoked';
 
 interface ClientDoc {
   id: string;
@@ -69,7 +70,7 @@ export default function ManageAccessInner({
     setLoading(true);
     try {
       const res = await fetch(
-        `/api/clients/${client.id}/organisations/${orgId}`,
+        `/api/v1/clients/${client.id}/organisations/${orgId}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -77,7 +78,8 @@ export default function ManageAccessInner({
         }
       );
       const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || 'Failed to update organisations');
+      if (!res.ok)
+        throw new Error(data?.error || 'Failed to update organisations');
 
       setOrgs((prev) =>
         prev.map((o) =>
@@ -95,49 +97,50 @@ export default function ManageAccessInner({
 
   return (
     <DashboardChrome
-      page="organisation-access"                          
+      page="organisation-access"
       clients={chromeClients}
       activeClientId={client.id}
       onClientChange={(id) =>
         router.push(`/family_dashboard/manage_organisation_access/${id}`)
       }
       activeClientName={client.name}
-      colors={{ header: colors.header, banner: colors.notice, text: colors.text }}
+      colors={{
+        header: colors.header,
+        banner: colors.notice,
+        text: colors.text,
+      }}
       onLogoClick={() => router.push('/empty_dashboard')}
     >
       {/* Full-bleed page body under chrome */}
       <div className="w-full h-full" style={{ backgroundColor: colors.pageBg }}>
         <div className="w-full h-full]">
           {/* Section header with Back button */}
-            <div
+          <div
             className="w-full px-6 py-4 flex items-center justify-between text-white text-2xl md:text-3xl font-extrabold"
             style={{ backgroundColor: colors.header }}
-            >
+          >
             <span>Manage Organisation Access</span>
-                <button
-                    onClick={() => router.push('/family_dashboard/people_list')}
-                    className="text-base md:text-lg font-semibold bg-white/10 px-4 py-1.5 rounded hover:bg-white/20 transition"
-                >
-                    &lt; Return
-                </button>
-            </div>
-          
+            <button
+              onClick={() => router.push('/family_dashboard/people_list')}
+              className="text-base md:text-lg font-semibold bg-white/10 px-4 py-1.5 rounded hover:bg-white/20 transition"
+            >
+              &lt; Return
+            </button>
+          </div>
 
           {/* Content area (no panels/borders; fills remaining height) */}
           <div
             className="w-full h-[630px] rounded-b-xl bg-[#f6efe2] border-x border-b flex flex-col"
-            style={{ borderColor: 'transparent' }}   // visually remove outer borders
+            style={{ borderColor: 'transparent' }} // visually remove outer borders
           >
-
-
             {/* Notice bar */}
             <div
               className="w-full px-5 py-3 text-black"
               style={{ backgroundColor: colors.notice }}
             >
               <p className="text-center font-semibold">
-                Privacy Notice: This information is visible only to you (family / POA) and
-                will not be shared with anyone.
+                Privacy Notice: This information is visible only to you (family
+                / POA) and will not be shared with anyone.
               </p>
             </div>
 
@@ -164,9 +167,7 @@ export default function ManageAccessInner({
           </div>
 
           {/* Loading / error lightweight handling */}
-          {loading && (
-            <div className="mt-3 text-black/70 px-6">Updating…</div>
-          )}
+          {loading && <div className="mt-3 text-black/70 px-6">Updating…</div>}
           {error && (
             <div className="mt-3 text-red-600 px-6">Error: {error}</div>
           )}
@@ -201,7 +202,10 @@ function Group({
       ) : (
         <ul className="space-y-2">
           {items.map((item) => (
-            <li key={item.id} className="flex text-lg items-center justify-between">
+            <li
+              key={item.id}
+              className="flex text-lg items-center justify-between"
+            >
               <div>{item.name}</div>
               <div className="flex items-center gap-3 ">
                 {item.status === 'active' && onRevoke && (

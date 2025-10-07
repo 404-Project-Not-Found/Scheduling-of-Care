@@ -1,8 +1,5 @@
-// src/app/family_client_list/page.tsx
-'use client';
-
 /**
- * File path: src/app/family_client_list/page.tsx
+ * File path: src/app/family_dashboard/people_list/page.tsx
  * Frontend Author: Qingyue Zhao
  *
  * Features (family-only):
@@ -14,13 +11,19 @@
  *         - View dashboard (full / partial)
  *         - Manage organisation access
  * - No organisation access status shown (unlike management view).
+ *
+ * Last Updated by Denise Alexander - 7/10/2025: back-end integrated to fetch family
+ * client lists from DB.
  */
+
+'use client';
 
 import React, { Suspense, useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 
 import DashboardChrome from '@/components/top_menu/client_schedule';
-import { getClientsFE, type Client as ApiClient } from '@/lib/mock/mockApi';
+import * as data from '@/lib/data';
+import { useActiveClient } from '@/context/ActiveClientContext';
 
 type Client = {
   id: string;
@@ -39,7 +42,9 @@ const colors = {
 
 export default function FamilyClientListPage() {
   return (
-    <Suspense fallback={<div className="p-6 text-gray-600">Loading clients…</div>}>
+    <Suspense
+      fallback={<div className="p-6 text-gray-600">Loading clients…</div>}
+    >
       <FamilyClientListInner />
     </Suspense>
   );
@@ -49,12 +54,14 @@ function FamilyClientListInner() {
   const router = useRouter();
   const [clients, setClients] = useState<Client[]>([]);
   const [q, setQ] = useState('');
+  const { client: activeClient, handleClientChange } = useActiveClient();
+  const [loadingClientId, setLoadingClientId] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
       try {
-        const list = await getClientsFE();
-        const mapped: Client[] = list.map((c: ApiClient) => ({
+        const list = await data.getClients();
+        const mapped: Client[] = list.map((c) => ({
           id: c._id,
           name: c.name,
           dashboardType: c.dashboardType,
@@ -72,14 +79,28 @@ function FamilyClientListInner() {
     return clients.filter((c) => c.name.toLowerCase().includes(t));
   }, [clients, q]);
 
+  const goToOrgAccess = async (c: Client) => {
+    if (c && activeClient?.id !== c.id) {
+      handleClientChange(c.id, c.name);
+    }
+    router.push(`/family_dashboard/manage_org_access/${c.id}`);
+  };
+
   return (
     <DashboardChrome
       page="people-list"
-      clients={[]} // not needed here
-      activeClientId={null}
-      activeClientName={undefined}
-      onClientChange={() => {}}
-      colors={{ header: colors.header, banner: colors.banner, text: colors.text }}
+      clients={clients}
+      onClientChange={(id) => {
+        const c = clients.find((cl) => cl.id === id);
+        if (c) {
+          goToOrgAccess(c);
+        }
+      }}
+      colors={{
+        header: colors.header,
+        banner: colors.banner,
+        text: colors.text,
+      }}
       onLogoClick={() => router.push('/empty_dashboard')}
     >
       <div className="w-full h-full" style={{ backgroundColor: colors.pageBg }}>
@@ -120,7 +141,7 @@ function FamilyClientListInner() {
             {/* List */}
             <div className="flex-1 px-0 pb-6">
               <div
-                className="mx-6 rounded-xl overflow-auto h-full"
+                className="mx-6 rounded-xl overflow-auto max-h-[500px]"
                 style={{
                   backgroundColor: '#F2E5D2',
                   border: '1px solid rgba(58,0,0,0.25)',
@@ -128,7 +149,7 @@ function FamilyClientListInner() {
               >
                 {filtered.length === 0 ? (
                   <div className="h-full flex items-center justify-center text-gray-600">
-                    No clients found.
+                    Loading clients...
                   </div>
                 ) : (
                   <ul className="divide-y divide-[rgba(58,0,0,0.15)]">
@@ -139,54 +160,60 @@ function FamilyClientListInner() {
                       >
                         {/* Left: avatar + name (clickable → dashboard) */}
                         <div
-                        className="flex items-center gap-5 cursor-pointer"
-                        onClick={() =>
+                          className="flex items-center gap-5 cursor-pointer"
+                          onClick={() =>
                             router.push(
-                            c.dashboardType === 'full'
-                                ? `/calender_dashboard?id=${c.id}`
+                              c.dashboardType === 'full'
+                                ? `/calendar_dashboard?id=${c.id}`
                                 : `/partial_dashboard?id=${c.id}`
                             )
-                        }
+                          }
                         >
-                        <div
+                          <div
                             className="shrink-0 rounded-full flex items-center justify-center"
                             style={{
-                            width: 64,
-                            height: 64,
-                            border: '4px solid #3A0000',
-                            backgroundColor: '#fff',
-                            color: '#3A0000',
-                            fontWeight: 900,
-                            fontSize: 20,
+                              width: 64,
+                              height: 64,
+                              border: '4px solid #3A0000',
+                              backgroundColor: '#fff',
+                              color: '#3A0000',
+                              fontWeight: 900,
+                              fontSize: 20,
                             }}
-                        >
+                          >
                             {c.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div
+                            className="text-xl md:text-2xl font-semibold"
+                            style={{ color: colors.text }}
+                          >
+                            {c.name}
+                          </div>
                         </div>
-                            <div
-                                className="text-xl md:text-2xl font-semibold"
-                                style={{ color: colors.text }}
-                            >
-                                {c.name}
-                            </div>
-                        </div>
-
 
                         {/* Right: action buttons */}
                         <div className="shrink-0 flex items-center gap-2">
                           {/* View profile */}
                           <button
-                            onClick={() => router.push(`/client_profile?id=${c.id}`)}
+                            onClick={async () => {
+                              setLoadingClientId(c.id);
+                              if (c && activeClient?.id !== c.id) {
+                                handleClientChange(c.id, c.name);
+                              }
+                              router.push(`/client_profile?id=${c.id}`);
+                            }}
                             className="px-4 py-2 rounded-lg text-white text-sm font-semibold hover:opacity-90"
                             style={{ backgroundColor: '#4CAF50' }}
+                            disabled={loadingClientId === c.id}
                           >
-                            Edit profile
+                            {loadingClientId === c.id
+                              ? `Loading ${c.name}'s profile...`
+                              : 'Edit profile'}
                           </button>
 
                           {/* Manage org access */}
                           <button
-                            onClick={() =>
-                              router.push(`/family_dashboard/manage_organisation_access/${c.id}`)
-                            }
+                            onClick={() => goToOrgAccess(c)}
                             className="px-4 py-2 rounded-lg text-white text-sm font-semibold hover:opacity-90"
                             style={{ backgroundColor: '#E91E63' }}
                           >

@@ -1,7 +1,8 @@
 /**
- * Filename: /app/page.tsx
+ * File path: /app/page.tsx
  * Authors: Qingyue Zhao & Denise Alexander
  * Date Created: 05/09/2025
+ * Last Updated by Denise Alexander - 7/10/2025: redirection after login changed to /schedule_dashboard.
  */
 
 'use client';
@@ -33,7 +34,6 @@ function PrefillFromSearchParams({
 }
 
 export default function Home() {
-
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [staySigned, setStaySigned] = useState(false);
@@ -56,24 +56,18 @@ export default function Home() {
     if (process.env.NEXT_PUBLIC_ENABLE_MOCK === '1') {
       const emailTrimmed = email.trim().toLowerCase();
 
-      const isFamily = emailTrimmed === 'family@email.com' && password === 'family';
-      const isCarer  = emailTrimmed === 'carer@email.com' && password === 'carer';
-      const isMgmt   = emailTrimmed === 'management@email.com' && password === 'management';
+      const isFamily =
+        emailTrimmed === 'family@email.com' && password === 'family';
+      const isCarer =
+        emailTrimmed === 'carer@email.com' && password === 'carer';
+      const isMgmt =
+        emailTrimmed === 'management@email.com' && password === 'management';
 
       if (isFamily || isCarer || isMgmt) {
         if (staySigned) localStorage.setItem('rememberMe', '1');
         else localStorage.removeItem('rememberMe');
 
-        const role = isCarer ? 'carer' : isMgmt ? 'management' : 'family';
-        sessionStorage.setItem('mockRole', role);
-
-        if (role === 'carer') {
-          window.location.href = '/calender_dashboard';
-          return;
-        } else {
-          window.location.href = '/empty_dashboard';
-          return;
-        }
+        window.location.href = '/schedule_dashboard';
       }
 
       setError('Invalid mock credentials');
@@ -97,30 +91,11 @@ export default function Home() {
         return;
       }
 
-      const session = await getSession();
-      if (!session?.user?.role) {
-        setError('Could not determine user role');
-        setLoading(false);
-        return;
-      }
-
-      switch (session.user.role) {
-        case 'carer':
-          window.location.href = '/calender_dashboard';
-          break;
-        case 'management':
-          window.location.href = '/empty_dashboard';
-          break;
-        case 'family':
-          window.location.href = '/empty_dashboard';
-          break;
-        default:
-          setError('Unknown role');
-          setLoading(false);
-          return;
-      }
+      window.location.href = '/schedule_dashboard';
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
+      setError(
+        err instanceof Error ? err.message : 'An unexpected error occurred'
+      );
       setLoading(false);
     }
   }
@@ -140,7 +115,10 @@ export default function Home() {
     <div className="h-screen w-full bg-[#F3E9D9] text-zinc-900">
       {/* Prefill email and password */}
       <Suspense fallback={null}>
-        <PrefillFromSearchParams setEmail={setEmail} setPassword={setPassword} />
+        <PrefillFromSearchParams
+          setEmail={setEmail}
+          setPassword={setPassword}
+        />
       </Suspense>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 h-full w-full">
@@ -177,7 +155,10 @@ export default function Home() {
             <form className="space-y-6" onSubmit={handleSubmit} noValidate>
               {/* Email */}
               <div>
-                <label htmlFor="email" className="block text-xl font-medium mb-2 text-left">
+                <label
+                  htmlFor="email"
+                  className="block text-xl font-medium mb-2 text-left"
+                >
                   Email
                 </label>
                 <input
@@ -196,7 +177,10 @@ export default function Home() {
 
               {/* Password + Show/Hide link */}
               <div>
-                <label htmlFor="password" className="block text-xl font-medium mb-2 text-left">
+                <label
+                  htmlFor="password"
+                  className="block text-xl font-medium mb-2 text-left"
+                >
                   Password
                 </label>
                 <div className="relative">
@@ -258,13 +242,19 @@ export default function Home() {
 
             {/* Links */}
             <div className="mt-6 text-center">
-              <Link href="/reset_password_link" className="text-lg underline underline-offset-4 hover:opacity-80">
+              <Link
+                href="/reset_password_link"
+                className="text-lg underline underline-offset-4 hover:opacity-80"
+              >
                 Forgot Password?
               </Link>
             </div>
             <p className="mt-4 text-lg text-center">
               Don’t have an account?{' '}
-              <Link href="/role" className="underline underline-offset-4 font-semibold hover:opacity-80">
+              <Link
+                href="/role"
+                className="underline underline-offset-4 font-semibold hover:opacity-80"
+              >
                 Sign Up
               </Link>
             </p>

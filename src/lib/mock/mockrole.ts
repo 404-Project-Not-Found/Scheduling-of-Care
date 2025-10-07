@@ -1,10 +1,9 @@
 /**
- * Filename: /app/lib/role.ts
- * Authors: Qingyue Zhao 
+ * File path: /app/lib/role.ts
+ * Author: Qingyue Zhao
  * Date Created: 25/09/2025
  * usage: Simple front-end role store for mocks (without api)
  */
-
 
 export type Role = 'family' | 'carer' | 'management';
 const KEY = 'mockRole';
@@ -44,4 +43,3 @@ export function clearMockRole() {
 export function isMockEnabled() {
   return process.env.NEXT_PUBLIC_ENABLE_MOCK === '1';
 }
-

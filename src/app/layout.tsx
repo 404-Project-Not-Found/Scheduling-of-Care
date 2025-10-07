@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { TransactionProvider } from '@/context/TransactionContext';
+import { ActiveClientProvider } from '@/context/ActiveClientContext';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -29,8 +30,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         style={{ background: '#ffd9b3' }}
       >
-        {/* Wrap all children in TransactionProvider to share state across pages */}
-        <TransactionProvider>{children}</TransactionProvider>
+        {/* Wrap all children in both providers to share state across pages */}
+        <TransactionProvider>
+          <ActiveClientProvider>{children}</ActiveClientProvider>
+        </TransactionProvider>
       </body>
     </html>
   );

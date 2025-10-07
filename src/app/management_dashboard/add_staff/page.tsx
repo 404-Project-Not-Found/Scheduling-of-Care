@@ -1,5 +1,5 @@
 /**
- * Filename: /management_dashboard/add_staff/page.tsx
+ * File path: /management_dashboard/add_staff/page.tsx
  * Author: Denise Alexander
  * Date Created: 26/09/2025
  */
@@ -25,7 +25,7 @@ export default function RegisterClientPage() {
 
     try {
       // Call the api endpoint to generate invite
-      const res = await fetch('/api/management/generate_invite', {
+      const res = await fetch('/api/v1/management/generate_invite', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role }),

@@ -1,7 +1,9 @@
 /**
- * Filename: /models/User.ts
+ * File path: /models/User.ts
  * Author: Denise Alexander
  * Date Created: 16/09/2025
+ * Last Updated by Denise Alexander - 7/10/2025: added activeClientId to identify the client the user is
+ * currently viewing across pages.
  */
 
 import mongoose, { Schema, Document } from 'mongoose';
@@ -13,6 +15,7 @@ export interface IUser extends Document {
   role: 'carer' | 'management' | 'family';
   organisation?: mongoose.Types.ObjectId;
   status?: 'active' | 'inactive';
+  activeClientId?: mongoose.Types.ObjectId | null; // the client the user is currently viewing
 }
 
 const UserSchema = new Schema<IUser>({
@@ -33,6 +36,11 @@ const UserSchema = new Schema<IUser>({
         ? 'active'
         : undefined;
     },
+  },
+  activeClientId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Client',
+    default: null,
   },
 });
 
