@@ -110,7 +110,7 @@ function FamilyClientListInner() {
             className="w-full mt-6 rounded-t-xl px-6 py-4 text-white text-2xl md:text-3xl font-extrabold"
             style={{ backgroundColor: colors.header }}
           >
-            My PWSN List
+            My Client List
           </div>
 
           {/* Content */}
@@ -134,7 +134,7 @@ function FamilyClientListInner() {
                 className="rounded-xl px-5 py-3 text-lg font-bold text-white hover:opacity-90"
                 style={{ backgroundColor: colors.header }}
               >
-                + Add new PWSN
+                + Add new Client
               </button>
             </div>
 

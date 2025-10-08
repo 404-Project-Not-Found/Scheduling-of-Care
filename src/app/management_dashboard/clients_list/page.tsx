@@ -380,7 +380,7 @@ function ClientListInner() {
                 Your request to access <b>{denyTarget}</b>’s profile is still
                 pending.
                 <br />
-                Please wait until the family approves your request.
+                Please wait until the family implements your request.
               </p>
             )}
             {denyReason === 'revoked' && (

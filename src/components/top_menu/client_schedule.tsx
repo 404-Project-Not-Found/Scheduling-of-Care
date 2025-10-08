@@ -8,8 +8,12 @@
  * - Pink banner with the centered title changes depending on the page and selected client.
  * - Carer users DO NOT see the client select dropdown in the banner.
  *
- * Last Updated by Denise Alexander - 7/10/2025: active client logic implemented to render the
+ * Updated by Denise Alexander on 7/10/2025: active client logic implemented to render the
  * correct client details across pages.
+ *
+ * Last Updated by Qingyue Zhao on 08/10/2025: add access list for on the Schedule page,
+ * show a read-only list of users who have access to the current client.
+ * 
  */
 
 'use client';
@@ -20,6 +24,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getViewerRole, signOutUser } from '@/lib/data';
 import { useActiveClient } from '@/context/ActiveClientContext';
+import AccessDropdown from '@/components/top_menu/AccessDropdown';
 
 const palette = {
   header: '#3A0000',
@@ -152,6 +157,9 @@ function hexToRgba(hex: string, alpha = 1) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+/** Read-only access user item type (for the inline list next to the profile). */
+type AccessUser = { id: string; name: string; role?: string };
+
 export default function DashboardChrome({
   page,
   clients,
@@ -245,6 +253,26 @@ export default function DashboardChrome({
     router.push('/');
   };
 
+  // Backend to do: 
+  // Read-only access list data (inline). Replace with your API call when ready.
+  // Example integration:
+  // useEffect(() => {
+  //   if (isManagement && page === 'schedule' && activeClient.id) {
+  //     fetch(`/api/clients/${activeClient.id}/access`)
+  //       .then(res => res.json())
+  //       .then((data: AccessUser[]) => setAccessUsers(data))
+  //       .catch(() => setAccessUsers([]));
+  //   }
+  // }, [isManagement, page, activeClient.id]);
+
+
+   const accessUsers: AccessUser[] = useMemo(() => {
+    // Keep empty by default; safe placeholder for a read-only list.
+    return [];
+  }, [activeClient.id]);
+
+
+
   if (!role) {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-[#F3E9D9] text-zinc-900">
@@ -268,6 +296,8 @@ export default function DashboardChrome({
   // Hide banner for management client-list & family people-list (unchanged from your logic)
   const shouldShowBanner =
     page !== 'client-list' && !(page === 'people-list' && role === 'family');
+
+ 
 
   return (
     <div className="min-h-screen flex flex-col" style={{ color: colors.text }}>
@@ -300,11 +330,7 @@ export default function DashboardChrome({
             title="Go to schedule dashboard"
           >
             <span className="font-extrabold leading-none text-2xl md:text-3xl">
-              {isFamily
-                ? 'PWSN Schedule'
-                : isCarer
-                  ? 'Carer Dashboard'
-                  : 'Client Schedule'}
+              Client Schedule
             </span>
           </button>
         </div>
@@ -326,7 +352,7 @@ export default function DashboardChrome({
                 href={ROUTES.peopleList}
                 className={activeUnderline(page, 'people-list', role)}
               >
-                My PWSNs
+                My Clients
               </Link>
               <Link
                 href={
@@ -488,7 +514,7 @@ export default function DashboardChrome({
             <div className="h-12 w-56 md:w-64" aria-hidden />
           )}
 
-          {/* Center title */}
+          {/* Center: avatar + title + inline read-only access list */}
           <div className="relative">
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
               <div
@@ -513,24 +539,31 @@ export default function DashboardChrome({
                     className="rounded-full border border-black/20 object-cover cursor-pointer hover:opacity-90"
                   />
                 </Link>
-                <h1 className="font-extrabold leading-none text-2xl md:text-3xl select-none">
+                <h1 className="font-extrabold leading-none text-2xl md:text-2xl select-none">
                   {centeredTitle}
                 </h1>
+
+                {/* Read-only access list: placed to the right of the client profile/title */}
+                {page === 'schedule' && activeClient.id && (
+                    <div className="ml-6 pl-6 border-l border-black/20 hidden md:block">
+                         <AccessDropdown clientId={activeClient.id} />
+                    </div>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Right: Print button — ONLY management on Schedule */}
-          <div className="justify-self-end">
-            {page === 'schedule' && isManagement && (
+          {/* Right: Print button only (access control moved next to the profile) */}
+          <div className="justify-self-end flex items-end gap-4">
+            <div>
               <button
                 onClick={handlePrint}
-                className="inline-flex items-center px-6 py-3 rounded-2xl border border-black/30 bg-white font-extrabold text-xl hover:bg-black/5"
+                className="inline-flex items-center px-4.5 py-2.5 rounded-2xl border border-black/30 bg-white font-extrabold text-xl hover:bg-black/5"
                 title="Print"
               >
                 Print
               </button>
-            )}
+            </div>
           </div>
         </div>
       )}

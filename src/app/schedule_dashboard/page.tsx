@@ -12,19 +12,14 @@ import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { getSession } from 'next-auth/react';
+import { getViewerRoleFE } from '@/lib/mock/mockApi';
 
-// No longer in use - due to change in page layout
-/* import FamilySideMenu from '@/components/side_menu/family';
-import ManagementSideMenu from '@/components/side_menu/management';
-*/
-
-/** Shared palette (borderless, full-width header/banner) */
 const palette = {
-  header: '#3A0000', // Dark brown header
-  banner: '#F9C9B1', // Pink notice bar
+  header: '#3A0000',
+  banner: '#F9C9B1',
   text: '#2b2b2b',
   white: '#FFFFFF',
-  pageBg: '#FAEBDC', // Light beige page background
+  pageBg: '#FAEBDC',
 };
 
 type Role = 'family' | 'management' | 'carer' | null;
@@ -33,11 +28,42 @@ export default function DashboardPage() {
   const [role, setRole] = useState<Role>(null);
   const [title, setTitle] = useState('Dashboard');
   const router = useRouter();
+  const isMock =
+    process.env.NEXT_PUBLIC_ENABLE_MOCK === '1' ||
+    process.env.NEXT_PUBLIC_ENABLE_MOCK === 'true';
 
   useEffect(() => {
-    const loadSession = async () => {
-      const session = await getSession();
+    const load = async () => {
+      if (isMock) {
+        let r = (getViewerRoleFE() as Role) || null;
+        if (!r) {
+          const em = (localStorage.getItem('lastLoginEmail') || '').toLowerCase();
+          if (em.includes('carer')) r = 'carer';
+          else if (em.includes('management')) r = 'management';
+          else if (em.includes('family')) r = 'family';
+        }
+        if (!r) {
+          router.replace('/');
+          return;
+        }
+        setRole(r);
+        switch (r) {
+          case 'family':
+            setTitle('Family/POA Dashboard');
+            break;
+          case 'management':
+            setTitle('Management Dashboard');
+            break;
+          case 'carer':
+            setTitle('Carer Dashboard');
+            break;
+          default:
+            setTitle('Dashboard');
+        }
+        return;
+      }
 
+      const session = await getSession();
       if (!session?.user?.role) {
         router.replace('/');
         return;
@@ -58,7 +84,7 @@ export default function DashboardPage() {
           setTitle('Dashboard');
       }
     };
-    loadSession();
+    load();
   }, [router]);
 
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -231,29 +257,3 @@ function BellIcon() {
     </svg>
   );
 }
-
-// No longer in use - due to design changes not requiring a menu option
-/* function HamburgerIcon({
-  size = 24,
-  color = 'currentColor',
-}: {
-  size?: number;
-  color?: string;
-}) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={color}
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M4 6h16M4 12h16M4 18h16" />
-    </svg>
-  );
-} */
