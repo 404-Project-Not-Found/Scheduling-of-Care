@@ -185,7 +185,7 @@ export default function DashboardPage() {
           <button
             className="text-lg md:text-4xl font-semibold hover:underline"
             style={{ color: palette.header }}
-            onClick={() => router.push('/staff_schedule')}
+            onClick={() => router.push('/management_dashboard/staff_schedule')}
           >
             Staff Schedule
           </button>

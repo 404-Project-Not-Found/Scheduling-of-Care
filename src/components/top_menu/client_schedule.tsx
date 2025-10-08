@@ -17,7 +17,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { getViewerRole, signOutUser } from '@/lib/data';
 import { useActiveClient } from '@/context/ActiveClientContext';
 
@@ -39,6 +39,8 @@ type PageKey =
   | 'care-add'
   | 'category-cost'
   | 'client-list'
+  | 'assign-carer'
+  | 'staff-list'
   | 'people-list'
   | 'profile'
   | 'organisation-access'
@@ -68,6 +70,12 @@ type ChromeProps = {
   avatarSrc?: string;
   onProfile?: () => void;
   onSignOut?: () => void;
+
+  /** Overrides for Staff Timetable */
+  navItems?: { label: string; href: string }[];
+  headerTitle?: string;
+  bannerTitle?: string;
+  showClientPicker?: boolean;
 };
 
 const ROUTES = {
@@ -166,8 +174,15 @@ export default function DashboardChrome({
   avatarSrc = '/default_profile.png',
   onProfile,
   onSignOut,
+
+  navItems = [],
+  headerTitle,
+  bannerTitle,
+  showClientPicker,
 }: ChromeProps) {
   const router = useRouter();
+  const pathname = usePathname();
+
   const [isSignOut, setIsSignOut] = useState(false);
   const [role, setRole] = useState<'family' | 'carer' | 'management' | null>(
     null
@@ -208,15 +223,31 @@ export default function DashboardChrome({
   const isFamily = role === 'family';
   const isManagement = role === 'management';
 
-  // Banner title, e.g. "Alice’s Budget Report"
+  // Default banner title
   const noun = nounForPage(page);
-  const centeredTitle = useMemo(() => {
+  const bannerDefault = useMemo(() => {
     return activeClient.id && activeClient.name
       ? `${activeClient.name}'s ${noun}`
       : 'No Client Selected';
   }, [activeClient, noun]);
 
-  // When user clicks on logo returns to schedule options page
+  const computedBannerTitle = bannerTitle ?? bannerDefault;
+
+  const computedHeaderTitle =
+    headerTitle ??
+    (isFamily
+      ? 'PWSN Schedule'
+      : isCarer
+        ? 'Carer Dashboard'
+        : 'Client Schedule');
+
+  // Client picker visibility: explicit prop wins; else hide for carers
+  const pickerVisible = showClientPicker ?? !isCarer;
+
+  const showTitleBlock =
+    typeof computedBannerTitle === 'string' &&
+    computedBannerTitle.trim().length > 0;
+
   const handleLogoClick = () => {
     router.push('/schedule_dashboard');
   };
@@ -237,7 +268,7 @@ export default function DashboardChrome({
     setIsSignOut(true);
     setUserMenuOpen(false);
     if (onSignOut) {
-      return onSignOut();
+      onSignOut();
     } else {
       await resetClient();
       await signOutUser();
@@ -267,7 +298,10 @@ export default function DashboardChrome({
 
   // Hide banner for management client-list & family people-list (unchanged from your logic)
   const shouldShowBanner =
-    page !== 'client-list' && !(page === 'people-list' && role === 'family');
+    page !== 'client-list' &&
+    page !== 'staff-list' &&
+    page !== 'assign-carer' &&
+    !(page === 'people-list' && role === 'family');
 
   return (
     <div className="min-h-screen flex flex-col" style={{ color: colors.text }}>
@@ -292,6 +326,7 @@ export default function DashboardChrome({
               priority
             />
           </button>
+
           <button
             onClick={() => router.push(ROUTES.schedule)}
             className={`font-extrabold leading-none text-2xl md:text-3xl ${
@@ -300,107 +335,128 @@ export default function DashboardChrome({
             title="Go to schedule dashboard"
           >
             <span className="font-extrabold leading-none text-2xl md:text-3xl">
-              {isFamily
-                ? 'PWSN Schedule'
-                : isCarer
-                  ? 'Carer Dashboard'
-                  : 'Client Schedule'}
+              {computedHeaderTitle}
             </span>
           </button>
         </div>
 
         {/* Center: navigation menu */}
-        <nav className="hidden lg:flex items-center gap-10 font-extrabold text-white text-xl">
-          {isManagement && (
-            <Link
-              href={ROUTES.clientList}
-              className={activeUnderline(page, 'client-list', role)}
-            >
-              Client List
-            </Link>
-          )}
-
-          {isFamily && (
+        <nav className="hidden lg:flex items-center gap-14 font-extrabold text-white text-xl px-2">
+          {navItems && navItems.length > 0 ? (
             <>
-              <Link
-                href={ROUTES.peopleList}
-                className={activeUnderline(page, 'people-list', role)}
-              >
-                My PWSNs
-              </Link>
-              <Link
-                href={
-                  activeClient.id
-                    ? ROUTES.organisationAccess(activeClient.id)
-                    : '#'
-                }
-                className={
-                  activeClient.id
-                    ? activeUnderline(page, 'organisation-access', role)
-                    : 'cursor-not-allowed opacity-50'
-                }
-                onClick={(e) => {
-                  if (!activeClient.id) e.preventDefault();
-                }}
-              >
-                Organisation
-              </Link>
-            </>
-          )}
-
-          <Link
-            href={ROUTES.budget}
-            className={activeUnderline(page, 'budget', role)}
-          >
-            Budget Report
-          </Link>
-          <Link
-            href={ROUTES.transactions}
-            className={activeUnderline(page, 'transactions', role)}
-          >
-            View Transactions
-          </Link>
-
-          {isFamily && (
-            <Link
-              href={ROUTES.requestForm}
-              className={activeUnderline(page, 'request-form', role)}
-            >
-              Request Form
-            </Link>
-          )}
-
-          {isManagement && (
-            <>
-              <div className="relative">
-                <details className="group">
-                  <summary
-                    className={`inline-flex items-center gap-2 list-none cursor-pointer ${activeUnderline(page, 'care', role)}`}
+              {navItems.map((item) => {
+                const active =
+                  pathname === item.href ||
+                  pathname.startsWith(item.href + '/');
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={
+                      active
+                        ? 'px-2 py-1 underline underline-offset-4'
+                        : 'px-2 py-1 text-white hover:underline'
+                    }
                   >
-                    Care Items <span className="text-white/90">▼</span>
-                  </summary>
-                  <div className="absolute left-1/2 -translate-x-1/2 mt-3 w-80 rounded-md border border-white/30 bg-white text-black shadow-2xl z-50">
-                    <Link
-                      href={ROUTES.careAdd}
-                      className="block w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5"
-                    >
-                      Add a new care item
-                    </Link>
-                    <Link
-                      href={ROUTES.careEdit}
-                      className="block w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5"
-                    >
-                      Edit a care item
-                    </Link>
-                  </div>
-                </details>
-              </div>
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </>
+          ) : (
+            <>
+              {isManagement && (
+                <Link
+                  href={ROUTES.clientList}
+                  className={activeUnderline(page, 'client-list', role!)}
+                >
+                  Client List
+                </Link>
+              )}
+
+              {isFamily && (
+                <>
+                  <Link
+                    href={ROUTES.peopleList}
+                    className={activeUnderline(page, 'people-list', role!)}
+                  >
+                    My PWSNs
+                  </Link>
+                  <Link
+                    href={
+                      activeClient.id
+                        ? ROUTES.organisationAccess(activeClient.id)
+                        : '#'
+                    }
+                    className={
+                      activeClient.id
+                        ? activeUnderline(page, 'organisation-access', role!)
+                        : 'cursor-not-allowed opacity-50'
+                    }
+                    onClick={(e) => {
+                      if (!activeClient.id) e.preventDefault();
+                    }}
+                  >
+                    Organisation
+                  </Link>
+                </>
+              )}
+
               <Link
-                href={ROUTES.requestLog}
-                className={activeUnderline(page, 'request-log', role)}
+                href={ROUTES.budget}
+                className={activeUnderline(page, 'budget', role!)}
               >
-                Request Log
+                Budget Report
               </Link>
+              <Link
+                href={ROUTES.transactions}
+                className={activeUnderline(page, 'transactions', role!)}
+              >
+                View Transactions
+              </Link>
+
+              {isFamily && (
+                <Link
+                  href={ROUTES.requestForm}
+                  className={activeUnderline(page, 'request-form', role!)}
+                >
+                  Request Form
+                </Link>
+              )}
+
+              {isManagement && (
+                <>
+                  <div className="relative">
+                    <details className="group">
+                      <summary
+                        className={`inline-flex items-center gap-2 list-none cursor-pointer ${activeUnderline(page, 'care', role!)}`}
+                      >
+                        Care Items <span className="text-white/90">▼</span>
+                      </summary>
+                      <div className="absolute left-1/2 -translate-x-1/2 mt-3 w-80 rounded-md border border-white/30 bg-white text-black shadow-2xl z-50">
+                        <Link
+                          href={ROUTES.careAdd}
+                          className="block w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5"
+                        >
+                          Add a new care item
+                        </Link>
+                        <Link
+                          href={ROUTES.careEdit}
+                          className="block w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5"
+                        >
+                          Edit a care item
+                        </Link>
+                      </div>
+                    </details>
+                  </div>
+                  <Link
+                    href={ROUTES.requestLog}
+                    className={activeUnderline(page, 'request-log', role!)}
+                  >
+                    Request Log
+                  </Link>
+                </>
+              )}
             </>
           )}
         </nav>
@@ -453,19 +509,22 @@ export default function DashboardChrome({
       {/* ---------- Pink banner ---------- */}
       {shouldShowBanner && (
         <div
-          className="px-4 md:px-8 py-2 md:py-4 grid grid-cols-[auto_1fr_auto] items-center"
-          style={{ backgroundColor: hexToRgba(palette.banner, 0.8) }}
+          className={`relative isolate px-4 md:px-8 py-2 md:py-4 grid grid-cols-[auto_1fr_auto] itemrelative isolate px-4 md:px-8 py-2 md:py-4 grid grid-cols-[auto_1fr_auto] items-center`}
         >
-          {/* Left cell: Client dropdown (HIDDEN for carers) */}
-          {!isCarer ? (
+          <div
+            className="absolute inset-0 z-0 pointer-events-none"
+            style={{ backgroundColor: hexToRgba(palette.banner, 0.8) }}
+            aria-hidden
+          />
+          {/* Left: client picker */}
+
+          {pickerVisible ? (
             <div className="relative justify-self-start">
               <label className="sr-only">Select Client</label>
               <select
                 className="appearance-none h-12 w-56 md:w-64 pl-8 pr-12 rounded-2xl border border-black/30 bg-white font-extrabold text-xl shadow-sm focus:outline-none"
                 value={activeClient.id || ''}
-                onChange={(e) => {
-                  onSelectClientChange(e.target.value);
-                }}
+                onChange={(e) => onSelectClientChange(e.target.value)}
                 aria-label="Select client"
               >
                 <option value="">{'- Select a client -'}</option>
@@ -489,43 +548,34 @@ export default function DashboardChrome({
           )}
 
           {/* Center title */}
-          <div className="relative">
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-              <div
-                className={`flex items-center gap-3 justify-center ${
-                  isCarer
-                    ? '-translate-x-8 md:-translate-x-32'
-                    : 'md:-translate-x-16'
-                }`}
-              >
-                <Link
-                  href={ROUTES.profile}
-                  aria-label="Open client profile"
-                  title="Open client profile"
-                  className="rounded-full focus:outline-none focus:ring-2 focus:ring-black/20"
-                >
+          <div className="relative z-10">
+            {showTitleBlock ? (
+              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                <div className="flex items-center gap-3 justify-center">
                   <Image
                     src="/default_profile.png"
                     alt="Client avatar"
                     width={40}
                     height={40}
                     priority
-                    className="rounded-full border border-black/20 object-cover cursor-pointer hover:opacity-90"
+                    className="rounded-full border border-black/20 object-cover"
                   />
-                </Link>
-                <h1 className="font-extrabold leading-none text-2xl md:text-3xl select-none">
-                  {centeredTitle}
-                </h1>
+                  <h1 className="font-extrabold leading-none text-2xl md:text-3xl select-none">
+                    {computedBannerTitle}
+                  </h1>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="h-10" />
+            )}
           </div>
 
           {/* Right: Print button — ONLY management on Schedule */}
-          <div className="justify-self-end">
+          <div className="relative z-10 justify-self-end">
             {page === 'schedule' && isManagement && (
               <button
                 onClick={handlePrint}
-                className="inline-flex items-center px-6 py-3 rounded-2xl border border-black/30 bg-white font-extrabold text-xl hover:bg-black/5"
+                className="relative z-20 inline-flex items-center px-6 py-3 rounded-2xl border border-black/30 bg-white font-extrabold text-xl hover:bg-black/5"
                 title="Print"
               >
                 Print
