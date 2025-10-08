@@ -25,7 +25,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import DashboardChrome from '@/components/top_menu/client_schedule';
-import CalendarPanel from '@/components/calendar/CalendarPanel';
+import CalendarPanel from '@/components/dashboard/CalendarPanel';
 import TasksPanel from '@/components/tasks/TasksPanel';
 
 import type { Task } from '@/lib/mock/mockApi';

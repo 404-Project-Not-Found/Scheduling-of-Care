@@ -145,9 +145,9 @@ export default function SignupPage() {
 
   // Display role in header
   const roleDisplayMap: Record<string, string> = {
+    family: 'Family/POA',
     carer: 'Carer',
     management: 'Management',
-    family: 'Family/POA',
   };
   const displayRole = roleDisplayMap[role.toLowerCase()] || 'User';
 

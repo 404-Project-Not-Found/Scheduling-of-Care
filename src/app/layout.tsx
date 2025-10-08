@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
+import { Suspense } from 'react';
 import { TransactionProvider } from '@/context/TransactionContext';
 import { ActiveClientProvider } from '@/context/ActiveClientContext';
 import { HelpProvider } from '@/components/help/HelpPanel';
@@ -36,8 +37,10 @@ export default function RootLayout({
           <TransactionProvider>
             <ActiveClientProvider>
               {children}
-              {/* Show one global floating Help button on every page */}
-              <HelpButton/>
+              <Suspense fallback={null}>
+                {/* Show one global floating Help button on every page */}
+                <HelpButton/>
+              </Suspense>
             </ActiveClientProvider>
           </TransactionProvider>
         </HelpProvider>
