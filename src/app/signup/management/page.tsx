@@ -214,13 +214,13 @@ export default function ManagementSignupPage() {
       </form>
 
       {/* Bottom-right help button */}
-      <Link
+      {/* <Link
         href="/help"
         aria-label="Help"
         className="fixed bottom-6 right-6 flex h-12 w-12 items-center justify-center rounded-full bg-[#E37E72] text-white text-2xl font-bold shadow-md hover:shadow-lg"
       >
         ?
-      </Link>
+      </Link> */}
     </div>
   );
 }
