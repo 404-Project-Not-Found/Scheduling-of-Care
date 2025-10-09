@@ -38,7 +38,10 @@ export default function ManageCarerPage() {
       showClientPicker={false}
       navItems={[
         { label: 'Staff List', href: '/management_dashboard/staff_list' },
-        { label: 'Assign Carer', href: '/management_dashboard/assign_carer' },
+        {
+          label: 'Assign Carer',
+          href: '/management_dashboard/assign_carer/manage',
+        },
       ]}
       colors={{
         header: colors.header,
