@@ -326,18 +326,23 @@ export default function DashboardChrome({
               priority
             />
           </button>
-
-          <button
-            onClick={() => router.push(ROUTES.schedule)}
-            className={`font-extrabold leading-none text-2xl md:text-3xl ${
-              page === 'schedule' ? 'underline' : 'text-white hover:underline'
-            }`}
-            title="Go to schedule dashboard"
-          >
-            <span className="font-extrabold leading-none text-2xl md:text-3xl">
+          {page === 'staff-list' || page === 'assign-carer' ? (
+            <span className="font-extrabold leading-none text-2xl md:text-3xl select-none cursor-default">
               {computedHeaderTitle}
             </span>
-          </button>
+          ) : (
+            <button
+              onClick={() => router.push(ROUTES.schedule)}
+              className={`font-extrabold leading-none text-2xl md:text-3xl ${
+                page === 'schedule' ? 'underline' : 'text-white hover:underline'
+              }`}
+              title="Go to schedule dashboard"
+            >
+              <span className="font-extrabold leading-none text-2xl md:text-3xl">
+                {computedHeaderTitle}
+              </span>
+            </button>
+          )}
         </div>
 
         {/* Center: navigation menu */}
