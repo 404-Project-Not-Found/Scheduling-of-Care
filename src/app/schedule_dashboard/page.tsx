@@ -51,9 +51,8 @@ export default function DashboardPage() {
           else if (em.includes('family')) r = 'family';
         }
         if (!r) {
-          //router.replace('/');
-          //return;
-          r = 'carer';
+          router.replace('/');
+          return;
         }
         setRole(r);
         switch (r) {
@@ -74,9 +73,7 @@ export default function DashboardPage() {
 
       const session = await getSession();
       if (!session?.user?.role) {
-        //router.replace('/');
-        //return;
-        setRole('carer');
+        router.replace('/');
         return;
       }
 
