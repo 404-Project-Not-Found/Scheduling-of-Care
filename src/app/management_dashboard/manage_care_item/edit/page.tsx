@@ -13,13 +13,12 @@
  * - Tasks are stored in localStorage (mock mode) and persisted across reloads.
  * - Buttons at the bottom support Cancel (navigate back) and Add (save task).
  */
-import {slugify} from "@/lib/slug";
-
 'use client';
 
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useMemo } from 'react';
 import DashboardChrome from '@/components/top_menu/client_schedule';
+import { useSearchParams } from 'next/navigation';
 import {
   readActiveClientFromStorage,
   writeActiveClientToStorage,
@@ -48,6 +47,9 @@ type Task = {
   dateTo?: string;
 };
 
+const searchParams = useSearchParams();
+const slug = (searchParams.get('slug') || '')?.toLowerCase();
+
 function saveTasks(tasks: Task[]) {
   if (typeof window === 'undefined') return;
   localStorage.setItem('tasks', JSON.stringify(tasks));
@@ -61,8 +63,6 @@ function loadTasks(): Task[] {
   }
 }
 
-
-=======
 const unitToDays: Record<Unit, number> = {
   day: 1,
   week: 7,
@@ -78,7 +78,6 @@ const slugify = (s: string) =>
     .replace(/[^a-z0-9\s-]/g, '')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-');
-
 
 const chromeColors = {
   header: '#3A0000',

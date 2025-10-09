@@ -2,30 +2,22 @@
  * Filename: /app/api/care-item/route.ts
  * Author: Zahra Rizqita
  * Date Created: 24/09/2025
+ * Updated at 05/09/2025
  */
 
 import { NextResponse } from "next/server";
 import {connectDB} from "@/lib/mongodb";
-import Task, { CareItemDoc,  isUnit} from "@/models/CareItem";
+import CareItem, {CareItemDoc, isUnit} from "@/models/CareItem";
 import { toISO } from "@/lib/care-item-helpers/date-helpers";
+import { findOrCreateNewCategory } from "@/lib/category-helpers";
+import {slugify} from "@/lib/slug"
 
 
-export const runtime = "nodejs";
-
-function slugify(s: string) {
-    return s
-        .trim()
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, "") 
-        .replace(/\s+/g, "-") 
-        .replace(/-+/g, "-") 
-        .replace(/^-+|-+$/g, "");
-}
 
 async function ensureUniqueSlug(base: string) {
     let slug = base || "task";
     let i = 2;
-    while(await Task.exists({slug})) {
+    while(await CareItem.exists({slug})) {
        slug = `${base}-${i++}`;
     }
     return slug;
@@ -35,7 +27,7 @@ function errorJson(message: string, status = 400) {
     return NextResponse.json({error: message}, {status});
 }
 
-// GET search list
+// fetch a list of care items
 export async function GET(req: Request) {
     await connectDB();
     const {searchParams} = new URL(req.url);
@@ -55,7 +47,7 @@ export async function GET(req: Request) {
 
     if(q) filter.label = { $regex: q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" };
 
-    const tasks = await Task.find(filter).sort({ updatedAt: -1, createdAt: -1, _id:-1 }).limit(limit).lean();
+    const tasks = await CareItem.find(filter).sort({ updatedAt: -1, createdAt: -1, _id:-1 }).limit(limit).lean();
 
     return NextResponse.json(tasks.map(t => ({
         label: t.label,
@@ -68,7 +60,7 @@ export async function GET(req: Request) {
     })));
 }
 
-// POST creating task
+// create a new care item
 export async function POST(req: Request) {
     await connectDB();
 
@@ -122,7 +114,7 @@ export async function POST(req: Request) {
     } satisfies Partial<CareItemDoc>;
 
     try {
-        const created = await Task.create(payload);
+        const created = await CareItem.create(payload);
         return NextResponse.json(created, {status: 201});
     } catch (err: unknown) {
         if (typeof err === "object" && err && "code" in err) { 

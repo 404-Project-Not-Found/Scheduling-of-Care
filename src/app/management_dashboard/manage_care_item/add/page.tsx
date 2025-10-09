@@ -13,8 +13,7 @@
  * - Tasks are stored in localStorage (mock mode) and persisted across reloads.
  * - Buttons at the bottom support Cancel (navigate back) and Add (save task).
  */
-
-'use client';
+'use client'
 
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useMemo } from 'react';
@@ -45,37 +44,6 @@ type Task = {
   dateFrom?: string;
   dateTo?: string;
 };
-
-
-function saveTasks(tasks: Task[]) {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem('tasks', JSON.stringify(tasks));
-}
-function loadTasks(): Task[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    return JSON.parse(localStorage.getItem('tasks') || '[]') as Task[];
-  } catch {
-    return [];
-  }
-}
-
-const unitToDays: Record<Unit, number> = {
-  day: 1,
-  week: 7,
-  month: 30,
-  year: 365,
-};
-const toDays = (count: number, unit: Unit) =>
-  Math.max(1, Math.floor(count || 1)) * unitToDays[unit];
-const slugify = (s: string) =>
-  s
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-');
-
 
 const chromeColors = {
   header: '#3A0000',
@@ -147,51 +115,46 @@ export default function AddTaskPage() {
     []
   );
 
-  // Updated for backend
   const onCreate = async () => {
     const name = label.trim();
     if (!name) {
       alert('Please enter the task name.');
       return;
     }
-    const tasks = loadTasks();
-
-    const base = slugify(name) || 'task';
-    let slug = base;
-    let i = 2;
-    while (tasks.some((t) => t.slug === slug)) slug = `${base}-${i++}`;
 
     const countNum = parseInt(frequencyCountStr, 10);
     const hasFrequency = Number.isFinite(countNum) && countNum > 0;
-    const frequencyDays = hasFrequency
-      ? toDays(countNum, frequencyUnit)
-      : undefined;
-    const legacyStr = hasFrequency
-      ? `${countNum} ${frequencyUnit}${countNum > 1 ? 's' : ''}`
-      : undefined;
 
-    const payload: Partial<Task>= {
-      label:name,
+    const payload = {
+      clientName: activeName,
+      label: name,
       status: status.trim(),
       category: category.trim(),
-      clientName: activeName.trim() || undefined,
       frequencyCount: hasFrequency ? countNum : undefined,
-      frequencyUnit: hasFrequency ? frequencyUnit: undefined,
+      frequencyUnit: hasFrequency ? frequencyUnit : undefined,
       dateFrom: dateFrom || undefined,
       dateTo: dateTo || undefined,
-      frequency: legacyStr,
-      lastDone: dateFrom && dateTo ? `${dateFrom} to ${dateTo}` : '',
-      deleted: false,
     };
+
     try {
-      const res = await fetch("/api/tasks", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
+      const res = await fetch('/api/v1/care_item', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(payload),
       });
 
-    saveTasks([...(tasks || []), newTask]);
-    router.push('/calendar_dashboard');
+      if(!res.ok) {
+        const msg = await res.json().catch(() => ({}));
+        alert(`Adding task failed: ${msg?.error || res.statusText}`);
+        return;
+      }
+
+      router.push('/calendar_dashboard');
+    } catch(e: unknown) {
+      const message = e instanceof Error? e.message: String(e);
+      alert(`Network error: ${message}`);
+    }
+    
   };
 
   const onLogoClick = () => {
