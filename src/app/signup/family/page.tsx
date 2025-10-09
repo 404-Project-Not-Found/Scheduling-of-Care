@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import Image from "next/image";
-import Link from "next/link";
-import { useState } from "react";
+import Image from 'next/image';
+import Link from 'next/link';
+import { useState } from 'react';
 
 export default function FamilySignupPage() {
   const [showPw, setShowPw] = useState(false);
@@ -11,13 +11,13 @@ export default function FamilySignupPage() {
     <div className="min-h-screen w-full bg-[#F3E9D9] flex flex-col items-center justify-center px-4">
       {/* Top-left logo */}
       <div className="absolute left-8 top-8">
-              <Image
-                  src="/logo-name.png"   
-                  alt="Scheduling of Care"
-                  width={210}          
-                  height={64}
-                  priority
-              />
+        <Image
+          src="/logo-name.png"
+          alt="Scheduling of Care"
+          width={210}
+          height={64}
+          priority
+        />
       </div>
 
       {/* Title - make sure it's centered */}
@@ -29,21 +29,21 @@ export default function FamilySignupPage() {
       <form className="w-full max-w-lg space-y-8 text-black">
         {/* Full Name */}
         <div className="flex flex-col gap-2">
-            <label
-                htmlFor="userName"
-                className="text-[20px] font-medium flex items-center gap-2"
-            >
-                <span>Enter Full Name</span>
-                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#E37E72] text-white text-sm font-bold">
-                i
-                </span>
-            </label>
-            <input
-                id="userName"
-                type="text"
-                className="w-full rounded-md border border-[#6E1B1B] bg-white text-black px-4 py-2.5 text-lg outline-none focus:ring-2 focus:ring-[#4A0A0A]/30"
-                required
-            />
+          <label
+            htmlFor="userName"
+            className="text-[20px] font-medium flex items-center gap-2"
+          >
+            <span>Enter Full Name</span>
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#E37E72] text-white text-sm font-bold">
+              i
+            </span>
+          </label>
+          <input
+            id="userName"
+            type="text"
+            className="w-full rounded-md border border-[#6E1B1B] bg-white text-black px-4 py-2.5 text-lg outline-none focus:ring-2 focus:ring-[#4A0A0A]/30"
+            required
+          />
         </div>
 
         {/* Email */}
@@ -79,7 +79,7 @@ export default function FamilySignupPage() {
           <div className="relative w-full">
             <input
               id="password"
-              type={showPw ? "text" : "password"}
+              type={showPw ? 'text' : 'password'}
               className="w-full rounded-md border border-[#6E1B1B] bg-white text-black px-4 py-2.5 text-lg outline-none focus:ring-2 focus:ring-[#4A0A0A]/30"
               required
             />
@@ -88,7 +88,7 @@ export default function FamilySignupPage() {
               onClick={() => setShowPw((v) => !v)}
               className="absolute top-1/2 -translate-y-1/2 right-[-8rem] text-[16px] underline underline-offset-4 text-[#4A0A0A] hover:opacity-80 whitespace-nowrap"
             >
-              {showPw ? "hide password" : "show password"}
+              {showPw ? 'hide password' : 'show password'}
             </button>
           </div>
         </div>
@@ -106,7 +106,7 @@ export default function FamilySignupPage() {
           </label>
           <input
             id="confirm"
-            type={showPw ? "text" : "password"}
+            type={showPw ? 'text' : 'password'}
             className="w-full rounded-md border border-[#6E1B1B] bg-white text-black px-4 py-2.5 text-lg outline-none focus:ring-2 focus:ring-[#4A0A0A]/30"
             required
           />
@@ -124,8 +124,11 @@ export default function FamilySignupPage() {
 
         {/* Back to role selection link */}
         <p className="text-center text-lg mt-4">
-          Not your role? Back to{" "}
-          <Link href="/signup" className="underline underline-offset-4 hover:opacity-80 font-bold">
+          Not your role? Back to{' '}
+          <Link
+            href="/signup"
+            className="underline underline-offset-4 hover:opacity-80 font-bold"
+          >
             Role Selection
           </Link>
         </p>

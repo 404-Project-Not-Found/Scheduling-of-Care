@@ -1,6 +1,5 @@
-
 'use client';
-// import type { Task } from '@/app/calender_dashboard/types';
+// import type { Task } from '@/app/calendar_dashboard/types';
 import type { Task } from '@/lib/mock/mockApi';
 
 type TasksPanelProps = {

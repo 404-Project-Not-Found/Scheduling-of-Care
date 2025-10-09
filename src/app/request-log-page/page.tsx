@@ -1,9 +1,8 @@
-
 /**
- * File name: Request Log 
+ * File name: Request Log
  * File path: src/app/request-log-page/page.tsx
  * Frontend Author: Devni Wijesinghe
- * 
+ *
  * - Uses <DashboardChrome /> to keep the same header + pink banner across the app.
  * - Loads the active client (from localStorage) and fetches that client's requests
  *   via getRequestsByClientFE(clientId). Switching the client in the pink banner
@@ -11,11 +10,12 @@
  * - Management users can change the Status inline; the <select> is color-coded.
  * - The table section is flush to the white panel’s edges (no inner horizontal padding).
  */
-"use client";
 
-import React, { useState, useEffect, Suspense, useMemo } from "react";
-import { useRouter } from "next/navigation";
-import DashboardChrome from "@/components/top_menu/client_schedule";
+'use client';
+
+import React, { useState, useEffect, Suspense, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
+import DashboardChrome from '@/components/top_menu/client_schedule';
 
 import {
   getViewerRoleFE,
@@ -24,7 +24,7 @@ import {
   writeActiveClientToStorage,
   type Client as ApiClient,
   getRequestsByClientFE,
-} from "@/lib/mock/mockApi";
+} from '@/lib/mock/mockApi';
 
 /** Data shape returned by getRequestsByClientFE() */
 type ApiRequest = {
@@ -34,20 +34,22 @@ type ApiRequest = {
   change: string;
   requestedBy: string;
   dateRequested: string;
-  status: "Pending" | "Approved";
+  status: 'Pending' | 'Approved';
   resolutionDate: string;
 };
 
 const colors = {
-  header: "#3A0000",
-  banner: "#F9C9B1",
-  text: "#000000",
+  header: '#3A0000',
+  banner: '#F9C9B1',
+  text: '#000000',
 };
 
 /* ---------------------------- Page wrapper ---------------------------- */
 export default function RequestLogPage() {
   return (
-    <Suspense fallback={<div className="p-6 text-gray-600">Loading requests…</div>}>
+    <Suspense
+      fallback={<div className="p-6 text-gray-600">Loading requests…</div>}
+    >
       <RequestLogInner />
     </Suspense>
   );
@@ -55,50 +57,54 @@ export default function RequestLogPage() {
 
 /* ----------------------------- Utilities ----------------------------- */
 const parseDateString = (dateStr: string) => {
-  if (!dateStr || dateStr === "-") return new Date(0);
-  const cleanStr = dateStr.replace(/(\d+)(st|nd|rd|th)/i, "$1");
+  if (!dateStr || dateStr === '-') return new Date(0);
+  const cleanStr = dateStr.replace(/(\d+)(st|nd|rd|th)/i, '$1');
   const d = new Date(cleanStr);
   return isNaN(d.getTime()) ? new Date(0) : d;
 };
 
 /** Utility for status color classes */
-const statusClasses = (value: "Pending" | "Approved") =>
-  value === "Pending"
-    ? "bg-yellow-100 text-yellow-800 border-yellow-300"
-    : "bg-green-100 text-green-800 border-green-300";
+const statusClasses = (value: 'Pending' | 'Approved') =>
+  value === 'Pending'
+    ? 'bg-yellow-100 text-yellow-800 border-yellow-300'
+    : 'bg-green-100 text-green-800 border-green-300';
 
 /* ------------------------------ Content ------------------------------ */
 function RequestLogInner() {
   const router = useRouter();
   const role = getViewerRoleFE();
-  const isManagement = role === "management";
+  const isManagement = role === 'management';
 
   // Clients for pink banner select
   const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
   const [activeClientId, setActiveClientId] = useState<string | null>(null);
-  const [activeClientName, setActiveClientName] = useState<string>("");
+  const [activeClientName, setActiveClientName] = useState<string>('');
 
   // Requests
   const [requests, setRequests] = useState<ApiRequest[]>([]);
   const [loading, setLoading] = useState(false);
-  const [errorText, setErrorText] = useState<string>("");
+  const [errorText, setErrorText] = useState<string>('');
 
   // Filters
-  const [search, setSearch] = useState<string>("");
+  const [search, setSearch] = useState<string>('');
   const [sortKey, setSortKey] = useState<keyof ApiRequest | null>(null);
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
 
   /** Load clients */
   useEffect(() => {
     (async () => {
       try {
         const list = await getClientsFE();
-        const mapped = list.map((c: ApiClient) => ({ id: c._id, name: c.name }));
+        const mapped = list.map((c: ApiClient) => ({
+          id: c._id,
+          name: c.name,
+        }));
         setClients(mapped);
 
         const { id, name } = readActiveClientFromStorage();
         const useId = id || mapped[0]?.id || null;
-        const useName = name || (mapped.find((m) => m.id === useId)?.name ?? "");
+        const useName =
+          name || (mapped.find((m) => m.id === useId)?.name ?? '');
         setActiveClientId(useId);
         setActiveClientName(useName);
       } catch {
@@ -115,12 +121,12 @@ function RequestLogInner() {
     }
     (async () => {
       setLoading(true);
-      setErrorText("");
+      setErrorText('');
       try {
         const data = await getRequestsByClientFE(activeClientId);
         setRequests(Array.isArray(data) ? data : []);
       } catch {
-        setErrorText("Failed to load requests for this client.");
+        setErrorText('Failed to load requests for this client.');
         setRequests([]);
       } finally {
         setLoading(false);
@@ -131,10 +137,10 @@ function RequestLogInner() {
   /** Pink banner select */
   const onClientChange = (id: string) => {
     const c = clients.find((x) => x.id === id) || null;
-    const name = c?.name || "";
+    const name = c?.name || '';
     setActiveClientId(id || null);
     setActiveClientName(name);
-    writeActiveClientToStorage(id || "", name);
+    writeActiveClientToStorage(id || '', name);
   };
 
   /** Filter + sort */
@@ -142,8 +148,15 @@ function RequestLogInner() {
     const q = search.trim().toLowerCase();
     if (!q) return requests;
     return requests.filter((r) =>
-      [r.task, r.change, r.requestedBy, r.dateRequested, r.status, r.resolutionDate]
-        .join(" ")
+      [
+        r.task,
+        r.change,
+        r.requestedBy,
+        r.dateRequested,
+        r.status,
+        r.resolutionDate,
+      ]
+        .join(' ')
         .toLowerCase()
         .includes(q)
     );
@@ -156,30 +169,30 @@ function RequestLogInner() {
       let va: string | number;
       let vb: string | number;
 
-      if (sortKey === "dateRequested" || sortKey === "resolutionDate") {
+      if (sortKey === 'dateRequested' || sortKey === 'resolutionDate') {
         va = parseDateString(a[sortKey]).getTime();
         vb = parseDateString(b[sortKey]).getTime();
       } else {
         va = String(a[sortKey]).toLowerCase();
         vb = String(b[sortKey]).toLowerCase();
       }
-      if (va < vb) return sortDir === "asc" ? -1 : 1;
-      if (va > vb) return sortDir === "asc" ? 1 : -1;
+      if (va < vb) return sortDir === 'asc' ? -1 : 1;
+      if (va > vb) return sortDir === 'asc' ? 1 : -1;
       return 0;
     });
     return arr;
   }, [filtered, sortKey, sortDir]);
 
   const toggleSort = (key: keyof ApiRequest) => {
-    if (sortKey === key) setSortDir(sortDir === "asc" ? "desc" : "asc");
+    if (sortKey === key) setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
     else {
       setSortKey(key);
-      setSortDir("asc");
+      setSortDir('asc');
     }
   };
 
   /** Inline status change (Management only) */
-  const handleStatusChange = (reqId: string, next: "Pending" | "Approved") => {
+  const handleStatusChange = (reqId: string, next: 'Pending' | 'Approved') => {
     if (!isManagement) return;
     setRequests((prev) =>
       prev.map((r) =>
@@ -189,13 +202,13 @@ function RequestLogInner() {
               ...r,
               status: next,
               resolutionDate:
-                next === "Approved"
-                  ? new Date().toLocaleDateString("en-GB", {
-                      day: "2-digit",
-                      month: "short",
-                      year: "numeric",
+                next === 'Approved'
+                  ? new Date().toLocaleDateString('en-GB', {
+                      day: '2-digit',
+                      month: 'short',
+                      year: 'numeric',
                     })
-                  : "-",
+                  : '-',
             }
       )
     );
@@ -209,7 +222,7 @@ function RequestLogInner() {
       onClientChange={onClientChange}
       activeClientName={activeClientName}
       colors={colors}
-      onLogoClick={() => router.push("/empty_dashboard")}
+      onLogoClick={() => router.push('/empty_dashboard')}
     >
       {/* Main content: 铺满全屏 */}
       <div className="flex-1 h-[680px] bg-white/80 overflow-auto">
@@ -240,19 +253,50 @@ function RequestLogInner() {
             <table className="w-full border-collapse text-sm text-black">
               <thead className="sticky top-0 bg-[#F9C9B1] shadow-sm">
                 <tr className="text-left">
-                  <th className="p-5 cursor-pointer" onClick={() => toggleSort("task")}>
-                    Task {sortKey === "task" ? (sortDir === "asc" ? "⬆" : "⬇") : "⬍"}
+                  <th
+                    className="p-5 cursor-pointer"
+                    onClick={() => toggleSort('task')}
+                  >
+                    Task{' '}
+                    {sortKey === 'task'
+                      ? sortDir === 'asc'
+                        ? '⬆'
+                        : '⬇'
+                      : '⬍'}
                   </th>
                   <th className="p-5">Requested Change</th>
-                  <th className="p-5 cursor-pointer" onClick={() => toggleSort("requestedBy")}>
-                    Requested By {sortKey === "requestedBy" ? (sortDir === "asc" ? "⬆" : "⬇") : "⬍"}
+                  <th
+                    className="p-5 cursor-pointer"
+                    onClick={() => toggleSort('requestedBy')}
+                  >
+                    Requested By{' '}
+                    {sortKey === 'requestedBy'
+                      ? sortDir === 'asc'
+                        ? '⬆'
+                        : '⬇'
+                      : '⬍'}
                   </th>
-                  <th className="p-5 cursor-pointer" onClick={() => toggleSort("dateRequested")}>
-                    Date Requested{" "}
-                    {sortKey === "dateRequested" ? (sortDir === "asc" ? "⬆" : "⬇") : "⬍"}
+                  <th
+                    className="p-5 cursor-pointer"
+                    onClick={() => toggleSort('dateRequested')}
+                  >
+                    Date Requested{' '}
+                    {sortKey === 'dateRequested'
+                      ? sortDir === 'asc'
+                        ? '⬆'
+                        : '⬇'
+                      : '⬍'}
                   </th>
-                  <th className="p-5 cursor-pointer" onClick={() => toggleSort("status")}>
-                    Status {sortKey === "status" ? (sortDir === "asc" ? "⬆" : "⬇") : "⬍"}
+                  <th
+                    className="p-5 cursor-pointer"
+                    onClick={() => toggleSort('status')}
+                  >
+                    Status{' '}
+                    {sortKey === 'status'
+                      ? sortDir === 'asc'
+                        ? '⬆'
+                        : '⬇'
+                      : '⬍'}
                   </th>
                   <th className="p-5">Resolution Date</th>
                 </tr>
@@ -261,7 +305,10 @@ function RequestLogInner() {
               <tbody>
                 {sorted.length > 0 ? (
                   sorted.map((req) => (
-                    <tr key={req.id} className="border-b hover:bg-[#fff6ea] transition">
+                    <tr
+                      key={req.id}
+                      className="border-b hover:bg-[#fff6ea] transition"
+                    >
                       <td className="p-5 font-semibold">{req.task}</td>
                       <td className="p-5">{req.change}</td>
                       <td className="p-5">{req.requestedBy}</td>
@@ -271,7 +318,10 @@ function RequestLogInner() {
                           <select
                             value={req.status}
                             onChange={(e) =>
-                              handleStatusChange(req.id, e.target.value as "Pending" | "Approved")
+                              handleStatusChange(
+                                req.id,
+                                e.target.value as 'Pending' | 'Approved'
+                              )
                             }
                             className={`rounded-full border px-3 py-1.5 text-xs font-bold ${statusClasses(
                               req.status
@@ -280,7 +330,7 @@ function RequestLogInner() {
                             <option value="Pending">Pending</option>
                             <option value="Approved">Approved</option>
                           </select>
-                        ) : req.status === "Pending" ? (
+                        ) : req.status === 'Pending' ? (
                           <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-bold">
                             Pending
                           </span>

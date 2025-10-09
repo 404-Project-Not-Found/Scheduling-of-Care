@@ -1,5 +1,5 @@
 /**
- * Filename: /app/management_dashboard/manage_care_item/add/page.tsx
+ * File path: /app/management_dashboard/manage_care_item/add/page.tsx
  * Frontend Author: Qingyue Zhao
  * Backend Author: Zahra Rizqita
  * Last Update: 2025-10-02
@@ -16,9 +16,9 @@
 
 'use client';
 
-import { useRouter } from "next/navigation";
-import { useState, useEffect, useMemo } from "react";
-import DashboardChrome from "@/components/top_menu/client_schedule";
+import { useRouter } from 'next/navigation';
+import { useState, useEffect, useMemo } from 'react';
+import DashboardChrome from '@/components/top_menu/client_schedule';
 import {
   readActiveClientFromStorage,
   writeActiveClientToStorage,
@@ -26,9 +26,9 @@ import {
   FULL_DASH_ID,
   NAME_BY_ID,
   type Client as ApiClient,
-} from "@/lib/mock/mockApi";
+} from '@/lib/mock/mockApi';
 
-type Unit = "day" | "week" | "month" | "year";
+type Unit = 'day' | 'week' | 'month' | 'year';
 
 type Task = {
   label: string;
@@ -46,11 +46,42 @@ type Task = {
   dateTo?: string;
 };
 
+
+function saveTasks(tasks: Task[]) {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem('tasks', JSON.stringify(tasks));
+}
+function loadTasks(): Task[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    return JSON.parse(localStorage.getItem('tasks') || '[]') as Task[];
+  } catch {
+    return [];
+  }
+}
+
+const unitToDays: Record<Unit, number> = {
+  day: 1,
+  week: 7,
+  month: 30,
+  year: 365,
+};
+const toDays = (count: number, unit: Unit) =>
+  Math.max(1, Math.floor(count || 1)) * unitToDays[unit];
+const slugify = (s: string) =>
+  s
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
+
+
 const chromeColors = {
-  header: "#3A0000",
-  banner: "#F9C9B1",
-  text: "#2b2b2b",
-  pageBg: '#FAEBDC'
+  header: '#3A0000',
+  banner: '#F9C9B1',
+  text: '#2b2b2b',
+  pageBg: '#FAEBDC',
 };
 
 type Client = { id: string; name: string };
@@ -60,21 +91,27 @@ export default function AddTaskPage() {
 
   // Topbar client list
   const [clients, setClients] = useState<Client[]>([]);
-  const [{ id: activeId, name: activeName }, setActive] = useState<{ id: string | null; name: string }>({
+  const [{ id: activeId, name: activeName }, setActive] = useState<{
+    id: string | null;
+    name: string;
+  }>({
     id: null,
-    name: "",
+    name: '',
   });
 
   useEffect(() => {
     (async () => {
       try {
         const list = await getClientsFE();
-        const mapped: Client[] = list.map((c: ApiClient) => ({ id: c._id, name: c.name }));
+        const mapped: Client[] = list.map((c: ApiClient) => ({
+          id: c._id,
+          name: c.name,
+        }));
         setClients(mapped);
 
         const stored = readActiveClientFromStorage();
         const resolvedId = stored.id || FULL_DASH_ID;
-        const resolvedName = stored.name || NAME_BY_ID[resolvedId] || "";
+        const resolvedName = stored.name || NAME_BY_ID[resolvedId] || '';
         setActive({ id: stored.id || null, name: resolvedName });
       } catch {
         setClients([]);
@@ -84,29 +121,29 @@ export default function AddTaskPage() {
 
   const onClientChange = (id: string) => {
     if (!id) {
-      setActive({ id: null, name: "" });
-      writeActiveClientToStorage("", "");
+      setActive({ id: null, name: '' });
+      writeActiveClientToStorage('', '');
       return;
     }
     const c = clients.find((x) => x.id === id);
-    const name = c?.name || "";
+    const name = c?.name || '';
     setActive({ id, name });
     writeActiveClientToStorage(id, name);
   };
 
   // Form states
-  const [label, setLabel] = useState("");
-  const [status, setStatus] = useState("in progress");
-  const [category, setCategory] = useState("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [notes, setNotes] = useState("");
+  const [label, setLabel] = useState('');
+  const [status, setStatus] = useState('in progress');
+  const [category, setCategory] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [notes, setNotes] = useState('');
 
-  const [frequencyCountStr, setFrequencyCountStr] = useState<string>("");
-  const [frequencyUnit, setFrequencyUnit] = useState<Unit>("day");
+  const [frequencyCountStr, setFrequencyCountStr] = useState<string>('');
+  const [frequencyUnit, setFrequencyUnit] = useState<Unit>('day');
 
   const statusOptions = useMemo(
-    () => ["in progress", "Completed", "Not started", "Paused", "Cancelled"],
+    () => ['in progress', 'Completed', 'Not started', 'Paused', 'Cancelled'],
     []
   );
 
@@ -114,12 +151,24 @@ export default function AddTaskPage() {
   const onCreate = async () => {
     const name = label.trim();
     if (!name) {
-      alert("Please enter the task name.");
+      alert('Please enter the task name.');
       return;
     }
+    const tasks = loadTasks();
+
+    const base = slugify(name) || 'task';
+    let slug = base;
+    let i = 2;
+    while (tasks.some((t) => t.slug === slug)) slug = `${base}-${i++}`;
 
     const countNum = parseInt(frequencyCountStr, 10);
     const hasFrequency = Number.isFinite(countNum) && countNum > 0;
+    const frequencyDays = hasFrequency
+      ? toDays(countNum, frequencyUnit)
+      : undefined;
+    const legacyStr = hasFrequency
+      ? `${countNum} ${frequencyUnit}${countNum > 1 ? 's' : ''}`
+      : undefined;
 
     const payload: Partial<Task>= {
       label:name,
@@ -130,8 +179,8 @@ export default function AddTaskPage() {
       frequencyUnit: hasFrequency ? frequencyUnit: undefined,
       dateFrom: dateFrom || undefined,
       dateTo: dateTo || undefined,
-      frequency: hasFrequency ? `${countNum} ${frequencyUnit}${countNum > 1 ? "s" : ""}` : undefined,
-      lastDone: dateFrom && dateTo ? `${dateFrom} to ${dateTo}` : "",
+      frequency: legacyStr,
+      lastDone: dateFrom && dateTo ? `${dateFrom} to ${dateTo}` : '',
       deleted: false,
     };
     try {
@@ -141,27 +190,12 @@ export default function AddTaskPage() {
         body: JSON.stringify(payload),
       });
 
-      if(res.status == 409) {
-        const msg = await res.text().catch(() => "");
-        alert(msg || "A care item with that name already exist.")
-      }
-
-      if(!res.ok) {
-        const msg = await res.json().catch(() => ({}));
-        alert(`Adding care item failed: ${msg?.error || res.statusText}`);
-        return;
-      }
-
-      router.push("/calendar_dashboard");
-      
-    } catch(e: unknown) {
-      const message = e instanceof Error? e.message: String(e);
-      alert(`Network error: ${message}`);
-    }
+    saveTasks([...(tasks || []), newTask]);
+    router.push('/calendar_dashboard');
   };
 
   const onLogoClick = () => {
-    router.push("/empty_dashboard");
+    router.push('/empty_dashboard');
   };
 
   return (
@@ -178,7 +212,9 @@ export default function AddTaskPage() {
       <div className="w-full h-[720px] bg-[#FAEBDC] flex flex-col">
         {/* Section title bar */}
         <div className="bg-[#3A0000] text-white px-6 py-3">
-          <h2 className="text-xl md:text-3xl font-extrabold px-5">Add New Care Item</h2>
+          <h2 className="text-xl md:text-3xl font-extrabold px-5">
+            Add New Care Item
+          </h2>
         </div>
 
         {/* Form content */}
@@ -228,7 +264,9 @@ export default function AddTaskPage() {
                   inputMode="numeric"
                   pattern="[0-9]*"
                   value={frequencyCountStr}
-                  onChange={(e) => setFrequencyCountStr(e.target.value.replace(/[^\d]/g, ""))}
+                  onChange={(e) =>
+                    setFrequencyCountStr(e.target.value.replace(/[^\d]/g, ''))
+                  }
                   className="w-28 rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black"
                   placeholder="e.g., 90"
                 />
@@ -271,7 +309,7 @@ export default function AddTaskPage() {
             {/* Footer buttons */}
             <div className="pt-6 flex items-center justify-center gap-30">
               <button
-                onClick={() => router.push("/calender_dashboard")}
+                onClick={() => router.push('/calendar_dashboard')}
                 className="px-6 py-2.5 rounded-full border border-[#3A0000] text-gray-700 hover:bg-gray-200"
               >
                 Cancel
@@ -290,7 +328,13 @@ export default function AddTaskPage() {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="grid grid-cols-[180px_1fr] items-center gap-4">
       <div className="text-xl font-semibold text-[#1c130f]">{label}</div>

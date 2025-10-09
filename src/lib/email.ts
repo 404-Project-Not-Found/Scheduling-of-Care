@@ -1,5 +1,5 @@
 /**
- * Filename: /lib/emails.ts
+ * File path: /lib/emails.ts
  * Author: Denise Alexander
  * Date Created: 17/09/2025
  */

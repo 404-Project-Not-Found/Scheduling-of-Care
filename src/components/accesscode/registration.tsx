@@ -1,5 +1,5 @@
 /**
- * Filename: /components/accesscode/Registration.tsx
+ * File path: /components/accesscode/Registration.tsx
  * Author: Qingyue Zhao
  * Date Created: 02/10/2025
  *
@@ -8,6 +8,8 @@
  * - Layout identical to AddAccessCodePanel.
  * - Notice bar text replaced with client registration instruction.
  * - Blocks background scrolling when open, closes on ESC key or overlay click.
+ *
+ * Last Updated by Denise Alexander - 7/10/2025: added back-end integration to register new client.
  */
 
 'use client';
@@ -33,6 +35,8 @@ export default function RegisterClientPanel({
 }) {
   const [accessCode, setAccessCode] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -46,18 +50,53 @@ export default function RegisterClientPanel({
     if (!open) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = prev; };
+    return () => {
+      document.body.style.overflow = prev;
+    };
   }, [open]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    setError(null);
+    setSuccess(null);
+
+    // Ensure access code is not empty!!
     if (!accessCode.trim()) {
       setError('Access code cannot be empty.');
       return;
     }
-    setError(null);
-    // TODO: backend request
-    console.log('Submitting access code:', accessCode);
+
+    setLoading(true);
+
+    try {
+      // Registers the client using the provided access code
+      const res = await fetch('/api/v1/management/register_client', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accessCode }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to register client.');
+      }
+
+      // Show success message from server
+      setSuccess(data.message);
+      setAccessCode('');
+
+      // Automatically close the modal after 5 seconds
+      setTimeout(() => {
+        setSuccess(null);
+        onClose();
+      }, 5000);
+    } catch (err) {
+      // Handle errors by gracefully displaying error messages
+      setError(err instanceof Error ? err.message : 'Something went wrong.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -66,7 +105,9 @@ export default function RegisterClientPanel({
         aria-label="Close overlay"
         onClick={onClose}
         className={`fixed inset-0 z-[90] bg-black/40 transition-opacity duration-300 ${
-          open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          open
+            ? 'opacity-100 pointer-events-auto'
+            : 'opacity-0 pointer-events-none'
         }`}
       />
 
@@ -99,16 +140,44 @@ export default function RegisterClientPanel({
 
         {/* Notice bar */}
         <div
-            className="w-full px-6 md:px-8 py-5 md:py-6"
-            style={{ backgroundColor: palette.notice }}
-            >
-            <p className="text-sm sm:text-base md:text-lg leading-relaxed text-black">
-                <span className="font-bold">Notice:</span>{' '}
-                Please request a client access code from the family member in charge of the client’s account to register a new client. 
-                Once registered, the system will automatically send an access request to the client’s family member/POA. 
-                After their approval, you will be able to access all information related to that client.
-            </p>
+          className="w-full px-6 md:px-8 py-5 md:py-6"
+          style={{ backgroundColor: palette.notice }}
+        >
+          <p className="text-sm sm:text-base md:text-lg leading-relaxed text-black">
+            <span className="font-bold">Notice:</span> Please request a client
+            access code from the family member in charge of the client’s account
+            to register a new client. Once registered, the system will
+            automatically send an access request to the client’s family
+            member/POA. After their approval, you will be able to access all
+            information related to that client.
+          </p>
         </div>
+
+        {error && (
+          <div
+            className="w-full text-center rounded-md border px-4 py-2 text-sm font-medium"
+            style={{
+              borderColor: '#ff4d4d',
+              color: '#b30000',
+              backgroundColor: '#ffe6e6',
+            }}
+          >
+            {error}
+          </div>
+        )}
+
+        {success && (
+          <div
+            className="w-full text-center rounded-md border px-4 py-2 text-sm font-medium"
+            style={{
+              borderColor: '#3bb273',
+              color: '#155724',
+              backgroundColor: '#e6f4ea',
+            }}
+          >
+            {success}
+          </div>
+        )}
 
         {/* Body */}
         <section className="flex-1 flex flex-col items-center justify-start">
@@ -121,12 +190,12 @@ export default function RegisterClientPanel({
               onChange={(e) => setAccessCode(e.target.value)}
               placeholder="Enter access code"
               className="h-12 w-full text-lg text-center rounded border outline-none"
-              style={{ borderColor: palette.inputBorder, color: palette.text, background: 'white' }}
+              style={{
+                borderColor: palette.inputBorder,
+                color: palette.text,
+                background: 'white',
+              }}
             />
-
-            {error && (
-              <span className="text-sm text-red-600">{error}</span>
-            )}
 
             <button
               type="submit"

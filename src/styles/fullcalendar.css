@@ -1,7 +1,12 @@
 /* ===== FullCalendar 基础覆写 ===== */
-.fc-theme-standard .fc-scrollgrid { border: none !important; }
+.fc-theme-standard .fc-scrollgrid {
+  border: none !important;
+}
 .fc-theme-standard td,
-.fc-theme-standard th { border: none !important; background: transparent !important; }
+.fc-theme-standard th {
+  border: none !important;
+  background: transparent !important;
+}
 
 .fc .fc-col-header-cell-cushion {
   text-transform: uppercase !important;
@@ -10,12 +15,23 @@
   font-size: 0.9rem;
 }
 
-.fc-toolbar-title { font-size: 1.5rem; font-weight: 700; color: #3d0000; }
-.fc .fc-toolbar button {
-  background: none !important; border: none !important; box-shadow: none !important;
-  color: #f6a56f !important; font-size: 1.5rem; padding: 0 8px;
+.fc-toolbar-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #3d0000;
 }
-.fc .fc-toolbar button:hover { background: none !important; color: #d96f3d !important; }
+.fc .fc-toolbar button {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #f6a56f !important;
+  font-size: 1.5rem;
+  padding: 0 8px;
+}
+.fc .fc-toolbar button:hover {
+  background: none !important;
+  color: #d96f3d !important;
+}
 
 /* ===== 日期数字的通用样式（放在高亮之前）===== */
 .fc-daygrid-day-number {
@@ -25,20 +41,22 @@
   font-size: 18px;
   /* 你要“更往左下”就调这里的 margin（上 20px，左 12px 举例）*/
   margin: 16px 30 -2 0;
-  padding: 0;               /* 不要影响高亮，由高亮自己指定 */
+  padding: 0; /* 不要影响高亮，由高亮自己指定 */
   text-align: left;
-  display: block;           /* 高亮里会再覆盖为 inline-block */
+  display: block; /* 高亮里会再覆盖为 inline-block */
 }
 
 /* 第一行与周几的距离 */
-.fc-daygrid-day-top { padding-top: 12px; }
+.fc-daygrid-day-top {
+  padding-top: 12px;
+}
 
 /* ===== 高亮（放在最后，带 !important 防止被覆盖）===== */
 
 /* 今日：红色圆圈 */
 .fc-daygrid-day.fc-today-custom .fc-daygrid-day-number {
   position: relative; /* 给伪元素定位的锚点 */
-  z-index: 1;         /* 确保文字在前面 */
+  z-index: 1; /* 确保文字在前面 */
 }
 
 .fc-daygrid-day.fc-today-custom .fc-daygrid-day-number::before {
@@ -72,4 +90,3 @@
   transform: translate(-50%, -50%);
   z-index: -1;
 }
-
