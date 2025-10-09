@@ -182,6 +182,7 @@ function ClientListInner() {
   return (
     <DashboardChrome
       page="staff-list"
+      headerTitle="Staff Schedule"
       navItems={[
         { label: 'Staff List', href: '/management_dashboard/staff_list' },
         {
