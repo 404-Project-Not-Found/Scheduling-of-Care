@@ -47,8 +47,7 @@ type Task = {
   dateTo?: string;
 };
 
-const searchParams = useSearchParams();
-const slug = (searchParams.get('slug') || '')?.toLowerCase();
+
 
 function saveTasks(tasks: Task[]) {
   if (typeof window === 'undefined') return;
@@ -90,7 +89,8 @@ type Client = { id: string; name: string };
 
 export default function AddTaskPage() {
   const router = useRouter();
-
+  const searchParams = useSearchParams();
+  const slug = (searchParams.get('slug') || '')?.toLowerCase();
   // Topbar client list
   const [clients, setClients] = useState<Client[]>([]);
   const [{ id: activeId, name: activeName }, setActive] = useState<{
@@ -118,8 +118,29 @@ export default function AddTaskPage() {
       } catch {
         setClients([]);
       }
+
+
+      const res = await fetch(`/api/v1/care_item/${encodeURIComponent(slug)}`, {cache: "no-store"});
+      if(!res.ok) {
+        const msg = await res.json().catch(() => ({}));
+        alert(`Could not load care item: ${msg?.error || res.statusText}`);
+        router.back();
+        return;
+      }
+      const t = await res.json();
+
+      setLabel(t.label || "");
+      setStatus(t.status || "");
+      setCategory(t.category || "");
+
+      if(typeof t.frequencyCount === "number" && t.frequencyUnit) {
+        setFrequencyCountStr(String(t.frequencyCount));
+        setFrequencyUnit(t.frequencyUnit);
+      }
+      if(t.dateFrom) setDateFrom(t.dateFrom);
+      if(t.dateTo) setDateTo(t.dateTo);
     })();
-  }, []);
+  }, [slug, router]);
 
   const onClientChange = (id: string) => {
     if (!id) {
@@ -161,12 +182,18 @@ export default function AddTaskPage() {
     return entry ? entry.tasks : [];
   }, [catalog, category]);
 
-  const onDelete = () => {
+  const onDelete = async () => {
     if (!confirm('Discard this new task and go back?')) return;
-    router.back();
+    const res = await fetch(`/api/v1/care_item/${encodeURIComponent(slug)}`, { method: 'DELETE'});
+    if(!res.ok) {
+      const msg = await res.json().catch(() => ({}));
+      alert(`Delete failed: ${msg?.error || res.statusText}`);
+      return;
+    }
+    router.push('/calendar_dashboard');
   };
 
-  const onCreate = () => {
+  const onCreate = async () => {
     const name = label.trim();
     if (!name) {
       alert('Please enter the task name.');
@@ -176,12 +203,6 @@ export default function AddTaskPage() {
       alert('Please select a category.');
       return;
     }
-    const tasks = loadTasks();
-
-    const base = slugify(name) || 'task';
-    let slug = base;
-    let i = 2;
-    while (tasks.some((t) => t.slug === slug)) slug = `${base}-${i++}`;
 
     const countNum = parseInt(frequencyCountStr, 10);
     const hasFrequency = Number.isFinite(countNum) && countNum > 0;
@@ -192,23 +213,31 @@ export default function AddTaskPage() {
       ? `${countNum} ${frequencyUnit}${countNum > 1 ? 's' : ''}`
       : undefined;
 
-    const newTask: Task = {
+    const payload = {
       clientName: activeName,
       label: name,
       slug,
       status: status.trim(),
       category: category.trim(),
       frequencyCount: hasFrequency ? countNum : undefined,
-      frequencyUnit: hasFrequency ? frequencyUnit : undefined,
+      frequencyUnit: hasFrequency ? (frequencyUnit as Unit) : undefined,
       frequencyDays,
       dateFrom: dateFrom || undefined,
       dateTo: dateTo || undefined,
-      frequency: legacyStr,
-      lastDone: dateFrom && dateTo ? `${dateFrom} to ${dateTo}` : '',
       deleted: false,
     };
 
-    saveTasks([...(tasks || []), newTask]);
+    const res = await fetch(`/api/v1/care_item/${encodeURIComponent(slug)}`, {
+      method: 'PUT',    
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload),
+    });
+
+    if(!res.ok) {
+      const msg = await res.json().catch(() => ({}));
+      alert(`Save failed: ${msg?.error || res.statusText}`);
+      return;
+    }
     router.push('/calendar_dashboard');
   };
 
