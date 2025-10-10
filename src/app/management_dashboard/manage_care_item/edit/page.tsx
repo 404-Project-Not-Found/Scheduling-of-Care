@@ -37,6 +37,7 @@ type Task = {
   status: string;
   category: string;
   clientName?: string;
+  clientId?: string;
   deleted?: boolean;
   frequency?: string;
   lastDone?: string;
@@ -45,8 +46,8 @@ type Task = {
   frequencyUnit?: Unit;
   dateFrom?: string;
   dateTo?: string;
+  notes?: string;
 };
-
 
 
 function saveTasks(tasks: Task[]) {
@@ -86,11 +87,31 @@ const chromeColors = {
 };
 
 type Client = { id: string; name: string };
+type CatalogItem = {category: string; tasks: {label: string; slug: string}[]};
+
+const LS_ACTIVE = 'activeClient';
+
+function readActive(): {id: string; name: string} { 
+  if(typeof window === 'undefined') return {id: '', name: ''};
+  try { 
+    const raw = localStorage.getItem(LS_ACTIVE);
+    if(!raw) return {id: '', name: ''};
+    const parsed = JSON.parse(raw) as {id?: string; name?: string};
+    return {id: parsed.id ?? '', name: parsed.name ?? ''};
+  } catch { 
+    return {id: '', name: ''}; 
+  } 
+} 
+function writeActive(id: string, name: string) { 
+  if(typeof window == 'undefined') return;
+  localStorage.setItem(LS_ACTIVE, JSON.stringify({ id, name })); 
+}
+
 
 export default function AddTaskPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const slug = (searchParams.get('slug') || '')?.toLowerCase();
+  const slugParams = (searchParams.get('slug') || '')?.toLowerCase();
   // Topbar client list
   const [clients, setClients] = useState<Client[]>([]);
   const [{ id: activeId, name: activeName }, setActive] = useState<{
@@ -100,61 +121,6 @@ export default function AddTaskPage() {
     id: null,
     name: '',
   });
-
-  useEffect(() => {console.log('NEXT_PUBLIC_ENABLE_MOCK =', process.env.NEXT_PUBLIC_ENABLE_MOCK);}, []);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const list = await getClientsFE();
-        const mapped: Client[] = list.map((c: ApiClient) => ({
-          id: c._id,
-          name: c.name,
-        }));
-        setClients(mapped);
-
-        const stored = readActiveClientFromStorage();
-        const resolvedId = stored.id || FULL_DASH_ID;
-        const resolvedName = stored.name || NAME_BY_ID[resolvedId] || '';
-        setActive({ id: stored.id || null, name: resolvedName });
-      } catch {
-        setClients([]);
-      }
-
-
-      const res = await fetch(`/api/v1/care_item/${encodeURIComponent(slug)}`, {cache: "no-store"});
-      if(!res.ok) {
-        const msg = await res.json().catch(() => ({}));
-        alert(`Could not load care item: ${msg?.error || res.statusText}`);
-        router.back();
-        return;
-      }
-      const t = await res.json();
-
-      setLabel(t.label || "");
-      setStatus(t.status || "");
-      setCategory(t.category || "");
-
-      if(typeof t.frequencyCount === "number" && t.frequencyUnit) {
-        setFrequencyCountStr(String(t.frequencyCount));
-        setFrequencyUnit(t.frequencyUnit);
-      }
-      if(t.dateFrom) setDateFrom(t.dateFrom);
-      if(t.dateTo) setDateTo(t.dateTo);
-    })();
-  }, [slug, router]);
-
-  const onClientChange = (id: string) => {
-    if (!id) {
-      setActive({ id: null, name: '' });
-      writeActiveClientToStorage('', '');
-      return;
-    }
-    const c = clients.find((x) => x.id === id);
-    const name = c?.name || '';
-    setActive({ id, name });
-    writeActiveClientToStorage(id, name);
-  };
 
   // Form states
   const [label, setLabel] = useState('');
@@ -167,6 +133,101 @@ export default function AddTaskPage() {
   const [frequencyCountStr, setFrequencyCountStr] = useState<string>('');
   const [frequencyUnit, setFrequencyUnit] = useState<Unit>('day');
 
+  // ---- keep dropdown logic: Category → Task name ----
+  const [catalog, setCatalog] = useState<CatalogItem[]>([]);
+  const tasksInCategory = useMemo(() => {
+    const entry = catalog.find((c) => c.category === category);
+    return entry ? entry.tasks : [];
+  }, [catalog, category]);
+
+  // Load client
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('/api/v1/client', {cache: 'no-store'});
+        if(!res.ok) throw new Error("Failed to load client -- Editing task");
+
+        const list = await res.json() as Array<{_id: string; name: string}>;
+        const mapped: Client[] = list.map(c => ({id: c._id, name: c.name}));
+        setClients(mapped);
+        const stored = readActive() as {id?: string; name?: string};
+        const selected = mapped.find((c) => c.id === stored.id) ?? mapped[0] ?? { id: null, name: '' };
+        
+        setActive({id: selected.id ?? null, name: selected?.name ?? ''});
+      } catch {
+        setClients([]);
+      }
+    })();
+  }, []);
+
+  //Load categories
+  useEffect(() => {
+    (async() => {
+      try {
+        const res = await fetch('/api/v1/category', {cache: 'no-store'});
+        if(!res.ok) throw new Error("Failed to load category -- Editing task");
+        const data: Array<{ name: string; slug: string }> = await res.json();
+        setCatalog(data.map((c) => ({category: c.name, tasks: []})));
+      } catch {
+        setCatalog([]);
+      }
+    }
+    )();
+  }, []);
+
+  //Load care items
+  useEffect(() => {
+    if(!slugParams) return;
+    (async() => {
+    
+        const res = await fetch(`/api/v1/care_item/${encodeURIComponent(slugParams)}`, { cache: 'no-store' });
+        if(!res.ok) {
+          const msg: {error?: string} = await res.json().catch(() => ({}));
+          alert(`Cannot load care item: ${msg.error || res.statusText}`);
+          router.back();
+          return;
+        }
+
+        const t: Task = await res.json();
+
+        setLabel(t.label || "");
+        setStatus((statusOptions.includes(t.status as any) ? t.status : 'in progress') as typeof status);
+        setCategory(t.category || "");
+        if(typeof t.frequencyCount === "number" && t.frequencyUnit) {
+          setFrequencyCountStr(String(t.frequencyCount));
+          setFrequencyUnit(t.frequencyUnit);
+        }
+        else {
+          setFrequencyCountStr('');
+          setFrequencyUnit('day');
+        }
+        if(t.dateFrom) setDateFrom(t.dateFrom);
+        if(t.dateTo) setDateTo(t.dateTo);
+        setNotes(t.notes ?? '');
+
+        if(t.clientId) {
+          const match = clients.find(c => c.id === t.clientId);
+          if(match) setActive({id: match.id, name:match.name});
+        }
+        else if(t.clientName && !activeName) {
+          setActive(prev => ({ id: prev.id, name: t.clientName! }));
+        }
+      })(); 
+  }, []);
+
+  const onClientChange = (id: string) => {
+    if (!id) {
+      setActive({ id: null, name: '' });
+      writeActive('', '');
+      return;
+    }
+    const c = clients.find((x) => x.id === id);
+    const name = c?.name || '';
+    setActive({ id, name });
+    writeActive(id, name);
+  };
+
+
   const statusOptions = useMemo(
     () => ['in progress', 'Completed', 'Not started', 'Paused', 'Cancelled'],
     []
@@ -177,16 +238,10 @@ export default function AddTaskPage() {
     dangerHover: '#a40f0f',
   };
 
-  // ---- keep dropdown logic: Category → Task name ----
-  const catalog = useMemo(() => getTaskCatalogFE(), []);
-  const tasksInCategory = useMemo(() => {
-    const entry = catalog.find((c) => c.category === category);
-    return entry ? entry.tasks : [];
-  }, [catalog, category]);
 
   const onDelete = async () => {
     if (!confirm('Discard this new task and go back?')) return;
-    const res = await fetch(`/api/v1/care_item/${encodeURIComponent(slug)}`, { method: 'DELETE'});
+    const res = await fetch(`/api/v1/care_item/${encodeURIComponent(slugParams)}`, { method: 'DELETE'});
     if(!res.ok) {
       const msg = await res.json().catch(() => ({}));
       alert(`Delete failed: ${msg?.error || res.statusText}`);
@@ -195,7 +250,7 @@ export default function AddTaskPage() {
     router.push('/calendar_dashboard');
   };
 
-  const onCreate = async () => {
+  const onSave = async () => {
     const name = label.trim();
     if (!name) {
       alert('Please enter the task name.');
@@ -215,21 +270,24 @@ export default function AddTaskPage() {
       ? `${countNum} ${frequencyUnit}${countNum > 1 ? 's' : ''}`
       : undefined;
 
-    const payload = {
-      clientName: activeName,
+    const payload: Partial<Task> & {
+      clientId?: string | null;
+      clientName?: string;
+    } = {
+      clientId: activeId ?? undefined,
+      clientName: activeName || undefined,
       label: name,
-      slug,
       status: status.trim(),
       category: category.trim(),
       frequencyCount: hasFrequency ? countNum : undefined,
       frequencyUnit: hasFrequency ? (frequencyUnit as Unit) : undefined,
-      frequencyDays,
       dateFrom: dateFrom || undefined,
       dateTo: dateTo || undefined,
+      notes: notes.trim() || undefined,
       deleted: false,
     };
 
-    const res = await fetch(`/api/v1/care_item/${encodeURIComponent(slug)}`, {
+    const res = await fetch(`/api/v1/care_item/${encodeURIComponent(slugParams)}`, {
       method: 'PUT',    
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(payload),
@@ -401,7 +459,7 @@ export default function AddTaskPage() {
                 Cancel
               </button>
               <button
-                onClick={onCreate}
+                onClick={onSave}
                 className="rounded-full bg-[#F39C6B] hover:bg-[#ef8a50] text-[#1c130f] text-xl font-bold px-7.5 py-2.5 shadow"
               >
                 Save

@@ -16,16 +16,8 @@
 'use client'
 
 import { useRouter } from 'next/navigation';
-import { useState, useEffect, useMemo, ChangeEventHandler, MouseEventHandler } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import DashboardChrome from '@/components/top_menu/client_schedule';
-import {
-  readActiveClientFromStorage,
-  writeActiveClientToStorage,
-  getClientsFE,
-  FULL_DASH_ID,
-  NAME_BY_ID,
-  type Client as ApiClient,
-} from '@/lib/mock/mockApi';
 
 type Unit = 'day' | 'week' | 'month' | 'year';
 
@@ -35,7 +27,9 @@ type Task = {
   slug: string;
   status: string;
   category: string;
+  categoryId?: string;
   clientName?: string;
+  clientId?: string;
   deleted?: boolean;
   frequency?: string;
   lastDone?: string;
@@ -44,6 +38,7 @@ type Task = {
   frequencyUnit?: Unit;
   dateFrom?: string;
   dateTo?: string;
+  notes?: string;
 };
 
 type CatalogItem = {
@@ -155,6 +150,7 @@ export default function AddTaskPage() {
     const hasFrequency = Number.isFinite(countNum) && countNum > 0;
 
     const payload = {
+      clientId: activeId ?? undefined,
       clientName: activeName,
       label: name,
       status: status.trim(),
