@@ -67,6 +67,10 @@ export default function AddTaskPage() {
     name: '',
   });
 
+  // Added catalog implementation
+  type CatalogItem = {category: string; tasks: {label: string; slug: string}[]};
+  const [catalog, setCatalog] = useState<CatalogItem[]>([]);
+
   useEffect(() => {
     (async () => {
       try {
@@ -86,6 +90,21 @@ export default function AddTaskPage() {
       }
     })();
   }, []);
+
+  // Load categories
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('/api/v1/category', {cache: 'no-store'});
+        if(!res.ok) throw new Error('failed');
+        const data = (await res.json()) as {name: string; slug: string}[];
+        setCatalog(data.map((c) => ({category: c.name, tasks: []})));
+      } catch {
+        setCatalog([]);
+      }
+    })();
+  }, []);
+
 
   const onClientChange = (id: string) => {
     if (!id) {
@@ -109,6 +128,13 @@ export default function AddTaskPage() {
 
   const [frequencyCountStr, setFrequencyCountStr] = useState<string>('');
   const [frequencyUnit, setFrequencyUnit] = useState<Unit>('day');
+
+  const tasksInCategory = useMemo( 
+    () => {
+      const entry = catalog.find(c => c.category === category);
+      return entry ? entry.tasks : [];
+    }, [catalog, category]
+  ); 
 
   const statusOptions = useMemo(
     () => ['in progress', 'Completed', 'Not started', 'Paused', 'Cancelled'],
