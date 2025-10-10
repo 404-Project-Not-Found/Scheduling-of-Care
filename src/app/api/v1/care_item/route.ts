@@ -50,7 +50,6 @@ export async function GET(req: Request): Promise<NextResponse> {
   const q = (searchParams.get("q") || "").trim().toLowerCase();
   const status = searchParams.get("status") || undefined;
   const category = searchParams.get("category") || undefined;
-  const clientName = searchParams.get("clientName") || undefined;
   const clientIdStr = searchParams.get("clientId") || undefined;
   const includeDeleted =
     (searchParams.get("includeDeleted") || "false").toLowerCase() === "true";
@@ -62,9 +61,20 @@ export async function GET(req: Request): Promise<NextResponse> {
   const filter: Record<string, unknown> = {};
   if (!includeDeleted) filter.deleted = { $ne: true };
   if (status) filter.status = status;
-  if (category) filter.category = category;
-  if (clientName) filter.clientName = clientName;
-  if (clientIdStr && Types.ObjectId.isValid(clientIdStr)) {
+  if (category) {
+    if(!clientIdStr) {
+      return NextResponse.json({error: "clientId must be a valid ObjectId"}, {status: 400});
+    }
+    if(!Types.ObjectId.isValid(clientIdStr)) {
+      return NextResponse.json({error: "clientId must be a valid ObjectId(2)"}, {status: 400});
+    }
+    filter.clientId = new Types.ObjectId(clientIdStr);
+    filter.category = category;
+  }
+  else if (clientIdStr) {
+    if(!Types.ObjectId.isValid(clientIdStr)) {
+      return NextResponse.json({error: "clientId must be a valid ObjectId(3)"}, {status: 400});
+    }
     filter.clientId = new Types.ObjectId(clientIdStr);
   }
   if (q.length > 0) {
@@ -87,6 +97,7 @@ export async function GET(req: Request): Promise<NextResponse> {
     status: t.status,
     category: t.category,
     deleted: Boolean(t.deleted),
+    clientId: t.clientId?.toString?.() ?? t.clientId,
   }));
 
   return NextResponse.json(response);

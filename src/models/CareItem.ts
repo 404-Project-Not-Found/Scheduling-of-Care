@@ -62,4 +62,6 @@ const CareItemSchema = new Schema<CareItemDoc> ({
     dateTo: {type: String},
 }, {timestamps: true});
 
+CareItemSchema.index({clientId: 1, category: 1, deleted: 1, status: 1});
+
 export default models.CareItem|| model<CareItemDoc>("CareItem", CareItemSchema);

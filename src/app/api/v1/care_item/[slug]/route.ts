@@ -40,10 +40,10 @@ export async function PUT(req: Request, ctx:{params: Promise<{slug: string}>}) {
 }
 
 // soft delete one care item
-export async function DELETE(_: Request, ctx:{params: Promise<{slug: string}>}) {
+export async function DELETE( _req: Request, { params }: { params: { slug: string } } ) {
     await connectDB();
 
-    const {slug} = await ctx.params;
+    const slug = params.slug.toLowerCase();
 
     const updated = await CareItem.findOneAndUpdate(
         {slug: slug.toLowerCase()},
@@ -51,6 +51,6 @@ export async function DELETE(_: Request, ctx:{params: Promise<{slug: string}>}) 
         {new: true}
     ).lean();
 
-    if(!updated) return errorJson("Task not found", 404);
+    if(!updated) return errorJson("Task not found", 400);
     return NextResponse.json({ok: true, slug: slug, deleted: true});
 }

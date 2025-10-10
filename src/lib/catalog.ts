@@ -8,10 +8,17 @@
 
 export type CareItemOption = { label: string; slug: string };
 
-export async function fetchCareItemCatalog(category: string): Promise<CareItemOption[]> {
-    if(!category.trim()) return [];
-    const res = await fetch(`/api/v1/task_catalog?category=${encodeURIComponent(category)}`, { cache: "no-store" });
-    if(!res.ok) return [];
-    const data: {category: string; tasks: CareItemOption[]} = await res.json();
-    return Array.isArray(data.tasks) ? data.tasks : [];
+export async function fetchCareItemCatalog(category: string, clientId?: string): Promise<CareItemOption[]> {
+  const cat = category.trim();
+  if (!cat) return [];
+  if (!clientId) throw new Error('clientId required for catalog fetch');
+
+  const url = new URL('/api/v1/task_catalog', window.location.origin);
+  url.searchParams.set('category', cat);
+  url.searchParams.set('clientId', clientId);
+
+  const res = await fetch(url.toString(), { cache: 'no-store' });
+  if (!res.ok) return [];
+  const data: { category: string; tasks: CareItemOption[] } = await res.json();
+  return Array.isArray(data.tasks) ? data.tasks : [];
 }
