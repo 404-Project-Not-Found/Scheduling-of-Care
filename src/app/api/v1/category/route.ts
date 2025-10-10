@@ -56,6 +56,4 @@ export async function POST(req: Request) {
         const msg = e instanceof Error ? e.message: 'Failed to create category';
         return NextResponse.json({error: msg}, {status: 500});
     }
-
-
 }

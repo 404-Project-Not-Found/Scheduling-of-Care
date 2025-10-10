@@ -29,6 +29,7 @@ import {
 
 type Unit = 'day' | 'week' | 'month' | 'year';
 
+
 type Task = {
   label: string;
   slug: string;
@@ -45,6 +46,11 @@ type Task = {
   dateTo?: string;
 };
 
+type CatalogItem = {
+  category: string;
+  tasks: {label: string; slug: string}[];
+}
+
 const chromeColors = {
   header: '#3A0000',
   banner: '#F9C9B1',
@@ -53,6 +59,10 @@ const chromeColors = {
 };
 
 type Client = { id: string; name: string };
+
+const LS_ACTIVE = 'activeClient';
+function readActive() { try { return JSON.parse(localStorage.getItem(LS_ACTIVE) || '{}'); } catch { return {}; } } 
+function writeActive(id: string, name: string) { localStorage.setItem(LS_ACTIVE, JSON.stringify({ id, name })); }
 
 export default function AddTaskPage() {
   const router = useRouter();
@@ -68,36 +78,35 @@ export default function AddTaskPage() {
   });
 
   // Added catalog implementation
-  type CatalogItem = {category: string; tasks: {label: string; slug: string}[]};
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
 
+  // Load clients
   useEffect(() => {
     (async () => {
       try {
-        const list = await getClientsFE();
-        const mapped: Client[] = list.map((c: ApiClient) => ({
-          id: c._id,
-          name: c.name,
-        }));
-        setClients(mapped);
+        const res = await fetch('api/v1/client', {cache: 'no-store'});
+        if(!res.ok) throw new Error('Failed to load client');
 
-        const stored = readActiveClientFromStorage();
-        const resolvedId = stored.id || FULL_DASH_ID;
-        const resolvedName = stored.name || NAME_BY_ID[resolvedId] || '';
-        setActive({ id: stored.id || null, name: resolvedName });
-      } catch {
-        setClients([]);
-      }
-    })();
-  }, []);
+        const list = await res.json() as Array<{_id: string; name: string}>;
+        const mapped: Client[] = list.map(c => ({id: c._id, name: c.name}));
+        setClients(mapped);
+        const stored = readActive() as {id?: string; name?: string};
+        const selected = mapped.find((c) => c.id === stored.id) ?? mapped[0] ?? { id: null, name: '' };
+        
+        setActive({id: selected.id ?? null, name: selected?.name ?? ''});
+        } catch {
+          setClients([]);
+        }
+      })();
+    }, []);
 
   // Load categories
   useEffect(() => {
     (async () => {
       try {
         const res = await fetch('/api/v1/category', {cache: 'no-store'});
-        if(!res.ok) throw new Error('failed');
-        const data = (await res.json()) as {name: string; slug: string}[];
+        if(!res.ok) throw new Error('Failed to load categories');
+        const data: Array<{ name: string; slug: string }> = await res.json();
         setCatalog(data.map((c) => ({category: c.name, tasks: []})));
       } catch {
         setCatalog([]);
@@ -109,13 +118,13 @@ export default function AddTaskPage() {
   const onClientChange = (id: string) => {
     if (!id) {
       setActive({ id: null, name: '' });
-      writeActiveClientToStorage('', '');
+      writeActive('', '');
       return;
     }
     const c = clients.find((x) => x.id === id);
     const name = c?.name || '';
     setActive({ id, name });
-    writeActiveClientToStorage(id, name);
+    writeActive(id, name);
   };
 
   // Form states
@@ -129,23 +138,6 @@ export default function AddTaskPage() {
   const [frequencyCountStr, setFrequencyCountStr] = useState<string>('');
   const [frequencyUnit, setFrequencyUnit] = useState<Unit>('day');
 
-  // Category implementation
-  const [openCategory, setOpenCategory] = useState<boolean>(false);
-  const [showNewCategory, setShowNewCategory] = useState(false);
-  const tasksInCategory = useMemo( 
-    () => {
-      const entry = catalog.find(c => c.category === category);
-      return entry ? entry.tasks : [];
-    }, [catalog, category]
-  ); 
-  const onCategoryChange: ChangeEventHandler<HTMLInputElement> = (e) => {
-    setCategory(e.target.value);
-    setOpenCategory(true);
-  }
-  const onPickCategory = (name: string): MouseEventHandler<HTMLButtonElement> => (_e) => {
-    setCategory(name);
-    setOpenCategory(false);
-  };
 
   const statusOptions = useMemo(
     () => ['in progress', 'Completed', 'Not started', 'Paused', 'Cancelled'],

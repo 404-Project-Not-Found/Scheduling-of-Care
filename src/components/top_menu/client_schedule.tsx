@@ -68,6 +68,10 @@ type ChromeProps = {
   avatarSrc?: string;
   onProfile?: () => void;
   onSignOut?: () => void;
+
+  // Controlled active client
+  activeClientId?: string | null;
+  activeClientName?: string;
 };
 
 const ROUTES = {
@@ -85,7 +89,7 @@ const ROUTES = {
   homeByRole: '/empty_dashboard',
   profile: '/client_profile',
   organisationAccess: (clientId: string) =>
-    '/family_dashboard/manage_org_access/${clientId}',
+    `/family_dashboard/manage_org_access/${clientId}`,
   newTransaction: '/calendar_dashboard/budget_report/add_transaction',
 };
 
@@ -166,6 +170,8 @@ export default function DashboardChrome({
   avatarSrc = '/default_profile.png',
   onProfile,
   onSignOut,
+  activeClientId,
+  activeClientName,
 }: ChromeProps) {
   const router = useRouter();
   const [isSignOut, setIsSignOut] = useState(false);
@@ -180,6 +186,9 @@ export default function DashboardChrome({
     handleClientChange,
     resetClient,
   } = useActiveClient();
+
+  const effectiveClientId = (typeof activeClientId !== 'undefined' ? activeClientId : activeClient.id) ?? '';
+  const effectiveClientName = (typeof activeClientName !== 'undefined' ? activeClientName : activeClient.name) ?? '';
 
   // Fetches user role on mount
   useEffect(() => {

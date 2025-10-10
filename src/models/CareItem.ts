@@ -22,6 +22,7 @@ export interface CareItemDoc extends mongoose.Document {
     category: string;
     categoryId: Types.ObjectId | null;
     clientName: string;
+    clientId: Types.ObjectId | null;
     deleted: boolean;
 
     // legacy string field
@@ -46,6 +47,7 @@ const CareItemSchema = new Schema<CareItemDoc> ({
     category: {type: String, required: true, trim: true},
     categoryId: {type: Schema.Types.ObjectId, ref: "Category", default: null},
     clientName: {type: String, trim: true},
+    clientId: {type: Schema.Types.ObjectId, ref: "Client", default: null},
     deleted: {type: Boolean, default: false},
 
     // legacy
