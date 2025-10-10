@@ -19,6 +19,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect, useMemo } from 'react';
 import DashboardChrome from '@/components/top_menu/client_schedule';
 import { useSearchParams } from 'next/navigation';
+import { fetchCareItemCatalog, type CareItemOption } from '@/lib/catalog';
 import {
   readActiveClientFromStorage,
   writeActiveClientToStorage,
@@ -122,6 +123,10 @@ export default function AddTaskPage() {
     name: '',
   });
 
+  // State
+  const [careItemOptions, setCareItemOptions] = useState<CareItemOption[]>([]);
+  const [careItemLoading, setCareItemLoading] = useState(false);
+
   // Form states
   const [label, setLabel] = useState('');
   const [status, setStatus] = useState('in progress');
@@ -215,6 +220,26 @@ export default function AddTaskPage() {
       })(); 
   }, []);
 
+  // Fetching catalog
+  useEffect(() => {
+    let cancelled = false;
+    (async() => {
+      if(!category.trim()) {
+        setCareItemOptions([]);
+        return;
+      }
+      setCareItemLoading(true);
+      try {
+        const options = await fetchCareItemCatalog(category);
+        if(!cancelled) setCareItemOptions(options);
+      } catch {
+        if(!cancelled) setCareItemOptions([]);
+      } finally {
+        if(!cancelled) setCareItemLoading(false);
+      }
+    })();
+  }, [category]);
+
   const onClientChange = (id: string) => {
     if (!id) {
       setActive({ id: null, name: '' });
@@ -226,6 +251,7 @@ export default function AddTaskPage() {
     setActive({ id, name });
     writeActive(id, name);
   };
+
 
 
   const statusOptions = useMemo(
@@ -358,21 +384,29 @@ export default function AddTaskPage() {
 
             {/* Task name (dropdown depends on category) */}
             <Field label="Task Name">
-              <select
-                value={label}
-                onChange={(e) => setLabel(e.target.value)}
-                disabled={!category}
-                className="w-full rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black disabled:opacity-60"
-              >
-                <option value="">
-                  {category ? 'Select a task…' : 'Choose a category first'}
-                </option>
-                {tasksInCategory.map((t: { slug: string; label: string }) => (
-                  <option key={t.slug} value={t.label}>
-                    {t.label}
-                  </option>
-                ))}
-              </select>
+              {careItemLoading ? (
+                <div className="text-sm opacity-70">Loading tasks…</div>
+              ) : careItemOptions.length > 0 ? (
+                <select
+                  value={label}
+                  onChange={(e) => setLabel(e.target.value)}
+                  disabled={!category}
+                  className="w-full rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black disabled:opacity-60"
+                >
+                  <option value="">{category ? "Select a task…" : "Choose a category first"}</option>
+                  {careItemOptions.map((t) => (
+                    <option key={t.slug} value={t.label}>{t.label}</option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  value={label}
+                  onChange={(e) => setLabel(e.target.value)}
+                  className="w-full rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black"
+                  placeholder={category ? "Enter a task name…" : "Choose a category first"}
+                  disabled={!category}
+                />
+              )}
             </Field>
 
             <Field label="Date Range">
