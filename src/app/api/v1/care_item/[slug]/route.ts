@@ -6,7 +6,7 @@
 
 import { NextResponse } from "next/server";
 import {connectDB} from "@/lib/mongodb";
-import CareItem, {type CareItemDoc} from "@/models/CareItem";
+import CareItem, {CareItemDoc} from "@/models/CareItem";
 import {normaliseCareItemPayLoad, errorJson} from "@/lib/care-item-helpers/care_item_utils";
 
 export const runtime = "nodejs";
@@ -26,6 +26,7 @@ export async function PUT(req: Request, ctx:{params: Promise<{slug: string}>}) {
 
     const {slug} = await ctx.params;
     const body = await req.json();
+    if(!body) return errorJson("Invalid JSON - api/v1/care_item/[slug]/route.ts", 404);
     const payload = normaliseCareItemPayLoad(body);
 
     const updated = await CareItem.findOneAndUpdate(
@@ -48,7 +49,7 @@ export async function DELETE(_: Request, ctx:{params: Promise<{slug: string}>}) 
         {slug: slug.toLowerCase()},
         {$set: {deleted: true}},
         {new: true}
-    );
+    ).lean();
 
     if(!updated) return errorJson("Task not found", 404);
     return NextResponse.json({ok: true, slug: slug, deleted: true});
