@@ -101,6 +101,8 @@ export default function AddTaskPage() {
     name: '',
   });
 
+  useEffect(() => {console.log('NEXT_PUBLIC_ENABLE_MOCK =', process.env.NEXT_PUBLIC_ENABLE_MOCK);}, []);
+
   useEffect(() => {
     (async () => {
       try {

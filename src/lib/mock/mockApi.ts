@@ -47,6 +47,7 @@
 
 export const isMock = process.env.NEXT_PUBLIC_ENABLE_MOCK === '1';
 
+
 export const FULL_DASH_ID = 'mock1'; // Mock Alice (full dashboard)
 export const PARTIAL_DASH_ID = 'mock2'; // Mock Bob (partial dashboard)
 

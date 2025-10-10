@@ -16,7 +16,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, ChangeEventHandler, MouseEventHandler } from 'react';
 import DashboardChrome from '@/components/top_menu/client_schedule';
 import {
   readActiveClientFromStorage,
@@ -129,12 +129,23 @@ export default function AddTaskPage() {
   const [frequencyCountStr, setFrequencyCountStr] = useState<string>('');
   const [frequencyUnit, setFrequencyUnit] = useState<Unit>('day');
 
+  // Category implementation
+  const [openCategory, setOpenCategory] = useState<boolean>(false);
+  const [showNewCategory, setShowNewCategory] = useState(false);
   const tasksInCategory = useMemo( 
     () => {
       const entry = catalog.find(c => c.category === category);
       return entry ? entry.tasks : [];
     }, [catalog, category]
   ); 
+  const onCategoryChange: ChangeEventHandler<HTMLInputElement> = (e) => {
+    setCategory(e.target.value);
+    setOpenCategory(true);
+  }
+  const onPickCategory = (name: string): MouseEventHandler<HTMLButtonElement> => (_e) => {
+    setCategory(name);
+    setOpenCategory(false);
+  };
 
   const statusOptions = useMemo(
     () => ['in progress', 'Completed', 'Not started', 'Paused', 'Cancelled'],
