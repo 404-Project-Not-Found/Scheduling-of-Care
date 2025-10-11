@@ -49,15 +49,15 @@ const CareItemSchema = new Schema<CareItemDoc> ({
     status: {type: String, required: true, trim: true},
     category: {type: String, required: true, trim: true},
     clientName: {type: String, trim: true},
-    categoryId: {type: Schema.Types.ObjectId, ref: "Category", default: null},
-    clientId: {type: Schema.Types.ObjectId, ref: "Client", default: null},
+    categoryId: {type: Schema.Types.ObjectId, ref: "Category", required: true},
+    clientId: {type: Schema.Types.ObjectId, ref: "Client", required: true},
     deleted: {type: Boolean, default: false},
 
     // legacy
     frequency: {type: String},
     lastDone: {type: String},
 
-    notes: {tpye: String, default: ""},
+    notes: {type: String, default: ""},
 
     //structured
     frequencyDays: {type: Number, min: 1},

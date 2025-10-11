@@ -20,11 +20,9 @@ interface CreateCareItemBody {
     status: string; 
     category: string; 
     frequencyCount?: number; 
-    frequencyUnit?: 
-    string; dateFrom?: 
-    string; 
-    dateTo?: 
-    string; 
+    frequencyUnit?: string; 
+    dateFrom?: string; 
+    dateTo?: string; 
     notes?: string; 
 }
 

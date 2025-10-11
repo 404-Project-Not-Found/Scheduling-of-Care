@@ -1,62 +1,33 @@
 /**
- * Filename: /lib/component_helpers.ts
+ * Filename: /lib/category_helpers.ts
  * Author: Zahra Rizqita
  * Date Created: 03/10/2025
  */
 
-import Category from "@/models/Category";
 import {Types} from 'mongoose';
+import Category from "@/models/Category";
 import {slugify} from "./slug";
 
 
-// Function to find existing category if input is similar or create a new category if not found
+/** Function to find or create category - client-scoped
+ * @param params.clientId - client's ObjectID
+ * @param params.input - category name inputted
+ * @returns Existing or newly created Category document
+ * */ 
 export async function findOrCreateNewCategory(params: {clientId: Types.ObjectId; input: string}) {
     const {clientId, input} = params;  
     const name = input.trim();
     if(!name) throw new Error("Category name required");
 
-    const baseSlug = slugify(name);
+    const slug = slugify(name);
 
     const doc = await Category.findOneAndUpdate(
-        {clientId, baseSlug},
+        {clientId, slug},
         {$setOnInsert: {name: name, clientId},},
         {new: true, upsert: true}
     );
 
+    if(!doc) throw new Error("Failed to create of fetch category");
+
     return doc;
-    // Find existing category
-
-    /*
-    const exist = await Category.findOne({
-        $or: [
-            {slug: baseSlug},
-            {name: new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i")},
-            {aliases:new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i")},
-        ]
-    });
-    
-    if(exist) {
-        const lowerName = name.toLowerCase();
-        const lowerExistName = exist.name.toLowerCase();
-        const aliasLower = (exist.aliases ?? []).map((alias: string) => alias.toLowerCase());
-
-        if(lowerName !== lowerExistName && !aliasLower.includes(lowerName)) {
-            await Category.updateOne(
-                {_id: exist._id},
-                {$addToSet: {aliases: name}}
-            );
-        }
-
-        return exist.toObject();
-    }
-
-    const newCategory = await Category.create({
-        name,
-        slug: baseSlug,
-        aliases: [name],
-    });
-
-    
-    return newCategory.toObject();
-    */
 }

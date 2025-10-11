@@ -19,6 +19,14 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect, useMemo } from 'react';
 import DashboardChrome from '@/components/top_menu/client_schedule';
 import {fetchCareItemCatalog, type CareItemOption} from '@/lib/catalog';
+import {
+  getClients,
+  getActiveClient,
+  setActiveClient,
+} from '@/lib/data';
+import type {Client as ApiClient} from '@/lib/data';
+
+type UiClient = {id: string; name: string};
 
 type Unit = 'day' | 'week' | 'month' | 'year';
 
@@ -28,9 +36,9 @@ type Task = {
   slug: string;
   status: string;
   category: string;
-  categoryId?: string;
+  categoryId: string;
   clientName?: string;
-  clientId?: string;
+  clientId: string;
   deleted?: boolean;
   frequency?: string;
   lastDone?: string;
@@ -54,17 +62,12 @@ const chromeColors = {
   pageBg: '#FAEBDC',
 };
 
-type Client = { id: string; name: string };
-
-const LS_ACTIVE = 'activeClient';
-function readActive() { try { return JSON.parse(localStorage.getItem(LS_ACTIVE) || '{}'); } catch { return {}; } } 
-function writeActive(id: string, name: string) { localStorage.setItem(LS_ACTIVE, JSON.stringify({ id, name })); }
 
 export default function AddTaskPage() {
   const router = useRouter();
 
   // Topbar client list
-  const [clients, setClients] = useState<Client[]>([]);
+  const [clients, setClients] = useState<UiClient[]>([]);
   const [{ id: activeId, name: activeName }, setActive] = useState<{
     id: string | null;
     name: string;
@@ -96,16 +99,17 @@ export default function AddTaskPage() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch('api/v1/client', {cache: 'no-store'});
-        if(!res.ok) throw new Error('Failed to load client');
-
-        const list = await res.json() as Array<{_id: string; name: string}>;
-        const mapped: Client[] = list.map(c => ({id: c._id, name: c.name}));
+        const list: ApiClient[] = await getClients();
+        const mapped: UiClient[] = list.map(c => ({ id: c._id, name: c.name }));
         setClients(mapped);
-        const stored = readActive() as {id?: string; name?: string};
-        const selected = mapped.find((c) => c.id === stored.id) ?? mapped[0] ?? { id: null, name: '' };
-        
-        setActive({id: selected.id ?? null, name: selected?.name ?? ''});
+
+        const active = await getActiveClient();
+        if(!activeId) {
+          setActive({ id: active.id, name: active.name });
+        } 
+        else {
+          setActive({id: null, name: ''});
+        }
         } catch {
           setClients([]);
         }
@@ -116,14 +120,12 @@ export default function AddTaskPage() {
   useEffect(() => {
     (async () => {
       try {
-        if(!activeId) {
-          setCatalog([]);
-          return;
-        }
+        if(!activeId) { setCatalog([]); return; }
+
         const url = new URL('/api/v1/category', window.location.origin); 
         url.searchParams.set('clientId', activeId);
 
-        const res = await fetch('/api/v1/category', {cache: 'no-store'});
+        const res = await fetch(url.toString(), {cache: 'no-store'});
         if(!res.ok) throw new Error('Failed to load categories');
 
         const data: Array<{ name: string; slug: string }> = await res.json();
@@ -166,15 +168,17 @@ export default function AddTaskPage() {
 
 
   const onClientChange = (id: string) => {
-    if (!id) {
-      setActive({ id: null, name: '' });
-      writeActive('', '');
-      return;
-    }
-    const c = clients.find((x) => x.id === id);
-    const name = c?.name || '';
-    setActive({ id, name });
-    writeActive(id, name);
+    (async () => {
+      if (!id) {
+        await setActiveClient(null, '');
+        setActive({id: null, name: ''});
+        return;
+      }
+      const c = clients.find((x) => x.id === id);
+      const name = c?.name || '';
+      await setActiveClient(id, name);
+      setActive({id, name});
+    })();
   };
 
 
@@ -185,11 +189,14 @@ export default function AddTaskPage() {
   );
 
   const onCreate = async () => {
+    if(!activeId) {alert('Please select a cleitn first.'); return;}
+
     const name = label.trim();
     if (!name) {
       alert('Please enter the task name.');
       return;
     }
+    if(!category.trim) {'Please enter a category.'; return;}
 
     const countNum = parseInt(frequencyCountStr, 10);
     const hasFrequency = Number.isFinite(countNum) && countNum > 0;
@@ -198,12 +205,13 @@ export default function AddTaskPage() {
       clientId: activeId ?? undefined,
       clientName: activeName,
       label: name,
-      status: status.trim(),
+      status: status.trim().toLowerCase(),
       category: category.trim(),
       frequencyCount: hasFrequency ? countNum : undefined,
       frequencyUnit: hasFrequency ? frequencyUnit : undefined,
       dateFrom: dateFrom || undefined,
       dateTo: dateTo || undefined,
+      notes: notes.trim() || undefined,
     };
 
     try {
