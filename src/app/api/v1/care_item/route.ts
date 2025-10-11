@@ -49,34 +49,34 @@ export async function GET(req: Request): Promise<NextResponse> {
 
   const q = (searchParams.get("q") || "").trim().toLowerCase();
   const status = searchParams.get("status") || undefined;
-  const category = searchParams.get("category") || undefined;
-  const clientIdStr = searchParams.get("clientId") || undefined;
-  const includeDeleted =
-    (searchParams.get("includeDeleted") || "false").toLowerCase() === "true";
-  const limit = Math.min(
-    parseInt(searchParams.get("limit") || "20", 10) || 20,
-    100
-  );
+
+  const categoryIdStr = (searchParams.get("categoryUd") || "").trim();
+  const clientIdStr = (searchParams.get("clientId") || "").trim();
+  const categoryName = (searchParams.get("category") || "").trim();
+
+  const includeDeleted = (searchParams.get("includeDeleted") || "false").toLowerCase() === "true";
+  const limit = Math.min(parseInt(searchParams.get("limit") || "20", 10) || 20, 100);
 
   const filter: Record<string, unknown> = {};
   if (!includeDeleted) filter.deleted = { $ne: true };
   if (status) filter.status = status;
-  if (category) {
-    if(!clientIdStr) {
+  // Filter by client
+  if (clientIdStr) {
+    if(!Types.ObjectId.isValid(clientIdStr)) {
       return NextResponse.json({error: "clientId must be a valid ObjectId"}, {status: 400});
     }
-    if(!Types.ObjectId.isValid(clientIdStr)) {
-      return NextResponse.json({error: "clientId must be a valid ObjectId(2)"}, {status: 400});
-    }
-    filter.clientId = new Types.ObjectId(clientIdStr);
-    filter.category = category;
-  }
-  else if (clientIdStr) {
-    if(!Types.ObjectId.isValid(clientIdStr)) {
-      return NextResponse.json({error: "clientId must be a valid ObjectId(3)"}, {status: 400});
-    }
     filter.clientId = new Types.ObjectId(clientIdStr);
   }
+  // Filter byt category
+  if (categoryIdStr) {
+    if(!Types.ObjectId.isValid(categoryIdStr)) {
+      return NextResponse.json({error: "categoryId must be a valid ObjectId"}, {status: 400});
+    }
+    filter.clientId = new Types.ObjectId(clientIdStr);
+  } else if (categoryName) {
+    filter.category = categoryName;
+  }
+
   if (q.length > 0) {
     filter.label = {
       $regex: q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
@@ -96,12 +96,15 @@ export async function GET(req: Request): Promise<NextResponse> {
     lastDone: t.lastDone ?? "",
     status: t.status,
     category: t.category,
+    categoryId: t.categoryId?.toString?.() ?? t.categoryId,
     deleted: Boolean(t.deleted),
     clientId: t.clientId?.toString?.() ?? t.clientId,
+    notes: t.notes ?? "",
   }));
 
   return NextResponse.json(response);
 }
+
 
 // create a new care item
 export async function POST(req: Request): Promise<NextResponse> {
@@ -117,24 +120,24 @@ export async function POST(req: Request): Promise<NextResponse> {
   const label = (body.label ?? "").trim();
   const status = (body.status ?? "").trim();
   const categoryInput = (body.category ?? "").trim();
+  const notes = typeof body.notes === "string" ? body.notes.trim() : "";
 
   if (!label || !status || !categoryInput) {
     return errorJson("label, status and category required", 422);
   }
 
-  // parse client info safely
-  const clientName =
-    typeof body.clientName === "string" ? body.clientName.trim() : undefined;
-  const clientId =
-    body.clientId && Types.ObjectId.isValid(body.clientId)
-      ? new Types.ObjectId(body.clientId)
-      : undefined;
-
+  if(!body.clientId || !Types.ObjectId.isValid(body.clientId)) return errorJson("Client body must be a valid ObjectId", 422);
+  const clientId = new Types.ObjectId(body.clientId);
+  const clientName = typeof body.clientName === "string" ? body.clientName.trim() : undefined;
+  
   // ensure or create category
   let categoryId: Types.ObjectId | undefined;
   let normalizedCategory = categoryInput;
   try {
-    const categoryDoc = await findOrCreateNewCategory(categoryInput);
+    const categoryDoc = await findOrCreateNewCategory({
+      clientId, 
+      input: categoryInput
+    });
     categoryId = categoryDoc._id as Types.ObjectId;
     normalizedCategory = categoryDoc.name;
   } catch (err: unknown) {
@@ -143,11 +146,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   }
 
   // validate date order
-  if (
-    body.dateFrom &&
-    body.dateTo &&
-    new Date(body.dateTo) < new Date(body.dateFrom)
-  ) {
+  if (body.dateFrom && body.dateTo && new Date(body.dateTo) < new Date(body.dateFrom)) {
     return errorJson("dateTo must be on/after dateFrom", 422);
   }
 
@@ -170,8 +169,8 @@ export async function POST(req: Request): Promise<NextResponse> {
     label,
     status,
     category: normalizedCategory,
-    ...(categoryId ? { categoryId } : {}),
-    ...(clientId ? { clientId } : {}),
+    categoryId,
+    clientId,
     ...(clientName ? { clientName } : {}),
     slug,
     deleted: false,
@@ -188,12 +187,24 @@ export async function POST(req: Request): Promise<NextResponse> {
     ...(dateFromStr && dateToStr
       ? { lastDone: `${dateFromStr} to ${dateToStr}` }
       : {}),
-    ...(body.notes ? { notes: body.notes.trim() } : {}),
+    ...(typeof notes === "string" ? {notes} : {}),
   };
 
   try {
     const created = await CareItem.create(payload);
-    return NextResponse.json(created, { status: 201 });
+    return NextResponse.json( 
+      {
+        _id: created._id,
+        label: created.label,
+        status: created.status,
+        slug: created.slug,
+        clientId: created.clientId,
+        categoryId: created.categoryId,
+        category: created.category,
+        notes: created.notes?? "",
+        createdAt: created.createdAt,
+        updatedAt: created.updatedAt,
+      }, { status: 201 });
   } catch (err: unknown) {
     if (
       typeof err === "object" &&

@@ -20,14 +20,16 @@ export interface CareItemDoc extends mongoose.Document {
     slug: string;
     status: string;
     category: string;
-    categoryId: Types.ObjectId | null;
     clientName: string;
-    clientId: Types.ObjectId | null;
+    categoryId: Types.ObjectId;  
+    clientId: Types.ObjectId;
     deleted: boolean;
 
     // legacy string field
     frequency?: string;
     lastDone?: string;
+
+    notes?: string;
 
     // structured field
     frequencyDays: number;     // normalised to days
@@ -35,6 +37,7 @@ export interface CareItemDoc extends mongoose.Document {
     frequencyUnit: Unit;       // user-chosen unit
     dateFrom: string;          // YYYY-MM-DD
     dateTo: string;            // YYYY-MM-DD
+
 
     createdAt: Date;
     updatedAt: Date;
@@ -45,14 +48,16 @@ const CareItemSchema = new Schema<CareItemDoc> ({
     slug: {type: String, required: true, unique: true, index: true, lowercase: true},
     status: {type: String, required: true, trim: true},
     category: {type: String, required: true, trim: true},
-    categoryId: {type: Schema.Types.ObjectId, ref: "Category", default: null},
     clientName: {type: String, trim: true},
+    categoryId: {type: Schema.Types.ObjectId, ref: "Category", default: null},
     clientId: {type: Schema.Types.ObjectId, ref: "Client", default: null},
     deleted: {type: Boolean, default: false},
 
     // legacy
     frequency: {type: String},
     lastDone: {type: String},
+
+    notes: {tpye: String, default: ""},
 
     //structured
     frequencyDays: {type: Number, min: 1},
@@ -62,6 +67,6 @@ const CareItemSchema = new Schema<CareItemDoc> ({
     dateTo: {type: String},
 }, {timestamps: true});
 
-CareItemSchema.index({clientId: 1, category: 1, deleted: 1, status: 1});
+CareItemSchema.index({clientId: 1, categoryId: 1, deleted: 1, status: 1});
 
 export default models.CareItem|| model<CareItemDoc>("CareItem", CareItemSchema);

@@ -5,17 +5,28 @@
  */
 
 import Category from "@/models/Category";
+import {Types} from 'mongoose';
 import {slugify} from "./slug";
 
 
 // Function to find existing category if input is similar or create a new category if not found
-export async function findOrCreateNewCategory(input: String) {
+export async function findOrCreateNewCategory(params: {clientId: Types.ObjectId; input: string}) {
+    const {clientId, input} = params;  
     const name = input.trim();
     if(!name) throw new Error("Category name required");
 
     const baseSlug = slugify(name);
 
+    const doc = await Category.findOneAndUpdate(
+        {clientId, baseSlug},
+        {$setOnInsert: {name: name, clientId},},
+        {new: true, upsert: true}
+    );
+
+    return doc;
     // Find existing category
+
+    /*
     const exist = await Category.findOne({
         $or: [
             {slug: baseSlug},
@@ -45,5 +56,7 @@ export async function findOrCreateNewCategory(input: String) {
         aliases: [name],
     });
 
+    
     return newCategory.toObject();
+    */
 }
