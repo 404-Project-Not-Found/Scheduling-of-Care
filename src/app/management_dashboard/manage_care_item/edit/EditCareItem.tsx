@@ -15,6 +15,7 @@
  * 
  * Updates:
  * - Backend and frontend integrated, Mock API no longer works and only real API
+ * - 
  */
 "use client";
 
@@ -22,8 +23,15 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect, useMemo } from 'react';
 import DashboardChrome from '@/components/top_menu/client_schedule';
 import { useSearchParams } from 'next/navigation';
-import { fetchCareItemCatalog, type CareItemOption } from '@/lib/catalog';
+import { type CareItemOption } from '@/lib/catalog';
+import {
+  getClients, 
+  getActiveClient,
+  setActiveClient,
+  type Client as ApiClient,
+} from '@/lib/data'
 
+type UiClient = {id: string; name: string};
 
 type Unit = 'day' | 'week' | 'month' | 'year';
 
@@ -64,24 +72,6 @@ const chromeColors = {
 
 type Client = { id: string; name: string };
 type CatalogItem = {category: string; tasks: {label: string; slug: string}[]};
-
-const LS_ACTIVE = 'activeClient';
-
-function readActive(): {id: string; name: string} { 
-  if(typeof window === 'undefined') return {id: '', name: ''};
-  try { 
-    const raw = localStorage.getItem(LS_ACTIVE);
-    if(!raw) return {id: '', name: ''};
-    const parsed = JSON.parse(raw) as {id?: string; name?: string};
-    return {id: parsed.id ?? '', name: parsed.name ?? ''};
-  } catch { 
-    return {id: '', name: ''}; 
-  } 
-} 
-function writeActive(id: string, name: string) { 
-  if(typeof window == 'undefined') return;
-  localStorage.setItem(LS_ACTIVE, JSON.stringify({ id, name })); 
-}
 
 
 export default function EditCareItem() {
@@ -125,27 +115,31 @@ export default function EditCareItem() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch('/api/v1/client', { cache: 'no-store' });
-        if(!res.ok) throw new Error("Failed to load client -- Editing task");
-
-        const list = await res.json() as Array<{_id: string; name: string}>;
-        const mapped: Client[] = list.map(c => ({id: c._id, name: c.name}));
+        const list: ApiClient[] = await getClients();
+        const mapped: UiClient[] = list.map(c => ({ id: c._id, name: c.name }));
         setClients(mapped);
-        const stored = readActive() as {id?: string; name?: string};
-        const selected = mapped.find((c) => c.id === stored.id) ?? mapped[0] ?? { id: null, name: '' };
         
-        setActive({id: selected.id ?? null, name: selected?.name ?? ''});
+        const active = await getActiveClient();
+        if (active.id) {
+          setActive({ id: active.id, name: active.name });
+        } 
+        else {
+          setActive({id: null, name: ''});
+        }
       } catch {
         setClients([]);
       }
     })();
   }, []);
 
-  //Load categories
+  //Load categories -- updated to scope client on 10/10/2025
   useEffect(() => {
     (async() => {
       try {
-        const res = await fetch('/api/v1/category', {cache: 'no-store'});
+        if(!activeId) {setCatalog([]); return;}
+        const url = new URL('/api/v1/category', window.location.origin);
+        url.searchParams.set('clientId', activeId);
+        const res = await fetch(url.toString(), {cache: 'no-store'});
         if(!res.ok) throw new Error("Failed to load category -- Editing task");
         const data: Array<{ name: string; slug: string }> = await res.json();
         setCatalog(data.map((c) => ({category: c.name, tasks: []})));
@@ -154,11 +148,16 @@ export default function EditCareItem() {
       }
     }
     )();
-  }, []);
+  }, [activeId]);
+
+  useEffect(() => {
+    if(!category) return;
+    if(!catalog.some(c => c.category === category)) {setCatalog(prev => [{category, tasks: []}, ...prev])}
+  }, [catalog, category]);
 
   //Load care items by slug
   useEffect(() => {
-    if(!slug) return;
+    if(!slug || clients.length === 0) return;
     (async() => {   
         const res = await fetch(`/api/v1/care_item/${encodeURIComponent(slug)}`, { cache: 'no-store' });
         if(!res.ok) {
@@ -172,7 +171,7 @@ export default function EditCareItem() {
 
         setLabel(t.label || "");
         setStatus((statusOptions.includes(t.status as any) ? t.status : 'in progress') as typeof status);
-        setCategory(t.category || "");
+        setCategory((t.category || "").trim());
         if(typeof t.frequencyCount === "number" && t.frequencyUnit) {
           setFrequencyCountStr(String(t.frequencyCount));
           setFrequencyUnit(t.frequencyUnit);
@@ -187,22 +186,26 @@ export default function EditCareItem() {
 
         if(t.clientId) {
           const match = clients.find(c => c.id === t.clientId);
-          if(match) setActive({id: match.id, name:match.name});
+          if(match) {
+            setActive({id: match.id, name:match.name}); 
+            await setActiveClient(match.id, match.name);
+          }
         }
         else if(t.clientName && !activeName) {
           setActive(prev => ({ id: prev.id, name: t.clientName! }));
         }
       })(); 
-  }, [slug]);
+  }, [slug, clients]);
 
   // Fetching catalog
   useEffect(() => {
   let cancelled = false;
   (async () => {
     if (!category.trim()) { setCareItemOptions([]); return; }
+    if(!activeId) {setCareItemOptions([]); return;}
     setCareItemLoading(true);
     try {
-      const res = await fetch(`/api/v1/task_catalog?category=${encodeURIComponent(category)}`, { cache: "no-store" });
+      const res = await fetch(`/api/v1/task_catalog?clientId=${encodeURIComponent(activeId)}&category=${encodeURIComponent(category)}`, { cache: "no-store" });
       if (!res.ok) throw new Error("failed");
       const data: { category: string; tasks: CareItemOption[] } = await res.json();
 
@@ -226,15 +229,17 @@ export default function EditCareItem() {
 }, [category]);
 
   const onClientChange = (id: string) => {
-    if (!id) {
-      setActive({ id: null, name: '' });
-      writeActive('', '');
-      return;
-    }
-    const c = clients.find((x) => x.id === id);
-    const name = c?.name || '';
-    setActive({ id, name });
-    writeActive(id, name);
+    (async () => {
+      if (!id) {
+        await setActiveClient(null, '');
+        setActive({id: null, name: ''});
+        return;
+      }
+      const c = clients.find((x) => x.id === id);
+      const name = c?.name || '';
+      await setActiveClient(id, name);
+      setActive({id, name});
+    })();
   };
 
 
@@ -268,6 +273,10 @@ export default function EditCareItem() {
   };
 
   const onSave = async () => {
+    if(!activeId) {
+      alert('Please select a client first.');
+      return;
+    }
     if(!slug) {
       alert("Missing Task Slug -- cannot proceed"); 
       return;
@@ -284,12 +293,6 @@ export default function EditCareItem() {
 
     const countNum = parseInt(frequencyCountStr, 10);
     const hasFrequency = Number.isFinite(countNum) && countNum > 0;
-    const frequencyDays = hasFrequency
-      ? toDays(countNum, frequencyUnit)
-      : undefined;
-    const legacyStr = hasFrequency
-      ? `${countNum} ${frequencyUnit}${countNum > 1 ? 's' : ''}`
-      : undefined;
 
     const payload: Partial<Task> & {
       clientId?: string | null;
@@ -361,9 +364,10 @@ export default function EditCareItem() {
             {/* Category (dropdown) */}
             <Field label="Category">
               <select
+                key={activeId || 'no-client'}
                 value={category}
                 onChange={(e) => {
-                  setCategory(e.target.value);
+                  setCategory(e.target.value.trim());
                   setLabel(''); // reset task when category changes
                 }}
                 className="w-full rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black"

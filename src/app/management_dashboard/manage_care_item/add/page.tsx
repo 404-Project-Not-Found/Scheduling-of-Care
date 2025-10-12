@@ -144,7 +144,7 @@ export default function AddTaskPage() {
     setCareItemLoading(true);
     try {
       const res = await fetch(`/api/v1/task_catalog?category=${encodeURIComponent(category)}`, { cache: "no-store" });
-      if (!res.ok) throw new Error("failed");
+      if (!res.ok) throw new Error("failed -- task catalog");
       const data: { category: string; tasks: CareItemOption[] } = await res.json();
 
       // Safety de-dupe (belt & braces)

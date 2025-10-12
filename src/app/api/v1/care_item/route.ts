@@ -2,7 +2,7 @@
  * Filename: /app/api/care-item/route.ts
  * Author: Zahra Rizqita
  * Date Created: 24/09/2025
- * Updated at 05/09/2025
+ * Last updated by Zahra Rizqita to connect client to care_item on 11/10/2025
  */
 
 import { NextResponse } from "next/server";

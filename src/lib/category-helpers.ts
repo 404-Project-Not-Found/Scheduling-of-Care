@@ -23,7 +23,7 @@ export async function findOrCreateNewCategory(params: {clientId: Types.ObjectId;
 
     const doc = await Category.findOneAndUpdate(
         {clientId, slug},
-        {$setOnInsert: {name: name, clientId},},
+        {$setOnInsert: {name: slug, clientId},},
         {new: true, upsert: true}
     );
 

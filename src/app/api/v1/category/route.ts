@@ -2,6 +2,7 @@
  * Filename: /app/api/category/route.ts
  * Author: Zahra Rizqita
  * Date Created: 05/10/2025
+ * Last updated by Zahra Rizqita to connect client to category on 11/10/2025
  */
 
 import {NextResponse} from 'next/server';
@@ -60,6 +61,20 @@ export async function GET(req: Request) {
       }))
     );
   }
+
+  // return nothing if no clientID provided
+  const list = await Category.find({baseFilter}).sort({ name: 1 }).limit(200).lean();
+  return NextResponse.json(
+    list.map((c) => ({
+      _id: c._id,
+      name: c.name,
+      slug: c.slug,
+      aliases: c.aliases?? [],
+      clientId: c.clientId,
+      createdAt: c.createdAt,
+      updatedAt: c.updatedAt,
+    }))
+  );
 }
 
 interface CategoryCreateBody {

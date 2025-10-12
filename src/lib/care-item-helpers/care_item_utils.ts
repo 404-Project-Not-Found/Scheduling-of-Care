@@ -15,7 +15,7 @@ type NormaliseInput = {
     frequency?: string;
     frequencyDays?: number;
     frequencyCount?: number;
-    frequencyUnit?: unknown;
+    frequencyUnit?: Unit | string | null;
     dateFrom?: string,
     dateTo?: string,
     lastDone?: string;
@@ -24,8 +24,11 @@ type NormaliseInput = {
 type NormalisedFields = {
     frequency?: string;
     frequencyDays?: number;
-    frequencyUnit?: Unit,
-    lastDone: string;
+    frequencyCount?: number;
+    frequencyUnit?: Unit;
+    dateFrom?: string,
+    dateTo?: string,
+    lastDone?: string;
 }
 
 export function parseLegacyFrequency(freq?: string): {count:number; unit:Unit } | null {
@@ -76,12 +79,12 @@ export function normaliseCareItemPayLoad(body: NormaliseInput): NormalisedFields
 
     return {
         ...body, 
-        frequencyCount, 
+        frequencyCount: frequencyCount ?? undefined, 
         frequencyUnit: isUnit(String(frequencyUnit)) ? (String(frequencyUnit) as Unit) : undefined, 
-        frequencyDays, 
-        frequency, 
-        lastDone}
-    ;
+        frequencyDays: frequencyDays ?? undefined, 
+        frequency: frequency ?? undefined, 
+        lastDone: lastDone ?? undefined,
+    };
 }
 
 export function errorJson(message: string, status=400) {
