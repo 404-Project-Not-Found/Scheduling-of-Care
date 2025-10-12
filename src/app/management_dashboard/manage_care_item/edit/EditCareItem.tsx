@@ -24,6 +24,7 @@ import { useState, useEffect, useMemo } from 'react';
 import DashboardChrome from '@/components/top_menu/client_schedule';
 import { useSearchParams } from 'next/navigation';
 import { type CareItemOption } from '@/lib/catalog';
+// import { useActiveClient } from '@/context/ActiveClientContext';
 import {
   getClients, 
   getActiveClient,
