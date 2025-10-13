@@ -81,6 +81,7 @@ type ChromeProps = {
   headerTitle?: string;
   bannerTitle?: string;
   showClientPicker?: boolean;
+  hideBanner?: boolean; // NEW: option to hide pink banner
 };
 
 const ROUTES = {
@@ -187,6 +188,7 @@ export default function DashboardChrome({
   headerTitle,
   bannerTitle,
   showClientPicker,
+  hideBanner,
 }: ChromeProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -323,6 +325,7 @@ export default function DashboardChrome({
 
   // Hide banner for management client-list & family people-list (unchanged from your logic)
   const shouldShowBanner =
+    !hideBanner &&
     page !== 'client-list' &&
     page !== 'staff-list' &&
     page !== 'assign-carer' &&

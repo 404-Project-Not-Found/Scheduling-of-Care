@@ -11,6 +11,8 @@ const palette = {
   banner: 'rgba(249, 201, 177, 0.7)',
   text: '#2b2b2b',
   pageBg: '#fff4e6',
+  border: '#3d0000',
+  accent: '#E07A5F',
 };
 
 /* ---------------- Types ---------------- */
@@ -230,255 +232,213 @@ export default function StaffSchedulePage() {
         }}
         onLogoClick={onLogoClick}
       >
-        <div
-          className="relative z-10 w-full px-6 md:px-8 py-0 md:py-0 flex items-center justify-between flex-wrap gap-3 -mt-8 md:-mt-10"
-          style={{
-            color: palette.header,
-            marginTop: '-28px',
-          }}
-        >
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            {/* LEFT: week picker */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => changeWeek(-1)}
-                className="h-9 px-3 rounded border bg-white"
-                style={{ borderColor: '#00000022', color: palette.header }}
-                aria-label="Previous week"
-              >
-                ◀
-              </button>
-
-              <div className="font-semibold">{weekLabel}</div>
-
-              <button
-                onClick={() => changeWeek(1)}
-                className="h-9 px-3 rounded border bg-white"
-                style={{ borderColor: '#00000022', color: palette.header }}
-                aria-label="Next week"
-              >
-                ▶
-              </button>
-            </div>
-
-            {/* RIGHT: search + actions */}
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                placeholder="Search staff"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="h-9 w-60 md:w-72 rounded-lg border px-3 text-black bg-white focus:outline-none focus:ring-2 focus:ring-[#F9C9B1]"
-              />
-
-              <button
-                onClick={goToToday}
-                className="h-9 px-4 rounded-full text-sm border bg-white"
-                style={{ borderColor: '#00000022', color: palette.header }}
-                title="Jump to current week"
-              >
-                Today
-              </button>
-
-              <button
-                onClick={() => setSettingsOpen(true)}
-                className="h-9 px-4 rounded-full text-sm border bg-white"
-                style={{ borderColor: '#00000022', color: palette.header }}
-                title="Shift presets"
-              >
-                ⚙ Shifts
-              </button>
-
-              <button
-                onClick={() => setAddCarerModal({ open: true, role: 'Carer' })}
-                className="h-9 px-4 rounded-full text-sm border bg-white"
-                style={{ borderColor: '#00000022', color: palette.header }}
-                title="Add a staff member"
-              >
-                + Add Staff
-              </button>
-            </div>
-          </div>
+        {/* Week navigation */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => changeWeek(-1)}
+            className="px-3 py-1 border rounded"
+            style={{ borderColor: palette.border, color: 'white' }}
+          >
+            ◀
+          </button>
+          <div className="text-white font-semibold">{weekLabel}</div>
+          <button
+            onClick={() => changeWeek(1)}
+            className="px-3 py-1 border rounded"
+            style={{ borderColor: palette.border, color: 'white' }}
+          >
+            ▶
+          </button>
+          <button
+            onClick={goToToday}
+            className="px-4 py-1 rounded-full text-sm border"
+            style={{
+              borderColor: palette.border,
+              color: palette.border,
+              background: 'white',
+            }}
+          >
+            Today
+          </button>
+          <button
+            onClick={() => setSettingsOpen(true)}
+            className="px-4 py-1 rounded-full text-sm border bg-white"
+            style={{ borderColor: palette.border, color: palette.border }}
+          >
+            ⚙ Shifts
+          </button>
+          <button
+            onClick={() => setAddCarerModal({ open: true, role: 'Carer' })}
+            className="px-4 py-1 rounded-full text-sm border bg-white"
+            style={{ borderColor: palette.border, color: palette.border }}
+          >
+            + Add Staff
+          </button>
         </div>
 
-        {/* Main content */}
-        <section className="w-full" style={{ backgroundColor: palette.banner }}>
-          <div className="max-w-6xl mx-auto px-6 md:px-10 py-8">
-            <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
-              <h2
-                className="text-2xl font-extrabold"
-                style={{ color: palette.header }}
-              >
-                {/* Staff */}
-              </h2>
-            </div>
+        <div style={{ background: '#f3d9c9', height: 8 }} />
 
-            <div
-              className="overflow-x-auto rounded-lg border bg-white"
-              style={{ borderColor: `${palette.header}22` }}
-            >
-              <table className="w-full table-auto border-collapse text-black">
-                <thead>
-                  <tr className="bg-[#fffaf6]">
-                    <th
-                      className="p-3 text-left border-r-2"
-                      style={{ borderColor: `${palette.header}55` }}
+        {/* Calendar Table */}
+        <section className="max-w-6xl mx-auto px-6 py-6">
+          <div
+            className="overflow-x-auto rounded-lg border"
+            style={{ borderColor: palette.border }}
+          >
+            <table className="w-full table-auto border-collapse text-black">
+              <thead>
+                <tr className="bg-[#fffaf6]">
+                  <th
+                    className="p-3 text-left border-r-2"
+                    style={{ borderColor: palette.border }}
+                  >
+                    Staff
+                  </th>
+                  {days.map((d) => {
+                    const label = d.toLocaleDateString(undefined, {
+                      weekday: 'short',
+                      day: 'numeric',
+                      month: 'short',
+                    });
+                    const iso = isoDate(d);
+                    const isToday = iso === isoDate(new Date());
+                    return (
+                      <th
+                        key={iso}
+                        className="p-3 text-center border-r-2 border-b-2"
+                        style={{ borderColor: palette.border }}
+                      >
+                        <div className="flex flex-col items-center">
+                          <span
+                            className={`text-sm ${isToday ? 'font-semibold text-red-600' : 'text-black'}`}
+                          >
+                            {label}
+                          </span>
+                          <span className="text-xs text-black/60">{iso}</span>
+                        </div>
+                      </th>
+                    );
+                  })}
+                </tr>
+              </thead>
+              <tbody>
+                {visibleCarers.map((carer) => (
+                  <tr
+                    key={carer.id}
+                    className="border-t"
+                    style={{ borderColor: palette.border }}
+                  >
+                    {/* Carer Name + Role + Delete */}
+                    <td
+                      className="p-3 align-top border-r-2"
+                      style={{ borderColor: palette.border }}
                     >
-                      Staff
-                    </th>
-                    {days.map((d) => {
-                      const label = d.toLocaleDateString(undefined, {
-                        weekday: 'short',
-                        day: 'numeric',
-                        month: 'short',
-                      });
-                      const iso = isoDate(d);
-                      const isToday = iso === isoDate(new Date());
-                      return (
-                        <th
-                          key={iso}
-                          className="p-3 text-center border-r-2 border-b-2"
-                          style={{ borderColor: `${palette.header}55` }}
-                        >
-                          <div className="flex flex-col items-center">
-                            <span
-                              className={`text-sm ${isToday ? 'font-semibold text-red-600' : 'text-black'}`}
-                            >
-                              {label}
-                            </span>
-                            <span className="text-xs text-black/60">{iso}</span>
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#3d0000] font-semibold border"
+                            style={{ borderColor: `${palette.border}33` }}
+                          >
+                            {carer.name
+                              .split(' ')
+                              .map((n) => n[0])
+                              .slice(0, 2)
+                              .join('')}
                           </div>
-                        </th>
+                          <div>
+                            <div className="font-medium text-black">
+                              {carer.name}
+                            </div>
+                            <div className="text-sm text-black/70">
+                              {carer.role || 'Carer'}
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            if (
+                              !confirm(
+                                `Are you sure you want to delete ${carer.name}?`
+                              )
+                            )
+                              return;
+                            setCarers((prev) =>
+                              prev.filter((c) => c.id !== carer.id)
+                            );
+                            setSchedule((prev) => {
+                              const copy = { ...prev };
+                              delete copy[carer.id];
+                              return copy;
+                            });
+                          }}
+                          className="px-2 py-1 text-xs border rounded text-red-700"
+                          style={{ borderColor: palette.border }}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+
+                    {days.map((d) => {
+                      const iso = isoDate(d);
+                      const s = getShift(carer.id, iso);
+                      return (
+                        <td
+                          key={iso}
+                          className="p-3 text-center border-r"
+                          style={{ borderColor: `${palette.border}33` }}
+                        >
+                          {s ? (
+                            <div
+                              className="inline-flex flex-col items-center justify-center gap-1 bg-[#fff4ec] border rounded px-3 py-2"
+                              style={{ borderColor: palette.border }}
+                            >
+                              <div className="text-sm text-black font-semibold">
+                                {s.label || 'Custom'} ({s.start} — {s.end})
+                              </div>
+                              <div className="text-xs text-black/70">
+                                ({shiftDuration(s.start, s.end)})
+                              </div>
+                              <div className="flex gap-1">
+                                <button
+                                  onClick={() => openAssignModal(carer.id, iso)}
+                                  className="text-xs px-2 py-1 border rounded"
+                                  style={{ borderColor: palette.border }}
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={() => removeShift(carer.id, iso)}
+                                  className="text-xs px-2 py-1 border rounded text-red-700"
+                                  style={{ borderColor: palette.border }}
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => openAssignModal(carer.id, iso)}
+                              className="text-sm text-[#3d0000] underline"
+                            >
+                              Assign
+                            </button>
+                          )}
+                        </td>
                       );
                     })}
                   </tr>
-                </thead>
-                <tbody>
-                  {visibleCarers.map((carer) => (
-                    <tr
-                      key={carer.id}
-                      className="border-t"
-                      style={{ borderColor: `${palette.header}55` }}
-                    >
-                      <td
-                        className="p-3 align-top border-r-2"
-                        style={{ borderColor: `${palette.header}55` }}
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-3">
-                            <div
-                              className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#3d0000] font-semibold border"
-                              style={{ borderColor: `${palette.header}33` }}
-                            >
-                              {carer.name
-                                .split(' ')
-                                .map((n) => n[0])
-                                .slice(0, 2)
-                                .join('')}
-                            </div>
-                            <div>
-                              <div className="font-medium text-black">
-                                {carer.name}
-                              </div>
-                              <div className="text-sm text-black/70">
-                                {carer.role || 'Carer'}
-                              </div>
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => {
-                              if (
-                                !confirm(
-                                  `Are you sure you want to delete ${carer.name}?`
-                                )
-                              )
-                                return;
-                              setCarers((prev) =>
-                                prev.filter((c) => c.id !== carer.id)
-                              );
-                              setSchedule((prev) => {
-                                const copy = { ...prev };
-                                delete copy[carer.id];
-                                return copy;
-                              });
-                            }}
-                            className="px-2 py-1 text-xs border rounded text-red-700 bg-white"
-                            style={{ borderColor: `${palette.header}55` }}
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-
-                      {days.map((d) => {
-                        const iso = isoDate(d);
-                        const s = getShift(carer.id, iso);
-                        return (
-                          <td
-                            key={iso}
-                            className="p-3 text-center border-r"
-                            style={{ borderColor: `${palette.header}22` }}
-                          >
-                            {s ? (
-                              <div
-                                className="inline-flex flex-col items-center justify-center gap-1 bg-[#fff4ec] border rounded px-3 py-2"
-                                style={{ borderColor: `${palette.header}55` }}
-                              >
-                                <div className="text-sm text-black font-semibold">
-                                  {s.label || 'Custom'} ({s.start} — {s.end})
-                                </div>
-                                <div className="text-xs text-black/70">
-                                  ({shiftDuration(s.start, s.end)})
-                                </div>
-                                <div className="flex gap-1">
-                                  <button
-                                    onClick={() =>
-                                      openAssignModal(carer.id, iso)
-                                    }
-                                    className="text-xs px-2 py-1 border rounded bg-white"
-                                    style={{
-                                      borderColor: `${palette.header}55`,
-                                    }}
-                                  >
-                                    Edit
-                                  </button>
-                                  <button
-                                    onClick={() => removeShift(carer.id, iso)}
-                                    className="text-xs px-2 py-1 border rounded text-red-700 bg-white"
-                                    style={{
-                                      borderColor: `${palette.header}55`,
-                                    }}
-                                  >
-                                    Remove
-                                  </button>
-                                </div>
-                              </div>
-                            ) : (
-                              <button
-                                onClick={() => openAssignModal(carer.id, iso)}
-                                className="text-sm underline"
-                                style={{ color: palette.header }}
-                              >
-                                Assign
-                              </button>
-                            )}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
         </section>
 
-        {/* Add Staff Modal */}
+        {/* Add Carer Modal */}
         {addCarerModal.open && (
           <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-lg w-full max-w-md p-6 text-black">
               <h3 className="text-lg font-semibold mb-3">Add Staff</h3>
-              <label className="block mb-2 text-sm">Name</label>
+              <label className="block mb-3 text-sm">Name:</label>
               <input
                 type="text"
                 value={addCarerModal.name || ''}
@@ -490,7 +450,7 @@ export default function StaffSchedulePage() {
                 }
                 className="w-full border px-3 py-2 rounded mb-3"
               />
-              <label className="block mb-2 text-sm">Role</label>
+              <label className="block mb-3 text-sm">Role:</label>
               <select
                 value={addCarerModal.role}
                 onChange={(e) =>
@@ -510,14 +470,14 @@ export default function StaffSchedulePage() {
                     setAddCarerModal({ open: false, role: 'Carer' })
                   }
                   className="px-4 py-2 rounded-md border"
-                  style={{ borderColor: `${palette.header}55` }}
+                  style={{ borderColor: palette.border }}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={addCarer}
                   className="px-4 py-2 rounded-md text-white"
-                  style={{ background: '#E07A5F' }}
+                  style={{ background: palette.accent }}
                 >
                   Add
                 </button>
@@ -526,7 +486,7 @@ export default function StaffSchedulePage() {
           </div>
         )}
 
-        {/* Shift Presets Modal */}
+        {/* Shift Preset Settings Modal */}
         {settingsOpen && (
           <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-lg w-full max-w-md p-6 text-black">
@@ -565,8 +525,8 @@ export default function StaffSchedulePage() {
               <div className="flex justify-end gap-3 mt-4">
                 <button
                   onClick={() => setSettingsOpen(false)}
-                  className="px-4 py-2 rounded-md border bg-white"
-                  style={{ borderColor: `${palette.header}55` }}
+                  className="px-4 py-2 rounded-md border"
+                  style={{ borderColor: palette.border }}
                 >
                   Close
                 </button>
@@ -575,7 +535,7 @@ export default function StaffSchedulePage() {
           </div>
         )}
 
-        {/* Assign Shift Modal */}
+        {/* Assign Modal */}
         {modal.open && modal.carerId && modal.dateISO && (
           <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-lg w-full max-w-md p-6 text-black">
@@ -585,8 +545,7 @@ export default function StaffSchedulePage() {
                 {carers.find((c) => c.id === modal.carerId)?.name} ·{' '}
                 <strong>Date:</strong> {modal.dateISO}
               </p>
-
-              <label className="block mb-3 text-sm">Select Shift</label>
+              <label className="block mb-3 text-sm">Select Shift:</label>
               <div className="flex gap-2 mb-4 flex-wrap">
                 {Object.entries(shiftPresets).map(([label, { start, end }]) => (
                   <button
@@ -595,7 +554,7 @@ export default function StaffSchedulePage() {
                       setModal((m) => ({ ...m, label, start, end }))
                     }
                     className={`px-3 py-2 border rounded text-sm ${modal.label === label ? 'bg-[#E07A5F] text-white' : 'bg-white'}`}
-                    style={{ borderColor: `${palette.header}55` }}
+                    style={{ borderColor: palette.border }}
                   >
                     {label}
                   </button>
@@ -610,12 +569,11 @@ export default function StaffSchedulePage() {
                     }))
                   }
                   className={`px-3 py-2 border rounded text-sm ${modal.label === 'Custom' ? 'bg-[#E07A5F] text-white' : 'bg-white'}`}
-                  style={{ borderColor: `${palette.header}55` }}
+                  style={{ borderColor: palette.border }}
                 >
                   Custom
                 </button>
               </div>
-
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <label className="flex flex-col text-sm">
                   <span className="text-xs mb-1">Start Time</span>
@@ -646,19 +604,18 @@ export default function StaffSchedulePage() {
                   />
                 </label>
               </div>
-
               <div className="flex justify-end gap-3">
                 <button
                   onClick={() => setModal({ open: false })}
-                  className="px-4 py-2 rounded-md border bg-white"
-                  style={{ borderColor: `${palette.header}55` }}
+                  className="px-4 py-2 rounded-md border"
+                  style={{ borderColor: palette.border }}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={saveModal}
                   className="px-4 py-2 rounded-md text-white"
-                  style={{ background: '#E07A5F' }}
+                  style={{ background: palette.accent }}
                 >
                   Save
                 </button>

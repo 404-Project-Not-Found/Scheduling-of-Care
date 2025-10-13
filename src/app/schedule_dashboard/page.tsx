@@ -207,7 +207,7 @@ export default function DashboardPage() {
           className="text-base md:text-lg leading-relaxed"
           style={{ color: palette.header }}
         >
-          Use the buttons below to navigate between staff and client schedules.
+          Use the buttons below to navigate to the respective pages.
         </p>
       </div>
 
