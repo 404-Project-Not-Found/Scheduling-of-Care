@@ -106,6 +106,9 @@ export type Client = {
   notes?: string[];
   avatarUrl?: string;
   orgAccess?: 'approved' | 'pending' | 'revoked';
+  medicalNotes?: string;
+  emergencyContact?: string;
+  address?: string;
 };
 
 export type Organisation = {

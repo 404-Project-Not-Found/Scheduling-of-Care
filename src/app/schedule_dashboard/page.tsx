@@ -13,6 +13,14 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { getSession } from 'next-auth/react';
 import { getViewerRoleFE } from '@/lib/mock/mockApi';
+import {
+  CalendarDays,
+  Users,
+  FileText,
+  Receipt,
+  ClipboardList,
+  HelpCircle,
+} from "lucide-react";
 
 const palette = {
   header: '#3A0000',
@@ -201,35 +209,51 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      {/* Sub-headings */}
-      <div className="w-full flex h-[600px]">
-        {/* Left side */}
-        <div
-          className="flex justify-center items-center w-1/2"
-          style={{ backgroundColor: palette.white }}
-        >
-          <button
-            className="text-lg md:text-4xl font-semibold hover:underline"
-            style={{ color: palette.header }}
-            onClick={() => router.push('/staff_schedule')}
-          >
-            Staff Schedule
-          </button>
-        </div>
-        {/* Right side */}
-        <div
-          className="flex justify-center items-center w-1/2"
-          style={{ backgroundColor: palette.pageBg }}
-        >
-          <button
-            className="text-lg md:text-4xl font-semibold hover:underline"
-            style={{ color: palette.header }}
+            {/* ===== Uniform button grid section ===== */}
+      <div
+        className="flex-1 flex items-center justify-center px-10 py-12"
+        style={{ backgroundColor: palette.white }}
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 w-full max-w-6xl">
+          {/* Button 1 */}
+          <DashboardButton
+            label="Client Schedule"
+            icon={CalendarDays}
             onClick={() => router.push('/calendar_dashboard')}
-          >
-            Client Schedule
-          </button>
+          />
+          {/* Button 2 */}
+          <DashboardButton
+            label="Staff Schedule"
+            icon={Users}
+            onClick={() => router.push('/staff_schedule_calendar')}
+          />
+          {/* Button 3 */}
+          <DashboardButton
+            label="Budget Report"
+            icon={FileText}
+            onClick={() => router.push('/calendar_dashboard/budget_report')}
+          />
+          {/* Button 4 */}
+          <DashboardButton
+            label="Transactions"
+            icon={Receipt}
+            onClick={() => router.push('/calendar_dashboard/transaction_history')}
+          />
+          {/* Button 5 */}
+          <DashboardButton
+            label="Family Requests"
+            icon={ClipboardList}
+            onClick={() => router.push('/request-log-page')}
+          />
+          {/* Button 6 */}
+          <DashboardButton
+            label="FAQ"
+            icon={HelpCircle}
+            onClick={() => router.push('/faq')}
+          />
         </div>
       </div>
+
 
       {/* ===== Main content — borderless, full-bleed section ===== */}
       <section className="w-full flex-1">
@@ -257,3 +281,25 @@ function BellIcon() {
     </svg>
   );
 }
+
+function DashboardButton({
+  label,
+  icon: Icon,
+  onClick,
+}: {
+  label: string;
+  icon: React.ElementType;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex flex-col items-center justify-center rounded-2xl shadow-lg bg-[#F5D8C2] hover:bg-[#F2C9AA] transition-all duration-300 p-10 border-2 border-[#3A0000]/20"
+    >
+      <Icon className="w-14 h-14 mb-4 text-[#3A0000]" />
+      <span className="text-2xl font-semibold text-[#3A0000]">{label}</span>
+    </button>
+  );
+}
+
+
