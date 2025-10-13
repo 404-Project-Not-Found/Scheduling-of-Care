@@ -13,6 +13,9 @@ import { useState, useEffect, Suspense } from 'react';
 import { signIn, getSession } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 
+import { mockSignIn } from '@/lib/mock/mockSignin';
+import type { ViewerRole } from '@/lib/mock/mockApi';
+
 // Prefills information after user signs up
 function PrefillFromSearchParams({
   setEmail,
@@ -56,18 +59,23 @@ export default function Home() {
     if (process.env.NEXT_PUBLIC_ENABLE_MOCK === '1') {
       const emailTrimmed = email.trim().toLowerCase();
 
-      const isFamily =
-        emailTrimmed === 'family@email.com' && password === 'family';
-      const isCarer =
-        emailTrimmed === 'carer@email.com' && password === 'carer';
-      const isMgmt =
-        emailTrimmed === 'management@email.com' && password === 'management';
+      let role: ViewerRole | null = null;
+      if (emailTrimmed === 'family@email.com' && password === 'family') {
+        role = 'family';
+      } else if (emailTrimmed === 'carer@email.com' && password === 'carer') {
+        role = 'carer';
+      } else if (
+        emailTrimmed === 'management@email.com' &&
+        password === 'management'
+      ) {
+        role = 'management';
+      }
 
-      if (isFamily || isCarer || isMgmt) {
-        if (staySigned) localStorage.setItem('rememberMe', '1');
-        else localStorage.removeItem('rememberMe');
-
+      if (role) {
+        localStorage.setItem('lastLoginEmail', emailTrimmed);
+        await mockSignIn(role);
         window.location.href = '/schedule_dashboard';
+        return;
       }
 
       setError('Invalid mock credentials');

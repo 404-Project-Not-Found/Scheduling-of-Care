@@ -8,8 +8,12 @@
  * - Pink banner with the centered title changes depending on the page and selected client.
  * - Carer users DO NOT see the client select dropdown in the banner.
  *
- * Last Updated by Denise Alexander - 7/10/2025: active client logic implemented to render the
+ * Updated by Denise Alexander on 7/10/2025: active client logic implemented to render the
  * correct client details across pages.
+ *
+ * Last Updated by Qingyue Zhao on 08/10/2025: add access list for on the Schedule page,
+ * show a read-only list of users who have access to the current client.
+ *
  */
 
 'use client';
@@ -20,6 +24,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { getViewerRole, signOutUser } from '@/lib/data';
 import { useActiveClient } from '@/context/ActiveClientContext';
+import AccessDropdown from '@/components/top_menu/AccessDropdown';
 
 const palette = {
   header: '#3A0000',
@@ -160,6 +165,9 @@ function hexToRgba(hex: string, alpha = 1) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+/** Read-only access user item type (for the inline list next to the profile). */
+type AccessUser = { id: string; name: string; role?: string };
+
 export default function DashboardChrome({
   page,
   clients,
@@ -275,6 +283,23 @@ export default function DashboardChrome({
     }
     router.push('/');
   };
+
+  // Backend to do:
+  // Read-only access list data (inline). Replace with your API call when ready.
+  // Example integration:
+  // useEffect(() => {
+  //   if (isManagement && page === 'schedule' && activeClient.id) {
+  //     fetch(`/api/clients/${activeClient.id}/access`)
+  //       .then(res => res.json())
+  //       .then((data: AccessUser[]) => setAccessUsers(data))
+  //       .catch(() => setAccessUsers([]));
+  //   }
+  // }, [isManagement, page, activeClient.id]);
+
+  const accessUsers: AccessUser[] = useMemo(() => {
+    // Keep empty by default; safe placeholder for a read-only list.
+    return [];
+  }, [activeClient.id]);
 
   if (!role) {
     return (
@@ -589,7 +614,6 @@ export default function DashboardChrome({
           </div>
         </div>
       )}
-
       <main className="flex-1 min-h-0">{children}</main>
     </div>
   );

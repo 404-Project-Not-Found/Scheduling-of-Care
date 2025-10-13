@@ -12,19 +12,22 @@ import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { getSession } from 'next-auth/react';
+import { getViewerRoleFE } from '@/lib/mock/mockApi';
+import {
+  CalendarDays,
+  Users,
+  FileText,
+  Receipt,
+  ClipboardList,
+  HelpCircle,
+} from 'lucide-react';
 
-// No longer in use - due to change in page layout
-/* import FamilySideMenu from '@/components/side_menu/family';
-import ManagementSideMenu from '@/components/side_menu/management';
-*/
-
-/** Shared palette (borderless, full-width header/banner) */
 const palette = {
-  header: '#3A0000', // Dark brown header
-  banner: '#F9C9B1', // Pink notice bar
+  header: '#3A0000',
+  banner: '#F9C9B1',
   text: '#2b2b2b',
   white: '#FFFFFF',
-  pageBg: '#FAEBDC', // Light beige page background
+  pageBg: '#FAEBDC',
 };
 
 type Role = 'family' | 'management' | 'carer' | null;
@@ -33,11 +36,44 @@ export default function DashboardPage() {
   const [role, setRole] = useState<Role>(null);
   const [title, setTitle] = useState('Dashboard');
   const router = useRouter();
+  const isMock =
+    process.env.NEXT_PUBLIC_ENABLE_MOCK === '1' ||
+    process.env.NEXT_PUBLIC_ENABLE_MOCK === 'true';
 
   useEffect(() => {
-    const loadSession = async () => {
-      const session = await getSession();
+    const load = async () => {
+      if (isMock) {
+        let r = (getViewerRoleFE() as Role) || null;
+        if (!r) {
+          const em = (
+            localStorage.getItem('lastLoginEmail') || ''
+          ).toLowerCase();
+          if (em.includes('carer')) r = 'carer';
+          else if (em.includes('management')) r = 'management';
+          else if (em.includes('family')) r = 'family';
+        }
+        if (!r) {
+          router.replace('/');
+          return;
+        }
+        setRole(r);
+        switch (r) {
+          case 'family':
+            setTitle('Family/POA Dashboard');
+            break;
+          case 'management':
+            setTitle('Management Dashboard');
+            break;
+          case 'carer':
+            setTitle('Carer Dashboard');
+            break;
+          default:
+            setTitle('Dashboard');
+        }
+        return;
+      }
 
+      const session = await getSession();
       if (!session?.user?.role) {
         router.replace('/');
         return;
@@ -58,7 +94,7 @@ export default function DashboardPage() {
           setTitle('Dashboard');
       }
     };
-    loadSession();
+    load();
   }, [router]);
 
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -175,33 +211,50 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      {/* Sub-headings */}
-      <div className="w-full flex h-[600px]">
-        {/* Left side */}
-        <div
-          className="flex justify-center items-center w-1/2"
-          style={{ backgroundColor: palette.white }}
-        >
-          <button
-            className="text-lg md:text-4xl font-semibold hover:underline"
-            style={{ color: palette.header }}
-            onClick={() => router.push('/management_dashboard/staff_schedule')}
-          >
-            Staff Schedule
-          </button>
-        </div>
-        {/* Right side */}
-        <div
-          className="flex justify-center items-center w-1/2"
-          style={{ backgroundColor: palette.pageBg }}
-        >
-          <button
-            className="text-lg md:text-4xl font-semibold hover:underline"
-            style={{ color: palette.header }}
+      {/* ===== Uniform button grid section ===== */}
+      <div
+        className="flex-1 flex items-center justify-center px-10 py-12"
+        style={{ backgroundColor: palette.white }}
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 w-full max-w-6xl">
+          {/* Button 1 */}
+          <DashboardButton
+            label="Client Schedule"
+            icon={CalendarDays}
             onClick={() => router.push('/calendar_dashboard')}
-          >
-            Client Schedule
-          </button>
+          />
+          {/* Button 2 */}
+          <DashboardButton
+            label="Staff Schedule"
+            icon={Users}
+            onClick={() => router.push('/staff_schedule_calendar')}
+          />
+          {/* Button 3 */}
+          <DashboardButton
+            label="Budget Report"
+            icon={FileText}
+            onClick={() => router.push('/calendar_dashboard/budget_report')}
+          />
+          {/* Button 4 */}
+          <DashboardButton
+            label="Transactions"
+            icon={Receipt}
+            onClick={() =>
+              router.push('/calendar_dashboard/transaction_history')
+            }
+          />
+          {/* Button 5 */}
+          <DashboardButton
+            label="Family Requests"
+            icon={ClipboardList}
+            onClick={() => router.push('/request-log-page')}
+          />
+          {/* Button 6 */}
+          <DashboardButton
+            label="FAQ"
+            icon={HelpCircle}
+            onClick={() => router.push('/faq')}
+          />
         </div>
       </div>
 
@@ -232,28 +285,22 @@ function BellIcon() {
   );
 }
 
-// No longer in use - due to design changes not requiring a menu option
-/* function HamburgerIcon({
-  size = 24,
-  color = 'currentColor',
+function DashboardButton({
+  label,
+  icon: Icon,
+  onClick,
 }: {
-  size?: number;
-  color?: string;
+  label: string;
+  icon: React.ElementType;
+  onClick: () => void;
 }) {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={color}
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
+    <button
+      onClick={onClick}
+      className="flex flex-col items-center justify-center rounded-2xl shadow-lg bg-[#F5D8C2] hover:bg-[#F2C9AA] transition-all duration-300 p-10 border-2 border-[#3A0000]/20"
     >
-      <path d="M4 6h16M4 12h16M4 18h16" />
-    </svg>
+      <Icon className="w-14 h-14 mb-4 text-[#3A0000]" />
+      <span className="text-2xl font-semibold text-[#3A0000]">{label}</span>
+    </button>
   );
-} */
+}

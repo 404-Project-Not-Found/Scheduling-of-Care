@@ -123,7 +123,7 @@ export default function AddAccessCodePanel({
           >
             <span className="font-bold">IMPORTANT:</span> Generate an access
             code, copy it and use it when you fill out{' '}
-            <span className="font-bold underline">Add New PWSN</span>. Then,
+            <span className="font-bold underline">Add New Client</span>. Then,
             email the access code to the care organisation management team to
             register the client.
           </p>

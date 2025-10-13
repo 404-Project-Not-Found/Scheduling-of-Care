@@ -34,7 +34,7 @@ type ApiRequest = {
   change: string;
   requestedBy: string;
   dateRequested: string;
-  status: 'Pending' | 'Approved';
+  status: 'Pending' | 'Implemented';
   resolutionDate: string;
 };
 
@@ -64,7 +64,7 @@ const parseDateString = (dateStr: string) => {
 };
 
 /** Utility for status color classes */
-const statusClasses = (value: 'Pending' | 'Approved') =>
+const statusClasses = (value: 'Pending' | 'Implemented') =>
   value === 'Pending'
     ? 'bg-yellow-100 text-yellow-800 border-yellow-300'
     : 'bg-green-100 text-green-800 border-green-300';
@@ -192,7 +192,10 @@ function RequestLogInner() {
   };
 
   /** Inline status change (Management only) */
-  const handleStatusChange = (reqId: string, next: 'Pending' | 'Approved') => {
+  const handleStatusChange = (
+    reqId: string,
+    next: 'Pending' | 'Implemented'
+  ) => {
     if (!isManagement) return;
     setRequests((prev) =>
       prev.map((r) =>
@@ -202,7 +205,7 @@ function RequestLogInner() {
               ...r,
               status: next,
               resolutionDate:
-                next === 'Approved'
+                next === 'Implemented'
                   ? new Date().toLocaleDateString('en-GB', {
                       day: '2-digit',
                       month: 'short',
@@ -224,7 +227,7 @@ function RequestLogInner() {
       colors={colors}
       onLogoClick={() => router.push('/empty_dashboard')}
     >
-      {/* Main content: 铺满全屏 */}
+      {/* Main content */}
       <div className="flex-1 h-[680px] bg-white/80 overflow-auto">
         {/* Header bar */}
         <div
@@ -320,7 +323,7 @@ function RequestLogInner() {
                             onChange={(e) =>
                               handleStatusChange(
                                 req.id,
-                                e.target.value as 'Pending' | 'Approved'
+                                e.target.value as 'Pending' | 'Implemented'
                               )
                             }
                             className={`rounded-full border px-3 py-1.5 text-xs font-bold ${statusClasses(
@@ -328,7 +331,7 @@ function RequestLogInner() {
                             )}`}
                           >
                             <option value="Pending">Pending</option>
-                            <option value="Approved">Approved</option>
+                            <option value="Implemented">Implemented</option>
                           </select>
                         ) : req.status === 'Pending' ? (
                           <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-bold">
@@ -336,7 +339,7 @@ function RequestLogInner() {
                           </span>
                         ) : (
                           <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold">
-                            Approved
+                            Implemented
                           </span>
                         )}
                       </td>

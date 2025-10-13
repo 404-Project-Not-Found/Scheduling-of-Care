@@ -87,6 +87,7 @@ export const getTasks = async () => {
   }
   return (await res.json()) as mockApi.Task[]; 
   */
+  return [];
 };
 
 // Saves the provided list of tasks
