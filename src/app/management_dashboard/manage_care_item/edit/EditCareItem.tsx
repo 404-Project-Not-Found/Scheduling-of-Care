@@ -24,13 +24,13 @@ import { useState, useEffect, useMemo } from 'react';
 import DashboardChrome from '@/components/top_menu/client_schedule';
 import { useSearchParams } from 'next/navigation';
 import { type CareItemOption } from '@/lib/catalog';
-// import { useActiveClient } from '@/context/ActiveClientContext';
+import { useActiveClient } from '@/context/ActiveClientContext';
 import {
-  getClients, 
+  getClients,
   getActiveClient,
-  setActiveClient,
-  type Client as ApiClient,
-} from '@/lib/data'
+  Client as ApiClient,
+} from '@/lib/data';
+
 
 type UiClient = {id: string; name: string};
 
@@ -82,13 +82,9 @@ export default function EditCareItem() {
 
   // Topbar client list
   const [clients, setClients] = useState<Client[]>([]);
-  const [{ id: activeId, name: activeName }, setActive] = useState<{
-    id: string | null;
-    name: string;
-  }>({
-    id: null,
-    name: '',
-  });
+  const { client, handleClientChange, resetClient } = useActiveClient();
+  const activeId = client.id;
+  const activeName = client.name;
 
   // State
   const [careItemOptions, setCareItemOptions] = useState<CareItemOption[]>([]);
@@ -122,13 +118,14 @@ export default function EditCareItem() {
         
         const active = await getActiveClient();
         if (active.id) {
-          setActive({ id: active.id, name: active.name });
+          handleClientChange(active.id, active.name);
         } 
         else {
-          setActive({id: null, name: ''});
+          resetClient();
         }
       } catch {
         setClients([]);
+        resetClient();
       }
     })();
   }, []);
@@ -188,12 +185,11 @@ export default function EditCareItem() {
         if(t.clientId) {
           const match = clients.find(c => c.id === t.clientId);
           if(match) {
-            setActive({id: match.id, name:match.name}); 
-            await setActiveClient(match.id, match.name);
+            if (match) handleClientChange(match.id, match.name);
           }
         }
         else if(t.clientName && !activeName) {
-          setActive(prev => ({ id: prev.id, name: t.clientName! }));
+          handleClientChange(client.id ?? '', t.clientName);
         }
       })(); 
   }, [slug, clients]);
@@ -230,17 +226,8 @@ export default function EditCareItem() {
 }, [category]);
 
   const onClientChange = (id: string) => {
-    (async () => {
-      if (!id) {
-        await setActiveClient(null, '');
-        setActive({id: null, name: ''});
-        return;
-      }
-      const c = clients.find((x) => x.id === id);
-      const name = c?.name || '';
-      await setActiveClient(id, name);
-      setActive({id, name});
-    })();
+    const c = clients.find(x => x.id === id);
+    handleClientChange(id, c?.name || '');
   };
 
 

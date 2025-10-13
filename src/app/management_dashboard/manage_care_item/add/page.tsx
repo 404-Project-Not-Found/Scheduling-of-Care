@@ -19,36 +19,15 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect, useMemo } from 'react';
 import DashboardChrome from '@/components/top_menu/client_schedule';
 import {fetchCareItemCatalog, type CareItemOption} from '@/lib/catalog';
-import {
-  getClients,
-  getActiveClient,
-  setActiveClient,
-} from '@/lib/data';
-import type {Client as ApiClient} from '@/lib/data';
+import {getClients, Client as ApiClient,} from '@/lib/data';
+import { useActiveClient } from '@/context/ActiveClientContext';
+
 
 type UiClient = {id: string; name: string};
 
 type Unit = 'day' | 'week' | 'month' | 'year';
 
 
-type Task = {
-  label: string;
-  slug: string;
-  status: string;
-  category: string;
-  categoryId: string;
-  clientName?: string;
-  clientId: string;
-  deleted?: boolean;
-  frequency?: string;
-  lastDone?: string;
-  frequencyDays?: number;
-  frequencyCount?: number;
-  frequencyUnit?: Unit;
-  dateFrom?: string;
-  dateTo?: string;
-  notes?: string;
-};
 
 type CatalogItem = {
   category: string;
@@ -68,13 +47,9 @@ export default function AddTaskPage() {
 
   // Topbar client list
   const [clients, setClients] = useState<UiClient[]>([]);
-  const [{ id: activeId, name: activeName }, setActive] = useState<{
-    id: string | null;
-    name: string;
-  }>({
-    id: null,
-    name: '',
-  });
+  const {client, handleClientChange, resetClient} = useActiveClient();
+  const activeId = client.id;
+  const activeName = client.name;
 
   // Added catalog implementation
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
@@ -103,12 +78,13 @@ export default function AddTaskPage() {
         const mapped: UiClient[] = list.map(c => ({ id: c._id, name: c.name }));
         setClients(mapped);
 
-        const active = await getActiveClient();
-        if(!activeId) {
-          setActive({ id: active.id, name: active.name });
-        } 
-        else {
-          setActive({id: null, name: ''});
+        if(!client.id) {
+          if(mapped[0]) {
+            handleClientChange(mapped[0].id, mapped[0].name);
+          }
+          else {
+            resetClient();
+          }
         }
         } catch {
           setClients([]);
@@ -141,9 +117,11 @@ export default function AddTaskPage() {
   let cancelled = false;
   (async () => {
     if (!category.trim()) { setCareItemOptions([]); return; }
+     if(!activeId) {setCareItemOptions([]); return;}
     setCareItemLoading(true);
+
     try {
-      const res = await fetch(`/api/v1/task_catalog?category=${encodeURIComponent(category)}`, { cache: "no-store" });
+      const res = await fetch(`/api/v1/task_catalog?clientId=${encodeURIComponent(activeId)}&category=${encodeURIComponent(category)}`, { cache: "no-store" });
       if (!res.ok) throw new Error("failed -- task catalog");
       const data: { category: string; tasks: CareItemOption[] } = await res.json();
 
@@ -169,15 +147,9 @@ export default function AddTaskPage() {
 
   const onClientChange = (id: string) => {
     (async () => {
-      if (!id) {
-        await setActiveClient(null, '');
-        setActive({id: null, name: ''});
-        return;
-      }
-      const c = clients.find((x) => x.id === id);
-      const name = c?.name || '';
-      await setActiveClient(id, name);
-      setActive({id, name});
+      const c = clients.find(x => x.id === id);
+      if(!id) resetClient();
+      else handleClientChange(id, c?.name || '');
     })();
   };
 
@@ -189,14 +161,15 @@ export default function AddTaskPage() {
   );
 
   const onCreate = async () => {
-    if(!activeId) {alert('Please select a cleitn first.'); return;}
+    if(!activeId) { alert('Please select a client first.'); return;}
 
     const name = label.trim();
     if (!name) {
       alert('Please enter the task name.');
       return;
     }
-    if(!category.trim) {'Please enter a category.'; return;}
+    if (!category.trim()) { alert('Please enter a category.'); return; }
+   
 
     const countNum = parseInt(frequencyCountStr, 10);
     const hasFrequency = Number.isFinite(countNum) && countNum > 0;
