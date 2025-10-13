@@ -1,9 +1,7 @@
 /**
  * File path: /schedule_dashboard/page.tsx
- * Author: Denise Alexander
- * Date Created: 25/09/2025
- * Function: schedule dashboard for the user to select between client or staff
- * schedules to view.
+ * Author: Denise Alexander & Devni Wijesinghe
+ * Function: Role-aware schedule dashboard that shows different actions per role.
  */
 
 'use client';
@@ -20,22 +18,65 @@ import {
   Receipt,
   ClipboardList,
   HelpCircle,
-} from "lucide-react";
+} from 'lucide-react';
 
 const palette = {
   header: '#3A0000',
   banner: '#F9C9B1',
   text: '#2b2b2b',
   white: '#FFFFFF',
-  pageBg: '#FAEBDC',
+  pageBg: '#fff5ecff',
 };
 
 type Role = 'family' | 'management' | 'carer' | null;
+type StrictRole = Exclude<Role, null>;
+
+type ButtonDef = {
+  label: string;
+  icon: React.ElementType;
+  href: string;
+};
+
+/**
+ * Role -> which buttons to show
+ * - family: Client/Staff Schedule + Budget + Transactions + Family Requests + FAQ
+ * - management: Client/Staff Schedule + Budget + Transactions + Request Log(renamed) + FAQ
+ * - carer: no Requests，但新增“Update Details”（使用 ClipboardList 图标）
+ */
+const BUTTONS: Record<StrictRole, ButtonDef[]> = {
+  family: [
+    { label: 'Client Schedule', icon: CalendarDays, href: '/calendar_dashboard' },
+    { label: 'Staff Schedule', icon: Users, href: '/staff_schedule_calendar' },
+    { label: 'Budget Report', icon: FileText, href: '/calendar_dashboard/budget_report' },
+    { label: 'Transactions', icon: Receipt, href: '/calendar_dashboard/transaction_history' },
+    { label: 'Family Requests', icon: ClipboardList, href: '/request-log-page' },
+    { label: 'FAQ', icon: HelpCircle, href: '/faq' },
+  ],
+  carer: [
+    { label: 'Client Schedule', icon: CalendarDays, href: '/calendar_dashboard' },
+    { label: 'Staff Schedule', icon: Users, href: '/staff_schedule_calendar' },
+    { label: 'Budget Report', icon: FileText, href: '/calendar_dashboard/budget_report' },
+    { label: 'Transactions', icon: Receipt, href: '/calendar_dashboard/transaction_history' },
+    // new: Update Details (uses Request Log's icon)
+    { label: 'Update Details', icon: ClipboardList, href: '/calendar_dashboard/update_details' },
+    { label: 'FAQ', icon: HelpCircle, href: '/faq' },
+  ],
+  management: [
+    { label: 'Client Schedule', icon: CalendarDays, href: '/calendar_dashboard' },
+    { label: 'Staff Schedule', icon: Users, href: '/staff_schedule_calendar' },
+    { label: 'Budget Report', icon: FileText, href: '/calendar_dashboard/budget_report' },
+    { label: 'Transactions', icon: Receipt, href: '/calendar_dashboard/transaction_history' },
+    { label: 'Request Log', icon: ClipboardList, href: '/request-log-page' },
+    { label: 'FAQ', icon: HelpCircle, href: '/faq' },
+  ],
+};
 
 export default function DashboardPage() {
   const [role, setRole] = useState<Role>(null);
   const [title, setTitle] = useState('Dashboard');
   const router = useRouter();
+
+  // Mock flag
   const isMock =
     process.env.NEXT_PUBLIC_ENABLE_MOCK === '1' ||
     process.env.NEXT_PUBLIC_ENABLE_MOCK === 'true';
@@ -43,17 +84,22 @@ export default function DashboardPage() {
   useEffect(() => {
     const load = async () => {
       if (isMock) {
+        // Try mock role first
         let r = (getViewerRoleFE() as Role) || null;
+
+        // Fallback: infer from lastLoginEmail
         if (!r) {
           const em = (localStorage.getItem('lastLoginEmail') || '').toLowerCase();
           if (em.includes('carer')) r = 'carer';
           else if (em.includes('management')) r = 'management';
           else if (em.includes('family')) r = 'family';
         }
+
         if (!r) {
           router.replace('/');
           return;
         }
+
         setRole(r);
         switch (r) {
           case 'family':
@@ -71,15 +117,16 @@ export default function DashboardPage() {
         return;
       }
 
+      // Real session role
       const session = await getSession();
       if (!session?.user?.role) {
         router.replace('/');
         return;
       }
 
-      // Loads dashboard title based on logged-in user's role
-      setRole(session.user.role as Role);
-      switch (session.user.role) {
+      const r = session.user.role as Role;
+      setRole(r);
+      switch (r) {
         case 'family':
           setTitle('Family/POA Dashboard');
           break;
@@ -88,12 +135,13 @@ export default function DashboardPage() {
           break;
         case 'carer':
           setTitle('Carer Dashboard');
+          break;
         default:
           setTitle('Dashboard');
       }
     };
     load();
-  }, [router]);
+  }, [router, isMock]);
 
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const showAvatar = true;
@@ -109,15 +157,7 @@ export default function DashboardPage() {
     router.push('/');
   };
 
-  // No longer in use - due to design changes not requiring a menu option
-  /* Close drawer on ESC 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
-    if (open) document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [open]);
-  */
-
+  // Loading state while role is unknown
   if (!role) {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-[#F3E9D9] text-zinc-900">
@@ -128,12 +168,14 @@ export default function DashboardPage() {
     );
   }
 
+  const actions = BUTTONS[role as StrictRole];
+
   return (
     <div
       className="min-h-screen w-full flex flex-col"
       style={{ backgroundColor: palette.pageBg }}
     >
-      {/* ===== Full-width top header (NO borders, same height as other pages) ===== */}
+      {/* ===== Header ===== */}
       <div
         className="w-full flex items-center justify-between px-8 py-5"
         style={{ backgroundColor: palette.header, color: palette.white }}
@@ -148,10 +190,10 @@ export default function DashboardPage() {
             className="object-contain"
             priority
           />
-
           <h1 className="text-2xl md:text-3xl font-bold underline">{title}</h1>
         </div>
-        {/* Right: Avatar */}
+
+        {/* Right: Avatar dropdown */}
         <div className="relative flex items-center gap-4">
           {showAvatar && (
             <div className="relative">
@@ -195,78 +237,56 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ===== Full-width banner (height matches other pages) ===== */}
+      {/* ===== Banner ===== */}
       <div
         className="w-full px-6 md:px-8 py-5 md:py-6 flex items-center gap-3"
         style={{ backgroundColor: palette.banner }}
       >
         <BellIcon />
-        <p
-          className="text-base md:text-lg leading-relaxed"
-          style={{ color: palette.header }}
-        >
-          Use the buttons below to navigate between staff and client schedules.
+        <p className="text-base md:text-lg leading-relaxed" style={{ color: palette.header }}>
+          {role === 'family'
+            ? 'Use the buttons below to view client & staff schedules, budgets, requests and transactions.'
+            : role === 'carer'
+            ? 'Use the buttons below to view client and staff schedules, budgets and transactions.'
+            : 'Use the buttons below to manage client & staff schedules, budget and requests.'}
         </p>
       </div>
 
-            {/* ===== Uniform button grid section ===== */}
+      {/* ===== Role-based button grid ===== */}
       <div
         className="flex-1 flex items-center justify-center px-10 py-12"
-        style={{ backgroundColor: palette.white }}
+        style={{ backgroundColor: 'transparent' }}
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 w-full max-w-6xl">
-          {/* Button 1 */}
-          <DashboardButton
-            label="Client Schedule"
-            icon={CalendarDays}
-            onClick={() => router.push('/calendar_dashboard')}
-          />
-          {/* Button 2 */}
-          <DashboardButton
-            label="Staff Schedule"
-            icon={Users}
-            onClick={() => router.push('/staff_schedule_calendar')}
-          />
-          {/* Button 3 */}
-          <DashboardButton
-            label="Budget Report"
-            icon={FileText}
-            onClick={() => router.push('/calendar_dashboard/budget_report')}
-          />
-          {/* Button 4 */}
-          <DashboardButton
-            label="Transactions"
-            icon={Receipt}
-            onClick={() => router.push('/calendar_dashboard/transaction_history')}
-          />
-          {/* Button 5 */}
-          <DashboardButton
-            label="Family Requests"
-            icon={ClipboardList}
-            onClick={() => router.push('/request-log-page')}
-          />
-          {/* Button 6 */}
-          <DashboardButton
-            label="FAQ"
-            icon={HelpCircle}
-            onClick={() => router.push('/faq')}
-          />
+          {actions.map(({ label, icon: Icon, href }) => (
+            <button
+              key={label}
+              onClick={() => router.push(href)}
+              className="group flex flex-col items-center justify-center rounded-2xl shadow-lg bg-[#F5D8C2] hover:bg-[#F2C9AA] transition-colors duration-300 p-10 border-2 border-[#3A0000]/20 hover:border-[#2B0000]/30"
+            >
+              <Icon
+                className="w-14 h-14 mb-4 text-[#3A0000] transition-colors duration-200 group-hover:text-[#2B0000]"
+                strokeWidth={2.2}
+              />
+              <span className="text-2xl font-semibold text-[#3A0000] transition-colors duration-200 group-hover:text-[#2B0000]">
+                {label}
+              </span>
+            </button>
+          ))}
         </div>
       </div>
 
-
-      {/* ===== Main content — borderless, full-bleed section ===== */}
+      {/* ===== Main content placeholder ===== */}
       <section className="w-full flex-1">
         <div className="w-full px-6 md:px-10 py-8 md:py-10">
-          {/* TODO: Insert dashboard widgets here */}
+          {/* Add dashboard widgets here if needed */}
         </div>
       </section>
     </div>
   );
 }
 
-/* ===== Helper icons (SVG only; no external deps) ===== */
-
+/* ===== Helper icon (inline SVG) ===== */
 function BellIcon() {
   return (
     <svg
@@ -281,25 +301,3 @@ function BellIcon() {
     </svg>
   );
 }
-
-function DashboardButton({
-  label,
-  icon: Icon,
-  onClick,
-}: {
-  label: string;
-  icon: React.ElementType;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="flex flex-col items-center justify-center rounded-2xl shadow-lg bg-[#F5D8C2] hover:bg-[#F2C9AA] transition-all duration-300 p-10 border-2 border-[#3A0000]/20"
-    >
-      <Icon className="w-14 h-14 mb-4 text-[#3A0000]" />
-      <span className="text-2xl font-semibold text-[#3A0000]">{label}</span>
-    </button>
-  );
-}
-
-
