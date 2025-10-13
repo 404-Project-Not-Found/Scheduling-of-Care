@@ -90,6 +90,7 @@ export default function DashboardPage() {
           break;
         case 'carer':
           setTitle('Carer Dashboard');
+          break;
         default:
           setTitle('Dashboard');
       }

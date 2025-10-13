@@ -1,5 +1,6 @@
 'use client';
 
+import { set } from 'mongoose';
 import React, { useEffect, useState } from 'react';
 
 const palette = {
@@ -55,14 +56,23 @@ export default function GenerateCode({
 
     setLoading(true);
     try {
-      const fakeCode = Math.random()
-        .toString(36)
-        .substring(2, 10)
-        .toUpperCase();
-      await new Promise((r) => setTimeout(r, 1000));
-      setGeneratedCode(fakeCode);
-    } catch {
-      setError('Failed to generate code.');
+      const res = await fetch('/api/v1/management/generate_invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to generate invite code.');
+      }
+
+      setGeneratedCode(data.invite.code);
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message : 'An unknown error occurred.'
+      );
     } finally {
       setLoading(false);
     }

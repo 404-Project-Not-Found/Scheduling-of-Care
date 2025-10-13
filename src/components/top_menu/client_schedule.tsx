@@ -188,7 +188,7 @@ export default function DashboardChrome({
   headerTitle,
   bannerTitle,
   showClientPicker,
-  hideBanner,
+  hideBanner, // NEW: option to hide pink banner
 }: ChromeProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -540,6 +540,10 @@ export default function DashboardChrome({
       </header>
 
       {/* ---------- Pink banner ---------- */}
+
+      {/* Add space when banner is hidden */}
+      {hideBanner && <div className="h-6" />}
+
       {shouldShowBanner && (
         <div
           className={`relative isolate px-4 md:px-8 py-2 md:py-4 grid grid-cols-[auto_1fr_auto] itemrelative isolate px-4 md:px-8 py-2 md:py-4 grid grid-cols-[auto_1fr_auto] items-center`}

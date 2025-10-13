@@ -313,6 +313,7 @@ function ClientProfilePageInner() {
         banner: colors.banner,
         text: colors.text,
       }}
+      hideBanner={isNew} // no pink banner with selected client when creating new client profile
     >
       {/* Fixed-height body to avoid page gutter */}
       <div

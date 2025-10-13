@@ -281,13 +281,6 @@ export default function StaffSchedulePage() {
             >
               ⚙ Shift Settings
             </button>
-            <button
-              onClick={() => setAddCarerModal({ open: true, role: 'Carer' })}
-              className="px-5 py-2 rounded-full text-base border bg-white"
-              style={{ borderColor: palette.border, color: palette.border }}
-            >
-              + Add New Staff
-            </button>
           </div>
         </div>
 
