@@ -1,5 +1,5 @@
 /**
- * Filename: /types/next-auth.d.ts
+ * File path: /types/next-auth.d.ts
  * Author: Denise Alexander
  * Date Created: 22/09/2025
  */

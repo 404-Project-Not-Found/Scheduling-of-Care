@@ -3,18 +3,6 @@ name: CI (Frontend & Backend)
 # ---------------------------------------------------------
 # This workflow runs on pushes and PRs targeting main branch.
 # It checks code quality, runs tests, and builds both frontend and backend.
-#
-# 🖥️ Frontend:
-#   - Language: TypeScript
-#   - Framework: Next.js (React, App Router)
-#   - Tools: ESLint, Prettier, Jest (or similar test runner)
-#
-# ⚙️ Backend:
-#   - Language: TypeScript (Node.js runtime)
-#   - Framework: Next.js API Routes
-#   - Database: MongoDB (via Mongoose models like User, PasswordResetToken)
-#   - Utilities: bcryptjs (password hashing), crypto (token generation),
-#                email sender (e.g., Nodemailer)
 # ---------------------------------------------------------
 
 on:
@@ -46,11 +34,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - id: chk
+        shell: bash
         run: |
-          fe=false; [ -f frontend/package.json ] && fe=true
-          be=false; [ -f backend/package.json ] && be=true
-          echo "frontend=$fe" >> "$GITHUB_OUTPUT"
-          echo "backend=$be"  >> "$GITHUB_OUTPUT"
+          fe=false; [[ -f frontend/package.json ]] && fe=true
+          be=false; [[ -f backend/package.json ]] && be=true
+          echo "frontend=$fe" >> $GITHUB_OUTPUT
+          echo "backend=$be"  >> $GITHUB_OUTPUT
+      - name: Debug detect outputs
+        run: |
+          echo "frontend? -> ${{ steps.chk.outputs.frontend }}"
+          echo "backend?  -> ${{ steps.chk.outputs.backend }}"
 
   # ---------- Frontend ----------
   frontend:
@@ -80,15 +73,15 @@ jobs:
         with:
           name: frontend-build
           path: |
-            .next
-            dist
+            frontend/.next
+            frontend/dist
           if-no-files-found: ignore
 
   # ---------- Backend ----------
   backend:
     name: Backend · Lint / Test
     runs-on: ubuntu-latest
-    needs: [detect, frontend]
+    needs: detect # don't depend on frontend to avoid dead-wait when FE is skipped
     if: ${{ needs.detect.outputs.has_backend == 'true' }}
     defaults:
       run:
@@ -115,5 +108,5 @@ jobs:
       - run: |
           echo "has_frontend: ${{ needs.detect.outputs.has_frontend }}"
           echo "has_backend:  ${{ needs.detect.outputs.has_backend }}"
-          echo "frontend result: ${{ needs.frontend.result || 'skipped' }}"
-          echo "backend result:  ${{ needs.backend.result  || 'skipped' }}"
+          echo "frontend result: ${{ needs.frontend.result }}"
+          echo "backend result:  ${{ needs.backend.result }}"

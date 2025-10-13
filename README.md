@@ -180,7 +180,6 @@ Scheduling for Care is licensed under the MIT license. See <a href="LICENSE">LIC
     <li><a href="https://github.com/404-Project-Not-Found/Schedule-of-Care-Program">Source Code</a></li>
 </ul>
 
-
 # Frontend Demo (Mock Mode)
 
 > Quick guide for **local frontend demo** using mock data & mock login. Includes three demo accounts, `.env.local` setup, where to put the mock API, and common gotchas.
@@ -192,10 +191,10 @@ Scheduling for Care is licensed under the MIT license. See <a href="LICENSE">LIC
 On the login page `/`, use any set below. After login, role is stored in browser storage and controls routing & permissions.
 
 | Role       | Email                  | Password     |
-|------------|------------------------|--------------|
-| Family     | `family@email.com`     | `family`     | 
-| Carer      | `carer@email.com`      | `carer`      | 
-| Management | `management@email.com` | `management` | 
+| ---------- | ---------------------- | ------------ |
+| Family     | `family@email.com`     | `family`     |
+| Carer      | `carer@email.com`      | `carer`      |
+| Management | `management@email.com` | `management` |
 
 \* Redirects are based on the current mock logic. If you change your routes, also update the logic in the login page.
 
@@ -223,10 +222,10 @@ What this does:
 
 ```bash
 # install dependencies
-npm install   
+npm install
 
 # start dev server
-npm run dev        
+npm run dev
 
 # open
 http://localhost:3000
@@ -236,27 +235,10 @@ http://localhost:3000
 
 ## 🧰 Where Is the Mock API?
 
-
 ```
-Source files in /src/lib/clientApi.ts
+Source files in /src/lib/mock/mockApi.ts which include more details
 ```
 
-pages import from `@/lib/mockApi`. 
-
-
-### Common exports expected by pages
-
-- **Environment & Role**
-  - `isMock`
-  - `setViewerRoleFE(role)` / `getViewerRoleFE()` / `clearViewerRoleFE()`
-- **Clients**
-  - `getClientsFE()` / `getClientByIdFE(id)`
-  - `readActiveClientFromStorage()` / `writeActiveClientToStorage(id,name?)`
-  - Demo constants: `FULL_DASH_ID`, `NAME_BY_ID`
-- **Tasks**
-  - `getTasksFE()` / `saveTasksFE(tasks)`
-  - Dropdown helpers: `getTaskCatalogFE()` / `getFrequencyOptionsByTaskSlugFE(slug)`
-
-> If an import fails with `@/lib/mockApi`, prefer adding the **path alias** above.
+pages import from `@/lib/mock/mockApi`.
 
 ---

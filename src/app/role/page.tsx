@@ -1,4 +1,8 @@
-// src/app/signup/page.tsx
+/**
+ * File path: /role/page.tsx
+ * Last Updated by Denise Alexander - 7/10/2025: role hirerachy updated to client's preference (management, family/POA, carer)
+ */
+
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -24,10 +28,10 @@ export default function SignupPage() {
 
         <div className="space-y-6">
           <Link
-            href="/signup?role=carer&org=join"
+            href="/signup?role=family"
             className="block w-full rounded-full px-10 py-5 text-2xl font-semibold bg-[#4A0A0A] text-white hover:opacity-95 transition text-center"
           >
-            Carer
+            Family/Power of Attorney
           </Link>
           <Link
             href="/organisation"
@@ -36,10 +40,10 @@ export default function SignupPage() {
             Management
           </Link>
           <Link
-            href="/signup?role=family"
+            href="/signup?role=carer&org=join"
             className="block w-full rounded-full px-10 py-5 text-2xl font-semibold bg-[#4A0A0A] text-white hover:opacity-95 transition text-center"
           >
-            Family/Power of Attorney
+            Carer
           </Link>
         </div>
 

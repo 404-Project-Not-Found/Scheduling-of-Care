@@ -1,231 +1,449 @@
-
 /**
- * Filename: /src/app/client_list/page.tsx
+ * File path: src/app/client_list/page.tsx
  * Frontend Author: Qingyue Zhao
- * 
- * Purpose:
- * - Display a list of clients for family and management
- *  1. family options: edit profile, view dashboard, manage organisation access
- *  2. management options: view profile, view dashboard
- * 
  *
- * Data:
- * - Source: getClientsFE() — mocked frontend API.
- * - Shape: Array<Client> where each item has at least {_id, name, dashboardType}.
+ * Features (latest update):
+ * - Displays client list with avatar, name, and organisation access status.
+ * - Organisation access statuses: approved / pending / revoked.
+ * - Approved client rows:
+ *      -> show "View profile" button (navigates to dashboard).
+ * - Pending / Revoked client rows:
+ *      -> clicking row opens a centered modal explaining why access is denied.
+ * - Management-only actions:
+ *      -> revoked: "Request again" button (enabled).
+ *      -> pending: "Request sent" button (disabled).
+ * - Now fetches all mock/demo clients purely from mockApi (no hardcoding here).
  *
- * Navigation:
- * - Profile:   /client_profile?id=<clientId>
- * - Dashboard: /calender_dashboard?id=<clientId> (for dashboardType === 'full')
- *              /partial_dashboard?id=<clientId>  (otherwise)
- * - Register:  /management_dashboard/register_client?new=true
- * - Back:      /empty_dashboard
- *
- * Last Updated: 30/09/2025
+ * Last Updated by Denise Alexander - 7/10/2025: back-end integrated to fetch client lists
+ * from DB.
  */
 
 'use client';
 
-export const dynamic = 'force-dynamic';
-
-import Image from 'next/image';
-import Link from 'next/link';
+import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { getSession } from 'next-auth/react';
 
-import { getClientsFE, type Client } from '@/lib/mockApi';
+import DashboardChrome from '@/components/top_menu/client_schedule';
+import RegisterClientPanel from '@/components/accesscode/registration';
+import { useActiveClient } from '@/context/ActiveClientContext';
+import {
+  getViewerRole,
+  getClients,
+  type Client as ApiClient,
+} from '@/lib/data';
 
-// ----- Color palette -----
-const palette = {
+// ------------------ Type Definitions ------------------
+type OrgAccess = 'approved' | 'pending' | 'revoked';
+
+// Client type for front-end usage
+type Client = {
+  id: string;
+  name: string;
+  dashboardType?: 'full' | 'partial';
+  orgAccess: OrgAccess;
+};
+// Organisation history entry returned by API
+type OrgHistEntry = {
+  status: OrgAccess;
+  createdAt: string;
+  updatedAt: string;
+  organisation?: { _id: string; name: string };
+};
+// Extended client type with optional organisation history
+type ClientWithOrgHist = ApiClient & {
+  organisationHistory?: OrgHistEntry[];
+};
+
+const colors = {
   pageBg: '#ffd9b3',
   cardBg: '#F7ECD9',
+  banner: '#F9C9B1',
   header: '#3A0000',
   text: '#2b2b2b',
-  border: '#3A0000',
   help: '#ff9999',
-  white: '#ffffff',
-  editGreen: '#4CAF50',
-  dashOrange: '#FF9800',
-  organPink: '#E91E63',
 };
 
 export default function ClientListPage() {
-  const router = useRouter();
-  const [clients, setClients] = useState<Client[]>([]);
-
-  // Fetch list from mock data
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const list = await getClientsFE();
-        if (mounted) setClients(Array.isArray(list) ? list : []);
-      } catch (err) {
-        console.error('Load clients failed:', err);
-        if (mounted) setClients([]);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  const goBack = () => router.replace('/empty_dashboard');
-
   return (
-    <main
-      className="min-h-screen relative flex items-start justify-center p-8"
-      style={{ backgroundColor: palette.pageBg }}
+    <Suspense
+      fallback={<div className="p-6 text-gray-600">Loading clients…</div>}
     >
-      {/* scale wrapper (keeps same layout visual size) */}
-      <div className="origin-top w-full flex items-center justify-center">
-        {/* logo */}
-        <div className="absolute top-6 left-6">
-          <Image
-            src="/logo-name.png"
-            alt="Scheduling of Care"
-            width={220}
-            height={80}
-            className="object-contain"
-            priority
-          />
-        </div>
-
-        <div className="w-full scale-[0.8] flex items-center justify-center">
-          {/* card */}
-          <div
-            className="w-full max-w-6xl rounded-3xl shadow-lg overflow-hidden relative"
-            style={{
-              backgroundColor: palette.cardBg,
-              border: `1px solid ${palette.border}`,
-              minHeight: 720,
-            }}
-          >
-            {/* header */}
-            <div
-              className="w-full flex items-center justify-center px-8 py-6 relative"
-              style={{ backgroundColor: palette.header, color: palette.white }}
-            >
-              <button
-                onClick={goBack}
-                aria-label="Go back"
-                className="absolute left-4 top-1/2 -translate-y-1/2 rounded-md px-2 py-2 focus:outline-none focus:ring-2 focus:ring-white/60 flex items-center gap-2"
-                title="Back"
-                style={{ color: palette.white }}
-              >
-                <BackIcon />
-                <span className="text-lg">Back</span>
-              </button>
-              <h1 className="text-3xl md:text-4xl font-bold">Client List</h1>
-            </div>
-
-            {/* content */}
-            <div className="px-10 pb-12 pt-8">
-              <p className="text-2xl md:text-3xl mb-5" style={{ color: palette.text }}>
-                List of registered clients:
-              </p>
-
-              {/* list */}
-              <div
-                className="mx-auto rounded-2xl bg-white overflow-y-auto mb-10"
-                style={{ maxHeight: 520, border: `2px solid ${palette.border}55` }}
-              >
-                <ul className="divide-y divide-black/10">
-                  {clients.map((p) => (
-                    <li
-                      key={p._id}
-                      className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 md:gap-6 px-8 py-5"
-                      style={{ color: palette.text }}
-                    >
-                      <span className="text-2xl">{p.name}</span>
-                      <div className="flex flex-wrap gap-4">
-                        {/* View profile (green) */}
-                        <Link
-                          href={`/client_profile?id=${p._id}`}
-                          className="px-4 py-2 rounded-lg text-lg font-medium"
-                          style={{ backgroundColor: palette.editGreen, color: palette.white }}
-                        >
-                          View profile
-                        </Link>
-
-                        {/* View dashboard (orange) */}
-                        {p.dashboardType === 'full' ? (
-                          <Link
-                            href={`/calender_dashboard?id=${p._id}`}
-                            className="px-4 py-2 rounded-lg text-lg font-medium"
-                            style={{ backgroundColor: palette.dashOrange, color: palette.white }}
-                          >
-                            View dashboard
-                          </Link>
-                        ) : (
-                          <Link
-                            href={`/partial_dashboard?id=${p._id}`}
-                            className="px-4 py-2 rounded-lg text-lg font-medium"
-                            style={{ backgroundColor: palette.dashOrange, color: palette.white }}
-                          >
-                            View dashboard
-                          </Link>
-                        )}
-
-                        {/* optional： Manage carer access */}
-                        {/* <Link
-                          href={`/management_dashboard/assign_carer/manage`}
-                          className="px-4 py-2 rounded-lg text-lg font-medium"
-                          style={{
-                            backgroundColor: palette.organPink,
-                            color: palette.white,
-                          }}
-                        >
-                          Manage carer access
-                        </Link> */}
-                        
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Add new person */}
-              <div className="flex justify-center">
-                <button
-                  onClick={() => router.push('/management_dashboard/register_client?new=true')}
-                  className="px-7 py-4 rounded-xl text-2xl font-semibold"
-                  style={{ backgroundColor: palette.header, color: palette.white }}
-                >
-                  + register new client
-                </button>
-              </div>
-            </div>
-
-            {/* help button */}
-            <button
-              className="absolute bottom-6 right-6 w-10 h-10 rounded-full text-white font-bold"
-              style={{ backgroundColor: palette.help }}
-              aria-label="Help"
-              title="Help"
-            >
-              ?
-            </button>
-          </div>
-        </div>
-      </div>
-    </main>
+      <ClientListInner />
+    </Suspense>
   );
 }
 
-function BackIcon({ size = 24 }: { size?: number }) {
+function ClientListInner() {
+  const router = useRouter();
+  const { handleClientChange } = useActiveClient();
+
+  // ---- Current viewer role (carer / family / management) ----
+  const [role, setRole] = useState<'carer' | 'family' | 'management'>('family');
+
+  // ---- Clients state ----
+  const [clients, setClients] = useState<Client[]>([]);
+  const [q, setQ] = useState('');
+
+  // ---- Modal: access denied ----
+  const [denyOpen, setDenyOpen] = useState(false);
+  const [denyTarget, setDenyTarget] = useState<string>('');
+  const [denyReason, setDenyReason] = useState<OrgAccess>('pending');
+
+  // ---- Drawer: register new client ----
+  const [showRegister, setShowRegister] = useState(false);
+  const addNewClient = () => setShowRegister(true);
+
+  const [orgId, setOrgId] = useState<string | undefined>();
+
+  // ---- Load clients ----
+  const loadClients = async (orgId: string) => {
+    try {
+      // Current user's role
+      const viewerRole = await getViewerRole();
+      setRole(viewerRole);
+
+      // Fetches all clients
+      const list: ClientWithOrgHist[] = await getClients();
+
+      // Maps clients to include their latest organisation status
+      const mapped: Client[] = await Promise.all(
+        list.map(async (c) => {
+          const res = await fetch(
+            `/api/v1/clients/${c._id}/organisations/${orgId}`
+          );
+          const history = (await res.json()) as OrgHistEntry[];
+
+          // Sort by updatedAt or createdAt descending
+          const latestOrg = history.sort((a, b) => {
+            const aTime = new Date(a.updatedAt ?? a.createdAt).getTime();
+            const bTime = new Date(b.updatedAt ?? b.createdAt).getTime();
+            return bTime - aTime;
+          })[0];
+          return {
+            id: c._id,
+            name: c.name,
+            dashboardType: c.dashboardType,
+            orgAccess: latestOrg?.status ?? 'pending',
+          };
+        })
+      );
+      // Update state with mapped clients
+      setClients(mapped);
+    } catch (err) {
+      console.error('Error loading clients.', err);
+      setClients([]);
+    }
+  };
+
+  // --- Fetches oragnisation ID and loads clients on mount ---
+  useEffect(() => {
+    const fetchOrgId = async () => {
+      const session = await getSession();
+      const orgId = session?.user?.organisation as string | undefined;
+
+      if (!orgId) {
+        console.error('No organisation linked to this account.');
+        return;
+      }
+
+      setOrgId(orgId);
+
+      await loadClients(orgId);
+    };
+
+    fetchOrgId();
+  }, []);
+
+  // ---- Search filter ----
+  const filtered = useMemo(() => {
+    const t = q.trim().toLowerCase();
+    return t
+      ? clients.filter((c) => c.name.toLowerCase().includes(t))
+      : clients;
+  }, [clients, q]);
+
+  // ---- Navigation guard ----
+  const tryOpenClient = (c: Client) => {
+    if (c.orgAccess !== 'approved') {
+      setDenyTarget(c.name);
+      setDenyReason(c.orgAccess);
+      setDenyOpen(true);
+      return;
+    }
+
+    handleClientChange(c.id, c.name);
+
+    router.push(`/client_profile?id=${c.id}`);
+  };
+
+  // ---- Management: request access again ----
+  const requestAccess = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation(); // avoid row navigation
+    if (!orgId) {
+      console.error('No organisation linked to this account.');
+      return;
+    }
+    try {
+      await fetch(`/api/v1/clients/${id}/organisations/${orgId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'request' }),
+      });
+      await loadClients(orgId);
+    } catch (err) {
+      console.error('Failed to request access.', err);
+    }
+  };
+
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
+    <DashboardChrome
+      page="client-list"
+      clients={[]} // not used here
+      onClientChange={(id) => {
+        const c = clients.find((cl) => cl.id === id);
+        if (c) {
+          handleClientChange(c.id, c.name);
+        }
+      }}
+      colors={{
+        header: colors.header,
+        banner: colors.banner,
+        text: colors.text,
+      }}
+      onLogoClick={() => router.push('/empty_dashboard')}
     >
-      <path d="M15 18l-6-6 6-6" />
-    </svg>
+      {/* Page body */}
+      <div className="w-full h-full" style={{ backgroundColor: colors.pageBg }}>
+        <div className="max-w-[1380px] h-[680px] mx-auto px-6">
+          {/* Section title */}
+          <div
+            className="w-full mt-6 rounded-t-xl px-6 py-4 text-white text-2xl md:text-3xl font-extrabold"
+            style={{ backgroundColor: colors.header }}
+          >
+            Client List
+          </div>
+
+          {/* Controls + List */}
+          <div
+            className="w-full h-[calc(100%-3rem)] rounded-b-xl bg-[#f6efe2] border-x border-b flex flex-col"
+            style={{ borderColor: '#3A000022' }}
+          >
+            {/* Controls */}
+            <div className="flex items-center justify-between px-6 py-4 gap-4">
+              {/* Search bar */}
+              <div className="relative flex-1 max-w-[350px]">
+                <input
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="Search for client"
+                  className="w-full h-12 rounded-full bg-white border text-black px-10 focus:outline-none"
+                  style={{ borderColor: '#3A0000' }}
+                />
+              </div>
+              {/* CTA: Register new client */}
+              <button
+                onClick={addNewClient}
+                className="rounded-xl px-5 py-3 text-lg font-bold text-white hover:opacity-90"
+                style={{ backgroundColor: colors.header }}
+              >
+                + Register new client
+              </button>
+            </div>
+
+            {/* List area */}
+            <div className="flex-1 px-0 pb-6">
+              <div
+                className="mx-6 rounded-xl overflow-auto max-h-[500px]"
+                style={{
+                  backgroundColor: '#F2E5D2',
+                  border: '1px solid rgba(58,0,0,0.25)',
+                }}
+              >
+                {filtered.length === 0 ? (
+                  <div className="h-full flex items-center justify-center text-gray-600">
+                    Loading clients...
+                  </div>
+                ) : (
+                  <ul className="divide-y divide-[rgba(58,0,0,0.15)]">
+                    {filtered.map((c) => (
+                      <li
+                        key={c.id}
+                        className="flex items-center justify-between gap-5 px-6 py-6 hover:bg-[rgba(255,255,255,0.6)]"
+                      >
+                        {/* Left: avatar + name */}
+                        <div
+                          className="flex items-center gap-5 cursor-pointer"
+                          onClick={() => tryOpenClient(c)}
+                        >
+                          {/* Avatar circle */}
+                          <div
+                            className="shrink-0 rounded-full flex items-center justify-center"
+                            style={{
+                              width: 64,
+                              height: 64,
+                              border: '4px solid #3A0000',
+                              backgroundColor: '#fff',
+                              color: '#3A0000',
+                              fontWeight: 900,
+                              fontSize: 20,
+                            }}
+                            aria-hidden
+                          >
+                            {c.name.charAt(0).toUpperCase()}
+                          </div>
+
+                          {/* Name + access badge */}
+                          <div className="flex flex-col">
+                            <div
+                              className="text-xl md:text-2xl font-semibold"
+                              style={{ color: colors.text }}
+                            >
+                              {c.name}
+                            </div>
+                            <div className="mt-1 text-sm flex items-center gap-2 text-black/70">
+                              <span className="opacity-80">
+                                Organisation access:
+                              </span>
+                              <AccessBadge status={c.orgAccess} />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Right-side actions */}
+                        <div className="shrink-0 flex items-center gap-2">
+                          {/* Approved -> View profile */}
+                          {c.orgAccess === 'approved' && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                tryOpenClient(c);
+                              }}
+                              className="px-4 py-2 rounded-lg text-white text-sm font-semibold hover:opacity-90"
+                              style={{ backgroundColor: colors.header }}
+                            >
+                              View profile
+                            </button>
+                          )}
+
+                          {/* Management actions (non-approved only) */}
+                          {c.orgAccess !== 'approved' && (
+                            <>
+                              {c.orgAccess === 'revoked' && (
+                                <button
+                                  onClick={(e) => requestAccess(e, c.id)}
+                                  className="px-4 py-2 rounded-lg text-white text-sm font-semibold hover:opacity-90"
+                                  style={{ backgroundColor: colors.header }}
+                                >
+                                  Request
+                                </button>
+                              )}
+                              {c.orgAccess === 'pending' && (
+                                <button
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="px-4 py-2 rounded-lg text-sm font-semibold cursor-not-allowed"
+                                  style={{
+                                    backgroundColor: '#b07b7b',
+                                    color: 'white',
+                                    opacity: 0.9,
+                                  }}
+                                  disabled
+                                >
+                                  Request sent
+                                </button>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ---- Access denied modal ---- */}
+      {denyOpen && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-2xl shadow-2xl w-[92%] max-w-[520px] p-6 text-center">
+            <h3
+              className="text-xl font-bold mb-2"
+              style={{ color: colors.header }}
+            >
+              Access required
+            </h3>
+            {denyReason === 'pending' && (
+              <p className="text-black/80">
+                Your request to access <b>{denyTarget}</b>’s profile is still
+                pending.
+                <br />
+                Please wait until the family implements your request.
+              </p>
+            )}
+            {denyReason === 'revoked' && (
+              <p className="text-black/80">
+                Your access to <b>{denyTarget}</b> has been revoked.
+                <br />
+                To regain access, please submit a new request.
+              </p>
+            )}
+            <div className="mt-6 flex justify-center gap-3">
+              <button
+                className="px-4 py-2 rounded-lg text-white font-semibold"
+                style={{ backgroundColor: colors.header }}
+                onClick={() => setDenyOpen(false)}
+              >
+                Got it
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Right-side registration drawer */}
+      <RegisterClientPanel
+        open={showRegister}
+        onClose={() => setShowRegister(false)}
+      />
+    </DashboardChrome>
+  );
+}
+
+/* ---- Badge component: shows access status visually ---- */
+function AccessBadge({ status }: { status: OrgAccess }) {
+  const cfg: Record<
+    OrgAccess,
+    { bg: string; dot: string; label: string; text: string }
+  > = {
+    approved: {
+      bg: 'bg-green-100',
+      dot: 'bg-green-500',
+      label: 'Approved',
+      text: 'text-green-800',
+    },
+    pending: {
+      bg: 'bg-yellow-100',
+      dot: 'bg-yellow-500',
+      label: 'Pending',
+      text: 'text-yellow-800',
+    },
+    revoked: {
+      bg: 'bg-red-100',
+      dot: 'bg-red-500',
+      label: 'Revoked',
+      text: 'text-red-800',
+    },
+  };
+  const c = cfg[status];
+  return (
+    <span
+      className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-semibold ${c.bg} ${c.text}`}
+    >
+      <span className={`inline-block w-2 h-2 rounded-full ${c.dot}`} />
+      {c.label}
+    </span>
   );
 }

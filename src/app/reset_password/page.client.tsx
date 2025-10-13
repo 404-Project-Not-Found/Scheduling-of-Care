@@ -1,5 +1,5 @@
 /**
- * Filename: /reset_password/page.client.tsx
+ * File path: /reset_password/page.client.tsx
  * Authors: Devni Wijesinghe & Denise Alexander
  * Date Created: 17/09/2025
  */
@@ -42,7 +42,7 @@ export default function ResetPasswordPage() {
       return;
     }
     try {
-      const res = await fetch('/api/reset_password', {
+      const res = await fetch('/api/v1/reset_password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, newPassword }),
@@ -164,7 +164,7 @@ export default function ResetPasswordPage() {
       </button>
 
       {/* Help button fixed bottom-right */}
-      <div className="fixed bottom-6 right-6 group">
+      {/* <div className="fixed bottom-6 right-6 group">
         <button
           className="flex items-center justify-center w-10 h-10 rounded-full text-white font-bold shadow-md cursor-pointer"
           style={{ backgroundColor: '#ed5f4f' }}
@@ -173,13 +173,14 @@ export default function ResetPasswordPage() {
         >
           ?
         </button>
+        
         {showHelp && (
           <div className="absolute bottom-12 right-0 bg-white text-black text-xs px-3 py-2 rounded shadow-md whitespace-nowrap z-10">
             Enter your new password twice and click &quot;Reset&quot;. Both
             passwords must match. Click &quot;Show Password&quot; to view.
           </div>
         )}
-      </div>
+      </div> */}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { Task } from '@/app/dashboards/calendar_dashboard/types'; // import from types
+import { Task } from '@/app/calendar_dashboard/types'; // import from types
 
 type TasksListProps = {
   tasks: Task[];
@@ -17,7 +17,7 @@ export default function TasksList({ tasks, onTaskClick }: TasksListProps) {
           onClick={() => onTaskClick(t)}
         >
           <div className="font-bold">{t.title}</div>
-          <p className="text-sm text-gray-700">Next due: {t.nextDue}</p>
+          <p className="text-sm text-gray-700">Scheduled due: {t.nextDue}</p>
           <p className="text-sm text-gray-700">
             Status: {t.status || 'Pending'}
           </p>

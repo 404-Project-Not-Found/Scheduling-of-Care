@@ -1,5 +1,5 @@
 /**
- * Filename: /models/PasswordResetToken.ts
+ * File path: /models/PasswordResetToken.ts
  * Author: Denise Alexander
  * Date Created: 17/09/2025
  */

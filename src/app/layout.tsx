@@ -1,7 +1,11 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
+import { Suspense } from 'react';
 import { TransactionProvider } from '@/context/TransactionContext';
+import { ActiveClientProvider } from '@/context/ActiveClientContext';
+import { HelpProvider } from '@/components/help/HelpPanel';
+import HelpButton from '@/components/help/HelpButton';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -29,8 +33,17 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         style={{ background: '#ffd9b3' }}
       >
-        {/* Wrap all children in TransactionProvider to share state across pages */}
-        <TransactionProvider>{children}</TransactionProvider>
+        <HelpProvider>
+          <TransactionProvider>
+            <ActiveClientProvider>
+              {children}
+              <Suspense fallback={null}>
+                {/* Show one global floating Help button on every page */}
+                <HelpButton/>
+              </Suspense>
+            </ActiveClientProvider>
+          </TransactionProvider>
+        </HelpProvider>
       </body>
     </html>
   );

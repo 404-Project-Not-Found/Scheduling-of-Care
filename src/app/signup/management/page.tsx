@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import Image from "next/image";
-import Link from "next/link";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import Image from 'next/image';
+import Link from 'next/link';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function ManagementSignupPage() {
   const [showPw, setShowPw] = useState(false);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -20,49 +20,49 @@ export default function ManagementSignupPage() {
     setError(null);
 
     if (!name.trim() || !email.trim() || !password) {
-      setError("Please fill in all fields.");
+      setError('Please fill in all fields.');
       return;
     }
     if (password !== confirm) {
-      setError("Passwords do not match.");
+      setError('Passwords do not match.');
       return;
     }
 
     setLoading(true);
     try {
       // create account with role=management
-      const signupRes = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const signupRes = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: name.trim(),
           email: email.trim().toLowerCase(),
           password,
-          role: "management",
+          role: 'management',
         }),
       });
 
       if (!signupRes.ok) {
         const j = await signupRes.json().catch(() => ({}));
-        throw new Error(j.error || "Signup failed");
+        throw new Error(j.error || 'Signup failed');
       }
 
       // auto-login to set cookie/session
-      const loginRes = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const loginRes = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
       });
 
       if (!loginRes.ok) {
         const j = await loginRes.json().catch(() => ({}));
-        throw new Error(j.error || "Login after signup failed");
+        throw new Error(j.error || 'Login after signup failed');
       }
 
-      router.push("/dashboard");
+      router.push('/dashboard');
     } catch (err: unknown) {
       if (err instanceof Error) {
-        setError(err?.message || "Something went wrong");
+        setError(err?.message || 'Something went wrong');
       }
     }
   }
@@ -151,7 +151,7 @@ export default function ManagementSignupPage() {
           <div className="relative w-full">
             <input
               id="password"
-              type={showPw ? "text" : "password"}
+              type={showPw ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-md border border-[#6E1B1B] bg-white text-black px-4 py-2.5 text-lg outline-none focus:ring-2 focus:ring-[#4A0A0A]/30"
@@ -163,7 +163,7 @@ export default function ManagementSignupPage() {
               onClick={() => setShowPw((v) => !v)}
               className="absolute top-1/2 -translate-y-1/2 right-[-8rem] text-[16px] underline underline-offset-4 text-[#4A0A0A] hover:opacity-80 whitespace-nowrap"
             >
-              {showPw ? "hide password" : "show password"}
+              {showPw ? 'hide password' : 'show password'}
             </button>
           </div>
         </div>
@@ -181,7 +181,7 @@ export default function ManagementSignupPage() {
           </label>
           <input
             id="confirm"
-            type={showPw ? "text" : "password"}
+            type={showPw ? 'text' : 'password'}
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
             className="w-full rounded-md border border-[#6E1B1B] bg-white text-black px-4 py-2.5 text-lg outline-none focus:ring-2 focus:ring-[#4A0A0A]/30"
@@ -197,13 +197,13 @@ export default function ManagementSignupPage() {
             disabled={loading}
             className="rounded-full bg-[#4A0A0A] text-white text-xl font-semibold px-10 py-3 hover:opacity-95 transition disabled:opacity-60"
           >
-            {loading ? "Creating..." : "Sign Up"}
+            {loading ? 'Creating...' : 'Sign Up'}
           </button>
         </div>
 
         {/* Back to role selection link */}
         <p className="text-center text-lg mt-4">
-          Not your role? Back to{" "}
+          Not your role? Back to{' '}
           <Link
             href="/signup"
             className="underline underline-offset-4 hover:opacity-80 font-bold"
@@ -214,13 +214,13 @@ export default function ManagementSignupPage() {
       </form>
 
       {/* Bottom-right help button */}
-      <Link
+      {/* <Link
         href="/help"
         aria-label="Help"
         className="fixed bottom-6 right-6 flex h-12 w-12 items-center justify-center rounded-full bg-[#E37E72] text-white text-2xl font-bold shadow-md hover:shadow-lg"
       >
         ?
-      </Link>
+      </Link> */}
     </div>
   );
 }
