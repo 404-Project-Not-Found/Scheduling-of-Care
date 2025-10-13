@@ -22,7 +22,6 @@
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useMemo } from 'react';
 import DashboardChrome from '@/components/top_menu/client_schedule';
-import { useSearchParams } from 'next/navigation';
 import { type CareItemOption } from '@/lib/catalog';
 import { useActiveClient } from '@/context/ActiveClientContext';
 import {
@@ -75,10 +74,9 @@ type Client = { id: string; name: string };
 type CatalogItem = {category: string; tasks: {label: string; slug: string}[]};
 
 
-export default function EditCareItem() {
+export default function EditCareItem({slug} : {slug: string}) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const slug = (searchParams.get('slug') || '').toLowerCase();
+  const cleanSlug = (slug || '').trim().toLowerCase();
 
   // Topbar client list
   const [clients, setClients] = useState<Client[]>([]);
@@ -107,6 +105,8 @@ export default function EditCareItem() {
     const entry = catalog.find((c) => c.category === category);
     return entry ? entry.tasks : [];
   }, [catalog, category]);
+
+  const [itemSlug, setItemSlug] = useState<string>('');
 
   // Load client
   useEffect(() => {
@@ -148,6 +148,7 @@ export default function EditCareItem() {
     )();
   }, [activeId]);
 
+  // Ensure selected category stays selected
   useEffect(() => {
     if(!category) return;
     if(!catalog.some(c => c.category === category)) {setCatalog(prev => [{category, tasks: []}, ...prev])}
@@ -157,7 +158,7 @@ export default function EditCareItem() {
   useEffect(() => {
     if(!slug || clients.length === 0) return;
     (async() => {   
-        const res = await fetch(`/api/v1/care_item/${encodeURIComponent(slug)}`, { cache: 'no-store' });
+        const res = await fetch(`/api/v1/care_item/${encodeURIComponent(cleanSlug)}`, { cache: 'no-store' });
         if(!res.ok) {
           const msg: {error?: string} = await res.json().catch(() => ({}));
           alert(`Cannot load care item: ${msg.error || res.statusText}`);
@@ -166,6 +167,7 @@ export default function EditCareItem() {
         }
 
         const t: Task = await res.json();
+        setItemSlug((t.slug || '').trim().toLowerCase());
 
         setLabel(t.label || "");
         setStatus((statusOptions.includes(t.status as any) ? t.status : 'in progress') as typeof status);
@@ -192,7 +194,7 @@ export default function EditCareItem() {
           handleClientChange(client.id ?? '', t.clientName);
         }
       })(); 
-  }, [slug, clients]);
+  }, [cleanSlug, clients]);
 
   // Fetching catalog
   useEffect(() => {
@@ -244,14 +246,11 @@ export default function EditCareItem() {
 
 
   const onDelete = async () => {
-    if(!slug) {
-      alert("Missing Task Slug -- cannot delete"); 
-      return;
-    }
-    
-    if (!confirm('Discard this new task and go back?')) return;
+    const slugForDel = (itemSlug || cleanSlug);
+    if(!slugForDel) {alert("Missing task slug -- cannot delete"); return;}
+    if (!confirm('Discard this task and go back?')) return;
 
-    const res = await fetch(`/api/v1/care_item/${encodeURIComponent(slug)}`, { method: 'DELETE'});
+    const res = await fetch(`/api/v1/care_item/${encodeURIComponent(slugForDel)}`, { method: 'DELETE'});
     if(!res.ok) {
       const msg = await res.json().catch(() => ({}));
       alert(`Delete failed: ${msg?.error || res.statusText}`);
@@ -261,23 +260,14 @@ export default function EditCareItem() {
   };
 
   const onSave = async () => {
-    if(!activeId) {
-      alert('Please select a client first.');
-      return;
-    }
-    if(!slug) {
-      alert("Missing Task Slug -- cannot proceed"); 
-      return;
-    }
+    const slugForSave = (itemSlug || cleanSlug);
+
+    if(!activeId) {alert('Please select a client first.'); return;}
+    if(!slugForSave) {alert("Missing Task Slug -- cannot proceed"); return;}
+    
     const name = label.trim();
-    if (!name) {
-      alert('Please enter the task name.');
-      return;
-    }
-    if (!category.trim()) {
-      alert('Please select a category.');
-      return;
-    }
+    if (!name) {alert('Please enter the task name.'); return;}
+    if (!category.trim()) {alert('Please select a category.'); return;}
 
     const countNum = parseInt(frequencyCountStr, 10);
     const hasFrequency = Number.isFinite(countNum) && countNum > 0;
@@ -299,7 +289,7 @@ export default function EditCareItem() {
       deleted: false,
     };
 
-    const res = await fetch(`/api/v1/care_item/${encodeURIComponent(slug)}`, {
+    const res = await fetch(`/api/v1/care_item/${encodeURIComponent(slugForSave)}`, {
       method: 'PUT',    
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(payload),
