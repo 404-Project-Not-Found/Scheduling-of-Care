@@ -46,7 +46,7 @@ type ButtonDef = {
 const BUTTONS: Record<StrictRole, ButtonDef[]> = {
   family: [
     { label: 'Client Schedule', icon: CalendarDays, href: '/calendar_dashboard' },
-    { label: 'Staff Schedule', icon: Users, href: '/staff_schedule_calendar' },
+    { label: 'Staff Schedule', icon: Users, href: '/management_dashboard/staff_schedule' },
     { label: 'Budget Report', icon: FileText, href: '/calendar_dashboard/budget_report' },
     { label: 'Transactions', icon: Receipt, href: '/calendar_dashboard/transaction_history' },
     { label: 'Family Requests', icon: ClipboardList, href: '/request-log-page' },
@@ -54,7 +54,7 @@ const BUTTONS: Record<StrictRole, ButtonDef[]> = {
   ],
   carer: [
     { label: 'Client Schedule', icon: CalendarDays, href: '/calendar_dashboard' },
-    { label: 'Staff Schedule', icon: Users, href: '/staff_schedule_calendar' },
+    { label: 'Staff Schedule', icon: Users, href: '/management_dashboard/staff_schedule' },
     { label: 'Budget Report', icon: FileText, href: '/calendar_dashboard/budget_report' },
     { label: 'Transactions', icon: Receipt, href: '/calendar_dashboard/transaction_history' },
     // new: Update Details (uses Request Log's icon)
@@ -63,7 +63,7 @@ const BUTTONS: Record<StrictRole, ButtonDef[]> = {
   ],
   management: [
     { label: 'Client Schedule', icon: CalendarDays, href: '/calendar_dashboard' },
-    { label: 'Staff Schedule', icon: Users, href: '/staff_schedule_calendar' },
+    { label: 'Staff Schedule', icon: Users, href: '/management_dashboard/staff_schedule' },
     { label: 'Budget Report', icon: FileText, href: '/calendar_dashboard/budget_report' },
     { label: 'Transactions', icon: Receipt, href: '/calendar_dashboard/transaction_history' },
     { label: 'Request Log', icon: ClipboardList, href: '/request-log-page' },

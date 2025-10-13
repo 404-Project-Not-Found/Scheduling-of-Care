@@ -1,19 +1,22 @@
 /*
- * File: top_menu/client_schedule
+ * File: src/components/top_menu/client_schedule.tsx
  * Author: Qingyue Zhao
  *
  * Purpose: Reusable header chrome for all calendar/budget/transactions/request pages.
  * - Role detection is handled here (family / carer / management).
  * - Top navigation menu is rendered here; active page gets an underline style.
  * - Pink banner with the centered title changes depending on the page and selected client.
- * - Carer users DO NOT see the client select dropdown in the banner.
+ * - Carer users DO NOT see the client select dropdown in the banner (unless overridden by props).
  *
  * Updated by Denise Alexander on 7/10/2025: active client logic implemented to render the
  * correct client details across pages.
  *
- * Last Updated by Qingyue Zhao on 08/10/2025: add access list for on the Schedule page,
+ * Updated by Qingyue Zhao on 08/10/2025: add access list for on the Schedule page,
  * show a read-only list of users who have access to the current client.
- * 
+ *
+ * Last Updated on 14/10/2025: Support "staff-list" page
+ * - When page === 'staff-list', the left title shows "Staff List" and does NOT link to Client Schedule.
+ * - Center navigation can be overridden by `navItems` so their buttons render without changing this component.
  */
 
 'use client';
@@ -21,7 +24,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { getViewerRole, signOutUser } from '@/lib/data';
 import { useActiveClient } from '@/context/ActiveClientContext';
 import AccessDropdown from '@/components/top_menu/AccessDropdown';
@@ -44,12 +47,13 @@ type PageKey =
   | 'care-add'
   | 'category-cost'
   | 'client-list'
+  | 'assign-carer'
+  | 'staff-list'         // ← added
   | 'people-list'
   | 'profile'
   | 'organisation-access'
   | 'new-transaction';
 
-// Client object passed from parent component
 type ClientLite = {
   id: string;
   name: string;
@@ -68,11 +72,17 @@ type ChromeProps = {
   onPrint?: () => void;
   onLogoClick?: () => void;
 
-  /** Avatar controls */
+  // Avatar controls
   showAvatar?: boolean;
   avatarSrc?: string;
   onProfile?: () => void;
   onSignOut?: () => void;
+
+  // Optional overrides
+  navItems?: { label: string; href: string }[]; // When provided, center nav uses these items.
+  headerTitle?: string;                          // Force header title text.
+  bannerTitle?: string;                          // Force banner title text.
+  showClientPicker?: boolean;                    // Force show/hide of client picker.
 };
 
 const ROUTES = {
@@ -90,11 +100,11 @@ const ROUTES = {
   homeByRole: '/empty_dashboard',
   profile: '/client_profile',
   organisationAccess: (clientId: string) =>
-    '/family_dashboard/manage_org_access/${clientId}',
+    `/family_dashboard/manage_org_access/${clientId}`, // ← fix to backticks
   newTransaction: '/calendar_dashboard/budget_report/add_transaction',
 };
 
-/** Maps each page to a noun title for the banner. */
+/** Map each page to a banner noun (used in default banner title). */
 function nounForPage(page: PageKey): string {
   switch (page) {
     case 'budget':
@@ -114,9 +124,12 @@ function nounForPage(page: PageKey): string {
       return 'Client List';
     case 'people-list':
       return 'People List';
-    case 'schedule':
     case 'profile':
       return 'Profile';
+    case 'schedule':
+      return 'Schedule';
+    case 'staff-list':
+      return 'Staff List';
     case 'organisation-access':
       return 'Organisation';
     case 'new-transaction':
@@ -126,7 +139,7 @@ function nounForPage(page: PageKey): string {
   }
 }
 
-/** Underline helper for top nav. */
+/** Underline helper for center nav. */
 function activeUnderline(
   page: PageKey,
   key: PageKey | 'care',
@@ -140,7 +153,7 @@ function activeUnderline(
       : role === 'management'
         ? 'client-list'
         : null;
-  const isProfileMapped = page === 'profile' && key === profileMappedTarget;
+  const isProfileMapped = page === 'profile' && key === (profileMappedTarget as PageKey);
   const isActiveDirect = page === key;
 
   return isActiveCare || isActiveDirect || isProfileMapped
@@ -148,7 +161,7 @@ function activeUnderline(
     : 'hover:underline text-white';
 }
 
-/** Converts HEX to RGBA (used for banner background). */
+/** HEX → RGBA (for banner background overlay). */
 function hexToRgba(hex: string, alpha = 1) {
   const h = hex.replace('#', '');
   const r = parseInt(h.slice(0, 2), 16);
@@ -157,7 +170,6 @@ function hexToRgba(hex: string, alpha = 1) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-/** Read-only access user item type (for the inline list next to the profile). */
 type AccessUser = { id: string; name: string; role?: string };
 
 export default function DashboardChrome({
@@ -168,28 +180,33 @@ export default function DashboardChrome({
   colors,
   children,
   headerHeight = 64,
-  bannerHeight = 64, // (currently unused, kept for API compatibility)
+  bannerHeight = 64, // kept for API compatibility
   onPrint,
   showAvatar = true,
   avatarSrc = '/default_profile.png',
   onProfile,
   onSignOut,
+
+  navItems = [],
+  headerTitle,
+  bannerTitle,
+  showClientPicker,
 }: ChromeProps) {
   const router = useRouter();
+  const pathname = usePathname();
+
   const [isSignOut, setIsSignOut] = useState(false);
-  const [role, setRole] = useState<'family' | 'carer' | 'management' | null>(
-    null
-  );
+  const [role, setRole] = useState<'family' | 'carer' | 'management' | null>(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
-  // Active client context - used to track and update currently selected client
+  // Active client context
   const {
     client: activeClient,
     handleClientChange,
     resetClient,
   } = useActiveClient();
 
-  // Fetches user role on mount
+  // Load role
   useEffect(() => {
     const loadRole = async () => {
       try {
@@ -203,7 +220,7 @@ export default function DashboardChrome({
     loadRole();
   }, [router]);
 
-  // When a new client is selected from dropdown, updates active client data
+  // Change client from dropdown
   const onSelectClientChange = (id: string) => {
     const selected = clients.find((c) => c.id === id);
     if (!selected) return;
@@ -211,20 +228,34 @@ export default function DashboardChrome({
     onClientChange(id);
   };
 
-  // Role flags for conditional rendering
   const isCarer = role === 'carer';
   const isFamily = role === 'family';
   const isManagement = role === 'management';
 
-  // Banner title, e.g. "Alice’s Budget Report"
+  // Default banner title (ClientName + Noun), unless overridden
   const noun = nounForPage(page);
-  const centeredTitle = useMemo(() => {
+  const bannerDefault = useMemo(() => {
     return activeClient.id && activeClient.name
       ? `${activeClient.name}'s ${noun}`
-      : 'No Client Selected';
+      : noun; // if no client, just show noun like "Staff List"
   }, [activeClient, noun]);
 
-  // When user clicks on logo returns to schedule options page
+  const computedBannerTitle = bannerTitle ?? bannerDefault;
+
+  // Header title: override staff-list to a fixed, non-link title
+  const computedHeaderTitle =
+    headerTitle ??
+    (page === 'staff-list'
+      ? 'Staff List'
+      : isFamily
+        ? 'Client Schedule'
+        : isCarer
+          ? 'Carer Dashboard'
+          : 'Client Schedule');
+
+  // Client picker visibility: prop wins; else hide for carers
+  const pickerVisible = showClientPicker ?? !isCarer;
+
   const handleLogoClick = () => {
     router.push('/schedule_dashboard');
   };
@@ -234,7 +265,6 @@ export default function DashboardChrome({
     if (typeof window !== 'undefined') window.print();
   };
 
-  // Avatar menu
   const goProfile = () => {
     setUserMenuOpen(false);
     if (onProfile) return onProfile();
@@ -245,7 +275,7 @@ export default function DashboardChrome({
     setIsSignOut(true);
     setUserMenuOpen(false);
     if (onSignOut) {
-      return onSignOut();
+      onSignOut();
     } else {
       await resetClient();
       await signOutUser();
@@ -253,25 +283,10 @@ export default function DashboardChrome({
     router.push('/');
   };
 
-  // Backend to do: 
-  // Read-only access list data (inline). Replace with your API call when ready.
-  // Example integration:
-  // useEffect(() => {
-  //   if (isManagement && page === 'schedule' && activeClient.id) {
-  //     fetch(`/api/clients/${activeClient.id}/access`)
-  //       .then(res => res.json())
-  //       .then((data: AccessUser[]) => setAccessUsers(data))
-  //       .catch(() => setAccessUsers([]));
-  //   }
-  // }, [isManagement, page, activeClient.id]);
-
-
-   const accessUsers: AccessUser[] = useMemo(() => {
-    // Keep empty by default; safe placeholder for a read-only list.
+  // Optional: access list mock (kept empty unless backend integrated)
+  const accessUsers: AccessUser[] = useMemo(() => {
     return [];
   }, [activeClient.id]);
-
-
 
   if (!role) {
     return (
@@ -293,25 +308,26 @@ export default function DashboardChrome({
     );
   }
 
-  // Hide banner for management client-list & family people-list (unchanged from your logic)
+  // Hide banner for these pages (unchanged)
   const shouldShowBanner =
-    page !== 'client-list' && !(page === 'people-list' && role === 'family');
-
- 
+    page !== 'client-list' &&
+    page !== 'staff-list' && // if you want banner on staff-list, remove this line
+    page !== 'assign-carer' &&
+    !(page === 'people-list' && role === 'family');
 
   return (
     <div className="min-h-screen flex flex-col" style={{ color: colors.text }}>
-      {/* ---------- Top Header ---------- */}
+      {/* -------- Header -------- */}
       <header
         className="px-8 py-12 flex items-center justify-between text-white"
         style={{ backgroundColor: colors.header, height: headerHeight }}
       >
-        {/* Left: Logo + Client Schedule link */}
+        {/* Left: Logo + Title (staff-list = non-clickable) */}
         <div className="flex items-center gap-8">
           <button
             onClick={handleLogoClick}
             className="flex items-center gap-3 hover:opacity-90"
-            title="Go to empty dashboard"
+            title="Go to dashboard"
           >
             <Image
               src="/logo.png"
@@ -322,111 +338,144 @@ export default function DashboardChrome({
               priority
             />
           </button>
-          <button
-            onClick={() => router.push(ROUTES.schedule)}
-            className={`font-extrabold leading-none text-2xl md:text-3xl ${
-              page === 'schedule' ? 'underline' : 'text-white hover:underline'
-            }`}
-            title="Go to schedule dashboard"
-          >
-            <span className="font-extrabold leading-none text-2xl md:text-3xl">
-              Client Schedule
+
+          {page === 'staff-list' ? (
+            <span className="font-extrabold leading-none text-2xl md:text-3xl select-none">
+              {computedHeaderTitle}
             </span>
-          </button>
+          ) : (
+            <button
+              onClick={() => router.push(ROUTES.schedule)}
+              className={`font-extrabold leading-none text-2xl md:text-3xl ${
+                page === 'schedule' ? 'underline' : 'text-white hover:underline'
+              }`}
+              title="Go to schedule dashboard"
+            >
+              <span className="font-extrabold leading-none text-2xl md:text-3xl">
+                {computedHeaderTitle}
+              </span>
+            </button>
+          )}
         </div>
 
-        {/* Center: navigation menu */}
-        <nav className="hidden lg:flex items-center gap-10 font-extrabold text-white text-xl">
-          {isManagement && (
-            <Link
-              href={ROUTES.clientList}
-              className={activeUnderline(page, 'client-list', role)}
-            >
-              Client List
-            </Link>
-          )}
-
-          {isFamily && (
+        {/* Center: Nav (if navItems passed, use them; else fall back to role-based default) */}
+        <nav className="hidden lg:flex items-center gap-14 font-extrabold text-white text-xl px-2">
+          {navItems && navItems.length > 0 ? (
             <>
-              <Link
-                href={ROUTES.peopleList}
-                className={activeUnderline(page, 'people-list', role)}
-              >
-                My Clients
-              </Link>
-              <Link
-                href={
-                  activeClient.id
-                    ? ROUTES.organisationAccess(activeClient.id)
-                    : '#'
-                }
-                className={
-                  activeClient.id
-                    ? activeUnderline(page, 'organisation-access', role)
-                    : 'cursor-not-allowed opacity-50'
-                }
-                onClick={(e) => {
-                  if (!activeClient.id) e.preventDefault();
-                }}
-              >
-                Organisation
-              </Link>
-            </>
-          )}
-
-          <Link
-            href={ROUTES.budget}
-            className={activeUnderline(page, 'budget', role)}
-          >
-            Budget Report
-          </Link>
-          <Link
-            href={ROUTES.transactions}
-            className={activeUnderline(page, 'transactions', role)}
-          >
-            View Transactions
-          </Link>
-
-          {isFamily && (
-            <Link
-              href={ROUTES.requestForm}
-              className={activeUnderline(page, 'request-form', role)}
-            >
-              Request Form
-            </Link>
-          )}
-
-          {isManagement && (
-            <>
-              <div className="relative">
-                <details className="group">
-                  <summary
-                    className={`inline-flex items-center gap-2 list-none cursor-pointer ${activeUnderline(page, 'care', role)}`}
+              {navItems.map((item) => {
+                const active =
+                  pathname === item.href ||
+                  pathname.startsWith(item.href + '/');
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={
+                      active
+                        ? 'px-2 py-1 underline underline-offset-4'
+                        : 'px-2 py-1 text-white hover:underline'
+                    }
                   >
-                    Care Items <span className="text-white/90">▼</span>
-                  </summary>
-                  <div className="absolute left-1/2 -translate-x-1/2 mt-3 w-80 rounded-md border border-white/30 bg-white text-black shadow-2xl z-50">
-                    <Link
-                      href={ROUTES.careAdd}
-                      className="block w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5"
-                    >
-                      Add a new care item
-                    </Link>
-                    <Link
-                      href={ROUTES.careEdit}
-                      className="block w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5"
-                    >
-                      Edit a care item
-                    </Link>
-                  </div>
-                </details>
-              </div>
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </>
+          ) : (
+            <>
+              {/* Default nav for your existing pages */}
+              {isManagement && (
+                <Link
+                  href={ROUTES.clientList}
+                  className={activeUnderline(page, 'client-list', role!)}
+                >
+                  Client List
+                </Link>
+              )}
+
+              {isFamily && (
+                <>
+                  <Link
+                    href={ROUTES.peopleList}
+                    className={activeUnderline(page, 'people-list', role!)}
+                  >
+                    My Clients
+                  </Link>
+                  <Link
+                    href={
+                      activeClient.id
+                        ? ROUTES.organisationAccess(activeClient.id)
+                        : '#'
+                    }
+                    className={
+                      activeClient.id
+                        ? activeUnderline(page, 'organisation-access', role!)
+                        : 'cursor-not-allowed opacity-50'
+                    }
+                    onClick={(e) => {
+                      if (!activeClient.id) e.preventDefault();
+                    }}
+                  >
+                    Organisation
+                  </Link>
+                </>
+              )}
+
               <Link
-                href={ROUTES.requestLog}
-                className={activeUnderline(page, 'request-log', role)}
+                href={ROUTES.budget}
+                className={activeUnderline(page, 'budget', role!)}
               >
-                Request Log
+                Budget Report
               </Link>
+              <Link
+                href={ROUTES.transactions}
+                className={activeUnderline(page, 'transactions', role!)}
+              >
+                View Transactions
+              </Link>
+
+              {isFamily && (
+                <Link
+                  href={ROUTES.requestForm}
+                  className={activeUnderline(page, 'request-form', role!)}
+                >
+                  Request Form
+                </Link>
+              )}
+
+              {isManagement && (
+                <>
+                  <div className="relative">
+                    <details className="group">
+                      <summary
+                        className={`inline-flex items-center gap-2 list-none cursor-pointer ${activeUnderline(page, 'care', role!)}`}
+                      >
+                        Care Items <span className="text-white/90">▼</span>
+                      </summary>
+                      <div className="absolute left-1/2 -translate-x-1/2 mt-3 w-80 rounded-md border border-white/30 bg-white text-black shadow-2xl z-50">
+                        <Link
+                          href={ROUTES.careAdd}
+                          className="block w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5"
+                        >
+                          Add a new care item
+                        </Link>
+                        <Link
+                          href={ROUTES.careEdit}
+                          className="block w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5"
+                        >
+                          Edit a care item
+                        </Link>
+                      </div>
+                    </details>
+                  </div>
+                  <Link
+                    href={ROUTES.requestLog}
+                    className={activeUnderline(page, 'request-log', role!)}
+                  >
+                    Request Log
+                  </Link>
+                </>
+              )}
             </>
           )}
         </nav>
@@ -476,22 +525,23 @@ export default function DashboardChrome({
         </div>
       </header>
 
-      {/* ---------- Pink banner ---------- */}
+      {/* -------- Pink banner -------- */}
       {shouldShowBanner && (
-        <div
-          className="px-4 md:px-8 py-2 md:py-4 grid grid-cols-[auto_1fr_auto] items-center"
-          style={{ backgroundColor: hexToRgba(palette.banner, 0.8) }}
-        >
-          {/* Left cell: Client dropdown (HIDDEN for carers) */}
-          {!isCarer ? (
-            <div className="relative justify-self-start">
+        <div className="relative isolate px-4 md:px-8 py-2 md:py-4 grid grid-cols-[auto_1fr_auto] items-center">
+          <div
+            className="absolute inset-0 z-0 pointer-events-none"
+            style={{ backgroundColor: hexToRgba(palette.banner, 0.8) }}
+            aria-hidden
+          />
+
+          {/* Left: Client picker or spacer */}
+          {pickerVisible ? (
+            <div className="relative justify-self-start z-10">
               <label className="sr-only">Select Client</label>
               <select
                 className="appearance-none h-12 w-56 md:w-64 pl-8 pr-12 rounded-2xl border border-black/30 bg-white font-extrabold text-xl shadow-sm focus:outline-none"
                 value={activeClient.id || ''}
-                onChange={(e) => {
-                  onSelectClientChange(e.target.value);
-                }}
+                onChange={(e) => onSelectClientChange(e.target.value)}
                 aria-label="Select client"
               >
                 <option value="">{'- Select a client -'}</option>
@@ -510,64 +560,54 @@ export default function DashboardChrome({
               </span>
             </div>
           ) : (
-            // Spacer to preserve grid layout when dropdown is hidden for carers
             <div className="h-12 w-56 md:w-64" aria-hidden />
           )}
 
-          {/* Center: avatar + title + inline read-only access list */}
-          <div className="relative">
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-              <div
-                className={`flex items-center gap-3 justify-center ${
-                  isCarer
-                    ? '-translate-x-8 md:-translate-x-32'
-                    : 'md:-translate-x-16'
-                }`}
-              >
-                <Link
-                  href={ROUTES.profile}
-                  aria-label="Open client profile"
-                  title="Open client profile"
-                  className="rounded-full focus:outline-none focus:ring-2 focus:ring-black/20"
-                >
+          {/* Center: Banner title (with avatar) */}
+          <div className="relative z-10">
+            {computedBannerTitle ? (
+              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                <div className="flex items-center gap-3 justify-center">
                   <Image
                     src="/default_profile.png"
                     alt="Client avatar"
                     width={40}
                     height={40}
                     priority
-                    className="rounded-full border border-black/20 object-cover cursor-pointer hover:opacity-90"
+                    className="rounded-full border border-black/20 object-cover"
                   />
-                </Link>
-                <h1 className="font-extrabold leading-none text-2xl md:text-2xl select-none">
-                  {centeredTitle}
-                </h1>
-
-                {/* Read-only access list: placed to the right of the client profile/title */}
-                {page === 'schedule' && activeClient.id && (
+                  <h1 className="font-extrabold leading-none text-2xl md:text-3xl select-none">
+                    {computedBannerTitle}
+                  </h1>
+                  {/* Optional: management schedule page can show AccessDropdown */}
+                  {page === 'schedule' && isManagement && activeClient.id && (
                     <div className="ml-6 pl-6 border-l border-black/20 hidden md:block">
-                         <AccessDropdown clientId={activeClient.id} />
+                      <AccessDropdown clientId={activeClient.id} />
                     </div>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="h-10" />
+            )}
           </div>
 
-          {/* Right: Print button only (access control moved next to the profile) */}
-          <div className="justify-self-end flex items-end gap-4">
-            <div>
+          {/* Right: Print (example: show on management schedule) */}
+          <div className="relative z-10 justify-self-end">
+            {page === 'schedule' && isManagement && (
               <button
                 onClick={handlePrint}
-                className="inline-flex items-center px-4.5 py-2.5 rounded-2xl border border-black/30 bg-white font-extrabold text-xl hover:bg-black/5"
+                className="relative z-20 inline-flex items-center px-6 py-3 rounded-2xl border border-black/30 bg-white font-extrabold text-xl hover:bg-black/5"
                 title="Print"
               >
                 Print
               </button>
-            </div>
+            )}
           </div>
         </div>
       )}
 
+      {/* -------- Content -------- */}
       <main className="flex-1 min-h-0">{children}</main>
     </div>
   );
