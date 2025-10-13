@@ -157,6 +157,8 @@ function ClientSchedule() {
 
   /* ------------------------------ Tasks ----------------------------- */
   const [selectedDate, setSelectedDate] = useState('');
+  const [visibleMonth, setVisibleMonth] = useState<string>(new Date().toISOString().slice(0, 7));
+
   const [tasks, setTasks] = useState<ClientTask[]>([]);
   const [selectedTask, setSelectedTask] = useState<ClientTask | null>(null);
 
@@ -204,13 +206,27 @@ function ClientSchedule() {
     ? tasks.filter((t): t is ClientTask => (t.clientId ?? '') === activeClientId)
     : [];
 
+  function getDueISO(t: ClientTask): string {
+    return (t.nextDue ?? '').slice(0, 10);
+  }
+
+  const tasksForCalendar: ClientTask[] = tasksByClient.filter((t) => {
+    const due = getDueISO(t);
+    if (!due) return false;
+    
+    if (selectedDate) return due === selectedDate;
+    
+    const month = due.slice(0, 7); 
+    return month === visibleMonth;
+  });
+
   const filteredTasks = selectedDate
     ? tasksByClient.filter((t) => t.nextDue === selectedDate)
     : tasksByClient;
 
   /* -------------------- RIGHT PANE: title search -------------------- */
   const [searchTerm, setSearchTerm] = useState('');
-  const tasksForRightPane = filteredTasks.filter((t) => {
+  const tasksForRightPane = tasksForCalendar.filter((t) => {
     const title = (t?.title ?? '').toLowerCase();
     const q = (searchTerm ?? '').trim().toLowerCase();
     return title.includes(q);
@@ -279,8 +295,12 @@ function ClientSchedule() {
         {/* LEFT: Calendar */}
         <section className="flex-1 bg-white overflow-auto p-4">
           <CalendarPanel
-            tasks={filteredTasks /* empty when no client is selected */}
+            tasks={tasksForCalendar}
             onDateClick={(date: string) => setSelectedDate(date)}
+            onMonthChange={(yyyyMm) => { 
+              setVisibleMonth(yyyyMm); 
+              setSelectedDate(''); 
+            }} 
           />
         </section>
 

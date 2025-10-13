@@ -18,6 +18,7 @@ type Task = {
 type CalendarPanelProps = {
   tasks: Task[];
   onDateClick: (date: string) => void;
+  onMonthChange?: (yyyyMm: string) => void;
 };
 
 // Helper to format Date object as YYYY-MM-DD in local time
@@ -28,9 +29,16 @@ function formatDateToYMD(date: Date) {
   return `${y}-${m}-${d}`;
 }
 
+function formatMonthToYM(d: Date) {
+  const y = d.getFullYear(); 
+  const m = String(d.getUTCMonth() + 1).padStart(2, '0'); 
+  return `${y}-${m}`;
+}
+
 export default function CalendarPanel({
   tasks,
   onDateClick,
+  onMonthChange,
 }: CalendarPanelProps) {
   const taskDatesSet = new Set(tasks.map((t) => t.nextDue));
   const todayStr = formatDateToYMD(new Date());
@@ -44,6 +52,10 @@ export default function CalendarPanel({
       events={[]}
       fixedWeekCount={false}
       showNonCurrentDates={false}
+      datesSet={(info) => {
+        const month = formatMonthToYM(info.start);
+        onMonthChange?.(month);
+      }}
       dateClick={(info) => {
         const clickedDate = formatDateToYMD(info.date);
         if (taskDatesSet.has(clickedDate)) onDateClick(clickedDate);

@@ -10,11 +10,7 @@ import * as mockApi from './mock/mockApi';
 import { getSession } from 'next-auth/react';
 import { mockSignOut } from './mock/mockSignout';
 import { signOut as nextAuthSignOut } from 'next-auth/react';
-import {
-  toISODateOnly,
-  nextDueISO,
-  addCount,
-} from '@/lib/care-item-helpers/date-helpers';
+import { toISODateOnly, nextOccurrenceAfterToday} from '@/lib/care-item-helpers/date-helpers';
 
 // Fetching Task helper
 
@@ -130,31 +126,6 @@ export const getTasks = async (): Promise<mockApi.Task[]> => {
     return '';
   };
 
-  const deriveNextDue = (row: CareItemListRow): string => {
-    const toISO = toISODateOnly(row.dateTo ?? null);
-    if (toISO) return toISO;
-
-    const fromISO = toISODateOnly(row.dateFrom ?? null);
-    if (fromISO && !(row.frequencyCount || row.frequencyDays)) return fromISO;
-
-    const lastDoneISO = toISODateOnly(row.lastDone ?? null);
-
-    if (lastDoneISO && row.frequencyCount && row.frequencyUnit) {
-      return nextDueISO(lastDoneISO, row.frequencyCount, row.frequencyUnit);
-    }
-
-    // Recurrence: raw frequencyDays (fallback to day-based add)
-    if (lastDoneISO && row.frequencyDays && row.frequencyDays > 0) {
-      return toISODateOnly(
-        addCount(lastDoneISO, row.frequencyDays, 'day')
-      ) || '';
-    }
-
-    if (fromISO) return fromISO;
-
-    return '';
-  };
-
   const res = await fetch('/api/v1/care_item?limit=200', { cache: 'no-store' });
   if (!res.ok) {
     throw new Error(`Failed to fetch tasks (${res.status})`);
@@ -173,7 +144,12 @@ export const getTasks = async (): Promise<mockApi.Task[]> => {
       clientId: row.clientId ?? '', 
       frequency: buildFrequency(row),
       lastDone: toISODateOnly(row.lastDone ?? null) || '',
-      nextDue: deriveNextDue(row),
+      nextDue: nextOccurrenceAfterToday(
+        toISODateOnly(row.dateFrom),
+        row.frequencyCount,
+        row.frequencyUnit,
+        row.frequencyDays
+      ),
       comments: [],
       files: [],
     };
