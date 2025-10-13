@@ -288,7 +288,7 @@ function ClientSchedule() {
 
   // Logo → home
   const onLogoClick = () => {
-    router.push('/schedule_dashboard');
+    router.push('/icon_dashboard');
   };
 
   /* ------------------------------ Render ---------------------------- */
@@ -297,7 +297,7 @@ function ClientSchedule() {
 
   return (
     <DashboardChrome
-      page="schedule"
+      page="client-schedule"
       clients={clients}
       onClientChange={onClientChange}
       colors={{

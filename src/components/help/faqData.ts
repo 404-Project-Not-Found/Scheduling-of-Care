@@ -373,6 +373,21 @@ export const faqData: FAQBook = {
   ],
 },
 
+
+'family/staff-schedule': {
+    title: 'Family — Staff Schedule',
+    sections: [
+     {
+        id: 'family-staff-schedule',
+        title: 'Staff Schedules',
+        body: [
+            'Q: What does the "Staff Schedule" page do?',
+            'A: It lets you view and manage the schedules of all staff members.',
+        ],
+      },
+    ],
+  },
+
   
 
   /* =========================
@@ -490,6 +505,20 @@ export const faqData: FAQBook = {
           'A: Starts a new transaction entry where you can add line items and totals.',
           'Q: What does “Attach receipt” do?',
           'A: Lets you upload images/PDFs and associate them with the transaction.',
+        ],
+      },
+    ],
+  },
+
+  'carer/staff-schedule': {
+    title: 'Carer — Staff Schedule',
+    sections: [
+     {
+        id: 'carer-staff-schedule',
+        title: 'Staff Schedules',
+        body: [
+            'Q: What does the "Staff Schedule" page do?',
+            'A: It lets you view and manage the schedules of all staff members.',
         ],
       },
     ],
@@ -652,6 +681,52 @@ export const faqData: FAQBook = {
             'A: It’s the password for this Management account, use to log in to this account and manage your client.',
             'Q: Whose email address is this?',
             'A: It’s the email you (as a Management) use to log in to this account and manage your client.',
+        ],
+      },
+    ],
+  },
+
+    'management/staff-schedule': {
+    title: 'Management — Staff Schedule',
+    sections: [
+     {
+        id: 'management-staff-schedule',
+        title: 'Manage staff schedules',
+        body: [
+            'Q: What does the "Staff Schedule" page do?',
+            'A: It lets you view and manage the schedules of all staff members.',
+            'Q: How do I add a new staff member?',
+            'A: Click the "Add Staff" button and fill in the required details.',
+        ],
+      },
+    ],
+  },
+
+  'management/staff-list': {
+    title: 'Management — Staff List',
+    sections: [
+     {
+        id: 'management-staff-list',
+        title: 'View staff members',
+        body: [
+            'Q: What does the "Staff List" page do?',
+            'A: It lets you view and manage the details of all staff members.',
+            'Q: How do I add a new staff member?',
+            'A: Click the "Add Staff" button and fill in the required details.',
+        ],
+      },
+    ],
+  },
+
+  'management/assign-carer': {
+    title: 'Management — Assign Carer',
+    sections: [
+     {
+        id: 'management-assign-carer',
+        title: 'Assign a carer to a client',
+        body: [
+            'Q: What does the "Assign Carer" page do?',
+            'A: It lets you assign a specific carer to a client for their care needs.',
         ],
       },
     ],

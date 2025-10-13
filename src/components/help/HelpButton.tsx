@@ -76,18 +76,18 @@ function resolveRoleByPath(pathname: string): Role {
   // Management hints
   if (
     p.includes('/management_dashboard') ||
-    p.startsWith('/add_staff') ||
+    p.startsWith('/staff_list') ||
     p.startsWith('/assign_carer') ||
     p.startsWith('/clients_list') ||
     p.startsWith('/manage_care_item') ||
     p.startsWith('/register_client') ||
     p.startsWith('/requests') ||
-    p.startsWith('/staff_list') ||
+    p.startsWith('/staff_schedule') ||
     p.startsWith('/old_organisation_access') ||
     p.startsWith('/organisation') ||
     p.startsWith('/partial_dashboard') ||
     p.startsWith('/request-log-page') ||
-    p.startsWith('/schedule_dashboard') ||
+    p.startsWith('/icon_dashboard') ||
     p.startsWith('/reset_password') ||
     p.startsWith('/reset_password_link')
   ) return 'management';
@@ -116,10 +116,10 @@ function isPreLoginPath(pathname: string): boolean {
     p.startsWith('/auth/login') || p.startsWith('/auth/signin')
   ) return true;
 
-  // ⭐ Your actual route: /role (role selection main page + its subroutes)
+  // Your actual route: /role (role selection main page + its subroutes)
   if (p === '/role' || p.startsWith('/role')) return true;
 
-  // ⭐ Your actual route: /organisation (management organisation flow + its subroutes)
+  // Your actual route: /organisation (management organisation flow + its subroutes)
   if (p === '/organisation' || p.startsWith('/organisation')) return true;
 
   // Backward-compatible aliases (optional)
@@ -242,11 +242,15 @@ const familyMatchers: Matcher[] = [
       ? { pageKey: 'family/update-details', sectionId: 'family-update-details' }
       : null,
   (p) =>
+    p.includes('/staff_schedule')
+      ? { pageKey: 'family/staff-schedule', sectionId: 'family-staff-schedule' }
+      : null,
+  (p) =>
     p.startsWith('/calendar_dashboard')
       ? { pageKey: 'family/client-schedule', sectionId: 'family-client-schedule' }
       : null,
   (p) =>
-    p.startsWith('/schedule_dashboard')
+    p.startsWith('/icon_dashboard')
       ? { pageKey: 'family/dashboard', sectionId: 'family-dashboard-overview' }
       : null,
 ];
@@ -274,11 +278,15 @@ const carerMatchers: Matcher[] = [
       ? { pageKey: 'carer/update-details', sectionId: 'carer-update-details' }
       : null,
   (p) =>
+    p.includes('/staff_schedule')
+      ? { pageKey: 'carer/staff-schedule', sectionId: 'carer-staff-schedule' }
+      : null,
+  (p) =>
     p.startsWith('/calendar_dashboard')
       ? { pageKey: 'carer/client-schedule', sectionId: 'carer-client-schedule' }
       : null,
   (p) =>
-    p.startsWith('/schedule_dashboard')
+    p.startsWith('/icon_dashboard')
       ? { pageKey: 'carer/dashboard', sectionId: 'carer-dashboard-overview' }
       : null,
 ];
@@ -286,8 +294,12 @@ const carerMatchers: Matcher[] = [
 /** MANAGEMENT */
 const managementMatchers: Matcher[] = [
   (p) =>
-    p.includes('/add_staff')
-      ? { pageKey: 'management/add-staff', sectionId: 'management-add-staff' }
+    p.includes('/staff_list')
+      ? { pageKey: 'management/staff-list', sectionId: 'management-staff-list' }
+      : null,
+  (p) =>
+    p.includes('/staff_schedule')
+      ? { pageKey: 'management/staff-schedule', sectionId: 'management-staff-schedule' }
       : null,
   (p) =>
     p.includes('/assign_carer')
@@ -330,7 +342,7 @@ const managementMatchers: Matcher[] = [
       ? { pageKey: 'management/update-details', sectionId: 'management-update-details' }
       : null,
   (p) =>
-    p.startsWith('/schedule_dashboard')
+    p.startsWith('/icon_dashboard')
       ? { pageKey: 'management/client-schedule', sectionId: 'management-client-schedule' }
       : null,
   (p) =>

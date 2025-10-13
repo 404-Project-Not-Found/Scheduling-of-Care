@@ -54,7 +54,7 @@ export default function ManageCarerPage() {
 
       {/* Page body */}
       <div
-        className="min-h-[calc(100vh-120px)] flex flex-col"
+        className="min-h-[calc(100vh-100px)] flex flex-col"
         style={{ background: colors.pageBg }}
       >
         {/* === GAP between top global header and maroon header === */}

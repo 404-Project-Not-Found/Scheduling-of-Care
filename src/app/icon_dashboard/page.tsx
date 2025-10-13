@@ -1,5 +1,5 @@
 /**
- * File path: /schedule_dashboard/page.tsx
+ * File path: /icon_dashboard/page.tsx
  * Author: Denise Alexander & Devni Wijesinghe
  * Function: Role-aware schedule dashboard that shows different actions per role.
  */
@@ -41,7 +41,6 @@ type ButtonDef = {
  * Role -> which buttons to show
  * - family: Client/Staff Schedule + Budget + Transactions + Family Requests + FAQ
  * - management: Client/Staff Schedule + Budget + Transactions + Request Log(renamed) + FAQ
- * - carer: no Requests，但新增“Update Details”（使用 ClipboardList 图标）
  */
 const BUTTONS: Record<StrictRole, ButtonDef[]> = {
   family: [
@@ -57,7 +56,6 @@ const BUTTONS: Record<StrictRole, ButtonDef[]> = {
     { label: 'Staff Schedule', icon: Users, href: '/management_dashboard/staff_schedule' },
     { label: 'Budget Report', icon: FileText, href: '/calendar_dashboard/budget_report' },
     { label: 'Transactions', icon: Receipt, href: '/calendar_dashboard/transaction_history' },
-    // new: Update Details (uses Request Log's icon)
     { label: 'Update Details', icon: ClipboardList, href: '/calendar_dashboard/update_details' },
     { label: 'FAQ', icon: HelpCircle, href: '/faq' },
   ],
@@ -254,10 +252,10 @@ export default function DashboardPage() {
 
       {/* ===== Role-based button grid ===== */}
       <div
-        className="flex-1 flex items-center justify-center px-10 py-12"
+        className="flex-1 flex items-center justify-center px-10 py-20"
         style={{ backgroundColor: 'transparent' }}
       >
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 w-full max-w-6xl">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-15 w-full max-w-6xl">
           {actions.map(({ label, icon: Icon, href }) => (
             <button
               key={label}
