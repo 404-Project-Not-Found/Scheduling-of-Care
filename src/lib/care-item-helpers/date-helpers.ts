@@ -13,15 +13,74 @@ import {
     addYears,
     differenceInCalendarDays,
 } from "date-fns";
+import { Types } from "mongoose";
+
+interface CareItemLean {
+  label: string;
+  slug: string;
+  status: string;
+  category: string;
+  frequency?: string;
+  lastDone?: Date | string | null;
+  categoryId?: Types.ObjectId | string | null;
+  deleted?: boolean;
+  clientId?: Types.ObjectId | string | null;
+  frequencyDays?: number | null;
+  frequencyCount?: number | null;
+  frequencyUnit?: Unit | null;
+  dateFrom?: Date | string | null;
+  dateTo?: Date | string | null;
+  notes?: string | null;
+}
+
+export function isISODateOnly(s: unknown): s is string {
+  return typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s);
+}
 
 // to store dates as YYY-MM-DD
 export function parseISODateOnly(yyyyMmDd: string): Date {
-    const [y, m, d] = yyyyMmDd.split("-").map(Number);
-    return new Date(Date.UTC(y, (m ?? 1) - 1, d ?? 1, 12, 0, 0));
+  if (!isISODateOnly(yyyyMmDd)) {
+    throw new Error(`parseISODateOnly: invalid format "${yyyyMmDd}"`);
+  }
+  const [ys, ms, ds] = yyyyMmDd.split("-");
+  const y = Number(ys);
+  const m = Number(ms);
+  const d = Number(ds);
+  if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) {
+    throw new Error(`parseISODateOnly: NaN components in "${yyyyMmDd}"`);
+  }
+  // Basic range checks
+  if (m < 1 || m > 12 || d < 1 || d > 31) {
+    throw new Error(`parseISODateOnly: out-of-range "${yyyyMmDd}"`);
+  }
+  
+  const dt = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+  const roundTrip = formatISODateOnly(dt);
+  if (roundTrip !== yyyyMmDd) {
+    throw new Error(`parseISODateOnly: impossible date "${yyyyMmDd}"`);
+  }
+  return dt;
 }
 
 export function formatISODateOnly(date: Date): string {
     return date.toISOString().slice(0, 10);
+}
+
+function toISODate(d: Date) {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+
+function cmpISO(a?: string, b?: string) {
+  if (!a || !b) return 0;
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
+function clampToWindow(date: string, start: string, end: string) {
+  return !(date < start || date > end);
 }
 
 export type Unit = "day" | "week" | "month" | "year";
@@ -66,3 +125,25 @@ export function toISO(input: unknown): string | undefined {
     const d = input instanceof Date? input : typeof input === "string"? new Date(input) : undefined;
     return d && !Number.isNaN(d.getTime())? d.toISOString() : undefined;
 }
+
+export function toISODateOnly(input: Date | string | number | null | undefined): string {
+  if (input == null) return "";
+
+  if (input instanceof Date && !Number.isNaN(input.getTime())) {
+    return formatISODateOnly(input);
+  }
+
+  if (typeof input === "number") {
+    const d = new Date(input);
+    return Number.isNaN(d.getTime()) ? "" : formatISODateOnly(d);
+  }
+
+  if (typeof input === "string") {
+    if (isISODateOnly(input)) return input;
+    const d = new Date(input);
+    return Number.isNaN(d.getTime()) ? "" : formatISODateOnly(d);
+  }
+  return "";
+}
+
+

@@ -8,10 +8,19 @@
 import { NextResponse } from "next/server";
 import {connectDB} from "@/lib/mongodb";
 import CareItem, {CareItemDoc, isUnit} from "@/models/CareItem";
-import { toISO } from "@/lib/care-item-helpers/date-helpers";
+import { 
+  toISO,
+  parseISODateOnly,
+  formatISODateOnly,
+  nextDueISO,
+  type Unit,
+  toISODateOnly
+ } from "@/lib/care-item-helpers/date-helpers";
 import { findOrCreateNewCategory } from "@/lib/category-helpers";
 import {slugify} from "@/lib/slug";
 import {Types} from "mongoose";
+
+
 
 interface CreateCareItemBody { 
     clientId?: string; 
@@ -48,7 +57,7 @@ export async function GET(req: Request): Promise<NextResponse> {
   const q = (searchParams.get("q") || "").trim().toLowerCase();
   const status = searchParams.get("status") || undefined;
 
-  const categoryIdStr = (searchParams.get("categoryUd") || "").trim();
+  const categoryIdStr = (searchParams.get("categoryId") || "").trim();
   const clientIdStr = (searchParams.get("clientId") || "").trim();
   const categoryName = (searchParams.get("category") || "").trim();
 
@@ -70,7 +79,7 @@ export async function GET(req: Request): Promise<NextResponse> {
     if(!Types.ObjectId.isValid(categoryIdStr)) {
       return NextResponse.json({error: "categoryId must be a valid ObjectId"}, {status: 400});
     }
-    filter.clientId = new Types.ObjectId(clientIdStr);
+    filter.categoryId = new Types.ObjectId(categoryIdStr);
   } else if (categoryName) {
     filter.category = categoryName;
   }
@@ -82,10 +91,11 @@ export async function GET(req: Request): Promise<NextResponse> {
     };
   }
 
-  const tasks = await CareItem.find(filter)
+  const tasks = (await CareItem.find(filter)
     .sort({ updatedAt: -1, createdAt: -1, _id: -1 })
     .limit(limit)
-    .lean();
+    .lean());
+
 
   const response = tasks.map((t) => ({
     label: t.label,
@@ -97,6 +107,11 @@ export async function GET(req: Request): Promise<NextResponse> {
     categoryId: t.categoryId?.toString?.() ?? t.categoryId,
     deleted: Boolean(t.deleted),
     clientId: t.clientId?.toString?.() ?? t.clientId,
+    frequencyDays: t.frequencyDays ?? undefined,
+    frequencyCount: t.frequencyCount ?? undefined, 
+    frequencyUnit: t.frequencyUnit ?? undefined, 
+    dateFrom: t.dateFrom ?? undefined, 
+    dateTo: t.dateTo ?? undefined,
     notes: t.notes ?? "",
   }));
 
