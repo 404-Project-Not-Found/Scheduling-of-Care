@@ -549,19 +549,41 @@ export const faqData: FAQBook = {
     ],
   },
 
-  'management/edit-care-items': {
-    title: 'Management — Edit Care Items',
+  'management/client-schedule': {
+    title: 'Management — Client Schedule',
     sections: [
       {
-        id: 'edit-care-item',
-        title: 'Manage care items',
+        id: 'management-client-schedule',
+        title: 'Client Schedules',
         body: [
-          'Q: How do I add or edit a care item template for clients?',
-          'A: Go to “Care Items”, create a new template or edit an existing one, then assign it to clients as needed.',
-          'Q: What does “Assign to client(s)” do?',
-          'A: Applies the configured care item to selected clients’ schedules.',
-          'Q: How do I change frequency or due dates?',
-          'A: Edit the item’s repeat settings (e.g., weekly/monthly) and save; new occurrences follow the updated rules.',
+          'Q: What does the calendar show?',
+          'A: It displays care items scheduled in the selected month for the selected (assigned) client.',
+          'Q: How do I switch the client I am viewing?',
+          'A: Use “Select a client” (or the Assigned client dropdown) to choose another client you are assigned to.',
+          'Q: What do the Prev/Next (Left/Right) arrows do?',
+          'A: They move the calendar backward/forward by one month.',
+          'Q: How do I select a different month directly?',
+          'A: Click the calendar icon next to the title to open a month picker.',
+          'Q: What happens when I click a care item?',
+          'A: The details open, showing last done, next due, frequency, status, comments, and files.',
+          'Q: How do I mark a care item as completed?',
+          'A: Open the item and click “Mark as completed”; add notes/files if required, then save.',
+          'Q: Can I print this schedule?',
+          'A: Yes. Click the “Print” button near the header.',
+        ],
+      },
+    ],
+  },
+
+  'management/client-list': {
+    title: 'Management — Client List',
+    sections: [
+      {
+        id: 'client-list',
+        title: 'Manage clients',
+        body: [
+          'Q: How do I register a new client?',
+          'A: Go to “Client List”, click “Add Client”, and fill in the required details.',
         ],
       },
     ],
@@ -718,17 +740,4 @@ export const faqData: FAQBook = {
     ],
   },
 
-  'management/assign-carer': {
-    title: 'Management — Assign Carer',
-    sections: [
-     {
-        id: 'management-assign-carer',
-        title: 'Assign a carer to a client',
-        body: [
-            'Q: What does the "Assign Carer" page do?',
-            'A: It lets you assign a specific carer to a client for their care needs.',
-        ],
-      },
-    ],
-  },
 };

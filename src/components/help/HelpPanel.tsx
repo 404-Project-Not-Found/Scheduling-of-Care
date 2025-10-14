@@ -271,15 +271,30 @@ function HelpPanelOverlay({
           <h2 className="text-2xl md:text-3xl font-semibold" style={{ color: 'white' }}>
             {page?.title ? `${page.title} FAQs` : 'Help - FAQs'}
           </h2>
-          <button
-            onClick={onClose}
-            aria-label="Close help"
-            className="rounded-full px-2 text-3xl leading-none hover:opacity-75"
-            style={{ color: 'white' }}
-            title="Close"
-          >
-            ×
-          </button>
+
+          <div className="flex items-center gap-3">
+            {/* Print — everyone can see */}
+            <button
+              onClick={() => typeof window !== 'undefined' && window.print()}
+              className="inline-flex items-center px-4 sm:px-5 py-2 rounded-2xl border border-white/40 bg-white font-semibold text-sm sm:text-base hover:bg-black/5 transition-colors"
+              title="Print"
+              aria-label="Print"
+              style={{ color: palette.deepBrown }}
+            >
+              Print
+            </button>
+
+            {/* Close */}
+            <button
+              onClick={onClose}
+              aria-label="Close help"
+              className="rounded-full px-2 text-3xl leading-none hover:opacity-75"
+              style={{ color: 'white' }}
+              title="Close"
+            >
+              ×
+            </button>
+          </div>
         </div>
 
         {/* Two-column layout */}

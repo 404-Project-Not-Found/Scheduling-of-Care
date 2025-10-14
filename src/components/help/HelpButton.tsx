@@ -47,7 +47,6 @@ function useViewerRoleResolved(pathname: string): Role {
 
   // 2) async (mock/real) → fallback to path inference
   useEffect(() => {
-    if (role) return;
     let alive = true;
     (async () => {
       try {
@@ -64,7 +63,7 @@ function useViewerRoleResolved(pathname: string): Role {
       setRole(resolveRoleByPath(pathname));
     })();
     return () => { alive = false; };
-  }, [pathname, role]);
+  }, [pathname]); // always re-check on path change
 
   return role ?? resolveRoleByPath(pathname);
 }
@@ -73,11 +72,15 @@ function useViewerRoleResolved(pathname: string): Role {
 function resolveRoleByPath(pathname: string): Role {
   const p = (pathname || '').toLowerCase();
 
+  // **Key fix**: /icon_dashboard should default to management when role is unknown
+  if (p.startsWith('/icon_dashboard')) {
+    return 'management';
+  }
+
   // Management hints
   if (
-    p.includes('/management_dashboard') ||
+    p.includes('/icon_dashboard') ||
     p.startsWith('/staff_list') ||
-    p.startsWith('/assign_carer') ||
     p.startsWith('/clients_list') ||
     p.startsWith('/manage_care_item') ||
     p.startsWith('/register_client') ||
@@ -207,17 +210,17 @@ function resolvePreLogin(pathname: string, search: URLSearchParams): Target | nu
 
 
 /* ----------------------- Post-login Route → FAQ tables ----------------------- */
+/** Helpers for robust path matching */
+const reBudget = /^\/calendar_dashboard\/(budget[_-]report|category[-_]cost)(\/|$)/i;
+const reTxn    = /^\/calendar_dashboard\/(transaction[_-]history|add[_-]tran|add[_-]transaction)(\/|$)/i;
+const reCalAny = /^\/calendar_dashboard(\/|$)/i;
+
 /** FAMILY */
 const familyMatchers: Matcher[] = [
-  (p) =>
-    p.startsWith('/calendar_dashboard/budget_report') ||
-    p.startsWith('/calendar_dashboard/category-cost')
+  (p) => reBudget.test(p)
       ? { pageKey: 'family/budget-report', sectionId: 'family-budget-report' }
       : null,
-  (p) =>
-    p.startsWith('/calendar_dashboard/transaction_history') ||
-    p.startsWith('/calendar_dashboard/add_tran') ||
-    p.startsWith('/calendar_dashboard/add_transaction')
+  (p) => reTxn.test(p)
       ? { pageKey: 'family/view-transaction', sectionId: 'family-view-transactions' }
       : null,
   (p) =>
@@ -245,8 +248,7 @@ const familyMatchers: Matcher[] = [
     p.includes('/staff_schedule')
       ? { pageKey: 'family/staff-schedule', sectionId: 'family-staff-schedule' }
       : null,
-  (p) =>
-    p.startsWith('/calendar_dashboard')
+  (p) => reCalAny.test(p)
       ? { pageKey: 'family/client-schedule', sectionId: 'family-client-schedule' }
       : null,
   (p) =>
@@ -261,12 +263,10 @@ const carerMatchers: Matcher[] = [
     p.includes('/update_details')
       ? { pageKey: 'carer/update-details', sectionId: 'carer-update-details' }
       : null,
-  (p) =>
-    p.includes('/budget_report') || p.includes('/category-cost')
+  (p) => reBudget.test(p)
       ? { pageKey: 'carer/budget-report', sectionId: 'carer-budget-report' }
       : null,
-  (p) =>
-    p.includes('/transaction_history') || p.includes('/add_tran') || p.includes('/add_transaction')
+  (p) => reTxn.test(p)
       ? { pageKey: 'carer/view-transactions', sectionId: 'carer-view-transactions' }
       : null,
   (p) =>
@@ -281,8 +281,7 @@ const carerMatchers: Matcher[] = [
     p.includes('/staff_schedule')
       ? { pageKey: 'carer/staff-schedule', sectionId: 'carer-staff-schedule' }
       : null,
-  (p) =>
-    p.startsWith('/calendar_dashboard')
+  (p) => reCalAny.test(p)
       ? { pageKey: 'carer/client-schedule', sectionId: 'carer-client-schedule' }
       : null,
   (p) =>
@@ -302,16 +301,8 @@ const managementMatchers: Matcher[] = [
       ? { pageKey: 'management/staff-schedule', sectionId: 'management-staff-schedule' }
       : null,
   (p) =>
-    p.includes('/assign_carer')
-      ? { pageKey: 'management/assign-carer', sectionId: 'management-assign-carer' }
-      : null,
-  (p) =>
     p.includes('/clients_list')
-      ? { pageKey: 'management/clients-list', sectionId: 'management-clients-list' }
-      : null,
-  (p) =>
-    p.includes('/staff_list')
-      ? { pageKey: 'management/staff-list', sectionId: 'management-staff-list' }
+      ? { pageKey: 'management/client-list', sectionId: 'management-client-list' }
       : null,
   (p) =>
     p.includes('/requests')
@@ -341,12 +332,22 @@ const managementMatchers: Matcher[] = [
     p.includes('/update_details')
       ? { pageKey: 'management/update-details', sectionId: 'management-update-details' }
       : null,
-  (p) =>
-    p.startsWith('/icon_dashboard')
+
+  // ----- SPECIFIC CALENDAR SUBPAGES BEFORE GENERIC -----
+  (p) => reBudget.test(p)
+      ? { pageKey: 'management/budget-report', sectionId: 'management-budget-report' }
+      : null,
+  (p) => reTxn.test(p)
+      ? { pageKey: 'management/view-transactions', sectionId: 'management-view-transactions' }
+      : null,
+
+  // Generic calendar fallback → client schedule
+  (p) => reCalAny.test(p)
       ? { pageKey: 'management/client-schedule', sectionId: 'management-client-schedule' }
       : null,
+
   (p) =>
-    p.startsWith('/management_dashboard')
+    p.startsWith('/icon_dashboard')
       ? { pageKey: 'management/dashboard', sectionId: 'management-dashboard-overview' }
       : null,
 ];
@@ -417,4 +418,3 @@ export default function FloatingHelpButton() {
     </button>
   );
 }
-

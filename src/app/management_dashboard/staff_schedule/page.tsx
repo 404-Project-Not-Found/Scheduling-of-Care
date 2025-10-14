@@ -215,7 +215,6 @@ export default function StaffSchedulePage() {
         showClientPicker={false}
         navItems={[
           { label: 'Staff List', href: '/management_dashboard/staff_list' },
-          ...(isManagement ? [{ label: 'Assign Carer', href: '/management_dashboard/assign_carer/manage' }] : []),
         ]}
         clients={[]}
         onClientChange={() => {}}
@@ -258,6 +257,16 @@ export default function StaffSchedulePage() {
 
             {/* Right buttons — management only */}
             <div className="flex items-center gap-6 justify-end w-1/3">
+
+            {/* Print — visible to everyone */}
+            <button
+                onClick={() => typeof window !== 'undefined' && window.print()}
+                className="inline-flex items-center px-6 py-3 rounded-2xl border border-black/30 bg-white font-extrabold text-xl hover:bg-black/5 transition-colors"
+                title="Print"
+                aria-label="Print"
+            >
+                Print
+            </button>
             {isManagement && (
                 <>
                 <button
@@ -268,16 +277,6 @@ export default function StaffSchedulePage() {
                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = palette.pageBg)}
                 >
                     Shift Settings
-                </button>
-
-                <button
-                    onClick={() => setAddCarerModal({ open: true, role: 'Carer' })}
-                    className="px-5 py-2.5 rounded-2xl text-base font-semibold transition-colors"
-                    style={{ backgroundColor: palette.pageBg, color: '#000000ff' }}
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#e2987aff')}
-                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = palette.pageBg)}
-                >
-                    Add Staff
                 </button>
                 </>
             )}

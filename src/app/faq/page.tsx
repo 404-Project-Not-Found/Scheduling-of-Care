@@ -254,6 +254,10 @@ export default function FAQPage() {
     if (typeof window !== 'undefined') window.history.back();
   };
 
+  const handlePrint = () => {
+    if (typeof window !== 'undefined') window.print();
+  };
+
   const jumpTo = (id: string) => {
     const el = document.getElementById(id);
     if (!el) return;
@@ -284,9 +288,23 @@ export default function FAQPage() {
         className="flex items-center justify-between px-5 sm:px-6 py-3"
         style={{ background: palette.deepBrown, color: '#fff' }}
       >
-        <h1 className="text-2xl md:text-3xl font-semibold">
-          {role === 'family' ? 'Family/POA FAQs' : role === 'carer' ? 'Carer FAQs' : 'Management FAQs'}
-        </h1>
+        {/* title + print */}
+        <div className="flex items-center gap-8">
+            <h1 className="text-2xl md:text-3xl font-semibold">
+            {role === 'family' ? 'Family/POA FAQs' : role === 'carer' ? 'Carer FAQs' : 'Management FAQs'}
+            </h1>
+
+            <button
+            onClick={handlePrint}
+            className="inline-flex items-center px-3 sm:px-4 py-1.5 rounded-2xl border border-white/40 bg-white font-semibold text-sm sm:text-base hover:bg-pink-50 transition-colors"
+            title="Print"
+            aria-label="Print"
+            style={{ color: palette.deepBrown }}
+            >
+            Print
+            </button>
+        </div>
+
         <button
           onClick={handleBack}
           className="rounded-lg px-4 py-2 text-lg font-semibold shadow-sm hover:opacity-90 transition"
