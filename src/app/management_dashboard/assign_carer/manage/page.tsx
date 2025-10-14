@@ -1,3 +1,5 @@
+//IMPORTANT: no longer use this page
+
 import { Suspense } from 'react';
 import AssignCarerPage from './ManageCarer';
 

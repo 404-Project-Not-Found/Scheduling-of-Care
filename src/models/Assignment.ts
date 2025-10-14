@@ -1,3 +1,5 @@
+// IMPORTANT: no longer use this model
+
 import mongoose, { Document, Schema, Types } from 'mongoose';
 
 export interface IAssignment extends Document {

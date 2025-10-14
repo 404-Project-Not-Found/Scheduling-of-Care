@@ -1,3 +1,5 @@
+//IMPORTANT: no longer use this page
+
 'use client';
 
 import React, { useEffect, useState } from 'react';

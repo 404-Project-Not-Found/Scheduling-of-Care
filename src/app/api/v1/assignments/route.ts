@@ -1,3 +1,5 @@
+// IMPORTANT: no longer use this endpoint
+
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import Assignment from '@/models/Assignment';

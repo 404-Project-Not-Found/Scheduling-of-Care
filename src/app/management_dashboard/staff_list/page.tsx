@@ -1,3 +1,11 @@
+/**
+ * File path: src/app/management_dashboard/staff_list/page.tsx
+ * Frontend Author: Vanessa Teo
+ 
+ * Last Updated by Denise Alexander - 14/10/2025: back-end integrated to fetch staff
+ * lists from DB.
+ */
+
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';

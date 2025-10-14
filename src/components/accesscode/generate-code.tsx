@@ -1,3 +1,18 @@
+/**
+ * File path: /components/accesscode/generate-code.tsx
+ * Author: Qingyue Zhao
+ * Date Created: 28/09/2025
+ *
+ * Description:
+ * Right-side sliding panel for generating and copying an invite code.
+ * - Supports generation of random 8-character access codes.
+ * - Blocks background scrolling when open, closes on ESC key or overlay click.
+ * - Designed to be embedded in Staff List page and other related pages.
+ *
+ * Last Updated by Denise Alexander - 14/10/2025: back-end integrated to fetch and store invite codes
+ * from DB.
+ */
+
 'use client';
 
 import { set } from 'mongoose';
@@ -44,6 +59,7 @@ export default function GenerateCode({
     };
   }, [open]);
 
+  // Handle form submission to generate invite code
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);

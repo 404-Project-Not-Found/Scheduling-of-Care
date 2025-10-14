@@ -1,4 +1,5 @@
-//no longer use this page --> using list of staff page to search carer
+//IMPORTANT: no longer use this page --> using list of staff page to search carer
+
 // src/app/carer/search/page.tsx
 'use client';
 
