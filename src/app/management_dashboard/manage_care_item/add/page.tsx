@@ -234,7 +234,7 @@ export default function AddTaskPage() {
         {/* Form content */}
         <div className="flex-1 p-16 text-xl">
           <div className="space-y-6 max-w-3xl mx-auto">
-            <Field label="Care Item Name">
+            <Field label="Care Item Sub Category">
               <input
                 value={label}
                 onChange={(e) => setLabel(e.target.value)}

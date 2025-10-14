@@ -106,6 +106,10 @@ export type Client = {
   accessCode?: string;
   notes?: string[];
   avatarUrl?: string;
+  orgAccess?: 'approved' | 'pending' | 'revoked';
+  medicalNotes?: string;
+  emergencyContact?: string;
+  address?: string;
 };
 
 export type Organisation = {
@@ -142,7 +146,7 @@ export function writeActiveClientToStorage(id: string, name?: string) {
 export async function getClientsFE(): Promise<Client[]> {
   if (isMock) {
     const baseClients: (Client & {
-      organisationAccess?: 'approved' | 'pending' | 'revoked';
+      orgAccess?: 'approved' | 'pending' | 'revoked';
     })[] = [
       {
         _id: 'mock1',
@@ -152,7 +156,7 @@ export async function getClientsFE(): Promise<Client[]> {
         accessCode: '',
         notes: [],
         avatarUrl: '',
-        organisationAccess: 'pending',
+        orgAccess: 'approved',
       },
       {
         _id: 'mock2',
@@ -162,7 +166,7 @@ export async function getClientsFE(): Promise<Client[]> {
         accessCode: '',
         notes: [],
         avatarUrl: '',
-        organisationAccess: 'pending',
+        orgAccess: 'approved',
       },
       {
         _id: 'mock-cathy',
@@ -172,7 +176,7 @@ export async function getClientsFE(): Promise<Client[]> {
         accessCode: '',
         notes: [],
         avatarUrl: '',
-        organisationAccess: 'approved',
+        orgAccess: 'approved',
       },
     ];
     return baseClients;
@@ -196,6 +200,7 @@ export async function getClientByIdFE(id: string): Promise<Client | null> {
         accessCode: '',
         notes: [],
         avatarUrl: '',
+        orgAccess: 'pending',
       },
       {
         _id: 'mock2',
@@ -205,6 +210,7 @@ export async function getClientByIdFE(id: string): Promise<Client | null> {
         accessCode: '',
         notes: [],
         avatarUrl: '',
+        orgAccess: 'pending',
       },
       {
         _id: 'mock-cathy',
@@ -214,6 +220,7 @@ export async function getClientByIdFE(id: string): Promise<Client | null> {
         accessCode: '',
         notes: [],
         avatarUrl: '',
+        orgAccess: 'pending',
       },
     ];
     return mockData.find((c) => c._id === id) || null;
@@ -243,7 +250,7 @@ export type Task = {
   frequency: string;
   lastDone: string; // YYYY-MM-DD
   nextDue: string; // YYYY-MM-DD
-  status: 'Pending' | 'Due' | 'Completed';
+  status: 'Pending' | 'Overdue' | 'Completed';
   comments: string[];
   files: string[];
 };
@@ -287,7 +294,7 @@ const DEMO_TASKS: Task[] = [
     frequency: 'Weekly',
     lastDone: '2025-09-18',
     nextDue: '2025-09-25',
-    status: 'Due',
+    status: 'Overdue',
     comments: [],
     files: [],
   },
@@ -368,7 +375,7 @@ export type TaskCatalog = { category: string; tasks: TaskCatalogItem[] }[];
 export function getTaskCatalogFE(): TaskCatalog {
   return [
     {
-      category: 'Appointments',
+      category: 'Medical',
       tasks: [
         { label: 'Dental Appointment', slug: 'dental-appointment' },
         { label: 'GP Checkup', slug: 'gp-checkup' },
@@ -767,4 +774,73 @@ export async function saveRequestsFE(requests: RequestLog[]): Promise<void> {
     body: JSON.stringify(requests),
   });
   if (!res.ok) throw new Error(`Failed to save requests (${res.status})`);
+}
+
+/* =================
+ * Users & Access (FE)
+ * ================= */
+
+export type AccessUser = {
+  id: string;
+  name: string;
+  role: ViewerRole;      // reuse: 'family' | 'carer' | 'management'
+};
+
+/** Per-client mock users who can access this client's data */
+const MOCK_USERS_BY_CLIENT: Record<string, AccessUser[]> = {
+  [FULL_DASH_ID]: [
+    {
+      id: 'u-alice-family',
+      name: 'Alice Nguyen',
+      role: 'family',
+    },
+    {
+      id: 'u-john-carer',
+      name: 'John Turner',
+      role: 'carer',
+    },
+    {
+      id: 'u-mgr-1',
+      name: 'Clinic Manager',
+      role: 'management',
+    },
+  ],
+  [PARTIAL_DASH_ID]: [
+    {
+      id: 'u-bobjr-family',
+      name: 'Bob Smith Jr.',
+      role: 'family',
+    },
+    {
+      id: 'u-david-carer',
+      name: 'David Lee',
+      role: 'carer',
+    },
+  ],
+  'mock-cathy': [
+    {
+      id: 'u-emma-family',
+      name: 'Emma Clark',
+      role: 'family',
+    },
+    {
+      id: 'u-opslead-mgmt',
+      name: 'Operations Lead',
+      role: 'management',
+    },
+  ],
+};
+
+/** Fetch users who have access to a given client (mock or backend) */
+export async function getUsersWithAccessFE(clientId: string): Promise<AccessUser[]> {
+  if (isMock) {
+    await new Promise((r) => setTimeout(r, 60));
+    return MOCK_USERS_BY_CLIENT[clientId] ?? [];
+  }
+
+  // real backend (adjust endpoint to your API)
+  const res = await fetch(`/api/v1/clients/${clientId}/access`, { cache: 'no-store' });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return Array.isArray(data) ? (data as AccessUser[]) : [];
 }

@@ -2,7 +2,6 @@
  * File path: /app/page.tsx
  * Authors: Qingyue Zhao & Denise Alexander
  * Date Created: 05/09/2025
- * Last Updated by Denise Alexander - 7/10/2025: redirection after login changed to /schedule_dashboard.
  */
 
 'use client';
@@ -12,6 +11,9 @@ import Link from 'next/link';
 import { useState, useEffect, Suspense } from 'react';
 import { signIn, getSession } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
+
+import { mockSignIn } from '@/lib/mock/mockSignin';
+import type { ViewerRole } from '@/lib/mock/mockApi';
 
 // Prefills information after user signs up
 function PrefillFromSearchParams({
@@ -53,26 +55,31 @@ export default function Home() {
     // ============================
     // Frontend mock path (no API)
     // ============================
-    if (process.env.NEXT_PUBLIC_ENABLE_MOCK === '1') {
-      const emailTrimmed = email.trim().toLowerCase();
+    if (
+      process.env.NEXT_PUBLIC_ENABLE_MOCK === '1' 
+    ) {
+    const emailTrimmed = email.trim().toLowerCase();
 
-      const isFamily =
-        emailTrimmed === 'family@email.com' && password === 'family';
-      const isCarer =
-        emailTrimmed === 'carer@email.com' && password === 'carer';
-      const isMgmt =
-        emailTrimmed === 'management@email.com' && password === 'management';
-
-      if (isFamily || isCarer || isMgmt) {
-        if (staySigned) localStorage.setItem('rememberMe', '1');
-        else localStorage.removeItem('rememberMe');
-
-        window.location.href = '/schedule_dashboard';
-      }
-
-      setError('Invalid mock credentials');
-      return;
+    let role: ViewerRole | null = null;
+    if (emailTrimmed === 'family@email.com' && password === 'family') {
+        role = 'family';
+    } else if (emailTrimmed === 'carer@email.com' && password === 'carer') {
+        role = 'carer';
+    } else if (emailTrimmed === 'management@email.com' && password === 'management') {
+        role = 'management';
     }
+
+    if (role) {
+        localStorage.setItem('lastLoginEmail', emailTrimmed);
+        await mockSignIn(role);
+        window.location.href = '/icon_dashboard';
+        return;
+    }
+    
+    setError('Invalid mock credentials');
+    return;
+    }
+
 
     // ============================
     // Real backend path (NextAuth)
@@ -91,7 +98,7 @@ export default function Home() {
         return;
       }
 
-      window.location.href = '/schedule_dashboard';
+      window.location.href = '/icon_dashboard';
     } catch (err: unknown) {
       setError(
         err instanceof Error ? err.message : 'An unexpected error occurred'

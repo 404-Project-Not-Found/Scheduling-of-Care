@@ -91,6 +91,10 @@ function ClientProfilePageInner() {
   const [avatarUrl, setAvatarUrl] = useState('');
   const [notesInput, setNotesInput] = useState('');
   const [savedNotes, setSavedNotes] = useState<string[]>([]);
+  const [medicalNotes, setMedicalNotes] = useState('');
+  const [emergencyContact, setEmergencyContact] = useState('');
+  const [address, setAddress] = useState('');
+
 
   const [loading, setLoading] = useState<boolean>(!!clientIdParam && !isNew);
   const [error, setError] = useState('');
@@ -176,6 +180,9 @@ function ClientProfilePageInner() {
               : []
         );
         setAvatarUrl(client.avatarUrl || '');
+        setMedicalNotes(client.medicalNotes || '');
+        setEmergencyContact(client.emergencyContact || '');
+        setAddress(client.address || '');
       } catch {
         if (alive) setError('Failed to load client data.');
       } finally {
@@ -198,6 +205,9 @@ function ClientProfilePageInner() {
         notes: isCarer
           ? [...savedNotes, notesInput].filter(Boolean)
           : [notesInput, ...savedNotes].filter(Boolean),
+        medicalNotes,
+        emergencyContact,
+        address,
       };
 
       // Either create new entry or update current entry
@@ -307,7 +317,7 @@ function ClientProfilePageInner() {
     >
       {/* Fixed-height body to avoid page gutter */}
       <div
-        className="w-full h-[680px] flex flex-col"
+        className="w-full h-[1000px] flex flex-col"
         style={{ backgroundColor: colors.pageBg, color: colors.text }}
       >
         {/* Section bar */}
@@ -448,6 +458,57 @@ function ClientProfilePageInner() {
                   )}
                 </FormRow>
               )}
+
+              {/* Address */}
+              <FormRow label="Address">
+                {isManagement || isCarer ? (
+                  <StaticText
+                    value={address}
+                    placeholder="This information is not provided"
+                  />
+                ) : (
+                  <input
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    className="w-full h-12 rounded-md bg-white border px-3 outline-none text-black"
+                    style={{ borderColor: colors.fieldBorder }}
+                  />
+                )}
+              </FormRow>
+
+              {/* Emergency Contact */}
+              <FormRow label="Emergency Contact">
+                {isManagement || isCarer ? (
+                  <StaticText
+                    value={emergencyContact}
+                    placeholder="This information is not provided"
+                  />
+                ) : (
+                  <input
+                    value={emergencyContact}
+                    onChange={(e) => setEmergencyContact(e.target.value)}
+                    className="w-full h-12 rounded-md bg-white border px-3 outline-none text-black"
+                    style={{ borderColor: colors.fieldBorder }}
+                  />
+                )}
+              </FormRow>
+
+              {/* Medical Notes */}
+              <FormRow label="Medical Notes">
+                {isManagement || isCarer ? (
+                  <div className="text-[16px] text-black/80 whitespace-pre-wrap">
+                    {medicalNotes || 'This information is not provided'}
+                  </div>
+                ) : (
+                  <textarea
+                    value={medicalNotes}
+                    onChange={(e) => setMedicalNotes(e.target.value)}
+                    className="w-full min-h-[120px] rounded-md bg-white border px-3 py-2 outline-none text-black"
+                    style={{ borderColor: colors.fieldBorder }}
+                  />
+                )}
+              </FormRow>
+
 
               {/* Notes */}
               <FormRow label="Notes">

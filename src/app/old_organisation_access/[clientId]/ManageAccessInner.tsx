@@ -10,7 +10,7 @@
  * - Switched to shared DashboardChrome (header + banner).
  * - Full-bleed content (no card borders / rounded panels).
  * - Section header + notice bar consistent with other family pages.
- * - Client dropdown in banner shows only this PWSN and allows switching.
+ * - Client dropdown in banner shows only this Client and allows switching.
  */
 
 'use client';

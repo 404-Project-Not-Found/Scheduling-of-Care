@@ -1,5 +1,5 @@
 /**
- * IMPORTANT: THIS FILE ISN NO LONGER IN USE, CHANGE TO components/top_menu INSTEAD
+ * IMPORTANT: THIS FILE IS NO LONGER IN USE, CHANGE TO components/top_menu INSTEAD
  *
  * File path: /app/menu/page.tsx
  * Author: Qingyue Zhao

@@ -98,7 +98,7 @@ export default function RequestChangeFormPage() {
 
   /* ---------- Form state ---------- */
   const [allTasks, setAllTasks] = useState<ApiTask[]>([]);
-  const [taskName, setTaskName] = useState(''); // Care Item Name
+  const [taskName, setTaskName] = useState(''); // Care Item Sub Category
   const [category, setCategory] = useState(''); // Care Item Category
   const [details, setDetails] = useState('');
   const [reason, setReason] = useState('');
@@ -232,8 +232,8 @@ export default function RequestChangeFormPage() {
               </select>
             </Field>
 
-            {/* Care Item Name (depends on category + client) */}
-            <Field label="Care Item Name">
+            {/* Care Item Sub Category (depends on category + client) */}
+            <Field label="Care Item Sub Category">
               <select
                 value={taskName}
                 onChange={(e) => onTaskChange(e.target.value)}

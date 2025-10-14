@@ -164,7 +164,7 @@ export default function ResetPasswordPage() {
       </button>
 
       {/* Help button fixed bottom-right */}
-      <div className="fixed bottom-6 right-6 group">
+      {/* <div className="fixed bottom-6 right-6 group">
         <button
           className="flex items-center justify-center w-10 h-10 rounded-full text-white font-bold shadow-md cursor-pointer"
           style={{ backgroundColor: '#ed5f4f' }}
@@ -173,13 +173,14 @@ export default function ResetPasswordPage() {
         >
           ?
         </button>
+        
         {showHelp && (
           <div className="absolute bottom-12 right-0 bg-white text-black text-xs px-3 py-2 rounded shadow-md whitespace-nowrap z-10">
             Enter your new password twice and click &quot;Reset&quot;. Both
             passwords must match. Click &quot;Show Password&quot; to view.
           </div>
         )}
-      </div>
+      </div> */}
     </div>
   );
 }
