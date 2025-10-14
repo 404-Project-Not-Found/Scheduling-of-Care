@@ -38,7 +38,8 @@ export interface CareItemDoc extends mongoose.Document {
     dateFrom: string;          // YYYY-MM-DD
     dateTo: string;            // YYYY-MM-DD
 
-
+    comments: [String];
+    
     createdAt: Date;
     updatedAt: Date;
 }

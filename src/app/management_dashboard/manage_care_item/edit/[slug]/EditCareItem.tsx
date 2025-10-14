@@ -44,7 +44,6 @@ type Task = {
   clientId?: string;
   deleted?: boolean;
   frequency?: string;
-  lastDone?: string;
   frequencyDays?: number;
   frequencyCount?: number;
   frequencyUnit?: Unit;
