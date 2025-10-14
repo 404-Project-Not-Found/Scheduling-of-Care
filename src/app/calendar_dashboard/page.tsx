@@ -8,13 +8,20 @@
  *   as the "Care Items" title, aligned to the RIGHT.
  * - The search filters tasks by title only (case-insensitive).
  *
- * Last Updated by Denise Alexander - 7/10/2025: back-end integrated for
+ * Updated by Denise Alexander - 7/10/2025: back-end integrated for
  * fetching user role and clients.
+ *
+ * Last Updated by Qingyue Zhao - 8/10/2025:
+ * - The calendar title (month/year) drives the right-pane title:
+ *   * When a day is selected -> "Care items on YYYY-MM-DD"
+ *   * Otherwise -> "All care items in <Month Year>"
+ * - TasksPanel receives either `selectedDate` or `year`+`month` to filter items,
+ *  add a dropdown of list of users with access to the selected client
  */
 
 'use client';
 
-import { Suspense, useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import DashboardChrome from '@/components/top_menu/client_schedule';
@@ -32,21 +39,7 @@ import {
   setActiveClient,
   type Client as ApiClient,
 } from '@/lib/data';
-
-/* ------------------------------ Routes ------------------------------ */
-const ROUTES = {
-  requestForm: '/family_dashboard/request_of_change_form',
-  requestLog: '/management_dashboard/requests',
-  homeByRole: '/empty_dashboard',
-  budgetReport: '/calendar_dashboard/budget_report',
-  transactions: '/calendar_dashboard/add_tran',
-  mgmtCareEdit: '/management_dashboard/manage_care_item/edit',
-  mgmtCareAdd: '/management_dashboard/manage_care_item/add',
-  myPWSN: 'family_dashboard/people_list',
-  accountUpdate: '/client_profile',
-  signOut: '/calendar_dashboard/update_details',
-  transaction: '/calendar_dashboard/transaction_history',
-};
+import { title } from 'node:process';
 
 /* ------------------------------ Palette ----------------------------- */
 const palette = {
@@ -90,7 +83,7 @@ function ClientSchedule() {
   const addedFile = searchParams.get('addedFile');
 
   /* ------------------------------ Role ------------------------------ */
-  const [role, setRole] = useState<Role>('carer'); //default
+  const [role, setRole] = useState<Role>('carer'); // default
 
   useEffect(() => {
     (async () => {
@@ -109,13 +102,11 @@ function ClientSchedule() {
   const [activeClientId, setActiveClientId] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string>('');
 
-  // Loads clients and active client on component mount
+  // Load clients + active client on mount
   useEffect(() => {
     (async () => {
       try {
-        // Fetches all clients
-        const list: ApiClient[] = await getClients(); // ApiClient[]
-        // Maps API response to simpler ClientLite objects with orgAccess
+        const list: ApiClient[] = await getClients();
         const mapped: ClientLite[] = (list as ApiClientWithAccess[]).map(
           (c) => ({
             id: c._id,
@@ -125,7 +116,6 @@ function ClientSchedule() {
         );
         setClients(mapped);
 
-        // Fetches the currently active client from context
         const active = await getActiveClient();
         setActiveClientId(active.id);
         setDisplayName(active.name || '');
@@ -138,7 +128,7 @@ function ClientSchedule() {
     })();
   }, []);
 
-  // Handler for changing active client
+  // Change active client (persists with helper)
   const onClientChange = async (id: string) => {
     if (!id) {
       setActiveClientId(null);
@@ -146,8 +136,6 @@ function ClientSchedule() {
       await setActiveClient(null);
       return;
     }
-
-    // Find selected client in current list
     const c = clients.find((x) => x.id === id);
     const name = c?.name || '';
     setActiveClientId(id);
@@ -156,7 +144,7 @@ function ClientSchedule() {
   };
 
   /* ------------------------------ Tasks ----------------------------- */
-  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedDate, setSelectedDate] = useState(''); // YYYY-MM-DD when a day is clicked
   const [tasks, setTasks] = useState<ClientTask[]>([]);
   const [selectedTask, setSelectedTask] = useState<ClientTask | null>(null);
 
@@ -204,9 +192,53 @@ function ClientSchedule() {
     ? []
     : tasks.filter((t) => !t.clientId || t.clientId === activeClientId);
 
+  // If a day is selected we filter by that day; otherwise it's the whole dataset for the visible month (handled in TasksPanel)
   const filteredTasks = selectedDate
     ? tasksByClient.filter((t) => t.nextDue === selectedDate)
     : tasksByClient;
+
+  /* ------------- Visible month/year coming from Calendar ------------- */
+  // These are set whenever the calendar view (brown title) changes.
+  const [visibleYear, setVisibleYear] = useState<number | null>(null);  // e.g. 2025
+  const [visibleMonth, setVisibleMonth] = useState<number | null>(null); // 1..12
+
+  const MONTH_NAMES = useMemo(
+    () => [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ],
+    []
+  );
+
+  // Title rule:
+  // - If a day is selected -> "Care items on YYYY-MM-DD"
+  // - Else if we know the current calendar month -> "All care items in <Month Year>"
+  // - Fallback -> "Care Items"
+  const titleParts = useMemo(() => {
+  // When a day is selected -> 2-line title: "Care items" + "on YYYY-MM-DD"
+    if (selectedDate) {
+      return { main: 'Care items', sub: `on ${selectedDate}` };
+    }
+  // Otherwise -> month scope: "All care items" + "in <Month Year>"
+    if (visibleYear && visibleMonth) {
+      return {
+        main: 'All care items',
+        sub: `in ${MONTH_NAMES[visibleMonth - 1]} ${visibleYear}`,
+      };
+    }
+    // Fallback
+    return { main: 'Care Items', sub: '' };
+  }, [selectedDate, visibleYear, visibleMonth, MONTH_NAMES]);
 
   /* -------------------- RIGHT PANE: title search -------------------- */
   const [searchTerm, setSearchTerm] = useState('');
@@ -256,13 +288,16 @@ function ClientSchedule() {
 
   // Logo → home
   const onLogoClick = () => {
-    router.push('/schedule_dashboard');
+    router.push('/icon_dashboard');
   };
 
   /* ------------------------------ Render ---------------------------- */
+  // Cast once so we can pass onMonthYearChange safely even if your CalendarPanel.d.ts isn't updated yet.
+  const CalendarPanelAny = CalendarPanel as any;
+
   return (
     <DashboardChrome
-      page="schedule"
+      page="client-schedule"
       clients={clients}
       onClientChange={onClientChange}
       colors={{
@@ -279,6 +314,12 @@ function ClientSchedule() {
           <CalendarPanel
             tasks={filteredTasks /* empty when no client is selected */}
             onDateClick={(date: string) => setSelectedDate(date)}
+            // When the calendar's brown title (view) changes, update month/year
+            // and clear any selected day so the right title shows the month scope.
+            onMonthYearChange={(y: number, m: number) => {
+              setVisibleYear(y);
+              setVisibleMonth(m);
+            }}
           />
         </section>
 
@@ -292,8 +333,17 @@ function ClientSchedule() {
               {/* Title row */}
               <div className="px-6 py-10 flex flex-col gap-4">
                 <div className="flex items-center justify-between gap-4">
-                  <h2 className="text-3xl md:text-4xl font-extrabold">
-                    Care Items
+                  <h2 className="leading-tight">
+                    {/* First line (big) */}
+                    <span className="block text-3xl md:text-4xl font-extrabold">
+                        {titleParts.main}
+                    </span>
+                    {/* Second line (smaller) */}
+                    {titleParts.sub && (
+                        <span className="block text-lg md:text-lg font-semibold text-black/70">
+                        {titleParts.sub}
+                        </span>
+                    )}
                   </h2>
                   <input
                     type="text"
@@ -315,6 +365,12 @@ function ClientSchedule() {
                 <TasksPanel
                   tasks={tasksForRightPane}
                   onTaskClick={(task) => setSelectedTask(task)}
+                  // Drive the list scope:
+                  // If a date is selected, TasksPanel will show that day only.
+                  // Otherwise it will use year/month (visible calendar title).
+                  selectedDate={selectedDate || undefined}
+                  year={visibleYear ?? undefined}
+                  month={visibleMonth ?? undefined}
                 />
               </div>
             </>
@@ -394,7 +450,7 @@ function TaskDetail({
           <span className="font-extrabold">Last Done:</span> {task.lastDone}
         </p>
         <p>
-          <span className="font-extrabold">Next Due:</span> {task.nextDue}
+          <span className="font-extrabold">Scheduled Due:</span> {task.nextDue}
         </p>
         <p>
           <span className="font-extrabold">Status:</span>{' '}
@@ -423,7 +479,7 @@ function TaskDetail({
 
         {/* Files */}
         <div className="mt-2">
-          <h3 className="font-extrabold text-2xl mb-2">Files</h3>
+          <h3 className="font-extrabold text-2xl mb-2">Available Files</h3>
           {task.files?.length ? (
             <ul className="list-disc pl-6 space-y-1">
               {task.files.map((f, idx) => (
@@ -522,7 +578,10 @@ function TaskDetail({
           {role === 'carer' && (
             <p className="mt-4 text-base">
               Need to add a receipt/view a receipt?{' '}
-              <a href={ROUTES.transaction} className="underline">
+              <a
+                href="/calendar_dashboard/transaction_history"
+                className="underline"
+              >
                 Go to transactions
               </a>
             </p>

@@ -208,12 +208,12 @@ function AddTransactionInner() {
               ))}
             </select>
 
-            {/* Care Item Name */}
+            {/* Care Item Sub Category */}
             <label
               className="self-center text-2xl font-extrabold"
               style={{ color: colors.label }}
             >
-              Care Item Name
+              Care Item Sub Category
             </label>
             <select
               value={taskName}

@@ -28,6 +28,12 @@ export default function SignupPage() {
 
         <div className="space-y-6">
           <Link
+            href="/signup?role=family"
+            className="block w-full rounded-full px-10 py-5 text-2xl font-semibold bg-[#4A0A0A] text-white hover:opacity-95 transition text-center"
+          >
+            Family/Power of Attorney
+          </Link>
+          <Link
             href="/organisation"
             className="block w-full rounded-full px-10 py-5 text-2xl font-semibold bg-[#4A0A0A] text-white hover:opacity-95 transition text-center"
           >
@@ -38,12 +44,6 @@ export default function SignupPage() {
             className="block w-full rounded-full px-10 py-5 text-2xl font-semibold bg-[#4A0A0A] text-white hover:opacity-95 transition text-center"
           >
             Carer
-          </Link>
-          <Link
-            href="/signup?role=family"
-            className="block w-full rounded-full px-10 py-5 text-2xl font-semibold bg-[#4A0A0A] text-white hover:opacity-95 transition text-center"
-          >
-            Family/Power of Attorney
           </Link>
         </div>
 

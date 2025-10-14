@@ -30,7 +30,7 @@ type sideMenuProps = {
 
 const defaultMenuItems: Item[] = [
   { href: '/calendar_dashboard/update_details', label: 'Manage your account' },
-  { href: '/family_dashboard/people_list', label: 'My PWSN' },
+  { href: '/family_dashboard/people_list', label: 'My Clients' },
   {
     href: '/family_dashboard/request_of_change_page',
     label: 'Request to change a task',
