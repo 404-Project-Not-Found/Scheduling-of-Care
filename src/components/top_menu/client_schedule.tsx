@@ -35,6 +35,7 @@ type PageKey =
   | 'request-form'
   | 'request-log'
   | 'care-edit'
+  | 'care-edit-picker'
   | 'care-add'
   | 'category-cost'
   | 'client-list'

@@ -188,9 +188,9 @@ function ClientSchedule() {
   /* --------------- Derived: filter by client and date --------------- */
   const noClientSelected = !activeClientId;
 
-  const tasksByClient: ClientTask[] = !activeClientId
-    ? []
-    : tasks.filter((t) => !t.clientId || t.clientId === activeClientId);
+  const tasksByClient: ClientTask[] = activeClientId
+    ? tasks.filter((t): t is ClientTask => (t.clientId ?? '') === activeClientId)
+    : [];
 
   // If a day is selected we filter by that day; otherwise it's the whole dataset for the visible month (handled in TasksPanel)
   const filteredTasks = selectedDate
@@ -242,9 +242,11 @@ function ClientSchedule() {
 
   /* -------------------- RIGHT PANE: title search -------------------- */
   const [searchTerm, setSearchTerm] = useState('');
-  const tasksForRightPane = filteredTasks.filter((t) =>
-    t.title.toLowerCase().includes(searchTerm.trim().toLowerCase())
-  );
+  const tasksForRightPane = filteredTasks.filter((t) => {
+    const title = (t?.title ?? '').toLowerCase();
+    const q = (searchTerm ?? '').trim().toLowerCase();
+    return title.includes(q);
+  });
 
   /* ----------------------------- Actions ---------------------------- */
   const addComment = (taskId: string, comment: string) => {

@@ -2,16 +2,51 @@
  * File path: /lib/data.ts
  * Author: Denise Alexander
  * Date Created: 04/10/2025
- * Last Updated by Denise Alexander - 7/10/2025: enables either mock mode or real back-end API.
- *
- * TO DO:
- * - fetching and saving tasks on the back-end side.
+ * Updated by Denise Alexander - 7/10/2025: enables either mock mode or real back-end API.
+ * Last Updated by Zahra Rizqita - 13/10/2025: implement fetching and saving task
  */
 
 import * as mockApi from './mock/mockApi';
 import { getSession } from 'next-auth/react';
 import { mockSignOut } from './mock/mockSignout';
 import { signOut as nextAuthSignOut } from 'next-auth/react';
+import {
+  toISODateOnly,
+  nextDueISO,
+  addCount,
+} from '@/lib/care-item-helpers/date-helpers';
+
+// Fetching Task helper
+
+export type ApiCareItem = {
+  slug: string;
+  label: string;
+  status: 'Pending' | 'Due' | 'Completed';
+  frequency?: string;
+  lastDone?: string;
+  nextDue?: string;
+  clientId?: string;
+  comments?: string[];
+  files?: string[];
+};
+
+type CareItemListRow = {
+  label: string;
+  slug: string;
+  status: 'Pending' | 'Due' | 'Completed';
+  category: string;
+  categoryId?: string;
+  clientId?: string;
+  deleted?: boolean;
+  frequency?: string;
+  lastDone?: string;
+  frequencyDays?: number;
+  frequencyCount?: number;
+  frequencyUnit?: 'day' | 'week' | 'month' | 'year';
+  dateFrom?: string;   
+  dateTo?: string;     
+  notes?: string;
+};
 
 // Flag to determine whether to use mock API or real back-end
 const isMock = process.env.NEXT_PUBLIC_ENABLE_MOCK === '1';
@@ -76,17 +111,78 @@ export const getClientById = async (id: string) => {
 };
 
 // Fetches all tasks visible to the current user
-export const getTasks = async () => {
+export const getTasks = async (): Promise<mockApi.Task[]> => {
   if (isMock) {
     return mockApi.getTasksFE();
   }
-  /* TO DO:
-  const res = await fetch('api/v1/tasks', { cache: 'no-store' });
+
+  const buildFrequency = (row: CareItemListRow): string => {
+    if (row.frequency && row.frequency.trim()) return row.frequency;
+    if (row.frequencyCount && row.frequencyUnit) {
+      const unit =
+        row.frequencyCount === 1 ? row.frequencyUnit : `${row.frequencyUnit}s`;
+      return `Every ${row.frequencyCount} ${unit}`;
+    }
+    if (row.frequencyDays && row.frequencyDays > 0) {
+      const unit = row.frequencyDays === 1 ? 'day' : 'days';
+      return `Every ${row.frequencyDays} ${unit}`;
+    }
+    return '';
+  };
+
+  const deriveNextDue = (row: CareItemListRow): string => {
+    const toISO = toISODateOnly(row.dateTo ?? null);
+    if (toISO) return toISO;
+
+    const fromISO = toISODateOnly(row.dateFrom ?? null);
+    if (fromISO && !(row.frequencyCount || row.frequencyDays)) return fromISO;
+
+    const lastDoneISO = toISODateOnly(row.lastDone ?? null);
+
+    if (lastDoneISO && row.frequencyCount && row.frequencyUnit) {
+      return nextDueISO(lastDoneISO, row.frequencyCount, row.frequencyUnit);
+    }
+
+    // Recurrence: raw frequencyDays (fallback to day-based add)
+    if (lastDoneISO && row.frequencyDays && row.frequencyDays > 0) {
+      return toISODateOnly(
+        addCount(lastDoneISO, row.frequencyDays, 'day')
+      ) || '';
+    }
+
+    if (fromISO) return fromISO;
+
+    return '';
+  };
+
+  const res = await fetch('/api/v1/care_item?limit=200', { cache: 'no-store' });
   if (!res.ok) {
     throw new Error(`Failed to fetch tasks (${res.status})`);
   }
-  return (await res.json()) as mockApi.Task[]; 
-  */
+
+  const rows: CareItemListRow[] = await res.json();
+
+  const tasks: mockApi.Task[] = rows.map((row, idx) => {
+    const id = row.slug || `task-${idx}`;
+
+    const task: mockApi.Task = {
+      id,
+      title: row.label,
+      status: row.status,         
+      category: row.category,
+      clientId: row.clientId ?? '', 
+      frequency: buildFrequency(row),
+      lastDone: toISODateOnly(row.lastDone ?? null) || '',
+      nextDue: deriveNextDue(row),
+      comments: [],
+      files: [],
+    };
+
+    return task;
+  });
+
+  return tasks;
+
 };
 
 // Saves the provided list of tasks
@@ -94,16 +190,17 @@ export const saveTasks = async (tasks: mockApi.Task[]) => {
   if (isMock) {
     return mockApi.saveTasksFE(tasks);
   }
-  /* TO DO:
-  const res = await fetch('/api/v1/tasks', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(tasks),
-  });
+
+  const deriveNextDue = (row: CareItemListRow): string => {
+    if (row.dateTo && row.dateTo.trim()) return row.dateTo;
+    if (row.dateFrom && row.dateFrom.trim()) return row.dateFrom;
+    return '';
+  };
+
+  const res = await fetch('/api/v1/care_item?limit=200', { cache: 'no-store' });
   if (!res.ok) {
-    throw new Error(`Failed to save tasks ${res.status}`);
+    throw new Error(`Failed to fetch tasks (${res.status})`);
   }
-  */
 };
 
 // Gets the client the logged-in user is currently viewing

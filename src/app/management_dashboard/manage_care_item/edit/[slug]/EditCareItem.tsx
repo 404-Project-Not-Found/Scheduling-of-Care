@@ -1,3 +1,22 @@
+/**
+ * File path: /app/management_dashboard/manage_care_item/edit//EditCareItem.tsx
+ * Frontend Author: Qingyue Zhao
+ * Backend Author: Zahra Rizqita
+ * Last Update: 2025-10-04
+ *
+ * Description:
+ * - This page provides the "Edit Care Item" form for management users.
+ * - Built on top of the shared <DashboardChrome /> component to ensure consistent
+ *   layout and navigation across the application.
+ * - Allows selecting the active client, and creating a new care task with details:
+ *   category, name, date range, repeat interval, status, etc.
+ * - Tasks are stored in localStorage (mock mode) and persisted across reloads.
+ * - Buttons at the bottom support Cancel (navigate back) and Add (save task).
+ * 
+ * Updates:
+ * - Backend and frontend integrated, Mock API no longer works and only real API
+ * - 
+ */
 "use client";
 
 import { useRouter } from 'next/navigation';
@@ -25,7 +44,6 @@ type Task = {
   clientId?: string;
   deleted?: boolean;
   frequency?: string;
-  lastDone?: string;
   frequencyDays?: number;
   frequencyCount?: number;
   frequencyUnit?: Unit;
@@ -55,8 +73,9 @@ type Client = { id: string; name: string };
 type CatalogItem = {category: string; tasks: {label: string; slug: string}[]};
 
 
-export default function EditSelectorPage() {
+export default function EditCareItem({slug} : {slug: string}) {
   const router = useRouter();
+  const cleanSlug = (slug || '').trim().toLowerCase();
 
   // Topbar client list
   const [clients, setClients] = useState<Client[]>([]);
@@ -66,7 +85,7 @@ export default function EditSelectorPage() {
 
   // State
   const [careItemOptions, setCareItemOptions] = useState<CareItemOption[]>([]);
-  const [loadingTasks, setLoadingTasks] = useState(false);
+  const [careItemLoading, setCareItemLoading] = useState(false);
 
   // Form states
   const [label, setLabel] = useState('');
@@ -128,63 +147,91 @@ export default function EditSelectorPage() {
     )();
   }, [activeId]);
 
-    // Load task suggestions when category changes
+  // Ensure selected category stays selected
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      if (!activeId || !category.trim()) { setCareItemOptions([]); return; }
-      setLoadingTasks(true);
-      try {
-        const res = await fetch(
-          `/api/v1/task_catalog?clientId=${encodeURIComponent(activeId)}&category=${encodeURIComponent(category)}`,
-          { cache: 'no-store' }
-        );
-        if (!res.ok) throw new Error('failed');
-        const data: { category: string; tasks: CareItemOption[] } = await res.json();
-        const seen = new Set<string>();
-        const uniq: CareItemOption[] = [];
-        for (const t of data.tasks ?? []) {
-          const norm = t.label.trim().toLowerCase().replace(/\s+/g, ' ');
-          if (seen.has(norm)) continue;
-          seen.add(norm);
-          uniq.push({ label: t.label, slug: t.slug });
-        }
-        if (!cancelled) setCareItemOptions(uniq);
-      } catch {
-        if (!cancelled) setCareItemOptions([]);
-      } finally {
-        if (!cancelled) setLoadingTasks(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [activeId, category]);
+    if(!category) return;
+    if(!catalog.some(c => c.category === category)) {setCatalog(prev => [{category, tasks: []}, ...prev])}
+  }, [catalog, category]);
 
-  // When task is chosen: push to /edit/[slug]
-  const handleTaskPick = async (value: string) => {
-    setLabel(value);
-    const option = careItemOptions.find(t => t.label === value);
-    if(option?.slug) {
-        router.push(`/management_dashboard/manage_care_item/edit/${encodeURIComponent(option.slug)}`);
-        return;
-    }
-
-    if (activeId && category && value) {
-      const url = new URL('/api/v1/care_item', window.location.origin);
-      url.searchParams.set('clientId', activeId);
-      url.searchParams.set('category', category);
-      url.searchParams.set('q', value);
-      url.searchParams.set('limit', '1');
-      const res = await fetch(url.toString(), { cache: 'no-store' });
-      if (res.ok) {
-        const hits: Array<{ slug: string }> = await res.json();
-        if (hits[0]?.slug) {
-          router.push(`/management_dashboard/manage_care_item/edit/${encodeURIComponent(hits[0].slug)}`);
+  //Load care items by slug
+  useEffect(() => {
+    if(!slug || clients.length === 0) return;
+    (async() => {   
+        const res = await fetch(`/api/v1/care_item/${encodeURIComponent(cleanSlug)}`, { cache: 'no-store' });
+        if(!res.ok) {
+          const msg: {error?: string} = await res.json().catch(() => ({}));
+          alert(`Cannot load care item: ${msg.error || res.statusText}`);
+          router.back();
           return;
         }
+
+        const t: Task = await res.json();
+        setItemSlug((t.slug || '').trim().toLowerCase());
+
+        setLabel(t.label || "");
+        setStatus((statusOptions.includes(t.status as any) ? t.status : 'in progress') as typeof status);
+        setCategory((t.category || "").trim());
+        if(typeof t.frequencyCount === "number" && t.frequencyUnit) {
+          setFrequencyCountStr(String(t.frequencyCount));
+          setFrequencyUnit(t.frequencyUnit);
+        }
+        else {
+          setFrequencyCountStr('');
+          setFrequencyUnit('day');
+        }
+        if(t.dateFrom) setDateFrom(t.dateFrom);
+        if(t.dateTo) setDateTo(t.dateTo);
+        setNotes(t.notes ?? '');
+
+        if(t.clientId) {
+          const match = clients.find(c => c.id === t.clientId);
+          if(match) {
+            if (match) handleClientChange(match.id, match.name);
+          }
+        }
+        else if(t.clientName && !activeName) {
+          handleClientChange(client.id ?? '', t.clientName);
+        }
+      })(); 
+  }, [cleanSlug, clients]);
+
+  // Fetching catalog
+  useEffect(() => {
+  let cancelled = false;
+  (async () => {
+    if (!category.trim()) { setCareItemOptions([]); return; }
+    if(!activeId) {setCareItemOptions([]); return;}
+    setCareItemLoading(true);
+    try {
+      const res = await fetch(`/api/v1/task_catalog?clientId=${encodeURIComponent(activeId)}&category=${encodeURIComponent(category)}`, { cache: "no-store" });
+      if (!res.ok) throw new Error("failed");
+      const data: { category: string; tasks: CareItemOption[] } = await res.json();
+
+      // Safety de-dupe (belt & braces)
+      const seen = new Set<string>();
+      const uniq: CareItemOption[] = [];
+      for (const t of data.tasks ?? []) {
+        const norm = t.label.trim().toLowerCase().replace(/\s+/g, " ");
+        if (seen.has(norm)) continue;
+        seen.add(norm);
+        uniq.push({ label: t.label, slug: t.slug });
       }
-      alert('Could not find a matching care item to edit.');
+      setCareItemOptions(uniq);
+    } catch {
+      setCareItemOptions([]);
+    } finally {
+      if (!cancelled) setCareItemLoading(false);
     }
-  }
+  })();
+  return () => { cancelled = true; };
+}, [category]);
+
+  const onClientChange = (id: string) => {
+    const c = clients.find(x => x.id === id);
+    handleClientChange(id, c?.name || '');
+  };
+
+
 
   const statusOptions = useMemo(
     () => ['in progress', 'Completed', 'Not started', 'Paused', 'Cancelled'],
@@ -197,23 +244,71 @@ export default function EditSelectorPage() {
   };
 
 
+  const onDelete = async () => {
+    const slugForDel = (itemSlug || cleanSlug);
+    if(!slugForDel) {alert("Missing task slug -- cannot delete"); return;}
+    if (!confirm('Discard this task and go back?')) return;
+
+    const res = await fetch(`/api/v1/care_item/${encodeURIComponent(slugForDel)}`, { method: 'DELETE'});
+    if(!res.ok) {
+      const msg = await res.json().catch(() => ({}));
+      alert(`Delete failed: ${msg?.error || res.statusText}`);
+      return;
+    }
+    router.push('/calendar_dashboard');
+  };
+
+  const onSave = async () => {
+    const slugForSave = (itemSlug || cleanSlug);
+
+    if(!activeId) {alert('Please select a client first.'); return;}
+    if(!slugForSave) {alert("Missing Task Slug -- cannot proceed"); return;}
+    
+    const name = label.trim();
+    if (!name) {alert('Please enter the task name.'); return;}
+    if (!category.trim()) {alert('Please select a category.'); return;}
+
+    const countNum = parseInt(frequencyCountStr, 10);
+    const hasFrequency = Number.isFinite(countNum) && countNum > 0;
+
+    const payload: Partial<Task> & {
+      clientId?: string | null;
+      clientName?: string;
+    } = {
+      clientId: activeId ?? undefined,
+      clientName: activeName || undefined,
+      label: name,
+      status: status.trim(),
+      category: category.trim(),
+      frequencyCount: hasFrequency ? countNum : undefined,
+      frequencyUnit: hasFrequency ? (frequencyUnit as Unit) : undefined,
+      dateFrom: dateFrom || undefined,
+      dateTo: dateTo || undefined,
+      notes: notes.trim() || undefined,
+      deleted: false,
+    };
+
+    const res = await fetch(`/api/v1/care_item/${encodeURIComponent(slugForSave)}`, {
+      method: 'PUT',    
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload),
+    });
+
+    if(!res.ok) {
+      const msg = await res.json().catch(() => ({}));
+      alert(`Save failed: ${msg?.error || res.statusText}`);
+      return;
+    }
+    router.push('/calendar_dashboard');
+  };
+
   const onLogoClick = () => {
     router.push('/empty_dashboard');
   };
 
-  const onClientChange = (id: string) => {
-    const c = clients.find(x => x.id === id);
-    if (!id) resetClient();
-    else handleClientChange(id, c?.name || '');
-    // reset selection on client change
-    setCategory('');
-    setLabel('');
-    setCareItemOptions([]);
-  };
-
   return (
     <DashboardChrome
-      page="care-edit-picker"
+      page="care-edit"
       clients={clients}
       activeClientId={activeId}
       activeClientName={activeName}
@@ -265,12 +360,12 @@ export default function EditSelectorPage() {
 
             {/* Task name (dropdown depends on category) */}
             <Field label="Task Name">
-              {loadingTasks ? (
+              {careItemLoading ? (
                 <div className="text-sm opacity-70">Loading tasks…</div>
               ) : careItemOptions.length > 0 ? (
                 <select
                   value={label}
-                  onChange={(e) => handleTaskPick(e.target.value)}
+                  onChange={(e) => setLabel(e.target.value)}
                   disabled={!category}
                   className="w-full rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black disabled:opacity-60"
                 >
@@ -361,7 +456,7 @@ export default function EditSelectorPage() {
             {/* Footer buttons */}
             <div className="pt-2 flex items-center justify-center gap-30">
               <button
-                //onClick={onDelete}
+                onClick={onDelete}
                 className="rounded-full text-white text-xl font-semibold px-6.5 py-2.5 shadow"
                 style={{ backgroundColor: palette.danger }}
               >
@@ -374,7 +469,7 @@ export default function EditSelectorPage() {
                 Cancel
               </button>
               <button
-                //onClick={onSave}
+                onClick={onSave}
                 className="rounded-full bg-[#F39C6B] hover:bg-[#ef8a50] text-[#1c130f] text-xl font-bold px-7.5 py-2.5 shadow"
               >
                 Save

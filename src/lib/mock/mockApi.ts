@@ -12,7 +12,7 @@
  *     - Role:    session/local storage
  * - Real backend mode:
  *     - Clients: /api/v1/clients, /api/v1/clients/:id
- *     - Tasks:   /api/v1/tasks
+ *     - Tasks:   /api/v1/care-item
  *     - Budget:  /api/v1/clients/:id/budget
  *     - Txns:    /api/v1/clients/:id/transactions
  */
@@ -46,6 +46,7 @@
  * ========================= */
 
 export const isMock = process.env.NEXT_PUBLIC_ENABLE_MOCK === '1';
+
 
 export const FULL_DASH_ID = 'mock1'; // Mock Alice (full dashboard)
 export const PARTIAL_DASH_ID = 'mock2'; // Mock Bob (partial dashboard)
@@ -341,7 +342,7 @@ export async function getTasksFE(): Promise<Task[]> {
   }
 
   // real backend
-  const res = await fetch('/api/v1/tasks', { cache: 'no-store' });
+  const res = await fetch('/api/v1/care-item', { cache: 'no-store' });
   if (!res.ok) throw new Error(`Failed to fetch tasks (${res.status})`);
   const data = await res.json();
   return Array.isArray(data) ? (data as Task[]) : [];
@@ -356,7 +357,7 @@ export async function saveTasksFE(tasks: Task[]): Promise<void> {
     return;
   }
 
-  const res = await fetch('/api/v1/tasks', {
+  const res = await fetch('/api/v1/care_item', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(tasks),
