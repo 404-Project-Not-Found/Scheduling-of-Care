@@ -313,10 +313,11 @@ function ClientProfilePageInner() {
         banner: colors.banner,
         text: colors.text,
       }}
+      hideBanner={isNew} // no pink banner with selected client when creating new client profile
     >
       {/* Fixed-height body to avoid page gutter */}
       <div
-        className="w-full h-[1000px] flex flex-col"
+        className="w-full h-[680px] flex flex-col"
         style={{ backgroundColor: colors.pageBg, color: colors.text }}
       >
         {/* Section bar */}
