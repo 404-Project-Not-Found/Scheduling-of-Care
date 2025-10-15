@@ -34,7 +34,11 @@ type HelpContextValue = {
   pageKey: keyof FAQBook | null;
   sectionId: string | null;
   allowedPageKeys?: (keyof FAQBook)[];
-  open: (page: keyof FAQBook, anchorId?: string, opts?: HelpOpenOptions) => void;
+  open: (
+    page: keyof FAQBook,
+    anchorId?: string,
+    opts?: HelpOpenOptions
+  ) => void;
   close: () => void;
 };
 
@@ -50,7 +54,9 @@ export function HelpProvider({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [pageKey, setPageKey] = useState<keyof FAQBook | null>(null);
   const [sectionId, setSectionId] = useState<string | null>(null);
-  const [allowedPageKeys, setAllowedPageKeys] = useState<(keyof FAQBook)[] | undefined>(undefined);
+  const [allowedPageKeys, setAllowedPageKeys] = useState<
+    (keyof FAQBook)[] | undefined
+  >(undefined);
 
   const open = useCallback(
     (page: keyof FAQBook, anchor?: string, opts?: HelpOpenOptions) => {
@@ -109,9 +115,12 @@ const palette = {
   backdrop: 'rgba(0,0,0,0.45)',
 };
 
-function getRoleFromKey(k: keyof FAQBook): 'family' | 'carer' | 'management' | 'other' {
+function getRoleFromKey(
+  k: keyof FAQBook
+): 'family' | 'carer' | 'management' | 'other' {
   const [role] = String(k).split('/', 1);
-  if (role === 'family' || role === 'carer' || role === 'management') return role;
+  if (role === 'family' || role === 'carer' || role === 'management')
+    return role;
   return 'other';
 }
 
@@ -266,9 +275,15 @@ function HelpPanelOverlay({
         {/* Header */}
         <div
           className="flex items-center justify-between px-5 sm:px-6 py-3 border-b"
-          style={{ borderColor: palette.deepBrown, background: palette.deepBrown }}
+          style={{
+            borderColor: palette.deepBrown,
+            background: palette.deepBrown,
+          }}
         >
-          <h2 className="text-2xl md:text-3xl font-semibold" style={{ color: 'white' }}>
+          <h2
+            className="text-2xl md:text-3xl font-semibold"
+            style={{ color: 'white' }}
+          >
             {page?.title ? `${page.title} FAQs` : 'Help - FAQs'}
           </h2>
 
@@ -303,7 +318,10 @@ function HelpPanelOverlay({
           style={{ height: 'calc(100% - 56px)', color: palette.deepBrown }}
         >
           {/* LEFT: page list (same-role keys, filtered by whitelist if provided) */}
-          <nav ref={sidebarRef} className="hidden md:block h-full overflow-y-auto self-stretch">
+          <nav
+            ref={sidebarRef}
+            className="hidden md:block h-full overflow-y-auto self-stretch"
+          >
             <div
               className="rounded-xl p-4"
               style={{ background: 'rgba(58,0,0,0.10)', minHeight: '140vh' }}
@@ -324,12 +342,16 @@ function HelpPanelOverlay({
                         onClick={() => {
                           setActiveKey(key);
                           // After switching, jump to the page divider and pin the highlight
-                          requestAnimationFrame(() => handleJump(`__page-divider__${key}`));
+                          requestAnimationFrame(() =>
+                            handleJump(`__page-divider__${key}`)
+                          );
                         }}
                         className="block w-full text-left no-underline"
                         style={{
                           color: isSelected ? '#fff' : palette.deepBrown,
-                          background: isSelected ? palette.deepBrown : 'rgba(58,0,0,0.08)',
+                          background: isSelected
+                            ? palette.deepBrown
+                            : 'rgba(58,0,0,0.08)',
                           borderRadius: 16,
                           padding: '16px 18px',
                           lineHeight: 1.35,
@@ -364,17 +386,27 @@ function HelpPanelOverlay({
           </nav>
 
           {/* RIGHT: active page content + top divider (stable anchor for the sidebar) */}
-          <div ref={contentRef} className="space-y-8 h-full overflow-y-auto pr-1">
+          <div
+            ref={contentRef}
+            className="space-y-8 h-full overflow-y-auto pr-1"
+          >
             {/* Top divider: acts as a stable anchor for this page */}
             <section id={dividerId} className="scroll-mt-24">
-              <h3 className="text-xl md:text-2xl font-semibold mb-3" style={{ color: palette.deepBrown }}>
+              <h3
+                className="text-xl md:text-2xl font-semibold mb-3"
+                style={{ color: palette.deepBrown }}
+              >
                 {cleanPageTitle(page?.title ?? 'Help')}
               </h3>
             </section>
 
             {/* Actual content: render each section */}
             {(sections as FAQSection[]).map((s) => (
-              <FAQSectionBlock key={s.id} section={s} color={palette.deepBrown} />
+              <FAQSectionBlock
+                key={s.id}
+                section={s}
+                color={palette.deepBrown}
+              />
             ))}
           </div>
         </div>
@@ -383,8 +415,12 @@ function HelpPanelOverlay({
       {/* Animations */}
       <style jsx global>{`
         @keyframes faq-drawer-in {
-          from { transform: translateY(100%); }
-          to   { transform: translateY(0%); }
+          from {
+            transform: translateY(100%);
+          }
+          to {
+            transform: translateY(0%);
+          }
         }
       `}</style>
     </>,
@@ -395,7 +431,13 @@ function HelpPanelOverlay({
 /* ---------------------------------------------------------------------
  * Single Section renderer
  * ------------------------------------------------------------------- */
-function FAQSectionBlock({ section, color }: { section: FAQSection; color: string }) {
+function FAQSectionBlock({
+  section,
+  color,
+}: {
+  section: FAQSection;
+  color: string;
+}) {
   const qaPairs = parseQAPairs(section.body);
   const hasQA = qaPairs.length > 0;
 
@@ -421,7 +463,11 @@ function FAQSectionBlock({ section, color }: { section: FAQSection; color: strin
                 <span className="font-semibold">{pair.q || 'Question'}</span>
               </summary>
               <div className="mt-2 space-y-2" style={{ color }}>
-                {pair.a.length ? pair.a.map((p, i) => <p key={i}>{p}</p>) : <p>—</p>}
+                {pair.a.length ? (
+                  pair.a.map((p, i) => <p key={i}>{p}</p>)
+                ) : (
+                  <p>—</p>
+                )}
               </div>
             </details>
           ))}
@@ -431,10 +477,13 @@ function FAQSectionBlock({ section, color }: { section: FAQSection; color: strin
           const body = Array.isArray(section.body)
             ? section.body
             : section.body
-            ? [section.body]
-            : [];
+              ? [section.body]
+              : [];
           return body.length ? (
-            <div className="space-y-3 leading-relaxed text-[1rem]" style={{ color }}>
+            <div
+              className="space-y-3 leading-relaxed text-[1rem]"
+              style={{ color }}
+            >
               {body.map((p, i) => (
                 <p key={i}>{p}</p>
               ))}

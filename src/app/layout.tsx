@@ -39,7 +39,7 @@ export default function RootLayout({
               {children}
               <Suspense fallback={null}>
                 {/* Show one global floating Help button on every page */}
-                <HelpButton/>
+                <HelpButton />
               </Suspense>
             </ActiveClientProvider>
           </TransactionProvider>

@@ -20,7 +20,12 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { getSession } from 'next-auth/react';
-import { faqData, type FAQBook, type FAQSection } from '@/components/help/faqData';
+import type { Session } from 'next-auth';
+import {
+  faqData,
+  type FAQBook,
+  type FAQSection,
+} from '@/components/help/faqData';
 import { getViewerRoleFE } from '@/lib/mock/mockApi';
 
 type Role = 'family' | 'carer' | 'management';
@@ -35,6 +40,14 @@ const palette = {
   cardBorder: 'rgba(58,0,0,0.15)',
 };
 
+interface CustomSession extends Session {
+  user: {
+    name?: string | null;
+    email?: string | null;
+    role?: Role | null;
+  };
+}
+
 /* -------------------------- helpers: role + titles -------------------------- */
 
 function cleanPageTitle(t: string) {
@@ -48,7 +61,8 @@ function cleanPageTitle(t: string) {
 // Role from key prefix, e.g. "family/..." -> "family"
 function getRoleFromKey(k: keyof FAQBook): Role | null {
   const [role] = String(k).split('/', 1);
-  if (role === 'family' || role === 'carer' || role === 'management') return role;
+  if (role === 'family' || role === 'carer' || role === 'management')
+    return role;
   return null;
 }
 
@@ -91,7 +105,9 @@ type QAPair = { q: string; a: string[] };
 
 function parseQAPairs(body?: string | string[]): QAPair[] {
   if (!body) return [];
-  const lines = (Array.isArray(body) ? body : [body]).map(s => String(s).trim()).filter(Boolean);
+  const lines = (Array.isArray(body) ? body : [body])
+    .map((s) => String(s).trim())
+    .filter(Boolean);
   const qa: QAPair[] = [];
   let current: QAPair | null = null;
   const qRe = /^q[:：]\s*/i;
@@ -119,7 +135,10 @@ function FAQSectionBlock({ section }: { section: FAQSection }) {
 
   return (
     <section id={section.id} className="scroll-mt-28 mb-8">
-      <h3 className="text-xl font-semibold mb-2" style={{ color: palette.deepBrown }}>
+      <h3
+        className="text-xl font-semibold mb-2"
+        style={{ color: palette.deepBrown }}
+      >
         {section.title}
       </h3>
 
@@ -135,20 +154,37 @@ function FAQSectionBlock({ section }: { section: FAQSection }) {
                 padding: '14px 16px',
               }}
             >
-              <summary className="cursor-pointer select-none" style={{ color: palette.deepBrown }}>
+              <summary
+                className="cursor-pointer select-none"
+                style={{ color: palette.deepBrown }}
+              >
                 <span className="font-semibold">{pair.q || 'Question'}</span>
               </summary>
-              <div className="mt-2 space-y-2" style={{ color: palette.deepBrown }}>
-                {pair.a.length ? pair.a.map((p, i) => <p key={i}>{p}</p>) : <p>—</p>}
+              <div
+                className="mt-2 space-y-2"
+                style={{ color: palette.deepBrown }}
+              >
+                {pair.a.length ? (
+                  pair.a.map((p, i) => <p key={i}>{p}</p>)
+                ) : (
+                  <p>—</p>
+                )}
               </div>
             </details>
           ))}
         </div>
       ) : (
         (() => {
-          const body = Array.isArray(section.body) ? section.body : section.body ? [section.body] : [];
+          const body = Array.isArray(section.body)
+            ? section.body
+            : section.body
+              ? [section.body]
+              : [];
           return body.length ? (
-            <div className="space-y-3 leading-relaxed text-[1rem]" style={{ color: palette.deepBrown }}>
+            <div
+              className="space-y-3 leading-relaxed text-[1rem]"
+              style={{ color: palette.deepBrown }}
+            >
               {body.map((p, i) => (
                 <p key={i}>{p}</p>
               ))}
@@ -177,7 +213,9 @@ export default function FAQPage() {
         if (isMock) {
           let r = (getViewerRoleFE() as Role | null) ?? null;
           if (!r) {
-            const em = (localStorage.getItem('lastLoginEmail') || '').toLowerCase();
+            const em = (
+              localStorage.getItem('lastLoginEmail') || ''
+            ).toLowerCase();
             if (em.includes('carer')) r = 'carer';
             else if (em.includes('management')) r = 'management';
             else if (em.includes('family')) r = 'family';
@@ -185,8 +223,8 @@ export default function FAQPage() {
           setRole(r ?? 'family'); // default to family if still unknown
           return;
         }
-        const session = await getSession();
-        const sRole = (session?.user as any)?.role as Role | undefined;
+        const session = (await getSession()) as CustomSession | null;
+        const sRole = session?.user.role;
         setRole(sRole ?? 'family'); // default to family if missing
       } finally {
         setLoading(false);
@@ -200,7 +238,10 @@ export default function FAQPage() {
     const keys = Object.keys(faqData) as (keyof FAQBook)[];
     return keys.map((key) => {
       const page = faqData[key];
-      const pageId = `page-${String(key).replace(/[^a-z0-9]+/gi, '-').replace(/(^-|-$)/g, '').toLowerCase()}`;
+      const pageId = `page-${String(key)
+        .replace(/[^a-z0-9]+/gi, '-')
+        .replace(/(^-|-$)/g, '')
+        .toLowerCase()}`;
       const title = page?.title ?? String(key);
       return {
         key,
@@ -271,7 +312,10 @@ export default function FAQPage() {
         className="h-screen w-full flex items-center justify-center"
         style={{ background: palette.lightPeach }}
       >
-        <div className="text-xl font-semibold" style={{ color: palette.deepBrown }}>
+        <div
+          className="text-xl font-semibold"
+          style={{ color: palette.deepBrown }}
+        >
           Loading FAQs…
         </div>
       </main>
@@ -290,19 +334,23 @@ export default function FAQPage() {
       >
         {/* title + print */}
         <div className="flex items-center gap-8">
-            <h1 className="text-2xl md:text-3xl font-semibold">
-            {role === 'family' ? 'Family/POA FAQs' : role === 'carer' ? 'Carer FAQs' : 'Management FAQs'}
-            </h1>
+          <h1 className="text-2xl md:text-3xl font-semibold">
+            {role === 'family'
+              ? 'Family/POA FAQs'
+              : role === 'carer'
+                ? 'Carer FAQs'
+                : 'Management FAQs'}
+          </h1>
 
-            <button
+          <button
             onClick={handlePrint}
             className="inline-flex items-center px-3 sm:px-4 py-1.5 rounded-2xl border border-white/40 bg-white font-semibold text-sm sm:text-base hover:bg-pink-50 transition-colors"
             title="Print"
             aria-label="Print"
             style={{ color: palette.deepBrown }}
-            >
+          >
             Print
-            </button>
+          </button>
         </div>
 
         <button
@@ -339,7 +387,9 @@ export default function FAQPage() {
                       className="block w-full text-left no-underline transition-[background,color] duration-150"
                       style={{
                         color: isActive ? '#fff' : palette.deepBrown,
-                        background: isActive ? palette.boxBgActive : palette.boxBg,
+                        background: isActive
+                          ? palette.boxBgActive
+                          : palette.boxBg,
                         borderRadius: 16,
                         padding: '16px 18px',
                         lineHeight: 1.35,
@@ -360,12 +410,17 @@ export default function FAQPage() {
           <section className="overflow-y-auto pr-1">
             {/* Smooth anchor scrolling */}
             <style jsx global>{`
-              html { scroll-behavior: smooth; }
+              html {
+                scroll-behavior: smooth;
+              }
             `}</style>
 
             {pages.map(({ key, pageId, cleanTitle, sections }) => (
               <article key={String(key)} className="mb-12">
-                <h2 id={pageId} className="text-2xl font-semibold mb-4 scroll-mt-28">
+                <h2
+                  id={pageId}
+                  className="text-2xl font-semibold mb-4 scroll-mt-28"
+                >
                   {cleanTitle}
                 </h2>
                 {sections.map((s: FAQSection) => (

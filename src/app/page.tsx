@@ -55,31 +55,31 @@ export default function Home() {
     // ============================
     // Frontend mock path (no API)
     // ============================
-    if (
-      process.env.NEXT_PUBLIC_ENABLE_MOCK === '1' 
-    ) {
-    const emailTrimmed = email.trim().toLowerCase();
+    if (process.env.NEXT_PUBLIC_ENABLE_MOCK === '1') {
+      const emailTrimmed = email.trim().toLowerCase();
 
-    let role: ViewerRole | null = null;
-    if (emailTrimmed === 'family@email.com' && password === 'family') {
+      let role: ViewerRole | null = null;
+      if (emailTrimmed === 'family@email.com' && password === 'family') {
         role = 'family';
-    } else if (emailTrimmed === 'carer@email.com' && password === 'carer') {
+      } else if (emailTrimmed === 'carer@email.com' && password === 'carer') {
         role = 'carer';
-    } else if (emailTrimmed === 'management@email.com' && password === 'management') {
+      } else if (
+        emailTrimmed === 'management@email.com' &&
+        password === 'management'
+      ) {
         role = 'management';
-    }
+      }
 
-    if (role) {
+      if (role) {
         localStorage.setItem('lastLoginEmail', emailTrimmed);
         await mockSignIn(role);
         window.location.href = '/icon_dashboard';
         return;
-    }
-    
-    setError('Invalid mock credentials');
-    return;
-    }
+      }
 
+      setError('Invalid mock credentials');
+      return;
+    }
 
     // ============================
     // Real backend path (NextAuth)

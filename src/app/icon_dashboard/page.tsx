@@ -44,26 +44,82 @@ type ButtonDef = {
  */
 const BUTTONS: Record<StrictRole, ButtonDef[]> = {
   family: [
-    { label: 'Client Schedule', icon: CalendarDays, href: '/calendar_dashboard' },
-    { label: 'Staff Schedule', icon: Users, href: '/management_dashboard/staff_schedule' },
-    { label: 'Budget Report', icon: FileText, href: '/calendar_dashboard/budget_report' },
-    { label: 'Transactions', icon: Receipt, href: '/calendar_dashboard/transaction_history' },
-    { label: 'Family Requests', icon: ClipboardList, href: '/request-log-page' },
+    {
+      label: 'Client Schedule',
+      icon: CalendarDays,
+      href: '/calendar_dashboard',
+    },
+    {
+      label: 'Staff Schedule',
+      icon: Users,
+      href: '/management_dashboard/staff_schedule',
+    },
+    {
+      label: 'Budget Report',
+      icon: FileText,
+      href: '/calendar_dashboard/budget_report',
+    },
+    {
+      label: 'Transactions',
+      icon: Receipt,
+      href: '/calendar_dashboard/transaction_history',
+    },
+    {
+      label: 'Family Requests',
+      icon: ClipboardList,
+      href: '/request-log-page',
+    },
     { label: 'FAQ', icon: HelpCircle, href: '/faq' },
   ],
   carer: [
-    { label: 'Client Schedule', icon: CalendarDays, href: '/calendar_dashboard' },
-    { label: 'Staff Schedule', icon: Users, href: '/management_dashboard/staff_schedule' },
-    { label: 'Budget Report', icon: FileText, href: '/calendar_dashboard/budget_report' },
-    { label: 'Transactions', icon: Receipt, href: '/calendar_dashboard/transaction_history' },
-    { label: 'Update Details', icon: ClipboardList, href: '/calendar_dashboard/update_details' },
+    {
+      label: 'Client Schedule',
+      icon: CalendarDays,
+      href: '/calendar_dashboard',
+    },
+    {
+      label: 'Staff Schedule',
+      icon: Users,
+      href: '/management_dashboard/staff_schedule',
+    },
+    {
+      label: 'Budget Report',
+      icon: FileText,
+      href: '/calendar_dashboard/budget_report',
+    },
+    {
+      label: 'Transactions',
+      icon: Receipt,
+      href: '/calendar_dashboard/transaction_history',
+    },
+    {
+      label: 'Update Details',
+      icon: ClipboardList,
+      href: '/calendar_dashboard/update_details',
+    },
     { label: 'FAQ', icon: HelpCircle, href: '/faq' },
   ],
   management: [
-    { label: 'Client Schedule', icon: CalendarDays, href: '/calendar_dashboard' },
-    { label: 'Staff Schedule', icon: Users, href: '/management_dashboard/staff_schedule' },
-    { label: 'Budget Report', icon: FileText, href: '/calendar_dashboard/budget_report' },
-    { label: 'Transactions', icon: Receipt, href: '/calendar_dashboard/transaction_history' },
+    {
+      label: 'Client Schedule',
+      icon: CalendarDays,
+      href: '/calendar_dashboard',
+    },
+    {
+      label: 'Staff Schedule',
+      icon: Users,
+      href: '/management_dashboard/staff_schedule',
+    },
+    {
+      label: 'Budget Report',
+      icon: FileText,
+      href: '/calendar_dashboard/budget_report',
+    },
+    {
+      label: 'Transactions',
+      icon: Receipt,
+      href: '/calendar_dashboard/transaction_history',
+    },
     { label: 'Request Log', icon: ClipboardList, href: '/request-log-page' },
     { label: 'FAQ', icon: HelpCircle, href: '/faq' },
   ],
@@ -87,7 +143,9 @@ export default function DashboardPage() {
 
         // Fallback: infer from lastLoginEmail
         if (!r) {
-          const em = (localStorage.getItem('lastLoginEmail') || '').toLowerCase();
+          const em = (
+            localStorage.getItem('lastLoginEmail') || ''
+          ).toLowerCase();
           if (em.includes('carer')) r = 'carer';
           else if (em.includes('management')) r = 'management';
           else if (em.includes('family')) r = 'family';
@@ -241,12 +299,15 @@ export default function DashboardPage() {
         style={{ backgroundColor: palette.banner }}
       >
         <BellIcon />
-        <p className="text-base md:text-lg leading-relaxed" style={{ color: palette.header }}>
+        <p
+          className="text-base md:text-lg leading-relaxed"
+          style={{ color: palette.header }}
+        >
           {role === 'family'
             ? 'Use the buttons below to view client & staff schedules, budgets, requests and transactions.'
             : role === 'carer'
-            ? 'Use the buttons below to view client and staff schedules, budgets and transactions.'
-            : 'Use the buttons below to manage client & staff schedules, budget and requests.'}
+              ? 'Use the buttons below to view client and staff schedules, budgets and transactions.'
+              : 'Use the buttons below to manage client & staff schedules, budget and requests.'}
         </p>
       </div>
 

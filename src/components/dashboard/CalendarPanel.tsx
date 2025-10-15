@@ -3,11 +3,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import dayGridPlugin from '@fullcalendar/daygrid';
-import interactionPlugin from '@fullcalendar/interaction';
+import interactionPlugin, { DateClickArg } from '@fullcalendar/interaction';
+import { CalendarApi, DatesSetArg } from '@fullcalendar/core';
 import '@/styles/fullcalendar.css';
 
 // Load FullCalendar on the client only
-const FullCalendar = dynamic(() => import('@fullcalendar/react'), { ssr: false });
+const FullCalendar = dynamic(() => import('@fullcalendar/react'), {
+  ssr: false,
+});
 
 type Task = {
   id: string;
@@ -34,7 +37,7 @@ export default function CalendarPanel(props: CalendarPanelProps) {
   const { tasks = [], onDateClick, onMonthYearChange } = props;
 
   const rootRef = useRef<HTMLDivElement | null>(null);
-  const apiRef = useRef<any>(null);
+  const apiRef = useRef<CalendarApi | null>(null);
 
   // Current visible month/year (driven by FullCalendar view)
   const [year, setYear] = useState<number>(new Date().getFullYear());
@@ -44,9 +47,15 @@ export default function CalendarPanel(props: CalendarPanelProps) {
   const [openPicker, setOpenPicker] = useState<boolean>(false);
 
   // Absolute position for the icon (to the RIGHT of the brown title)
-  const [iconPos, setIconPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
+  const [iconPos, setIconPos] = useState<{ top: number; left: number }>({
+    top: 0,
+    left: 0,
+  });
 
-  const taskDates = useMemo(() => new Set(tasks.map((t) => t.nextDue)), [tasks]);
+  const taskDates = useMemo(
+    () => new Set(tasks.map((t) => t.nextDue)),
+    [tasks]
+  );
   const todayStr = yyyymmdd(new Date());
 
   const months = [
@@ -61,7 +70,7 @@ export default function CalendarPanel(props: CalendarPanelProps) {
     'September',
     'October',
     'November',
-    'December'
+    'December',
   ];
 
   const yearOptions = useMemo(() => {
@@ -90,12 +99,12 @@ export default function CalendarPanel(props: CalendarPanelProps) {
 
     setIconPos({
       top: tBox.top - hostBox.top + tBox.height / 2, // vertically centered
-      left: tBox.right - hostBox.left + 8            // 8px to the right
+      left: tBox.right - hostBox.left + 8, // 8px to the right
     });
   };
 
   // Called whenever FullCalendar view changes (prev/next/initial)
-  const onDatesSet = (arg: any) => {
+  const onDatesSet = (arg: DatesSetArg) => {
     apiRef.current = arg.view.calendar;
 
     const cur = arg.view.calendar.getDate();
@@ -135,12 +144,35 @@ export default function CalendarPanel(props: CalendarPanelProps) {
         aria-label="Pick month and year"
         onClick={() => setOpenPicker((v) => !v)}
         className="absolute z-10 -translate-y-1/2 p-1 hover:bg-black/5 rounded"
-        style={{ top: iconPos.top, left: iconPos.left, background: 'transparent' }}
+        style={{
+          top: iconPos.top,
+          left: iconPos.left,
+          background: 'transparent',
+        }}
         title="Pick month & year"
       >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <rect x="3" y="4" width="18" height="17" rx="2" stroke="#3A0000" strokeWidth="2" />
-          <path d="M8 2v4M16 2v4M3 9h18" stroke="#3A0000" strokeWidth="2" strokeLinecap="round" />
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden="true"
+        >
+          <rect
+            x="3"
+            y="4"
+            width="18"
+            height="17"
+            rx="2"
+            stroke="#3A0000"
+            strokeWidth="2"
+          />
+          <path
+            d="M8 2v4M16 2v4M3 9h18"
+            stroke="#3A0000"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
         </svg>
       </button>
 
@@ -154,11 +186,11 @@ export default function CalendarPanel(props: CalendarPanelProps) {
         fixedWeekCount={false}
         showNonCurrentDates={false}
         datesSet={onDatesSet}
-        dateClick={(info: any) => {
+        dateClick={(info: DateClickArg) => {
           const d = yyyymmdd(info.date);
           onDateClick(taskDates.has(d) ? d : '');
         }}
-        dayCellClassNames={(info: any) => {
+        dayCellClassNames={(info) => {
           const d = yyyymmdd(info.date);
           const cls: string[] = [];
           if (d === todayStr) cls.push('fc-today-custom');

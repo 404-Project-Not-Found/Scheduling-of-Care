@@ -1,32 +1,13 @@
-/**
- * File path: /app/management_dashboard/manage_care_item/edit/page.tsx
- * Frontend Author: Qingyue Zhao
- * Last Update: 2025-10-02
- *
- * Description:
- * - This page provides the "Edit Care Item" form for management users.
- * - Built on top of the shared <DashboardChrome /> component to ensure consistent
- *   layout and navigation across the application.
- * - Allows selecting the active client, and creating a new care task with details:
- *   category, name, date range, repeat interval, status, etc.
- * - Tasks are stored in localStorage (mock mode) and persisted across reloads.
- * - Buttons at the bottom support Cancel (navigate back) and Add (save task).
- */
-
 'use client';
 
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useMemo } from 'react';
 import DashboardChrome from '@/components/top_menu/client_schedule';
-import {
-  readActiveClientFromStorage,
-  writeActiveClientToStorage,
-  getClientsFE,
-  FULL_DASH_ID,
-  NAME_BY_ID,
-  getTaskCatalogFE, // keep dropdown logic
-  type Client as ApiClient,
-} from '@/lib/mock/mockApi';
+import { type CareItemOption } from '@/lib/catalog';
+import { useActiveClient } from '@/context/ActiveClientContext';
+import { getClients, getActiveClient, Client as ApiClient } from '@/lib/data';
+
+type UiClient = { id: string; name: string };
 
 type Unit = 'day' | 'week' | 'month' | 'year';
 
@@ -36,6 +17,7 @@ type Task = {
   status: string;
   category: string;
   clientName?: string;
+  clientId?: string;
   deleted?: boolean;
   frequency?: string;
   lastDone?: string;
@@ -44,20 +26,8 @@ type Task = {
   frequencyUnit?: Unit;
   dateFrom?: string;
   dateTo?: string;
+  notes?: string;
 };
-
-function saveTasks(tasks: Task[]) {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem('tasks', JSON.stringify(tasks));
-}
-function loadTasks(): Task[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    return JSON.parse(localStorage.getItem('tasks') || '[]') as Task[];
-  } catch {
-    return [];
-  }
-}
 
 const unitToDays: Record<Unit, number> = {
   day: 1,
@@ -67,13 +37,6 @@ const unitToDays: Record<Unit, number> = {
 };
 const toDays = (count: number, unit: Unit) =>
   Math.max(1, Math.floor(count || 1)) * unitToDays[unit];
-const slugify = (s: string) =>
-  s
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-');
 
 const chromeColors = {
   header: '#3A0000',
@@ -83,51 +46,23 @@ const chromeColors = {
 };
 
 type Client = { id: string; name: string };
+type CatalogItem = {
+  category: string;
+  tasks: { label: string; slug: string }[];
+};
 
-export default function AddTaskPage() {
+export default function EditSelectorPage() {
   const router = useRouter();
 
   // Topbar client list
   const [clients, setClients] = useState<Client[]>([]);
-  const [{ id: activeId, name: activeName }, setActive] = useState<{
-    id: string | null;
-    name: string;
-  }>({
-    id: null,
-    name: '',
-  });
+  const { client, handleClientChange, resetClient } = useActiveClient();
+  const activeId = client.id;
+  const activeName = client.name;
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const list = await getClientsFE();
-        const mapped: Client[] = list.map((c: ApiClient) => ({
-          id: c._id,
-          name: c.name,
-        }));
-        setClients(mapped);
-
-        const stored = readActiveClientFromStorage();
-        const resolvedId = stored.id || FULL_DASH_ID;
-        const resolvedName = stored.name || NAME_BY_ID[resolvedId] || '';
-        setActive({ id: stored.id || null, name: resolvedName });
-      } catch {
-        setClients([]);
-      }
-    })();
-  }, []);
-
-  const onClientChange = (id: string) => {
-    if (!id) {
-      setActive({ id: null, name: '' });
-      writeActiveClientToStorage('', '');
-      return;
-    }
-    const c = clients.find((x) => x.id === id);
-    const name = c?.name || '';
-    setActive({ id, name });
-    writeActiveClientToStorage(id, name);
-  };
+  // State
+  const [careItemOptions, setCareItemOptions] = useState<CareItemOption[]>([]);
+  const [loadingTasks, setLoadingTasks] = useState(false);
 
   // Form states
   const [label, setLabel] = useState('');
@@ -140,6 +75,127 @@ export default function AddTaskPage() {
   const [frequencyCountStr, setFrequencyCountStr] = useState<string>('');
   const [frequencyUnit, setFrequencyUnit] = useState<Unit>('day');
 
+  // ---- keep dropdown logic: Category → Task name ----
+  const [catalog, setCatalog] = useState<CatalogItem[]>([]);
+  const tasksInCategory = useMemo(() => {
+    const entry = catalog.find((c) => c.category === category);
+    return entry ? entry.tasks : [];
+  }, [catalog, category]);
+
+  const [itemSlug, setItemSlug] = useState<string>('');
+
+  // Load client
+  useEffect(() => {
+    (async () => {
+      try {
+        const list: ApiClient[] = await getClients();
+        const mapped: UiClient[] = list.map((c) => ({
+          id: c._id,
+          name: c.name,
+        }));
+        setClients(mapped);
+
+        const active = await getActiveClient();
+        if (active.id) {
+          handleClientChange(active.id, active.name);
+        } else {
+          resetClient();
+        }
+      } catch {
+        setClients([]);
+        resetClient();
+      }
+    })();
+  }, []);
+
+  //Load categories -- updated to scope client on 10/10/2025
+  useEffect(() => {
+    (async () => {
+      try {
+        if (!activeId) {
+          setCatalog([]);
+          return;
+        }
+        const url = new URL('/api/v1/category', window.location.origin);
+        url.searchParams.set('clientId', activeId);
+        const res = await fetch(url.toString(), { cache: 'no-store' });
+        if (!res.ok) throw new Error('Failed to load category -- Editing task');
+        const data: Array<{ name: string; slug: string }> = await res.json();
+        setCatalog(data.map((c) => ({ category: c.name, tasks: [] })));
+      } catch {
+        setCatalog([]);
+      }
+    })();
+  }, [activeId]);
+
+  // Load task suggestions when category changes
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!activeId || !category.trim()) {
+        setCareItemOptions([]);
+        return;
+      }
+      setLoadingTasks(true);
+      try {
+        const res = await fetch(
+          `/api/v1/task_catalog?clientId=${encodeURIComponent(activeId)}&category=${encodeURIComponent(category)}`,
+          { cache: 'no-store' }
+        );
+        if (!res.ok) throw new Error('failed');
+        const data: { category: string; tasks: CareItemOption[] } =
+          await res.json();
+        const seen = new Set<string>();
+        const uniq: CareItemOption[] = [];
+        for (const t of data.tasks ?? []) {
+          const norm = t.label.trim().toLowerCase().replace(/\s+/g, ' ');
+          if (seen.has(norm)) continue;
+          seen.add(norm);
+          uniq.push({ label: t.label, slug: t.slug });
+        }
+        if (!cancelled) setCareItemOptions(uniq);
+      } catch {
+        if (!cancelled) setCareItemOptions([]);
+      } finally {
+        if (!cancelled) setLoadingTasks(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeId, category]);
+
+  // When task is chosen: push to /edit/[slug]
+  const handleTaskPick = async (value: string) => {
+    setLabel(value);
+    const option = careItemOptions.find((t) => t.label === value);
+    if (option?.slug) {
+      router.push(
+        `/management_dashboard/manage_care_item/edit/${encodeURIComponent(option.slug)}`
+      );
+      return;
+    }
+
+    if (activeId && category && value) {
+      const url = new URL('/api/v1/care_item', window.location.origin);
+      url.searchParams.set('clientId', activeId);
+      url.searchParams.set('category', category);
+      url.searchParams.set('q', value);
+      url.searchParams.set('limit', '1');
+      const res = await fetch(url.toString(), { cache: 'no-store' });
+      if (res.ok) {
+        const hits: Array<{ slug: string }> = await res.json();
+        if (hits[0]?.slug) {
+          router.push(
+            `/management_dashboard/manage_care_item/edit/${encodeURIComponent(hits[0].slug)}`
+          );
+          return;
+        }
+      }
+      alert('Could not find a matching care item to edit.');
+    }
+  };
+
   const statusOptions = useMemo(
     () => ['in progress', 'Completed', 'Not started', 'Paused', 'Cancelled'],
     []
@@ -150,71 +206,23 @@ export default function AddTaskPage() {
     dangerHover: '#a40f0f',
   };
 
-  // ---- keep dropdown logic: Category → Task name ----
-  const catalog = useMemo(() => getTaskCatalogFE(), []);
-  const tasksInCategory = useMemo(() => {
-    const entry = catalog.find((c) => c.category === category);
-    return entry ? entry.tasks : [];
-  }, [catalog, category]);
-
-  const onDelete = () => {
-    if (!confirm('Discard this new task and go back?')) return;
-    router.back();
-  };
-
-  const onCreate = () => {
-    const name = label.trim();
-    if (!name) {
-      alert('Please enter the task name.');
-      return;
-    }
-    if (!category.trim()) {
-      alert('Please select a category.');
-      return;
-    }
-    const tasks = loadTasks();
-
-    const base = slugify(name) || 'task';
-    let slug = base;
-    let i = 2;
-    while (tasks.some((t) => t.slug === slug)) slug = `${base}-${i++}`;
-
-    const countNum = parseInt(frequencyCountStr, 10);
-    const hasFrequency = Number.isFinite(countNum) && countNum > 0;
-    const frequencyDays = hasFrequency
-      ? toDays(countNum, frequencyUnit)
-      : undefined;
-    const legacyStr = hasFrequency
-      ? `${countNum} ${frequencyUnit}${countNum > 1 ? 's' : ''}`
-      : undefined;
-
-    const newTask: Task = {
-      clientName: activeName,
-      label: name,
-      slug,
-      status: status.trim(),
-      category: category.trim(),
-      frequencyCount: hasFrequency ? countNum : undefined,
-      frequencyUnit: hasFrequency ? frequencyUnit : undefined,
-      frequencyDays,
-      dateFrom: dateFrom || undefined,
-      dateTo: dateTo || undefined,
-      frequency: legacyStr,
-      lastDone: dateFrom && dateTo ? `${dateFrom} to ${dateTo}` : '',
-      deleted: false,
-    };
-
-    saveTasks([...(tasks || []), newTask]);
-    router.push('/calendar_dashboard');
-  };
-
   const onLogoClick = () => {
     router.push('/empty_dashboard');
   };
 
+  const onClientChange = (id: string) => {
+    const c = clients.find((x) => x.id === id);
+    if (!id) resetClient();
+    else handleClientChange(id, c?.name || '');
+    // reset selection on client change
+    setCategory('');
+    setLabel('');
+    setCareItemOptions([]);
+  };
+
   return (
     <DashboardChrome
-      page="care-edit"
+      page="care-edit-picker"
       clients={clients}
       activeClientId={activeId}
       activeClientName={activeName}
@@ -247,9 +255,10 @@ export default function AddTaskPage() {
             {/* Category (dropdown) */}
             <Field label="Category">
               <select
+                key={activeId || 'no-client'}
                 value={category}
                 onChange={(e) => {
-                  setCategory(e.target.value);
+                  setCategory(e.target.value.trim());
                   setLabel(''); // reset task when category changes
                 }}
                 className="w-full rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black"
@@ -265,21 +274,35 @@ export default function AddTaskPage() {
 
             {/* Task name (dropdown depends on category) */}
             <Field label="Task Name">
-              <select
-                value={label}
-                onChange={(e) => setLabel(e.target.value)}
-                disabled={!category}
-                className="w-full rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black disabled:opacity-60"
-              >
-                <option value="">
-                  {category ? 'Select a task…' : 'Choose a category first'}
-                </option>
-                {tasksInCategory.map((t: { slug: string; label: string }) => (
-                  <option key={t.slug} value={t.label}>
-                    {t.label}
+              {loadingTasks ? (
+                <div className="text-sm opacity-70">Loading tasks…</div>
+              ) : careItemOptions.length > 0 ? (
+                <select
+                  value={label}
+                  onChange={(e) => handleTaskPick(e.target.value)}
+                  disabled={!category}
+                  className="w-full rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black disabled:opacity-60"
+                >
+                  <option value="">
+                    {category ? 'Select a task…' : 'Choose a category first'}
                   </option>
-                ))}
-              </select>
+                  {careItemOptions.map((t) => (
+                    <option key={t.slug} value={t.label}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  value={label}
+                  onChange={(e) => setLabel(e.target.value)}
+                  className="w-full rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black"
+                  placeholder={
+                    category ? 'Enter a task name…' : 'Choose a category first'
+                  }
+                  disabled={!category}
+                />
+              )}
             </Field>
 
             <Field label="Date Range">
@@ -353,7 +376,7 @@ export default function AddTaskPage() {
             {/* Footer buttons */}
             <div className="pt-2 flex items-center justify-center gap-30">
               <button
-                onClick={onDelete}
+                //onClick={onDelete}
                 className="rounded-full text-white text-xl font-semibold px-6.5 py-2.5 shadow"
                 style={{ backgroundColor: palette.danger }}
               >
@@ -366,7 +389,7 @@ export default function AddTaskPage() {
                 Cancel
               </button>
               <button
-                onClick={onCreate}
+                //onClick={onSave}
                 className="rounded-full bg-[#F39C6B] hover:bg-[#ef8a50] text-[#1c130f] text-xl font-bold px-7.5 py-2.5 shadow"
               >
                 Save

@@ -5,16 +5,16 @@
  */
 
 export type FAQSection = {
-  id: string;                 // anchor id (e.g., "faq-login", "family-client-schedule")
-  title: string;              // section title
-  subtitle?: string;          // optional small subtitle
-  body?: string | string[];   // Q&A paragraphs (e.g., "Q: ...", "A: ...")
-  image?: string;             // optional screenshot filename (NOT rendered)
-  table?: string[][];         // optional simple table (kept for compatibility)
+  id: string; // anchor id (e.g., "faq-login", "family-client-schedule")
+  title: string; // section title
+  subtitle?: string; // optional small subtitle
+  body?: string | string[]; // Q&A paragraphs (e.g., "Q: ...", "A: ...")
+  image?: string; // optional screenshot filename (NOT rendered)
+  table?: string[][]; // optional simple table (kept for compatibility)
 };
 
 export type FAQPage = {
-  title: string;              // page title shown in the panel header
+  title: string; // page title shown in the panel header
   sections: FAQSection[];
 };
 
@@ -25,123 +25,121 @@ export type FAQBook = Record<string, FAQPage>;
  * ==================================================================== */
 
 export const faqData: FAQBook = {
+  /* =========================
+   * PRE-LOGIN (split into multiple pages, titles cleaned)
+   * ========================= */
 
-/* =========================
-* PRE-LOGIN (split into multiple pages, titles cleaned)
-* ========================= */
+  // Login
+  'prelogin/login': {
+    title: 'Login',
+    sections: [
+      {
+        id: 'login',
+        title: 'Login to your account',
+        body: [
+          'Q: How do I log in?',
+          'A: On the login page, enter your email and password, then click “Sign In”.',
+          'Q: What if I forgot my password?',
+          'A: Click “Forgot password” to receive a reset link by email.',
+        ],
+      },
+    ],
+  },
 
-// Login
-'prelogin/login': {
-  title: 'Login',
-  sections: [
-    {
-      id: 'login',
-      title: 'Login to your account',
-      body: [
-        'Q: How do I log in?',
-        'A: On the login page, enter your email and password, then click “Sign In”.',
-        'Q: What if I forgot my password?',
-        'A: Click “Forgot password” to receive a reset link by email.',
-      ],
-    },
-  ],
-},
+  // Role select
+  'prelogin/role': {
+    title: 'Role Selection',
+    sections: [
+      {
+        id: 'role-select',
+        title: 'Select a role (on /signup)',
+        body: [
+          'Q: What happens after I click “Sign Up”?',
+          'A: You’ll be asked to choose a role: Family/POA, Carer, or Management.',
+          'Q: Which role should I choose?',
+          'A: If you want care to look after your client, choose Family/POA. If you are a care worker in an organisation and got an invite code from your manager, choose Carer. If you manage an organisation, choose Management.',
+          'Q: Can I change my role later?',
+          'A: You can sign out and sign up again with a different role, or use separate accounts. But once an account is created, its role cannot be changed.',
+        ],
+      },
+    ],
+  },
 
-// Role select
-'prelogin/role': {
-  title: 'Role Selection',
-  sections: [
-    {
-      id: 'role-select',
-      title: 'Select a role (on /signup)',
-      body: [
-        'Q: What happens after I click “Sign Up”?',
-        'A: You’ll be asked to choose a role: Family/POA, Carer, or Management.',
-        'Q: Which role should I choose?',
-        'A: If you want care to look after your client, choose Family/POA. If you are a care worker in an organisation and got an invite code from your manager, choose Carer. If you manage an organisation, choose Management.',
-        'Q: Can I change my role later?',
-        'A: You can sign out and sign up again with a different role, or use separate accounts. But once an account is created, its role cannot be changed.',
-      ],
-    },
-  ],
-},
+  // Family signup
+  'prelogin/signup-family': {
+    title: 'Sign Up — Family / POA',
+    sections: [
+      {
+        id: 'signup-family',
+        title: 'Sign Up — Family / POA',
+        body: [
+          'Q: How do I sign up as Family/POA?',
+          'A: On the role selection screen, choose “Family/POA” and fill in your details.',
+          'Q: What does “Submit” do?',
+          'A: It creates your Family/POA account and redirects you to the Login page, then click on "Login" to enter.',
+          'Q: What if my email is already registered?',
+          'A: Enter your password directly to login. If you forgot your password, go back to the login page and click on “Forgot password” and you will receive an email with instructions to reset it.',
+        ],
+      },
+    ],
+  },
 
-// Family signup
-'prelogin/signup-family': {
-  title: 'Sign Up — Family / POA',
-  sections: [
-    {
-      id: 'signup-family',
-      title: 'Sign Up — Family / POA',
-      body: [
-        'Q: How do I sign up as Family/POA?',
-        'A: On the role selection screen, choose “Family/POA” and fill in your details.',
-        'Q: What does “Submit” do?',
-        'A: It creates your Family/POA account and redirects you to the Login page, then click on "Login" to enter.',
-        'Q: What if my email is already registered?',
-        'A: Enter your password directly to login. If you forgot your password, go back to the login page and click on “Forgot password” and you will receive an email with instructions to reset it.',
-      ],
-    },
-  ],
-},
+  // Carer signup
+  'prelogin/signup-carer': {
+    title: 'Sign Up — Carer',
+    sections: [
+      {
+        id: 'signup-carer',
+        title: 'Sign Up — Carer',
+        body: [
+          'Q: How do I sign up as Carer?',
+          'A: On the role selection screen, choose “Carer” and complete the registration form.',
+          'Q: What does “Submit” do?',
+          'A: It finalises your Carer account and opens your dashboard.',
+          'Q: Can I see all clients?',
+          'A: Carers only see clients assigned by the organisation.',
+        ],
+      },
+    ],
+  },
 
-// Carer signup
-'prelogin/signup-carer': {
-  title: 'Sign Up — Carer',
-  sections: [
-    {
-      id: 'signup-carer',
-      title: 'Sign Up — Carer',
-      body: [
-        'Q: How do I sign up as Carer?',
-        'A: On the role selection screen, choose “Carer” and complete the registration form.',
-        'Q: What does “Submit” do?',
-        'A: It finalises your Carer account and opens your dashboard.',
-        'Q: Can I see all clients?',
-        'A: Carers only see clients assigned by the organisation.',
-      ],
-    },
-  ],
-},
+  // Management: choose org flow
+  'prelogin/mgmt-org-choice': {
+    title: 'Management — Create or Join Organisation',
+    sections: [
+      {
+        id: 'mgmt-org-choice',
+        title: 'Management — Create or Join an Organisation',
+        body: [
+          'Q: I chose Management — what’s next?',
+          'A: You’ll pick whether to create a new organisation or join an existing one using an invite code.',
+          'Q: What does “Create” do?',
+          'A: Registers the organisation you manage in our system.',
+          'Q: What does “Join” do?',
+          'A: Lets you enter an invite code to join an existing organisation set up by another admin.',
+        ],
+      },
+    ],
+  },
 
-// Management: choose org flow
-'prelogin/mgmt-org-choice': {
-  title: 'Management — Create or Join Organisation',
-  sections: [
-    {
-      id: 'mgmt-org-choice',
-      title: 'Management — Create or Join an Organisation',
-      body: [
-        'Q: I chose Management — what’s next?',
-        'A: You’ll pick whether to create a new organisation or join an existing one using an invite code.',
-        'Q: What does “Create” do?',
-        'A: Registers the organisation you manage in our system.',
-        'Q: What does “Join” do?',
-        'A: Lets you enter an invite code to join an existing organisation set up by another admin.',
-      ],
-    },
-  ],
-},
-
-// Management signup
-'prelogin/signup-management': {
-  title: 'Sign Up — Management',
-  sections: [
-    {
-      id: 'signup-management',
-      title: 'Sign Up — Management',
-      body: [
-        'Q: How do I sign up as Management?',
-        'A: After choosing Management, complete the organisation details (create or join).',
-        'Q: What does “Submit” do?',
-        'A: It registers your organisation account and enables management features.',
-        'Q: Can I invite other management users?',
-        'A: Yes. Once logged in, go to your Organisation page to invite other managers and carers in your organisation.',
-      ],
-    },
-  ],
-},
-
+  // Management signup
+  'prelogin/signup-management': {
+    title: 'Sign Up — Management',
+    sections: [
+      {
+        id: 'signup-management',
+        title: 'Sign Up — Management',
+        body: [
+          'Q: How do I sign up as Management?',
+          'A: After choosing Management, complete the organisation details (create or join).',
+          'Q: What does “Submit” do?',
+          'A: It registers your organisation account and enables management features.',
+          'Q: Can I invite other management users?',
+          'A: Yes. Once logged in, go to your Organisation page to invite other managers and carers in your organisation.',
+        ],
+      },
+    ],
+  },
 
   /* =========================
    * FAMILY (post-login)
@@ -356,39 +354,36 @@ export const faqData: FAQBook = {
 
   // Family / POA — Update Details
   'family/update-details': {
-  title: 'Family / POA — Update Details',
-  sections: [
-    {
-      id: 'family-update-details',
-      title: 'Manage your account details',
-      body: [
-            'Q: What does the "Update Details" page do?',
-            'A: It lets you change your email and password for this Family/POA account.',
-            'Q: What is this password for?',
-            'A: It’s the password for this Family/POA account, use to log in to this account and manage your client.',
-            'Q: Whose email address is this?',
-            'A: It’s the email you (as a Family/POA) use to log in to this account and manage your client.',
-      ],
-    },
-  ],
-},
-
-
-'family/staff-schedule': {
-    title: 'Family — Staff Schedule',
+    title: 'Family / POA — Update Details',
     sections: [
-     {
-        id: 'family-staff-schedule',
-        title: 'Staff Schedules',
+      {
+        id: 'family-update-details',
+        title: 'Manage your account details',
         body: [
-            'Q: What does the "Staff Schedule" page do?',
-            'A: It lets you view and manage the schedules of all staff members.',
+          'Q: What does the "Update Details" page do?',
+          'A: It lets you change your email and password for this Family/POA account.',
+          'Q: What is this password for?',
+          'A: It’s the password for this Family/POA account, use to log in to this account and manage your client.',
+          'Q: Whose email address is this?',
+          'A: It’s the email you (as a Family/POA) use to log in to this account and manage your client.',
         ],
       },
     ],
   },
 
-  
+  'family/staff-schedule': {
+    title: 'Family — Staff Schedule',
+    sections: [
+      {
+        id: 'family-staff-schedule',
+        title: 'Staff Schedules',
+        body: [
+          'Q: What does the "Staff Schedule" page do?',
+          'A: It lets you view and manage the schedules of all staff members.',
+        ],
+      },
+    ],
+  },
 
   /* =========================
    * CARER (post-login)
@@ -463,12 +458,12 @@ export const faqData: FAQBook = {
         id: 'carer-update-details',
         title: 'Manage your account details',
         body: [
-            'Q: What does the "Update Details" page do?',
-            'A: It lets you change your email and password for this Carer account.',
-            'Q: What is this password for?',
-            'A: It’s the password for this Carer account, use to log in to this account and manage your client.',
-            'Q: Whose email address is this?',
-            'A: It’s the email you (as a Carer) use to log in to this account and manage your client.',
+          'Q: What does the "Update Details" page do?',
+          'A: It lets you change your email and password for this Carer account.',
+          'Q: What is this password for?',
+          'A: It’s the password for this Carer account, use to log in to this account and manage your client.',
+          'Q: Whose email address is this?',
+          'A: It’s the email you (as a Carer) use to log in to this account and manage your client.',
         ],
       },
     ],
@@ -513,19 +508,16 @@ export const faqData: FAQBook = {
   'carer/staff-schedule': {
     title: 'Carer — Staff Schedule',
     sections: [
-     {
+      {
         id: 'carer-staff-schedule',
         title: 'Staff Schedules',
         body: [
-            'Q: What does the "Staff Schedule" page do?',
-            'A: It lets you view and manage the schedules of all staff members.',
+          'Q: What does the "Staff Schedule" page do?',
+          'A: It lets you view and manage the schedules of all staff members.',
         ],
       },
     ],
   },
-  
-
-
 
   /* =========================
    * MANAGEMENT (post-login)
@@ -689,36 +681,36 @@ export const faqData: FAQBook = {
     ],
   },
 
-    // Management — Update Details
-    'management/update-details': {
+  // Management — Update Details
+  'management/update-details': {
     title: 'Management — Update Details',
     sections: [
-     {
+      {
         id: 'management-update-details',
         title: 'Manage your account details',
         body: [
-            'Q: What does the "Update Details" page do?',
-            'A: It lets you change your email and password for this Management account.',
-            'Q: What is this password for?',
-            'A: It’s the password for this Management account, use to log in to this account and manage your client.',
-            'Q: Whose email address is this?',
-            'A: It’s the email you (as a Management) use to log in to this account and manage your client.',
+          'Q: What does the "Update Details" page do?',
+          'A: It lets you change your email and password for this Management account.',
+          'Q: What is this password for?',
+          'A: It’s the password for this Management account, use to log in to this account and manage your client.',
+          'Q: Whose email address is this?',
+          'A: It’s the email you (as a Management) use to log in to this account and manage your client.',
         ],
       },
     ],
   },
 
-    'management/staff-schedule': {
+  'management/staff-schedule': {
     title: 'Management — Staff Schedule',
     sections: [
-     {
+      {
         id: 'management-staff-schedule',
         title: 'Manage staff schedules',
         body: [
-            'Q: What does the "Staff Schedule" page do?',
-            'A: It lets you view and manage the schedules of all staff members.',
-            'Q: How do I add a new staff member?',
-            'A: Click the "Add Staff" button and fill in the required details.',
+          'Q: What does the "Staff Schedule" page do?',
+          'A: It lets you view and manage the schedules of all staff members.',
+          'Q: How do I add a new staff member?',
+          'A: Click the "Add Staff" button and fill in the required details.',
         ],
       },
     ],
@@ -727,17 +719,16 @@ export const faqData: FAQBook = {
   'management/staff-list': {
     title: 'Management — Staff List',
     sections: [
-     {
+      {
         id: 'management-staff-list',
         title: 'View staff members',
         body: [
-            'Q: What does the "Staff List" page do?',
-            'A: It lets you view and manage the details of all staff members.',
-            'Q: How do I add a new staff member?',
-            'A: Click the "Add Staff" button and fill in the required details.',
+          'Q: What does the "Staff List" page do?',
+          'A: It lets you view and manage the details of all staff members.',
+          'Q: How do I add a new staff member?',
+          'A: Click the "Add Staff" button and fill in the required details.',
         ],
       },
     ],
   },
-
 };
