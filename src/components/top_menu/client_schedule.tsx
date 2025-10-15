@@ -35,6 +35,7 @@ type PageKey =
   | 'request-form'
   | 'request-log'
   | 'care-edit'
+  | 'care-edit-picker'
   | 'care-add'
   | 'category-cost'
   | 'client-list'
@@ -83,8 +84,7 @@ type ChromeProps = {
 };
 
 const ROUTES = {
-  clientSchedule: '/calendar_dashboard',
-  staffSchedule: '/management_dashboard/staff_schedule',
+  schedule: '/calendar_dashboard',
   budget: '/calendar_dashboard/budget_report',
   transactions: '/calendar_dashboard/transaction_history',
   requestForm: '/family_dashboard/request_of_change_page',
@@ -92,14 +92,13 @@ const ROUTES = {
   careEdit: '/management_dashboard/manage_care_item/edit',
   careAdd: '/management_dashboard/manage_care_item/add',
   clientList: '/management_dashboard/clients_list',
-  staffList: '/management_dashboard/staff_list',
   peopleList: '/family_dashboard/people_list',
   defaultHome: '/empty_dashboard',
   accountUpdate: '/calendar_dashboard/update_details',
   homeByRole: '/empty_dashboard',
   profile: '/client_profile',
   organisationAccess: (clientId: string) =>
-    `/family_dashboard/manage_org_access/${clientId}`,
+    '/family_dashboard/manage_org_access/${clientId}',
   newTransaction: '/calendar_dashboard/budget_report/add_transaction',
 };
 
@@ -152,8 +151,8 @@ function activeUnderline(
     role === 'family'
       ? 'people-list'
       : role === 'management'
-      ? 'client-list'
-      : null;
+        ? 'client-list'
+        : null;
 
   const isProfileMapped =
     page === 'profile' && key === (profileMappedTarget as PageKey);
@@ -211,6 +210,15 @@ export default function DashboardChrome({
     resetClient,
   } = useActiveClient();
 
+  const effectiveClientId =
+    (typeof activeClientId !== 'undefined'
+      ? activeClientId
+      : activeClient.id) ?? '';
+  const effectiveClientName =
+    (typeof activeClientName !== 'undefined'
+      ? activeClientName
+      : activeClient.name) ?? '';
+
   // Load viewer role once
   useEffect(() => {
     const loadRole = async () => {
@@ -254,10 +262,10 @@ export default function DashboardChrome({
     (page === 'staff-list'
       ? 'Staff List'
       : isFamily
-      ? 'Client Schedule'
-      : isCarer
-      ? 'Carer Dashboard'
-      : 'Client Schedule');
+        ? 'Client Schedule'
+        : isCarer
+          ? 'Carer Dashboard'
+          : 'Client Schedule');
 
   // -------- Banner picker visibility --------
   // Now: ALWAYS visible for all roles (carer/family/management), unless explicitly hidden via prop.
@@ -268,13 +276,13 @@ export default function DashboardChrome({
     !navItems || navItems.length === 0
       ? []
       : isManagement
-      ? navItems
-      : navItems.filter(
-          (n) =>
-            // strip staff-only links for non-management
-            !/staff[-\s]*list/i.test(n.label) &&
-            !/management_dashboard/i.test(n.href)
-        );
+        ? navItems
+        : navItems.filter(
+            (n) =>
+              // strip staff-only links for non-management
+              !/staff[-\s]*list/i.test(n.label) &&
+              !/management_dashboard/i.test(n.href)
+          );
 
   // -------- Handlers --------
   const onSelectClientChange = (id: string) => {
@@ -564,7 +572,9 @@ export default function DashboardChrome({
               >
                 <option value="">{'- Select a client -'}</option>
                 {clients
-                  .filter((c) => (isManagement ? c.orgAccess === 'approved' : true))
+                  .filter((c) =>
+                    isManagement ? c.orgAccess === 'approved' : true
+                  )
                   .map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
@@ -596,7 +606,11 @@ export default function DashboardChrome({
                         : 'cursor-not-allowed opacity-60'
                     }`}
                     aria-label="Open client profile"
-                    title={activeClient.id ? 'Open client profile' : 'Select a client first'}
+                    title={
+                      activeClient.id
+                        ? 'Open client profile'
+                        : 'Select a client first'
+                    }
                   >
                     <Image
                       src="/default_profile.png"
@@ -626,7 +640,7 @@ export default function DashboardChrome({
 
           {/* Right: Print button (management on client-schedule) */}
           <div className="relative z-10 justify-self-end">
-            {page === 'client-schedule'  && (
+            {page === 'client-schedule' && (
               <button
                 onClick={handlePrint}
                 className="relative z-20 inline-flex items-center px-6 py-3 rounded-2xl border border-black/30 bg-white font-extrabold text-xl hover:bg-black/5"

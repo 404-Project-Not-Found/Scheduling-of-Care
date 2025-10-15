@@ -11,8 +11,7 @@
 
 import { setViewerRoleFE, type ViewerRole } from '@/lib/mock/mockApi';
 
-
-export async function mockSignIn(role: ViewerRole) { 
+export async function mockSignIn(role: ViewerRole) {
   try {
     setViewerRoleFE(role);
 

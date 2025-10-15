@@ -21,7 +21,7 @@
 
 'use client';
 
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import DashboardChrome from '@/components/top_menu/client_schedule';
@@ -67,6 +67,12 @@ type ClientTask = Task & {
   clientId?: string;
   comments?: string[];
   files?: string[];
+};
+
+type CalendarPanelProps = {
+  tasks: Task[];
+  onDateClick?: (date: string) => void;
+  onMonthYearChange?: (year: number, month: number) => void;
 };
 
 export default function Page() {
@@ -144,7 +150,7 @@ function ClientSchedule() {
   };
 
   /* ------------------------------ Tasks ----------------------------- */
-  const [selectedDate, setSelectedDate] = useState(''); // YYYY-MM-DD when a day is clicked
+  const [selectedDate, setSelectedDate] = useState('');
   const [tasks, setTasks] = useState<ClientTask[]>([]);
   const [selectedTask, setSelectedTask] = useState<ClientTask | null>(null);
 
@@ -188,9 +194,25 @@ function ClientSchedule() {
   /* --------------- Derived: filter by client and date --------------- */
   const noClientSelected = !activeClientId;
 
-  const tasksByClient: ClientTask[] = !activeClientId
-    ? []
-    : tasks.filter((t) => !t.clientId || t.clientId === activeClientId);
+  const tasksByClient: ClientTask[] = activeClientId
+    ? tasks.filter(
+        (t): t is ClientTask => (t.clientId ?? '') === activeClientId
+      )
+    : [];
+
+  function getDueISO(t: ClientTask): string {
+    return (t.nextDue ?? '').slice(0, 10);
+  }
+
+  const tasksForCalendar: ClientTask[] = tasksByClient.filter((t) => {
+    const due = getDueISO(t);
+    if (!due) return false;
+
+    if (selectedDate) return due === selectedDate;
+
+    const month = due.slice(0, 7);
+    return month === visibleMonth;
+  });
 
   // If a day is selected we filter by that day; otherwise it's the whole dataset for the visible month (handled in TasksPanel)
   const filteredTasks = selectedDate
@@ -199,7 +221,7 @@ function ClientSchedule() {
 
   /* ------------- Visible month/year coming from Calendar ------------- */
   // These are set whenever the calendar view (brown title) changes.
-  const [visibleYear, setVisibleYear] = useState<number | null>(null);  // e.g. 2025
+  const [visibleYear, setVisibleYear] = useState<number | null>(null); // e.g. 2025
   const [visibleMonth, setVisibleMonth] = useState<number | null>(null); // 1..12
 
   const MONTH_NAMES = useMemo(
@@ -225,11 +247,11 @@ function ClientSchedule() {
   // - Else if we know the current calendar month -> "All care items in <Month Year>"
   // - Fallback -> "Care Items"
   const titleParts = useMemo(() => {
-  // When a day is selected -> 2-line title: "Care items" + "on YYYY-MM-DD"
+    // When a day is selected -> 2-line title: "Care items" + "on YYYY-MM-DD"
     if (selectedDate) {
       return { main: 'Care items', sub: `on ${selectedDate}` };
     }
-  // Otherwise -> month scope: "All care items" + "in <Month Year>"
+    // Otherwise -> month scope: "All care items" + "in <Month Year>"
     if (visibleYear && visibleMonth) {
       return {
         main: 'All care items',
@@ -242,9 +264,11 @@ function ClientSchedule() {
 
   /* -------------------- RIGHT PANE: title search -------------------- */
   const [searchTerm, setSearchTerm] = useState('');
-  const tasksForRightPane = filteredTasks.filter((t) =>
-    t.title.toLowerCase().includes(searchTerm.trim().toLowerCase())
-  );
+  const tasksForRightPane = tasksForCalendar.filter((t) => {
+    const title = (t?.title ?? '').toLowerCase();
+    const q = (searchTerm ?? '').trim().toLowerCase();
+    return title.includes(q);
+  });
 
   /* ----------------------------- Actions ---------------------------- */
   const addComment = (taskId: string, comment: string) => {
@@ -291,10 +315,6 @@ function ClientSchedule() {
     router.push('/icon_dashboard');
   };
 
-  /* ------------------------------ Render ---------------------------- */
-  // Cast once so we can pass onMonthYearChange safely even if your CalendarPanel.d.ts isn't updated yet.
-  const CalendarPanelAny = CalendarPanel as any;
-
   return (
     <DashboardChrome
       page="client-schedule"
@@ -312,13 +332,11 @@ function ClientSchedule() {
         {/* LEFT: Calendar */}
         <section className="flex-1 bg-white overflow-auto p-4">
           <CalendarPanel
-            tasks={filteredTasks /* empty when no client is selected */}
+            tasks={tasksForCalendar}
             onDateClick={(date: string) => setSelectedDate(date)}
-            // When the calendar's brown title (view) changes, update month/year
-            // and clear any selected day so the right title shows the month scope.
-            onMonthYearChange={(y: number, m: number) => {
-              setVisibleYear(y);
-              setVisibleMonth(m);
+            onMonthYearChange={(year: number, month: number) => {
+              setVisibleYear(year);
+              setVisibleMonth(month);
             }}
           />
         </section>
@@ -336,13 +354,13 @@ function ClientSchedule() {
                   <h2 className="leading-tight">
                     {/* First line (big) */}
                     <span className="block text-3xl md:text-4xl font-extrabold">
-                        {titleParts.main}
+                      {titleParts.main}
                     </span>
                     {/* Second line (smaller) */}
                     {titleParts.sub && (
-                        <span className="block text-lg md:text-lg font-semibold text-black/70">
+                      <span className="block text-lg md:text-lg font-semibold text-black/70">
                         {titleParts.sub}
-                        </span>
+                      </span>
                     )}
                   </h2>
                   <input

@@ -1,10 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import {
-  getUsersWithAccessFE,
-  type AccessUser,
-} from '@/lib/mock/mockApi';
+import { getUsersWithAccessFE, type AccessUser } from '@/lib/mock/mockApi';
 
 export default function AccessMenu({ clientId }: { clientId?: string | null }) {
   const [users, setUsers] = useState<AccessUser[]>([]);
@@ -23,7 +20,9 @@ export default function AccessMenu({ clientId }: { clientId?: string | null }) {
       }
     }
     load();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [clientId]);
 
   return (

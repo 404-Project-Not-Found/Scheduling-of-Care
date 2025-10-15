@@ -192,7 +192,10 @@ function RequestLogInner() {
   };
 
   /** Inline status change (Management only) */
-  const handleStatusChange = (reqId: string, next: 'Pending' | 'Implemented') => {
+  const handleStatusChange = (
+    reqId: string,
+    next: 'Pending' | 'Implemented'
+  ) => {
     if (!isManagement) return;
     setRequests((prev) =>
       prev.map((r) =>

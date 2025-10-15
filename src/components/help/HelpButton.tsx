@@ -25,9 +25,15 @@ function useViewerRoleResolved(pathname: string): Role {
   // 1) hints from window / storage
   useEffect(() => {
     try {
-      // @ts-ignore
-      const hinted = typeof window !== 'undefined' ? window.__APP_ROLE__ : undefined;
-      if (hinted === 'family' || hinted === 'carer' || hinted === 'management') {
+      const hinted =
+        typeof window !== 'undefined'
+          ? (window as unknown as { __APP_ROLE__?: Role }).__APP_ROLE__
+          : undefined;
+      if (
+        hinted === 'family' ||
+        hinted === 'carer' ||
+        hinted === 'management'
+      ) {
         setRole(hinted);
         return;
       }
@@ -42,7 +48,9 @@ function useViewerRoleResolved(pathname: string): Role {
           return;
         }
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   // 2) async (mock/real) → fallback to path inference
@@ -54,15 +62,21 @@ function useViewerRoleResolved(pathname: string): Role {
         if (!alive) return;
         if (r === 'family' || r === 'carer' || r === 'management') {
           setRole(r);
-          try { sessionStorage.setItem('role', r); } catch {}
-          try { (window as any).__APP_ROLE__ = r; } catch {}
+          try {
+            sessionStorage.setItem('role', r);
+          } catch {}
+          try {
+            (window as unknown as { __APP_ROLE__?: Role }).__APP_ROLE__ = r;
+          } catch {}
           return;
         }
       } catch {}
       if (!alive) return;
       setRole(resolveRoleByPath(pathname));
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [pathname]); // always re-check on path change
 
   return role ?? resolveRoleByPath(pathname);
@@ -93,14 +107,16 @@ function resolveRoleByPath(pathname: string): Role {
     p.startsWith('/icon_dashboard') ||
     p.startsWith('/reset_password') ||
     p.startsWith('/reset_password_link')
-  ) return 'management';
+  )
+    return 'management';
 
   // Family hints
   if (
     p.startsWith('/calendar_dashboard') ||
     p.startsWith('/client_profile') ||
     p.startsWith('/family_dashboard')
-  ) return 'family';
+  )
+    return 'family';
 
   // Carer hint
   if (p.includes('/carer')) return 'carer';
@@ -114,10 +130,14 @@ function isPreLoginPath(pathname: string): boolean {
   // Login-related routes
   if (
     p === '/' ||
-    p === '/login' || p.startsWith('/login') ||
-    p === '/signin' || p.startsWith('/signin') ||
-    p.startsWith('/auth/login') || p.startsWith('/auth/signin')
-  ) return true;
+    p === '/login' ||
+    p.startsWith('/login') ||
+    p === '/signin' ||
+    p.startsWith('/signin') ||
+    p.startsWith('/auth/login') ||
+    p.startsWith('/auth/signin')
+  )
+    return true;
 
   // Your actual route: /role (role selection main page + its subroutes)
   if (p === '/role' || p.startsWith('/role')) return true;
@@ -127,13 +147,20 @@ function isPreLoginPath(pathname: string): boolean {
 
   // Backward-compatible aliases (optional)
   if (
-    p === '/signup' || p.startsWith('/signup') ||
-    p === '/register' || p.startsWith('/register') ||
-    p === '/create-account' || p.startsWith('/create-account') ||
-    p === '/choose-role' || p.startsWith('/choose-role') ||
-    p === '/role-selection' || p.startsWith('/role-selection') ||
-    p === '/sign-up' || p.startsWith('/sign-up')
-  ) return true;
+    p === '/signup' ||
+    p.startsWith('/signup') ||
+    p === '/register' ||
+    p.startsWith('/register') ||
+    p === '/create-account' ||
+    p.startsWith('/create-account') ||
+    p === '/choose-role' ||
+    p.startsWith('/choose-role') ||
+    p === '/role-selection' ||
+    p.startsWith('/role-selection') ||
+    p === '/sign-up' ||
+    p.startsWith('/sign-up')
+  )
+    return true;
 
   return false;
 }
@@ -153,19 +180,25 @@ function isPreLoginPath(pathname: string): boolean {
  * - /organisation* → no org/create|join → faq-mgmt-org-choice;
  *                    otherwise → faq-signup-management
  */
-function resolvePreLogin(pathname: string, search: URLSearchParams): Target | null {
+function resolvePreLogin(
+  pathname: string,
+  search: URLSearchParams
+): Target | null {
   const p = (pathname || '/').toLowerCase();
   const role = (search.get('role') || '').toLowerCase();
-  const org  = (search.get('org')  || '').toLowerCase();
+  const org = (search.get('org') || '').toLowerCase();
 
   if (!isPreLoginPath(p)) return null;
 
   // A) Login-related → prelogin/login
   if (
     p === '/' ||
-    p === '/login' || p.startsWith('/login') ||
-    p === '/signin' || p.startsWith('/signin') ||
-    p.startsWith('/auth/login') || p.startsWith('/auth/signin')
+    p === '/login' ||
+    p.startsWith('/login') ||
+    p === '/signin' ||
+    p.startsWith('/signin') ||
+    p.startsWith('/auth/login') ||
+    p.startsWith('/auth/signin')
   ) {
     return { pageKey: 'prelogin/login', sectionId: 'login' };
   }
@@ -174,11 +207,20 @@ function resolvePreLogin(pathname: string, search: URLSearchParams): Target | nu
   if (p === '/role' || p.startsWith('/role')) {
     if (!role) return { pageKey: 'prelogin/role', sectionId: 'role-select' };
 
-    if (role === 'family') return { pageKey: 'prelogin/signup-family', sectionId: 'signup-family' };
-    if (role === 'carer')  return { pageKey: 'prelogin/signup-carer',  sectionId: 'signup-carer'  };
+    if (role === 'family')
+      return { pageKey: 'prelogin/signup-family', sectionId: 'signup-family' };
+    if (role === 'carer')
+      return { pageKey: 'prelogin/signup-carer', sectionId: 'signup-carer' };
     if (role === 'management') {
-      if (!org) return { pageKey: 'prelogin/mgmt-org-choice', sectionId: 'mgmt-org-choice' };
-      return { pageKey: 'prelogin/signup-management', sectionId: 'signup-management' };
+      if (!org)
+        return {
+          pageKey: 'prelogin/mgmt-org-choice',
+          sectionId: 'mgmt-org-choice',
+        };
+      return {
+        pageKey: 'prelogin/signup-management',
+        sectionId: 'signup-management',
+      };
     }
     return { pageKey: 'prelogin/role', sectionId: 'role-select' };
   }
@@ -187,18 +229,33 @@ function resolvePreLogin(pathname: string, search: URLSearchParams): Target | nu
   if (p === '/organisation' || p.startsWith('/organisation')) {
     const inCreateJoin = /\/organisation\/(create|join)/.test(p);
     if (!inCreateJoin && !org) {
-      return { pageKey: 'prelogin/mgmt-org-choice', sectionId: 'mgmt-org-choice' };
+      return {
+        pageKey: 'prelogin/mgmt-org-choice',
+        sectionId: 'mgmt-org-choice',
+      };
     }
-    return { pageKey: 'prelogin/signup-management', sectionId: 'signup-management' };
+    return {
+      pageKey: 'prelogin/signup-management',
+      sectionId: 'signup-management',
+    };
   }
 
   // D) legacy /signup*
   if (p.startsWith('/signup')) {
-    if (role === 'family') return { pageKey: 'prelogin/signup-family', sectionId: 'signup-family' };
-    if (role === 'carer')  return { pageKey: 'prelogin/signup-carer',  sectionId: 'signup-carer'  };
+    if (role === 'family')
+      return { pageKey: 'prelogin/signup-family', sectionId: 'signup-family' };
+    if (role === 'carer')
+      return { pageKey: 'prelogin/signup-carer', sectionId: 'signup-carer' };
     if (role === 'management') {
-      if (!org) return { pageKey: 'prelogin/mgmt-org-choice', sectionId: 'mgmt-org-choice' };
-      return { pageKey: 'prelogin/signup-management', sectionId: 'signup-management' };
+      if (!org)
+        return {
+          pageKey: 'prelogin/mgmt-org-choice',
+          sectionId: 'mgmt-org-choice',
+        };
+      return {
+        pageKey: 'prelogin/signup-management',
+        sectionId: 'signup-management',
+      };
     }
     return { pageKey: 'prelogin/role', sectionId: 'role-select' };
   }
@@ -207,21 +264,26 @@ function resolvePreLogin(pathname: string, search: URLSearchParams): Target | nu
   return { pageKey: 'prelogin/role', sectionId: 'role-select' };
 }
 
-
-
 /* ----------------------- Post-login Route → FAQ tables ----------------------- */
 /** Helpers for robust path matching */
-const reBudget = /^\/calendar_dashboard\/(budget[_-]report|category[-_]cost)(\/|$)/i;
-const reTxn    = /^\/calendar_dashboard\/(transaction[_-]history|add[_-]tran|add[_-]transaction)(\/|$)/i;
+const reBudget =
+  /^\/calendar_dashboard\/(budget[_-]report|category[-_]cost)(\/|$)/i;
+const reTxn =
+  /^\/calendar_dashboard\/(transaction[_-]history|add[_-]tran|add[_-]transaction)(\/|$)/i;
 const reCalAny = /^\/calendar_dashboard(\/|$)/i;
 
 /** FAMILY */
 const familyMatchers: Matcher[] = [
-  (p) => reBudget.test(p)
+  (p) =>
+    reBudget.test(p)
       ? { pageKey: 'family/budget-report', sectionId: 'family-budget-report' }
       : null,
-  (p) => reTxn.test(p)
-      ? { pageKey: 'family/view-transaction', sectionId: 'family-view-transactions' }
+  (p) =>
+    reTxn.test(p)
+      ? {
+          pageKey: 'family/view-transaction',
+          sectionId: 'family-view-transactions',
+        }
       : null,
   (p) =>
     p.startsWith('/client_profile')
@@ -234,7 +296,10 @@ const familyMatchers: Matcher[] = [
   (p) =>
     p.startsWith('/family_dashboard/manage_organisation_access') ||
     p.startsWith('/family_dashboard/manage_org_access')
-      ? { pageKey: 'family/organisation-access', sectionId: 'family-organisation-access' }
+      ? {
+          pageKey: 'family/organisation-access',
+          sectionId: 'family-organisation-access',
+        }
       : null,
   (p) =>
     p.startsWith('/family_dashboard/request_of_change_page')
@@ -248,8 +313,12 @@ const familyMatchers: Matcher[] = [
     p.includes('/staff_schedule')
       ? { pageKey: 'family/staff-schedule', sectionId: 'family-staff-schedule' }
       : null,
-  (p) => reCalAny.test(p)
-      ? { pageKey: 'family/client-schedule', sectionId: 'family-client-schedule' }
+  (p) =>
+    reCalAny.test(p)
+      ? {
+          pageKey: 'family/client-schedule',
+          sectionId: 'family-client-schedule',
+        }
       : null,
   (p) =>
     p.startsWith('/icon_dashboard')
@@ -263,11 +332,16 @@ const carerMatchers: Matcher[] = [
     p.includes('/update_details')
       ? { pageKey: 'carer/update-details', sectionId: 'carer-update-details' }
       : null,
-  (p) => reBudget.test(p)
+  (p) =>
+    reBudget.test(p)
       ? { pageKey: 'carer/budget-report', sectionId: 'carer-budget-report' }
       : null,
-  (p) => reTxn.test(p)
-      ? { pageKey: 'carer/view-transactions', sectionId: 'carer-view-transactions' }
+  (p) =>
+    reTxn.test(p)
+      ? {
+          pageKey: 'carer/view-transactions',
+          sectionId: 'carer-view-transactions',
+        }
       : null,
   (p) =>
     p.startsWith('/client_profile')
@@ -281,7 +355,8 @@ const carerMatchers: Matcher[] = [
     p.includes('/staff_schedule')
       ? { pageKey: 'carer/staff-schedule', sectionId: 'carer-staff-schedule' }
       : null,
-  (p) => reCalAny.test(p)
+  (p) =>
+    reCalAny.test(p)
       ? { pageKey: 'carer/client-schedule', sectionId: 'carer-client-schedule' }
       : null,
   (p) =>
@@ -298,11 +373,17 @@ const managementMatchers: Matcher[] = [
       : null,
   (p) =>
     p.includes('/staff_schedule')
-      ? { pageKey: 'management/staff-schedule', sectionId: 'management-staff-schedule' }
+      ? {
+          pageKey: 'management/staff-schedule',
+          sectionId: 'management-staff-schedule',
+        }
       : null,
   (p) =>
     p.includes('/clients_list')
-      ? { pageKey: 'management/client-list', sectionId: 'management-client-list' }
+      ? {
+          pageKey: 'management/client-list',
+          sectionId: 'management-client-list',
+        }
       : null,
   (p) =>
     p.includes('/requests')
@@ -318,37 +399,64 @@ const managementMatchers: Matcher[] = [
       : null,
   (p) =>
     p.includes('/register_client')
-      ? { pageKey: 'management/register-client', sectionId: 'management-register-client' }
+      ? {
+          pageKey: 'management/register-client',
+          sectionId: 'management-register-client',
+        }
       : null,
   (p) =>
     p.includes('/old_organisation_access') || p.includes('/organisation')
-      ? { pageKey: 'management/organisation', sectionId: 'management-organisation' }
+      ? {
+          pageKey: 'management/organisation',
+          sectionId: 'management-organisation',
+        }
       : null,
   (p) =>
     p.includes('/request-log-page')
-      ? { pageKey: 'management/request-log', sectionId: 'management-request-log' }
+      ? {
+          pageKey: 'management/request-log',
+          sectionId: 'management-request-log',
+        }
       : null,
   (p) =>
     p.includes('/update_details')
-      ? { pageKey: 'management/update-details', sectionId: 'management-update-details' }
+      ? {
+          pageKey: 'management/update-details',
+          sectionId: 'management-update-details',
+        }
       : null,
 
   // ----- SPECIFIC CALENDAR SUBPAGES BEFORE GENERIC -----
-  (p) => reBudget.test(p)
-      ? { pageKey: 'management/budget-report', sectionId: 'management-budget-report' }
+  (p) =>
+    reBudget.test(p)
+      ? {
+          pageKey: 'management/budget-report',
+          sectionId: 'management-budget-report',
+        }
       : null,
-  (p) => reTxn.test(p)
-      ? { pageKey: 'management/view-transactions', sectionId: 'management-view-transactions' }
+  (p) =>
+    reTxn.test(p)
+      ? {
+          pageKey: 'management/view-transactions',
+          sectionId: 'management-view-transactions',
+        }
       : null,
 
   // Generic calendar fallback → client schedule
-  (p) => reCalAny.test(p)
-      ? { pageKey: 'management/client-schedule', sectionId: 'management-client-schedule' }
+  (p) =>
+    reCalAny.test(p)
+      ? {
+          pageKey: 'management/client-schedule',
+          sectionId: 'management-client-schedule',
+        }
       : null,
 
   (p) =>
     p.startsWith('/icon_dashboard')
-      ? { pageKey: 'management/dashboard', sectionId: 'management-dashboard-overview' }
+      ? {
+          pageKey: 'management/dashboard',
+          sectionId: 'management-dashboard-overview',
+        }
       : null,
 ];
 
@@ -377,13 +485,25 @@ function resolveByRoleAndPath(
   // 2) Fallbacks
   switch (role) {
     case 'family':
-      return { pageKey: 'family/dashboard', sectionId: 'family-dashboard-overview' };
+      return {
+        pageKey: 'family/dashboard',
+        sectionId: 'family-dashboard-overview',
+      };
     case 'carer':
-      return { pageKey: 'carer/dashboard', sectionId: 'carer-dashboard-overview' };
+      return {
+        pageKey: 'carer/dashboard',
+        sectionId: 'carer-dashboard-overview',
+      };
     case 'management':
-      return { pageKey: 'management/dashboard', sectionId: 'management-dashboard-overview' };
+      return {
+        pageKey: 'management/dashboard',
+        sectionId: 'management-dashboard-overview',
+      };
     default:
-      return { pageKey: 'family/dashboard', sectionId: 'family-dashboard-overview' };
+      return {
+        pageKey: 'family/dashboard',
+        sectionId: 'family-dashboard-overview',
+      };
   }
 }
 
@@ -408,13 +528,14 @@ export default function FloatingHelpButton() {
       title="Help"
       onClick={() =>
         isPreLogin
-          ? open(target.pageKey, target.sectionId, { allowedPageKeys: [target.pageKey] })
+          ? open(target.pageKey, target.sectionId, {
+              allowedPageKeys: [target.pageKey],
+            })
           : open(target.pageKey, target.sectionId)
       }
       className="fixed bottom-6 right-6 flex h-12 w-12 items-center justify-center rounded-full bg-[#F08479] text-white text-2xl font-bold shadow-md hover:shadow-lg hover:bg-[#E57266] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
     >
-      ?
-      <span className="sr-only">Help</span>
+      ?<span className="sr-only">Help</span>
     </button>
   );
 }

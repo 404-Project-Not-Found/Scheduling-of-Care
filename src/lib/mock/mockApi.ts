@@ -12,7 +12,7 @@
  *     - Role:    session/local storage
  * - Real backend mode:
  *     - Clients: /api/v1/clients, /api/v1/clients/:id
- *     - Tasks:   /api/v1/tasks
+ *     - Tasks:   /api/v1/care-item
  *     - Budget:  /api/v1/clients/:id/budget
  *     - Txns:    /api/v1/clients/:id/transactions
  */
@@ -341,7 +341,7 @@ export async function getTasksFE(): Promise<Task[]> {
   }
 
   // real backend
-  const res = await fetch('/api/v1/tasks', { cache: 'no-store' });
+  const res = await fetch('/api/v1/care-item', { cache: 'no-store' });
   if (!res.ok) throw new Error(`Failed to fetch tasks (${res.status})`);
   const data = await res.json();
   return Array.isArray(data) ? (data as Task[]) : [];
@@ -356,7 +356,7 @@ export async function saveTasksFE(tasks: Task[]): Promise<void> {
     return;
   }
 
-  const res = await fetch('/api/v1/tasks', {
+  const res = await fetch('/api/v1/care_item', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(tasks),
@@ -782,7 +782,7 @@ export async function saveRequestsFE(requests: RequestLog[]): Promise<void> {
 export type AccessUser = {
   id: string;
   name: string;
-  role: ViewerRole;      // reuse: 'family' | 'carer' | 'management'
+  role: ViewerRole; // reuse: 'family' | 'carer' | 'management'
 };
 
 /** Per-client mock users who can access this client's data */
@@ -831,14 +831,18 @@ const MOCK_USERS_BY_CLIENT: Record<string, AccessUser[]> = {
 };
 
 /** Fetch users who have access to a given client (mock or backend) */
-export async function getUsersWithAccessFE(clientId: string): Promise<AccessUser[]> {
+export async function getUsersWithAccessFE(
+  clientId: string
+): Promise<AccessUser[]> {
   if (isMock) {
     await new Promise((r) => setTimeout(r, 60));
     return MOCK_USERS_BY_CLIENT[clientId] ?? [];
   }
 
   // real backend (adjust endpoint to your API)
-  const res = await fetch(`/api/v1/clients/${clientId}/access`, { cache: 'no-store' });
+  const res = await fetch(`/api/v1/clients/${clientId}/access`, {
+    cache: 'no-store',
+  });
   if (!res.ok) return [];
   const data = await res.json();
   return Array.isArray(data) ? (data as AccessUser[]) : [];

@@ -95,7 +95,6 @@ function ClientProfilePageInner() {
   const [emergencyContact, setEmergencyContact] = useState('');
   const [address, setAddress] = useState('');
 
-
   const [loading, setLoading] = useState<boolean>(!!clientIdParam && !isNew);
   const [error, setError] = useState('');
 
@@ -508,7 +507,6 @@ function ClientProfilePageInner() {
                   />
                 )}
               </FormRow>
-
 
               {/* Notes */}
               <FormRow label="Notes">
