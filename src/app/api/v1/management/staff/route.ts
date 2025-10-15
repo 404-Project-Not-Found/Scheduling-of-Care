@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import User from '@/models/User';
+import Client from '@/models/Client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import mongoose from 'mongoose';
@@ -19,7 +20,20 @@ type StaffDoc = {
   role?: 'management' | 'carer';
   status?: 'active' | 'inactive';
   avatarUrl?: string;
+  org?: string;
 };
+
+interface OrgHistoryItem {
+  organisation: mongoose.Types.ObjectId;
+  status: 'pending' | 'approved' | 'revoked';
+}
+
+interface PopStaffDoc extends Omit<StaffDoc, 'org'> {
+  organisation?: {
+    _id: mongoose.Types.ObjectId;
+    name: string;
+  };
+}
 
 /**
  * Fetches all staff members for the authenticated user's organisation.
@@ -35,26 +49,53 @@ export async function GET() {
 
   await connectDB();
 
+  let orgIds: string[] = [];
+
   // Validates organisation ID
-  const orgId = session.user.organisation;
-  if (!orgId || !mongoose.isValidObjectId(orgId)) {
-    console.log('Invalid orgId:', orgId);
-    return NextResponse.json(
-      { error: 'Organisation not found or invalid.' },
-      { status: 400 }
+  if (session.user.role === 'management' || session.user.role === 'carer') {
+    const orgId = session.user.organisation;
+    if (!orgId || !mongoose.isValidObjectId(orgId)) {
+      return NextResponse.json(
+        { error: 'Organisation not found or invalid.' },
+        { status: 400 }
+      );
+    }
+    orgIds = [orgId];
+  } else if (session.user.role === 'family') {
+    const clients = await Client.find({ createdBy: session.user.id })
+      .select('organisationHistory')
+      .lean<
+        {
+          organisationHistory: OrgHistoryItem[];
+        }[]
+      >();
+
+    const approvedOrgsIds = clients.flatMap((client) =>
+      (client.organisationHistory || [])
+        .filter((entry) => entry.status === 'approved')
+        .map((entry) => entry.organisation?.toString())
     );
+
+    orgIds = Array.from(
+      new Set(approvedOrgsIds.filter((id): id is string => Boolean(id)))
+    );
+
+    if (!orgIds.length) {
+      return NextResponse.json({ staff: [] }, { status: 200 });
+    }
   }
 
   // Fetches staff members belonging to the organisation
   const staff: StaffDoc[] = await User.find({
-    organisation: orgId,
+    organisation: { $in: orgIds },
     role: { $in: ['management', 'carer'] },
   })
-    .select('_id fullName email role status avatarUrl') // only include necessary fields
+    .select('_id fullName email role status avatarUrl organisation') // only include necessary fields
+    .populate<{ organisation: { name: string } }>('organisation', 'name')
     .lean<StaffDoc[]>(); // convert to plain JS object
 
   // Format the staf data for API response
-  const formattedStaff = staff.map((s) => ({
+  const formattedStaff = staff.map((s: PopStaffDoc) => ({
     _id: s._id.toString(), // convert ObjectID to string
     name: s.fullName,
     email: s.email,
@@ -64,10 +105,11 @@ export async function GET() {
       s.status ??
       (['management', 'carer'].includes(s.role || '') ? 'active' : undefined),
     avatarUrl: s.avatarUrl,
+    org: s.organisation?.name || '',
   }));
 
   // Return staff list
-  return NextResponse.json(formattedStaff);
+  return NextResponse.json({ staff: formattedStaff }, { status: 200 });
 }
 
 /**
@@ -100,7 +142,7 @@ export async function POST(req: NextRequest) {
     const newStaff = await User.create({
       ...data,
       organisation: orgId,
-      status,
+      status: data.status ?? 'active',
     });
 
     // Return newly created staff member
@@ -112,6 +154,7 @@ export async function POST(req: NextRequest) {
         role: newStaff.role,
         status: newStaff.status,
         avatarUrl: newStaff.avatarUrl,
+        org: newStaff.organisation?.name || '',
       },
       { status: 201 }
     );

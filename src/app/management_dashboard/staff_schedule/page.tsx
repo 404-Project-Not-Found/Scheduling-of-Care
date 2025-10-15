@@ -18,15 +18,36 @@ const palette = {
   peachHover: 'rgba(249,201,177,0.9)', // hover deeper
 };
 
-type Carer = { id: string; name: string; role?: 'Carer' | 'Management' };
-type ShiftEntry = { start: string; end: string; label?: string };
-type ScheduleByCarer = Record<string, Record<string, ShiftEntry | undefined>>;
+type Staff = {
+  id: string;
+  name: string;
+  role?: 'Carer' | 'Management';
+  org?: string;
+};
+type ShiftEntry = { id?: string; start: string; end: string; label?: string };
+type ScheduleByStaff = Record<string, Record<string, ShiftEntry>>;
+
+interface StaffApiResponse {
+  _id: string;
+  name: string;
+  role: string;
+  org: string;
+}
+
+interface ShiftApiResponse {
+  staffId: string;
+  date: string;
+  start: string;
+  end: string;
+  label?: string;
+}
 
 function isoDate(d: Date) {
   const tzOff = d.getTimezoneOffset();
   const local = new Date(d.getTime() - tzOff * 60000);
   return local.toISOString().slice(0, 10);
 }
+
 function startOfWeek(date: Date) {
   const d = new Date(date);
   const day = d.getDay();
@@ -35,6 +56,7 @@ function startOfWeek(date: Date) {
   d.setHours(0, 0, 0, 0);
   return d;
 }
+
 function shiftDuration(start: string, end: string) {
   try {
     const [sh, sm] = start.split(':').map(Number);
@@ -48,109 +70,112 @@ function shiftDuration(start: string, end: string) {
   }
 }
 
-/* Demo data */
-const DEMO_CARERS: Carer[] = [
-  { id: 'c-hannah', name: 'Hannah Brown', role: 'Carer' },
-  { id: 'c-john', name: 'John Smith', role: 'Carer' },
-  { id: 'c-florence', name: 'Florence Edwards', role: 'Carer' },
-  { id: 'c-michael', name: 'Michael Chen', role: 'Carer' },
-];
-const DEMO_SCHEDULE: ScheduleByCarer = {
-  'c-hannah': {
-    '2025-10-06': { start: '07:00', end: '15:00', label: 'Morning' },
-  },
-  'c-john': {
-    '2025-10-07': { start: '15:00', end: '22:00', label: 'Afternoon' },
-  },
-  'c-florence': {
-    '2025-10-09': { start: '22:00', end: '07:00', label: 'Evening' },
-  },
-  'c-michael': {},
-};
-
 export default function StaffSchedulePage() {
   const router = useRouter();
   const onLogoClick = () => router.push('/management_dashboard');
 
-  // Role
   const [role, setRole] = useState<'family' | 'carer' | 'management' | null>(
     null
   );
-  useEffect(() => {
-    (async () => {
-      try {
-        const r = await getViewerRole();
-        setRole(r);
-      } catch {
-        setRole(null);
-      }
-    })();
-  }, []);
-  const isManagement = role === 'management';
-  const isReadonly = !isManagement;
-
-  // State
+  const [staff, setStaff] = useState<Staff[]>([]);
+  const [schedule, setSchedule] = useState<ScheduleByStaff>({});
   const [weekStart, setWeekStart] = useState<Date>(() =>
     startOfWeek(new Date())
   );
-  const [carers, setCarers] = useState<Carer[]>(() => {
-    try {
-      const raw = localStorage.getItem('staff_carers');
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length) return parsed;
-      }
-    } catch {}
-    return DEMO_CARERS;
-  });
-  const [schedule, setSchedule] = useState<ScheduleByCarer>(() => {
-    try {
-      const raw = localStorage.getItem('staff_schedule_by_carer');
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        return parsed || DEMO_SCHEDULE;
-      }
-    } catch {}
-    return DEMO_SCHEDULE;
-  });
-  const [shiftPresets, setShiftPresets] = useState({
-    Morning: { start: '07:00', end: '15:00' },
-    Afternoon: { start: '15:00', end: '22:00' },
-    Evening: { start: '22:00', end: '07:00' },
-  });
-  const [search, setSearch] = useState<string>('');
   const [modal, setModal] = useState<{
     open: boolean;
-    carerId?: string;
+    staffId?: string;
     dateISO?: string;
     start?: string;
     end?: string;
     label?: string;
   }>({ open: false });
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [addCarerModal, setAddCarerModal] = useState<{
-    open: boolean;
-    name?: string;
-    role: 'Carer' | 'Management';
-  }>({
-    open: false,
-    role: 'Carer',
+  const [shiftPresets, setShiftPresets] = useState({
+    Morning: { start: '07:00', end: '15:00' },
+    Afternoon: { start: '15:00', end: '22:00' },
+    Evening: { start: '22:00', end: '07:00' },
   });
+  const [search, setSearch] = useState('');
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
+  const isManagement = role === 'management';
+  const isReadonly = !isManagement;
 
   useEffect(() => {
-    localStorage.setItem('staff_carers', JSON.stringify(carers));
-    localStorage.setItem('staff_schedule_by_carer', JSON.stringify(schedule));
-  }, [carers, schedule]);
+    (async () => {
+      const r = await getViewerRole();
+      setRole(r);
+
+      try {
+        const resStaff = await fetch('/api/v1/management/staff');
+        const staffData = await resStaff.json();
+        const staffArray: StaffApiResponse[] = Array.isArray(staffData.staff)
+          ? staffData.staff
+          : [];
+
+        setStaff(
+          staffArray.map((s) => ({
+            id: s._id,
+            name: s.name,
+            role: s.role === 'management' ? 'Management' : 'Carer',
+            org: s.org,
+          }))
+        );
+
+        const resShifts = await fetch('/api/v1/shifts');
+        const data = await resShifts.json();
+        const shifts: ShiftApiResponse[] = Array.isArray(data.shifts)
+          ? data.shifts
+          : [];
+        const scheduleMap: ScheduleByStaff = {};
+        shifts.forEach((shift) => {
+          if (!scheduleMap[shift.staffId]) scheduleMap[shift.staffId] = {};
+          scheduleMap[shift.staffId][shift.date] = {
+            start: shift.start,
+            end: shift.end,
+            label: shift.label,
+          };
+        });
+        setSchedule(scheduleMap);
+      } catch (err) {
+        console.error('Error fetching staff or shifts:', err);
+      }
+    })();
+  }, []);
 
   const days = useMemo(() => {
-    const arr: Date[] = [];
-    for (let i = 0; i < 7; i++) {
+    return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(weekStart);
       d.setDate(weekStart.getDate() + i);
-      arr.push(d);
-    }
-    return arr;
+      return d;
+    });
   }, [weekStart]);
+
+  const visibleStaff = useMemo<Staff[]>(() => {
+    const q = search.trim().toLocaleLowerCase();
+    if (!q) return staff;
+
+    return staff.filter((s) => {
+      return (
+        s.name.toLowerCase().includes(q) ||
+        (s.role?.toLowerCase().includes(q) ?? false) ||
+        (s.org?.toLowerCase().includes(q) ?? false)
+      );
+    });
+  }, [staff, search]);
+
+  const getShift = (staffId: string, dateISO: string) =>
+    schedule?.[staffId]?.[dateISO];
+
+  const weekLabel = useMemo(() => {
+    const a = days[0];
+    const b = days[6];
+    const opts: Intl.DateTimeFormatOptions = {
+      day: 'numeric',
+      month: 'short',
+    };
+    return `${a.toLocaleDateString(undefined, opts)} - ${b.toLocaleDateString(undefined, opts)}`;
+  }, [days]);
 
   const changeWeek = (weeks: number) => {
     const newDate = new Date(weekStart);
@@ -158,71 +183,64 @@ export default function StaffSchedulePage() {
     setWeekStart(startOfWeek(newDate));
   };
 
-  const openAssignModal = (carerId: string, dateISO: string) => {
+  const openAssignModal = (staffId: string, dateISO: string) => {
     if (isReadonly) return;
-    const existing = schedule?.[carerId]?.[dateISO];
+    const existing = schedule?.[staffId]?.[dateISO];
     setModal({
       open: true,
-      carerId,
+      staffId,
       dateISO,
       start: existing?.start || '',
       end: existing?.end || '',
       label: existing?.label || '',
     });
   };
-  const saveModal = () => {
-    if (isReadonly) return setModal({ open: false });
-    if (!modal.carerId || !modal.dateISO) return setModal({ open: false });
-    const { carerId, dateISO, start = '', end = '', label = '' } = modal;
-    setSchedule((prev) => {
-      const copy: ScheduleByCarer = structuredClone(prev || {});
-      if (!copy[carerId]) copy[carerId] = {};
-      copy[carerId][dateISO] = { start, end, label };
-      return copy;
-    });
+
+  const saveModal = async () => {
+    console.log(
+      'Saving shift',
+      modal.staffId,
+      modal.dateISO,
+      modal.start,
+      modal.end,
+      modal.label
+    );
+
+    if (!modal.staffId || !modal.dateISO) return setModal({ open: false });
+    const { staffId, dateISO, start = '', end = '', label = '' } = modal;
+    try {
+      await fetch('/api/v1/shifts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ staffId, date: dateISO, start, end, label }),
+      });
+      setSchedule((prev) => {
+        const newSchedule = { ...prev };
+        if (!newSchedule[staffId]) newSchedule[staffId] = {};
+        newSchedule[staffId][dateISO] = { start, end, label };
+        return newSchedule;
+      });
+    } catch (err) {
+      console.error('Error saving shift:', err);
+    }
+
     setModal({ open: false });
   };
-  const removeShift = (carerId: string, dateISO: string) => {
-    if (isReadonly) return;
-    setSchedule((prev) => {
-      const copy: ScheduleByCarer = structuredClone(prev || {});
-      delete copy[carerId]?.[dateISO];
-      return copy;
-    });
-  };
 
-  const visibleCarers = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return carers;
-    return carers.filter((c) => c.name.toLowerCase().includes(q));
-  }, [carers, search]);
+  const deleteShift = async (staffId: string, dateISO: string) => {
+    try {
+      await fetch(`/api/v1/shifts?staffId=${staffId}&date=${dateISO}`, {
+        method: 'DELETE',
+      });
 
-  const getShift = (carerId: string, dateISO: string) =>
-    schedule?.[carerId]?.[dateISO];
-
-  const weekLabel = useMemo(() => {
-    const a = days[0];
-    const b = days[6];
-    const opts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' };
-    return `${a.toLocaleDateString(undefined, opts)} — ${b.toLocaleDateString(undefined, opts)}`;
-  }, [days]);
-
-  const addCarer = () => {
-    if (isReadonly) return;
-    const name = addCarerModal.name?.trim();
-    if (!name) return;
-    const id =
-      'c-' +
-      name
-        .toLowerCase()
-        .replace(/\s+/g, '-')
-        .replace(/[^a-z0-9-_]/g, '');
-    if (carers.some((c) => c.id === id || c.name === name)) {
-      alert('Staff already exists');
-      return;
+      setSchedule((prev) => {
+        const sch = { ...prev };
+        if (sch[staffId]) delete sch[staffId][dateISO];
+        return sch;
+      });
+    } catch (err) {
+      console.error('Error deleting shift:', err);
     }
-    setCarers((prev) => [...prev, { id, name, role: addCarerModal.role }]);
-    setAddCarerModal({ open: false, role: 'Carer' });
   };
 
   return (
@@ -250,9 +268,19 @@ export default function StaffSchedulePage() {
           className="flex justify-between items-center px-6 py-4 shadow-md mt-4"
           style={{ backgroundColor: palette.banner }}
         >
+          {/* Search Bar */}
+          <div className="relative flex-1 max-w-[350px]">
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search for staff, role or organisation"
+              className="w-full h-12 rounded-full bg-white border text-black px-10 focus:outline-none"
+              style={{ borderColor: '#3A0000' }}
+            />
+          </div>
           {/* Week navigation */}
           <div
-            className="flex items-center gap-4 w-1/3 px-4 py-2 rounded-2xl"
+            className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-4 px-6 py-2 rounded-2xl min-w-[450px]"
             style={{ backgroundColor: palette.pageBg }}
           >
             <button
@@ -371,8 +399,8 @@ export default function StaffSchedulePage() {
                 </tr>
               </thead>
               <tbody>
-                {visibleCarers.map((carer) => (
-                  <tr key={carer.id}>
+                {visibleStaff.map((s) => (
+                  <tr key={s.id}>
                     {/* Carer cell */}
                     <td
                       className="p-3 py-5 align-top border"
@@ -386,7 +414,7 @@ export default function StaffSchedulePage() {
                               boxShadow: '0 0 0 2px rgba(61,0,0,0.25) inset',
                             }}
                           >
-                            {carer.name
+                            {s.name
                               .split(' ')
                               .map((n) => n[0])
                               .slice(0, 2)
@@ -394,52 +422,33 @@ export default function StaffSchedulePage() {
                           </div>
                           <div>
                             <div className="font-medium text-black">
-                              {carer.name}
+                              {s.name}
                             </div>
                             <div className="text-sm text-black/70">
-                              {carer.role || 'Carer'}
+                              {s.org ? s.org : ''}
+                            </div>
+                            <div className="text-sm text-black/70">
+                              {s.role || 'Carer'}
                             </div>
                           </div>
                         </div>
-
-                        {isManagement && (
-                          <button
-                            onClick={() => {
-                              if (!confirm(`Delete ${carer.name}?`)) return;
-                              setCarers((prev) =>
-                                prev.filter((c) => c.id !== carer.id)
-                              );
-                              setSchedule((prev) => {
-                                const copy = { ...prev };
-                                delete copy[carer.id];
-                                return copy;
-                              });
-                            }}
-                            className="px-3 py-1 rounded-2xl text-sm font-semibold transition-colors"
-                            style={{
-                              color: palette.header,
-                              backgroundColor: palette.peachSoft,
-                            }}
-                            onMouseEnter={(e) =>
-                              (e.currentTarget.style.backgroundColor =
-                                palette.peachHover)
-                            }
-                            onMouseLeave={(e) =>
-                              (e.currentTarget.style.backgroundColor =
-                                palette.peachSoft)
-                            }
-                          >
-                            Remove
-                          </button>
-                        )}
                       </div>
                     </td>
 
                     {/* Day cells */}
                     {days.map((d) => {
                       const iso = isoDate(d);
-                      const s = getShift(carer.id, iso);
+                      const shift = getShift(s.id, iso);
                       const isToday = iso === isoDate(new Date());
+
+                      // Extract shift details safely
+                      const shiftLabel = shift?.label || 'Custom';
+                      const shiftStart = shift?.start || '';
+                      const shiftEnd = shift?.end || '';
+                      const dur =
+                        shiftStart && shiftEnd
+                          ? shiftDuration(shiftStart, shiftEnd)
+                          : '';
                       return (
                         <td
                           key={iso}
@@ -448,7 +457,7 @@ export default function StaffSchedulePage() {
                             backgroundColor: isToday ? '#d7c1bbff' : 'white',
                           }}
                         >
-                          {s ? (
+                          {shift ? (
                             <div
                               className="inline-flex flex-col items-center justify-center gap-3 rounded-2xl px-4 py-3"
                               style={{
@@ -458,22 +467,20 @@ export default function StaffSchedulePage() {
                               }}
                             >
                               <div className="text-sm text-black font-semibold">
-                                {(s.label === 'Morning' && 'Morning') ||
-                                  (s.label === 'Afternoon' && 'Afternoon') ||
-                                  (s.label === 'Evening' && 'Evening') ||
+                                {(shiftLabel === 'Morning' && 'Morning') ||
+                                  (shiftLabel === 'Afternoon' && 'Afternoon') ||
+                                  (shiftLabel === 'Evening' && 'Evening') ||
                                   'Custom'}{' '}
-                                ({s.start} — {s.end})
+                                ({shiftStart} — {shiftEnd})
                               </div>
                               <div className="text-xs text-black/70">
-                                ({shiftDuration(s.start, s.end)})
+                                ({dur})
                               </div>
 
                               {isManagement && (
                                 <div className="flex gap-2">
                                   <button
-                                    onClick={() =>
-                                      openAssignModal(carer.id, iso)
-                                    }
+                                    onClick={() => openAssignModal(s.id, iso)}
                                     className="text-xs px-3 py-1 rounded-2xl font-semibold transition-colors"
                                     style={{
                                       backgroundColor: palette.peachSoft,
@@ -491,7 +498,7 @@ export default function StaffSchedulePage() {
                                     Edit
                                   </button>
                                   <button
-                                    onClick={() => removeShift(carer.id, iso)}
+                                    onClick={() => deleteShift(s.id, iso)}
                                     className="text-xs px-3 py-1 rounded-2xl font-semibold transition-colors"
                                     style={{
                                       backgroundColor: palette.peachSoft,
@@ -511,27 +518,15 @@ export default function StaffSchedulePage() {
                                 </div>
                               )}
                             </div>
-                          ) : isManagement ? (
-                            <button
-                              onClick={() => openAssignModal(carer.id, iso)}
-                              className="text-sm px-3 py-2 rounded-2xl font-semibold transition-colors"
-                              style={{
-                                backgroundColor: palette.peachSoft,
-                                color: palette.header,
-                              }}
-                              onMouseEnter={(e) =>
-                                (e.currentTarget.style.backgroundColor =
-                                  palette.peachHover)
-                              }
-                              onMouseLeave={(e) =>
-                                (e.currentTarget.style.backgroundColor =
-                                  palette.peachSoft)
-                              }
-                            >
-                              Add Shift
-                            </button>
                           ) : (
-                            <span className="text-sm text-black/40">—</span>
+                            isManagement && (
+                              <button
+                                onClick={() => openAssignModal(s.id, iso)}
+                                className="text-sm text-[#3d0000] underline"
+                              >
+                                Add Shift
+                              </button>
+                            )
                           )}
                         </td>
                       );
@@ -542,79 +537,6 @@ export default function StaffSchedulePage() {
             </table>
           </div>
         </section>
-
-        {/* Modals — management only, borderless shells */}
-        {isManagement && addCarerModal.open && (
-          <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-lg w-full max-w-md p-6 text-black">
-              <h3 className="text-lg font-semibold mb-3">Add Staff</h3>
-              <label className="block mb-2 text-sm">Name</label>
-              <input
-                type="text"
-                value={addCarerModal.name || ''}
-                onChange={(e) =>
-                  setAddCarerModal((prev) => ({
-                    ...prev,
-                    name: e.target.value,
-                  }))
-                }
-                className="w-full px-3 py-2 rounded-2xl mb-3"
-                style={{ backgroundColor: '#f7f7f7' }}
-              />
-              <label className="block mb-2 text-sm">Role</label>
-              <select
-                value={addCarerModal.role}
-                onChange={(e) =>
-                  setAddCarerModal((prev) => ({
-                    ...prev,
-                    role: e.target.value as 'Carer' | 'Management',
-                  }))
-                }
-                className="w-full px-3 py-2 rounded-2xl mb-4"
-                style={{ backgroundColor: '#f7f7f7' }}
-              >
-                <option>Carer</option>
-                <option>Management</option>
-              </select>
-              <div className="flex justify-end gap-3">
-                <button
-                  onClick={() =>
-                    setAddCarerModal({ open: false, role: 'Carer' })
-                  }
-                  className="px-4 py-2 rounded-2xl font-semibold transition-colors"
-                  style={{
-                    backgroundColor: palette.peachSoft,
-                    color: palette.header,
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.backgroundColor = palette.peachHover)
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.backgroundColor = palette.peachSoft)
-                  }
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={addCarer}
-                  className="px-4 py-2 rounded-2xl font-semibold transition-colors"
-                  style={{
-                    backgroundColor: palette.peachSoft,
-                    color: palette.header,
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.backgroundColor = palette.peachHover)
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.backgroundColor = palette.peachSoft)
-                  }
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
 
         {isManagement && settingsOpen && (
           <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center p-4">
@@ -675,13 +597,13 @@ export default function StaffSchedulePage() {
           </div>
         )}
 
-        {isManagement && modal.open && modal.carerId && modal.dateISO && (
+        {isManagement && modal.open && modal.staffId && modal.dateISO && (
           <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-lg w-full max-w-md p-6 text-black">
               <h3 className="text-lg font-semibold mb-3">Assign Shift</h3>
               <p className="text-sm mb-3">
                 <strong>Staff:</strong>{' '}
-                {carers.find((c) => c.id === modal.carerId)?.name} ·{' '}
+                {staff.find((c) => c.id === modal.staffId)?.name} ·{' '}
                 <strong>Date:</strong> {modal.dateISO}
               </p>
               <label className="block mb-2 text-sm">Presets</label>

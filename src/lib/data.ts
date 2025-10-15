@@ -2,7 +2,9 @@
  * File path: /lib/data.ts
  * Author: Denise Alexander
  * Date Created: 04/10/2025
+ *
  * Updated by Denise Alexander - 7/10/2025: enables either mock mode or real back-end API.
+ *
  * Last Updated by Zahra Rizqita - 13/10/2025: implement fetching and saving task
  */
 
