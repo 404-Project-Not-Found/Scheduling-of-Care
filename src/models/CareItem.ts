@@ -27,7 +27,7 @@ export interface CareItemDoc extends mongoose.Document {
 
   // legacy string field
   frequency?: string;
-  lastDone?: string;
+  doneDates?: string[];
 
   notes?: string;
 
@@ -37,6 +37,9 @@ export interface CareItemDoc extends mongoose.Document {
   frequencyUnit: Unit; // user-chosen unit
   dateFrom: string; // YYYY-MM-DD
   dateTo: string; // YYYY-MM-DD
+
+  comments: string[];
+  files: string[];
 
   createdAt: Date;
   updatedAt: Date;
@@ -65,9 +68,12 @@ const CareItemSchema = new Schema<CareItemDoc>(
 
     // legacy
     frequency: { type: String },
-    lastDone: { type: String },
+    doneDates: { type: [String], default: [] },
 
     notes: { type: String, default: '' },
+
+    comments: {type: [String], default: []},
+    files: {type: [String], default: []},
 
     //structured
     frequencyDays: { type: Number, min: 1 },

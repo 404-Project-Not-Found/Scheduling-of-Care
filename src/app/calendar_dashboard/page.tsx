@@ -191,6 +191,29 @@ function ClientSchedule() {
     }
   }, [addedFile, selectedTask, role]);
 
+  /* ------------- Visible month/year coming from Calendar ------------- */
+  // These are set whenever the calendar view (brown title) changes.
+  const [visibleYear, setVisibleYear] = useState<number | null>(null); // e.g. 2025
+  const [visibleMonth, setVisibleMonth] = useState<number | null>(null); // 1..12
+
+  const MONTH_NAMES = useMemo(
+    () => [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ],
+    []
+  );
+
   /* --------------- Derived: filter by client and date --------------- */
   const noClientSelected = !activeClientId;
 
@@ -219,28 +242,6 @@ function ClientSchedule() {
     ? tasksByClient.filter((t) => t.nextDue === selectedDate)
     : tasksByClient;
 
-  /* ------------- Visible month/year coming from Calendar ------------- */
-  // These are set whenever the calendar view (brown title) changes.
-  const [visibleYear, setVisibleYear] = useState<number | null>(null); // e.g. 2025
-  const [visibleMonth, setVisibleMonth] = useState<number | null>(null); // 1..12
-
-  const MONTH_NAMES = useMemo(
-    () => [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ],
-    []
-  );
 
   // Title rule:
   // - If a day is selected -> "Care items on YYYY-MM-DD"

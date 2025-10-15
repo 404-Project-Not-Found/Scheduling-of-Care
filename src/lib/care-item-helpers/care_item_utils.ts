@@ -6,6 +6,7 @@
 
 import { NextResponse } from 'next/server';
 import { Unit, isUnit } from '@/models/CareItem';
+import { isISODateOnly } from './date-helpers';
 
 // Days in a day and a week always same unlike a month and a year
 const unitDayWeekSame: Record<Extract<Unit, 'day' | 'week'>, number> = {
@@ -86,10 +87,6 @@ export function normaliseCareItemPayLoad(
     frequency = `${count} day${count > 1 ? 's' : ''}`;
   }
 
-  const lastDone =
-    dateFrom && dateTo
-      ? `${String(dateFrom).trim()} to ${String(dateTo).trim()}`
-      : body.lastDone || '';
 
   return {
     ...body,
@@ -99,8 +96,18 @@ export function normaliseCareItemPayLoad(
       : undefined,
     frequencyDays: frequencyDays ?? undefined,
     frequency: frequency ?? undefined,
-    lastDone: lastDone ?? undefined,
   };
+}
+
+export function normalizeDoneDates(input: unknown) {
+  if(input == null) return undefined;
+  if(!Array.isArray(input)) return [];
+
+  const uniq = new Set<string>();
+  for(const i of input) {
+    if(isISODateOnly(i)) uniq.add(i); 
+  }
+  return Array.from(uniq).sort();
 }
 
 export function errorJson(message: string, status = 400) {

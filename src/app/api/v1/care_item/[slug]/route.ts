@@ -13,6 +13,7 @@ import { toISO } from '@/lib/care-item-helpers/date-helpers';
 import { findOrCreateNewCategory } from '@/lib/category-helpers';
 import {
   normaliseCareItemPayLoad,
+  normalizeDoneDates,
   errorJson,
 } from '@/lib/care-item-helpers/care_item_utils';
 import { error } from 'console';
@@ -31,7 +32,7 @@ type PutBody = {
   frequency?: string;
   dateFrom?: string;
   dateTo?: string;
-  lastDone?: string;
+  doneDates?: string[];
   notes?: string;
   deleted?: boolean;
 };
@@ -109,8 +110,9 @@ export async function PUT(
     frequency: body.frequency,
     dateFrom: dateFromISO,
     dateTo: dateToISO,
-    lastDone: body.lastDone,
   });
+
+  const normalizesDoneDate = normalizeDoneDates(body.doneDates);
 
   const setPayLoad: Partial<CareItemDoc> = {};
   if (typeof body.label === 'string' && body.label.trim())
@@ -136,8 +138,8 @@ export async function PUT(
     setPayLoad.frequencyDays = normalised.frequencyDays;
   if (normalised.frequency !== undefined)
     setPayLoad.frequency = normalised.frequency;
-  if (normalised.lastDone !== undefined)
-    setPayLoad.lastDone = normalised.lastDone;
+  if (normalised.doneDates !== undefined)
+    setPayLoad.doneDates= normalizesDoneDate;
 
   if (typeof body.deleted === 'boolean') setPayLoad.deleted = body.deleted;
 

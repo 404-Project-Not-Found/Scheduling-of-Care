@@ -20,7 +20,7 @@ import {
 export type ApiCareItem = {
   slug: string;
   label: string;
-  status: 'Pending' | 'Due' | 'Completed';
+  status: 'Pending' | 'Overdue' | 'Completed';
   frequency?: string;
   lastDone?: string;
   nextDue?: string;
@@ -32,7 +32,7 @@ export type ApiCareItem = {
 type CareItemListRow = {
   label: string;
   slug: string;
-  status: 'Pending' | 'Due' | 'Completed';
+  status: 'Pending' | 'Overdue' | 'Completed';
   category: string;
   categoryId?: string;
   clientId?: string;
