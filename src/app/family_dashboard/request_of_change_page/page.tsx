@@ -7,6 +7,9 @@
  * - Family-facing "Request of Change" form, built on top of shared <DashboardChrome />.
  * - Full-bleed layout; section header → notice → form → footer buttons.
  * - Validates required fields (task name, details, reason) before submit.
+ *
+ * Latest Update by Denise Alexander (14/10/2025): integrated backend API for client specific
+ * family requests.
  */
 
 'use client';
@@ -152,7 +155,7 @@ export default function RequestChangeFormPage() {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (
       !taskName.trim() ||
       !category.trim() ||
@@ -162,7 +165,42 @@ export default function RequestChangeFormPage() {
       setSubmitMessage('Please fill in all fields before submitting.');
       return;
     }
-    router.push('/calendar_dashboard');
+
+    if (!activeId) {
+      setSubmitMessage('Please select a client before submitting.');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/v1/family_requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientId: activeId,
+          taskCategory: category,
+          taskSubCategory: taskName,
+          details,
+          reason,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to submit request.');
+      }
+
+      setTaskName('');
+      setCategory('');
+      setDetails('');
+      setReason('');
+      setSubmitMessage('Request has been submitted successfully!');
+
+      router.push('/calendar_dashboard');
+    } catch (err) {
+      console.error(err);
+      setSubmitMessage(
+        'An error occurred while submitting the request. Please try again later.'
+      );
+    }
   };
 
   const handleCancel = () => {
@@ -180,8 +218,6 @@ export default function RequestChangeFormPage() {
       colors={chromeColors}
       onLogoClick={onLogoClick}
       clients={clients}
-      activeClientId={activeId}
-      activeClientName={activeName}
       onClientChange={onClientChange}
     >
       {/* Fill entire area below the top bar */}
