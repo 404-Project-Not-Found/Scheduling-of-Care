@@ -157,6 +157,7 @@ function ClientSchedule() {
   const [isAddingComment, setIsAddingComment] = useState(false);
   const [newComment, setNewComment] = useState('');
 
+  // Load tasks
   useEffect(() => {
     (async () => {
       try {
@@ -192,6 +193,10 @@ function ClientSchedule() {
   }, [addedFile, selectedTask, role]);
 
   /* --------------- Derived: filter by client and date --------------- */
+  // These are set whenever the calendar view (brown title) changes.
+  const [visibleYear, setVisibleYear] = useState<number | null>(null); // e.g. 2025
+  const [visibleMonth, setVisibleMonth] = useState<number | null>(null); // 1..12
+
   const noClientSelected = !activeClientId;
 
   const tasksByClient: ClientTask[] = activeClientId
@@ -210,8 +215,15 @@ function ClientSchedule() {
 
     if (selectedDate) return due === selectedDate;
 
-    const month = due.slice(0, 7);
-    return month === visibleMonth;
+    if (!visibleYear || !visibleMonth) return true; // show all if no month/year
+
+    const [y, m] = due.split('-').map(Number);
+
+    if (visibleYear && visibleMonth) {
+      return y === visibleYear && m === visibleMonth;
+    }
+
+    return true;
   });
 
   // If a day is selected we filter by that day; otherwise it's the whole dataset for the visible month (handled in TasksPanel)
@@ -220,10 +232,6 @@ function ClientSchedule() {
     : tasksByClient;
 
   /* ------------- Visible month/year coming from Calendar ------------- */
-  // These are set whenever the calendar view (brown title) changes.
-  const [visibleYear, setVisibleYear] = useState<number | null>(null); // e.g. 2025
-  const [visibleMonth, setVisibleMonth] = useState<number | null>(null); // 1..12
-
   const MONTH_NAMES = useMemo(
     () => [
       'January',
@@ -372,9 +380,7 @@ function ClientSchedule() {
                   />
                 </div>
                 {noClientSelected && (
-                  <p className="text-lg opacity-80">
-                    Select a client to view tasks.
-                  </p>
+                  <p className="text-lg">Loading client&apos;s care items...</p>
                 )}
               </div>
 
@@ -383,12 +389,10 @@ function ClientSchedule() {
                 <TasksPanel
                   tasks={tasksForRightPane}
                   onTaskClick={(task) => setSelectedTask(task)}
-                  // Drive the list scope:
-                  // If a date is selected, TasksPanel will show that day only.
-                  // Otherwise it will use year/month (visible calendar title).
                   selectedDate={selectedDate || undefined}
                   year={visibleYear ?? undefined}
                   month={visibleMonth ?? undefined}
+                  clientLoaded={!noClientSelected}
                 />
               </div>
             </>
