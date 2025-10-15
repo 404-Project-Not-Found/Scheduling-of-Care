@@ -1,5 +1,21 @@
+/**
+ * File path: /components/accesscode/generate-code.tsx
+ * Author: Qingyue Zhao
+ * Date Created: 28/09/2025
+ *
+ * Description:
+ * Right-side sliding panel for generating and copying an invite code.
+ * - Supports generation of random 8-character access codes.
+ * - Blocks background scrolling when open, closes on ESC key or overlay click.
+ * - Designed to be embedded in Staff List page and other related pages.
+ *
+ * Last Updated by Denise Alexander - 14/10/2025: back-end integrated to fetch and store invite codes
+ * from DB.
+ */
+
 'use client';
 
+import { set } from 'mongoose';
 import React, { useEffect, useState } from 'react';
 
 const palette = {
@@ -43,6 +59,7 @@ export default function GenerateCode({
     };
   }, [open]);
 
+  // Handle form submission to generate invite code
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -55,14 +72,23 @@ export default function GenerateCode({
 
     setLoading(true);
     try {
-      const fakeCode = Math.random()
-        .toString(36)
-        .substring(2, 10)
-        .toUpperCase();
-      await new Promise((r) => setTimeout(r, 1000));
-      setGeneratedCode(fakeCode);
-    } catch {
-      setError('Failed to generate code.');
+      const res = await fetch('/api/v1/management/generate_invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to generate invite code.');
+      }
+
+      setGeneratedCode(data.invite.code);
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message : 'An unknown error occurred.'
+      );
     } finally {
       setLoading(false);
     }
