@@ -1,9 +1,16 @@
+/**
+ * File path: /clients/[id]/requests
+ * Author: Denise Alexander
+ * Date Created: 16/10/2025
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import Request from '@/models/FamilyRequest';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
+// --------------- Type Definitions ---------------
 interface RequestDoc {
   _id: string;
   clientId: string;
@@ -27,6 +34,12 @@ interface UpdateRequestBody {
   status: 'Pending' | 'Implemented';
 }
 
+/**
+ * Fetch client specific requests
+ * @param req
+ * @param context
+ * @returns requests
+ */
 export async function GET(
   req: NextRequest,
   context: { params?: { id?: string } }
@@ -48,6 +61,7 @@ export async function GET(
 
     const data = await Request.find({ clientId }).lean<RequestDoc[]>();
 
+    // Format dates and response for front-end
     const formatted = data.map((r) => ({
       id: r._id.toString(),
       clientId: r.clientId,
@@ -81,6 +95,12 @@ export async function GET(
   }
 }
 
+/**
+ * Create a new request
+ * @param req
+ * @param context
+ * @returns new request
+ */
 export async function POST(
   req: NextRequest,
   context: { params?: { id?: string } }
@@ -110,6 +130,7 @@ export async function POST(
       );
     }
 
+    // Create new request in DB
     const newRequest = await Request.create({
       clientId,
       task: taskSubCategory,
@@ -119,6 +140,7 @@ export async function POST(
       status: 'Pending',
     });
 
+    // Newly created request
     return NextResponse.json(
       {
         id: newRequest._id.toString(),
@@ -140,6 +162,12 @@ export async function POST(
   }
 }
 
+/**
+ * Update request status
+ * @param req
+ * @param context
+ * @returns updated request
+ */
 export async function PATCH(
   req: NextRequest,
   context: { params?: { id?: string } }
@@ -165,6 +193,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
     }
 
+    // Update request in DB
     const updated = await Request.findOneAndUpdate(
       { _id: requestId, clientId },
       { status, resolutionDate: status === 'Implemented' ? new Date() : null },

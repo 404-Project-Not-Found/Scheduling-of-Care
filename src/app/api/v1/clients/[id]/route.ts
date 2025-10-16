@@ -1,5 +1,5 @@
 /**
- * File path: /clients/[id]]/route.ts
+ * File path: /clients/[id]/route.ts
  * Author: Denise Alexander
  * Date Created: 22/09/2025
  */

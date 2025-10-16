@@ -1,7 +1,7 @@
 /**
  * File path: /app/request_form/page.tsx
- * Frontend Author: Devni Wijesinghe
- * Last Update by Qingyue Zhao: 2025-10-03
+ * Front-end Author: Devni Wijesinghe
+ * Back-end Author: Denise Alexander
  *
  * Description:
  * - Family-facing "Request of Change" form, built on top of shared <DashboardChrome />.
@@ -69,6 +69,7 @@ export default function RequestChangeFormPage() {
   const [reason, setReason] = useState('');
   const [submitMessage, setSubmitMessage] = useState('');
 
+  // ---------------- Fetch Clients and Set Active ----------------
   useEffect(() => {
     (async () => {
       try {
@@ -79,6 +80,7 @@ export default function RequestChangeFormPage() {
         }));
         setClients(mapped);
 
+        // Get currently active client
         const active = await getActiveClient();
         if (active?.id) {
           setActive({
@@ -95,8 +97,10 @@ export default function RequestChangeFormPage() {
     })();
   }, []);
 
+  // ---------------- Fetch Tasks when Active Client changes ----------------
   useEffect(() => {
     if (!activeId) {
+      // Clear tasks & categories no active client
       setAllTasks([]);
       setCategoryOptions([]);
       return;
@@ -104,8 +108,10 @@ export default function RequestChangeFormPage() {
 
     (async () => {
       try {
+        // Fetch tasks for the selected client
         const clientTasks = await getTasksByClient(activeId);
 
+        // Map tasks to local ApiCareItem type
         const mapped: ApiCareItem[] = clientTasks.map((t) => ({
           slug: t.id || '',
           label: t.title || '',
@@ -115,17 +121,20 @@ export default function RequestChangeFormPage() {
 
         setAllTasks(mapped);
 
+        // Generate unique categories for dropdowns
         const cats = Array.from(
           new Set(mapped.map((t) => t.category).filter((c): c is string => !!c))
         );
         setCategoryOptions(cats);
       } catch {
+        // Clear tasks & categories on error
         setAllTasks([]);
         setCategoryOptions([]);
       }
     })();
   }, [activeId]);
 
+  // ---------------- Handle Client Selection ----------------
   const onClientChange = async (id: string) => {
     if (!id) {
       setActive({ id: null, name: '' });
@@ -142,6 +151,7 @@ export default function RequestChangeFormPage() {
     await setActiveClient(id, name);
   };
 
+  // ---------------- Filter Tasks for Selected Category ----------------
   const tasksForCategory = useMemo(() => {
     if (!category) return [];
 
@@ -154,6 +164,7 @@ export default function RequestChangeFormPage() {
     setSubmitMessage('');
   };
 
+  // ---------------- Handle Form Submission ----------------
   const handleSubmit = async () => {
     if (!activeId || !category || !taskName || !details || !reason) {
       setSubmitMessage('Please fill in all fields before submitting.');
@@ -183,6 +194,7 @@ export default function RequestChangeFormPage() {
       setReason('');
       setSubmitMessage('Request has been submitted successfully!');
 
+      // Navigate back to request log page
       router.push('/request-log-page');
     } catch (err) {
       console.error(err);

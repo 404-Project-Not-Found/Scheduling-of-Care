@@ -1,7 +1,8 @@
 /**
  * File name: Request Log
  * File path: src/app/request-log-page/page.tsx
- * Frontend Author: Devni Wijesinghe
+ * Front-end Author: Devni Wijesinghe
+ * Back-end Author: Denise Alexander
  *
  * - Uses <DashboardChrome /> to keep the same header + pink banner across the app.
  * - Loads the active client (from localStorage) and fetches that client's requests
@@ -9,6 +10,8 @@
  *   reloads the table for the newly selected client.
  * - Management users can change the Status inline; the <select> is color-coded.
  * - The table section is flush to the white panel’s edges (no inner horizontal padding).
+ *
+ * Last Updated by Denise Alexander (16/10/2025): added back-end API endpoints.
  */
 
 'use client';

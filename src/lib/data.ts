@@ -4,8 +4,10 @@
  * Date Created: 04/10/2025
  *
  * Updated by Denise Alexander - 7/10/2025: enables either mock mode or real back-end API.
+ * Updated by Zahra Rizqita - 13/10/2025: implement fetching and saving task.
  *
- * Last Updated by Zahra Rizqita - 13/10/2025: implement fetching and saving task
+ * Last Updated by Denise Alexander - 16/10/2025: added new helper functions for family
+ * requests handling.
  */
 
 import * as mockApi from './mock/mockApi';
@@ -18,7 +20,6 @@ import {
 } from '@/lib/care-item-helpers/date-helpers';
 
 // Fetching Task helper
-
 export type ApiCareItem = {
   slug: string;
   label: string;
@@ -261,11 +262,13 @@ export const setActiveClient = async (id: string | null, name: string = '') => {
   }
 };
 
+// Fetches tasks for a specific client
 export const getTasksByClient = async (clientId: string) => {
   const allTasks = await getTasks();
   return allTasks.filter((t) => t.clientId === clientId);
 };
 
+// Gets full task catalog
 export const getTaskCatalog = () => {
   if (process.env.NEXT_PUBLIC_ENABLE_MOCK === '1') {
     return mockApi.getTaskCatalogFE();
@@ -274,6 +277,7 @@ export const getTaskCatalog = () => {
   return mockApi.getTaskCatalogFE;
 };
 
+// Gets all unique categories for a client
 export const getCategoriesForClient = async (clientId: string) => {
   const tasks = await getTasksByClient(clientId);
 
