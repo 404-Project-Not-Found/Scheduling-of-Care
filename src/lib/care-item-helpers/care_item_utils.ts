@@ -40,7 +40,7 @@ export type NewTask = {
   title: string;
   category?: string; // optional: auto derived from catalog
   frequency: string;
-  doneDates: string[]; 
+  lastDone: string; 
   nextDue: string; // YYYY-MM-DD
   status: 'Pending' | 'Overdue' | 'Completed';
   comments: string[];
@@ -110,17 +110,6 @@ export function normaliseCareItemPayLoad(
     frequencyDays: frequencyDays ?? undefined,
     frequency: frequency ?? undefined,
   };
-}
-
-export function normalizeDoneDates(input: unknown) {
-  if(input == null) return undefined;
-  if(!Array.isArray(input)) return [];
-
-  const uniq = new Set<string>();
-  for(const i of input) {
-    if(isISODateOnly(i)) uniq.add(i); 
-  }
-  return Array.from(uniq).sort();
 }
 
 export function errorJson(message: string, status = 400) {

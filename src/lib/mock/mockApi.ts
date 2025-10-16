@@ -249,7 +249,7 @@ export type Task = {
   frequency: string;
   lastDone: string; // YYYY-MM-DD
   nextDue: string; // YYYY-MM-DD
-  status: 'Pending' | 'Overdue' | 'Completed';
+  status: 'Pending' | 'Due' | 'Completed';
   comments: string[];
   files: string[];
 };
@@ -293,7 +293,7 @@ const DEMO_TASKS: Task[] = [
     frequency: 'Weekly',
     lastDone: '2025-09-18',
     nextDue: '2025-09-25',
-    status: 'Overdue',
+    status: 'Due',
     comments: [],
     files: [],
   },

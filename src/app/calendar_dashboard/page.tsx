@@ -27,10 +27,10 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import DashboardChrome from '@/components/top_menu/client_schedule';
 import CalendarPanel from '@/components/dashboard/CalendarPanel';
 import TasksPanel from '@/components/tasks/TasksPanel';
+import { futureOccurencesAfterLastDone} from '@/lib/care-item-helpers/date-helpers';
+
 
 import type { Task } from '@/lib/mock/mockApi';
-
-import { nextDueTaskFromLastDone, futureOccurenceAfterDoneWindow, formatISODateOnly } from '@/lib/care-item-helpers/date-helpers';
 
 import {
   getViewerRole,
@@ -41,19 +41,8 @@ import {
   setActiveClient,
   type Client as ApiClient,
 } from '@/lib/data';
+
 import { title } from 'node:process';
-
-/* ------------------------------ Task Retrieval helper ----------------------------- */
-function monthsBoundsUTC(yyyyMm: string) {
-  const [y, m] = yyyyMm.split('-').map(Number);
-  const first = new Date(Date.UTC(y, m-1, 1));
-  const last = new Date(Date.UTC(y, m, 0));
-  const iso = (d: Date) => formatISODateOnly(d);
-  return {start: iso(first), end: iso(last)};
-}
-
-
-
 
 /* ------------------------------ Palette ----------------------------- */
 const palette = {
@@ -77,18 +66,20 @@ type ApiClientWithAccess = ApiClient & {
 };
 
 // Extends Task type to safely access clientId, files and comments
-// updatted
 type ClientTask = Task & {
   clientId?: string;
   comments?: string[];
   files?: string[];
-  dateFrom?: string,
-  dateTo?: string,
-  doneDates?: string[],
-  frequencyCount?: number,
-  frequencyUnit?: 'day' | 'week' | 'month' | 'year',
+
+  // added for task occurences
+  dateFrom?: string;
+  dateTo?: string;
+  frequencyCount?: number;
+  frequencyUnit?: 'day' | 'week' | 'month' | 'year';
+  completedDates?: string[];
 };
 
+/* ---------------------------- Main Page ----------------------------- */
 type CalendarPanelProps = {
   tasks: Task[];
   onDateClick?: (date: string) => void;
@@ -176,8 +167,8 @@ function ClientSchedule() {
 
   const [isAddingComment, setIsAddingComment] = useState(false);
   const [newComment, setNewComment] = useState('');
-  
 
+  // Load tasks
   useEffect(() => {
     (async () => {
       try {
@@ -212,11 +203,60 @@ function ClientSchedule() {
     }
   }, [addedFile, selectedTask, role]);
 
-  /* ------------- Visible month/year coming from Calendar ------------- */
+  /* --------------- Derived: filter by client and date --------------- */
   // These are set whenever the calendar view (brown title) changes.
   const [visibleYear, setVisibleYear] = useState<number | null>(null); // e.g. 2025
   const [visibleMonth, setVisibleMonth] = useState<number | null>(null); // 1..12
 
+  const noClientSelected = !activeClientId;
+
+  const tasksByClient: ClientTask[] = activeClientId
+    ? tasks.filter(
+        (t): t is ClientTask => (t.clientId ?? '') === activeClientId
+      )
+    : [];
+
+  function monthBoundsUTC(yyyyMm: string) {
+    const [ys, ms] = yyyyMm.split('-');
+    const y = Number(ys), m = Number(ms);
+    const first = new Date(Date.UTC(y, m - 1, 1));
+    const last  = new Date(Date.UTC(y, m, 0));
+    const iso = (d: Date) => d.toISOString().slice(0, 10);
+    return { start: iso(first), end: iso(last) };
+  }
+
+  const visibleMonthStr = visibleYear && visibleMonth ? `${visibleYear}-${String(visibleMonth).padStart(2, '0')}` : new Date().toISOString().slice(0, 7);
+
+  const { start: monthStart, end: monthEnd } = monthBoundsUTC(visibleMonthStr);
+
+  const windowStart = selectedDate || monthStart; 
+  const windowEnd   = selectedDate || monthEnd;
+
+  // Completion-driven using lastDone
+  const tasksForCalendar: ClientTask[] = tasksByClient.flatMap((t) => {
+  const count = t.frequencyCount ?? 0;
+  const unit  = t.frequencyUnit as 'day' | 'week' | 'month' | 'year' | undefined;
+  if (!count || !unit) return [];
+
+  const occs = futureOccurencesAfterLastDone(
+    t.dateFrom,
+    t.lastDone,           
+    count,
+    unit,
+    windowStart,
+    windowEnd,
+    t.dateTo ?? null,
+  );
+
+  return occs.map((d) => ({ ...t, nextDue: d }));
+});
+
+  // If a day is selected we filter by that day; otherwise it's the whole dataset for the visible month (handled in TasksPanel)
+  const filteredTasks = selectedDate
+    ? tasksByClient.filter((t) => t.nextDue === selectedDate)
+    : tasksByClient;
+
+  /* ------------- Visible month/year coming from Calendar ------------- */
   const MONTH_NAMES = useMemo(
     () => [
       'January',
@@ -234,53 +274,6 @@ function ClientSchedule() {
     ],
     []
   );
-
-  /* --------------- Derived: filter by client and date --------------- */
-  const noClientSelected = !activeClientId;
-
-  const tasksByClient: ClientTask[] = activeClientId
-    ? tasks.filter(
-        (t): t is ClientTask => (t.clientId ?? '') === activeClientId
-      )
-    : [];
-
-  function getDueISO(t: ClientTask): string {
-    return (t.nextDue ?? '').slice(0, 10);
-  }
-
-  function pad2(num: number) {return String(num).padStart(2, '0');}
-
-  const {start, end} = useMemo(() => {
-    const now = new Date();
-    const y = (visibleYear ?? now.getUTCFullYear());
-    const m = (visibleMonth ?? (now.getUTCMonth() + 1));
-    const ym = `${y}-${pad2(m)}`;
-    return monthsBoundsUTC(ym);
-  }, [visibleYear, visibleMonth] );
-
-
-  const tasksForCalendar: ClientTask[] = tasksByClient.flatMap((t) => {
-    
-    if(!t.frequencyCount || !t.frequencyUnit) return [];
-
-    const occur = futureOccurenceAfterDoneWindow(
-      t.dateFrom,
-      t.doneDates,
-      t.frequencyCount,
-      t.frequencyUnit,
-      start,
-      end,
-      t.dateTo
-    );
-
-    return occur.map((date) =>({...t, nextDue: date}));
-  });
-
-  // If a day is selected we filter by that day; otherwise it's the whole dataset for the visible month (handled in TasksPanel)
-  const filteredTasks = selectedDate
-    ? tasksByClient.filter((t) => t.nextDue === selectedDate)
-    : tasksByClient;
-
 
   // Title rule:
   // - If a day is selected -> "Care items on YYYY-MM-DD"
@@ -339,7 +332,7 @@ function ClientSchedule() {
 
   const getStatusBadgeClasses = (status?: string) => {
     switch ((status || '').toLowerCase()) {
-      case 'overdue':
+      case 'due':
         return 'bg-red-500 text-white';
       case 'pending':
         return 'bg-orange-400 text-white';
@@ -412,9 +405,7 @@ function ClientSchedule() {
                   />
                 </div>
                 {noClientSelected && (
-                  <p className="text-lg opacity-80">
-                    Select a client to view tasks.
-                  </p>
+                  <p className="text-lg">Loading client&apos;s care items...</p>
                 )}
               </div>
 
@@ -423,12 +414,10 @@ function ClientSchedule() {
                 <TasksPanel
                   tasks={tasksForRightPane}
                   onTaskClick={(task) => setSelectedTask(task)}
-                  // Drive the list scope:
-                  // If a date is selected, TasksPanel will show that day only.
-                  // Otherwise it will use year/month (visible calendar title).
                   selectedDate={selectedDate || undefined}
                   year={visibleYear ?? undefined}
                   month={visibleMonth ?? undefined}
+                  clientLoaded={!noClientSelected}
                 />
               </div>
             </>
@@ -480,6 +469,61 @@ function TaskDetail({
   setIsAddingComment: (v: boolean) => void;
 }) {
   const readOnly = role !== 'carer';
+
+    async function markTaskDone(fileName: string, comment?: string) {
+    try {
+      const res = await fetch(
+        `/api/v1/care_item/${encodeURIComponent(task.id)}/done`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ file: fileName, comment }),
+        }
+      );
+
+      if (!res.ok) {
+        console.error('Failed to mark task as done:', await res.text());
+        alert('Failed to mark as done');
+        return;
+      }
+
+      const updated = await res.json();
+
+      // Update local task state
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === task.id
+            ? {
+                ...t,
+                status: updated.status ?? 'Completed',
+                lastDone: updated.lastDone ?? t.lastDone,
+                files: updated.files ?? t.files,
+                comments: updated.comments ?? t.comments,
+              }
+            : t
+        )
+      );
+
+      // Also update currently selected task (detail view)
+      setSelectedTask((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: updated.status ?? 'Completed',
+              lastDone: updated.lastDone ?? prev.lastDone,
+              files: updated.files ?? prev.files,
+              comments: updated.comments ?? prev.comments,
+            }
+          : prev
+      );
+
+      alert('Task marked as done!');
+    } catch (err) {
+      console.error('Error marking task done:', err);
+      alert('Unexpected error');
+    }
+  }
+
 
   return (
     <div className="flex flex-col h-full" style={{ color: palette.text }}>
@@ -588,11 +632,12 @@ function TaskDetail({
               <button
                 className="px-5 py-2 border rounded bg-white"
                 onClick={() => {
-                  setTasks((prev) =>
-                    prev.map((t) =>
-                      t.id === task.id ? { ...t, status: 'Completed' } : t
-                    )
-                  );
+                  const uploadedFile = task.files?.[task.files.length - 1]; // last uploaded file
+                  if (!uploadedFile) {
+                    alert('You must upload a file before marking as done.');
+                    return;
+                  }
+                  markTaskDone(uploadedFile);
                 }}
               >
                 Mark as done

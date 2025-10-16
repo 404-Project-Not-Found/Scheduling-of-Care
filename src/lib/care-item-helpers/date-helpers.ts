@@ -152,71 +152,46 @@ export function toISO(input: unknown): string | undefined {
   return d && !Number.isNaN(d.getTime()) ? d.toISOString() : undefined;
 }
 
-// return when a task is last done
-export function getLastDoneTask(doneDates: string[] | undefined, dateFrom: string | null | undefined) {
-  const doneDate = 
-  (Array.isArray(doneDates) && doneDates.length 
-  ? [...doneDates].sort().at(-1)!
-  : toISODateOnly(dateFrom)) || '';
-  if(!doneDate) return undefined;
-  return doneDate; 
-}
 
-export function latestISO(dates?: string[]): string { 
-  if (!Array.isArray(dates) || dates.length === 0) return ''; 
+
+export function latestISO(dates?: string[]): string | undefined { 
+  if (!Array.isArray(dates) || dates.length === 0) return undefined; 
   const sorted = dates.slice().sort(); 
   return sorted[sorted.length - 1] ?? ''; 
 }
 
 
-// return when the task is next due based on when it is last done
-export function nextDueTaskFromLastDone(dateFrom: string | null | undefined, doneDates: string[] | undefined, count: number, unit: Unit) {
-  // if task not yet done once, get the dateFrom
-  const lastDone = getLastDoneTask(doneDates, dateFrom);
-  if(!lastDone) return undefined;
-  return nextDueISO(lastDone, count, unit);
-}
 
-// generate future occurence after when task is last done or dateFrom
-export function futureOccurenceAfterDoneWindow(
-  dateFrom: string | undefined, 
-  doneDates: string[] | undefined, 
-  frequencyCount: number,
-  frequencyUnit: Unit, 
-  windowStartISO: string, 
-  windowEndISO: string,
-  dateTo?: string
-  ): string[] {
+export function futureOccurencesAfterLastDone(dateFrom: string | undefined, lastDone: string | undefined, count: number | undefined, unit: Unit | undefined, winStartISO: string, winEndISO: string, dateTo: string | null) {
+  if(!count || !unit) return [];
+  const base = (lastDone && /^\d{4}-\d{2}-\d{2}$/.test(lastDone))
+    ? lastDone
+    : (dateFrom && /^\d{4}-\d{2}-\d{2}$/.test(dateFrom) ? dateFrom : undefined);
+  if (!base) return [];
+  if(!isISODateOnly(base)) return [];
 
-    const lastDone = getLastDoneTask(doneDates, dateFrom);
-    if(!lastDone) return [];
+  let occur = formatISODateOnly(addCount(base, count, unit));
 
-    if(dateTo && windowStartISO > dateTo) return [];
-    
-    const step = (base: string) => nextDueTaskFromLastDone(base, doneDates, frequencyCount, frequencyUnit);
+  const limit = dateTo && isISODateOnly(dateTo) ? dateTo : undefined;
+  const step = (iso: string) => formatISODateOnly(addCount(iso, count, unit));
+  
+  while(occur < winStartISO) {
+    const next = step(occur);
+    if(!next || next == occur) return [];
+    occur = next;
+    if(limit && occur > limit) return [];
+  }
 
-    let occur = step(lastDone);
-    const out: string[] = [];
-    
-    while(occur && occur < windowStartISO) {
-      const next = step(occur);
-      if(!next || next === occur) return [];
-      occur = next;
-      if(dateTo && occur > dateTo) return [];
-    }
-
-    let guard = 0;
-    while(occur && occur <= windowEndISO && guard < 2048) {
-      if(!dateTo || occur <= dateTo) out.push(occur);
-      else break;
-
-      const next = step(occur);
-      if(!next || next === occur) break;
-      occur = next;
-      guard++;
-    }
-
-    return out;
+  const out: string[] = [];
+  let guard = 0;
+  while(occur <= winEndISO && (!limit || occur <= limit) && guard < 2048) {
+    out.push(occur);
+    const next = step(occur);
+    if(!next || next == occur) break;
+    occur = next;
+    guard++;
+  }
+  return out;
 }
 
 
@@ -244,63 +219,27 @@ export function toISODateOnly(
   return '';
 }
 
-export function nextOccurrenceAfterToday(
+export function getNextDue(
   start: string,
   count?: number | null,
   unit?: Unit | null,
   frequencyDays?: number | null
 ): string {
-  const today = toISODateOnly(new Date());
   const startISO = toISODateOnly(start);
-  if (!startISO) return '';
-
-  if (startISO > today) return startISO;
+  if(!startISO) return '';
 
   const step =
-    count && unit
+    (count && count > 0 && unit)
       ? (iso: string) => nextDueISO(iso, count, unit)
-      : frequencyDays && frequencyDays > 0
+      : (frequencyDays && frequencyDays > 0)
         ? (iso: string) => toISODateOnly(addCount(iso, frequencyDays, 'day'))
         : null;
 
-  if (!step) {
-    return '';
-  }
+  if (!step) return '';
 
-  let due = step(startISO);
-  let guard = 0;
-  while (due <= today && guard < 512) {
-    due = step(due);
-    guard++;
-  }
-  return guard >= 512 ? '' : due;
+  return step(startISO);
 }
 
-export function upcomingOccurrencesAfterToday(
-  start: string,
-  count?: number | null,
-  unit?: Unit | null,
-  frequencyDays?: number | null,
-  n = 6
-): string[] {
-  const next = nextOccurrenceAfterToday(start, count, unit, frequencyDays);
-  if (!next) return [];
 
-  const out: string[] = [next];
-  const step =
-    count && unit
-      ? (iso: string) => nextDueISO(iso, count, unit)
-      : frequencyDays && frequencyDays > 0
-        ? (iso: string) => toISODateOnly(addCount(iso, frequencyDays, 'day'))
-        : null;
-  if (!step) return out;
-
-  for (let i = 1; i < n; i++) {
-    const nextISO = step(out[i - 1]);
-    if (!nextISO) break;
-    out.push(nextISO);
-  }
-  return out;
-}
 
 

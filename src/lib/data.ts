@@ -2,17 +2,61 @@
  * File path: /lib/data.ts
  * Author: Denise Alexander
  * Date Created: 04/10/2025
+ *
  * Updated by Denise Alexander - 7/10/2025: enables either mock mode or real back-end API.
- * Last Updated by Zahra Rizqita - 13/10/2025: implement fetching and saving task
+ * Updated by Zahra Rizqita - 13/10/2025: implement fetching and saving task.
+ *
+ * Last Updated by Denise Alexander - 16/10/2025: added new helper functions for family
+ * requests handling.
  */
 
 import * as mockApi from './mock/mockApi';
 import { getSession } from 'next-auth/react';
 import { mockSignOut } from './mock/mockSignout';
 import { signOut as nextAuthSignOut } from 'next-auth/react';
-import { latestISO } from './care-item-helpers/date-helpers';
-import { CareItemListRow, doneNextDue, frequencyLabel, normalizeStatus } from './care-item-helpers/get_task_helpers';
+import {
+  toISODateOnly,
+  getNextDue,
+} from '@/lib/care-item-helpers/date-helpers';
 
+// Fetching Task helper
+export type ApiCareItem = {
+  slug: string;
+  label: string;
+  category?: string;
+  status: 'Pending' | 'Due' | 'Completed';
+  frequency?: string;
+  lastDone?: string;
+  nextDue?: string;
+  clientId?: string;
+  comments?: string[];
+  files?: string[];
+};
+
+export interface Task {
+  id: string;
+  title: string;
+  category: string;
+  description?: string;
+}
+
+type CareItemListRow = {
+  label: string;
+  slug: string;
+  status: 'Pending' | 'Due' | 'Completed';
+  category: string;
+  categoryId?: string;
+  clientId?: string;
+  deleted?: boolean;
+  frequency?: string;
+  lastDone?: string;
+  frequencyDays?: number;
+  frequencyCount?: number;
+  frequencyUnit?: 'day' | 'week' | 'month' | 'year';
+  dateFrom?: string;
+  dateTo?: string;
+  notes?: string;
+};
 
 // Flag to determine whether to use mock API or real back-end
 const isMock = process.env.NEXT_PUBLIC_ENABLE_MOCK === '1';
@@ -54,7 +98,9 @@ export const getClients = async (): Promise<mockApi.Client[]> => {
 
   const role = session.user.role;
   const url =
-    role === 'management' ? '/api/v1/management/clients' : '/api/v1/clients';
+    role === 'management' || role === 'carer'
+      ? '/api/v1/management/clients'
+      : '/api/v1/clients';
 
   const res = await fetch(url, { cache: 'no-store' });
   if (!res.ok) {
@@ -82,38 +128,88 @@ export const getTasks = async (): Promise<mockApi.Task[]> => {
     return mockApi.getTasksFE();
   }
 
+  const buildFrequency = (row: CareItemListRow): string => {
+    if (row.frequency && row.frequency.trim()) return row.frequency;
+    if (row.frequencyCount && row.frequencyUnit) {
+      const unit =
+        row.frequencyCount === 1 ? row.frequencyUnit : `${row.frequencyUnit}s`;
+      return `Every ${row.frequencyCount} ${unit}`;
+    }
+    if (row.frequencyDays && row.frequencyDays > 0) {
+      const unit = row.frequencyDays === 1 ? 'day' : 'days';
+      return `Every ${row.frequencyDays} ${unit}`;
+    }
+    return '';
+  };
+
   const res = await fetch('/api/v1/care_item?limit=200', { cache: 'no-store' });
   if (!res.ok) {
     throw new Error(`Failed to fetch tasks (${res.status})`);
   }
 
-  const rows = (await res.json()) as CareItemListRow[];
+  const rows: CareItemListRow[] = await res.json();
 
-  const tasks: mockApi.Task[] = rows.filter((r) => !r.deleted).map((row, idx) => {
+  const parseLastDone = (val?: string) => {
+    if (!val) return '';
+    // Some old records used "start to end" text; keep first part
+    const first = val.split('to')[0]?.trim();
+    return toISODateOnly(first);
+  };
+
+  const normalizeStatus = (s: string) => {
+    const v = (s || '').toLowerCase();
+    if (v === 'in progress') return 'Pending';
+    if (v === 'pending') return 'Pending';
+    if (v === 'due') return 'Due';
+    if (v === 'completed') return 'Completed';
+    // fallback
+    return 'Pending';
+  };
+
+  const tasks: mockApi.Task[] = rows.map((row, idx) => {
     const id = row.slug || `task-${idx}`;
 
-    const lastDone = latestISO(row.doneDates);
-    const nextDue = doneNextDue(row) || '';
+    
+    const baseISO =
+      parseLastDone(row.lastDone) ||
+      toISODateOnly(row.dateFrom ?? null) ||
+      '';
 
-    return {
+    const nextDue = getNextDue(
+      baseISO,
+      row.frequencyCount ?? null,
+      row.frequencyUnit ?? null,
+      row.frequencyDays ?? null
+    );
+
+    const task: any = {
       id,
+      label: row.label,
+      status: normalizeStatus(row.status) as 'Pending' | 'Due' | 'Completed',
+      category: row.category,
       clientId: row.clientId ?? '',
-      label: (row.label ||'').trim() || 'Untitled',
-      category: row.category || undefined,
-      frequency: frequencyLabel(row),
-      lastDone,
+      frequency: buildFrequency(row),
+      lastDone: parseLastDone(row.lastDone),
       nextDue,
-      status: normalizeStatus(row.status, nextDue),
-      comments: Array.isArray(row.comments) ? row.comments : [],
-      files: Array.isArray(row.files) ? row.files : [],
-      dateFrom: row.dateFrom,
-      dateTo: row.dateTo,
-      doneDates: row.doneDates,
+      comments: [],
+      files: [],
+
+      // 🔑 include structured fields so the calendar can generate occurrences
+      dateFrom: toISODateOnly(row.dateFrom ?? null) || undefined,
+      dateTo: toISODateOnly(row.dateTo ?? null) || undefined,
+      frequencyCount: row.frequencyCount ?? undefined,
+      frequencyUnit: row.frequencyUnit ?? undefined,
+      frequencyDays: row.frequencyDays ?? undefined,
     };
+
+    return task as mockApi.Task;
   });
 
   return tasks;
 };
+
+
+
 
 // Saves the provided list of tasks
 export const saveTasks = async (tasks: mockApi.Task[]) => {
@@ -199,6 +295,34 @@ export const setActiveClient = async (id: string | null, name: string = '') => {
       body: JSON.stringify({ clientId: id }),
     });
   }
+};
+
+// Fetches tasks for a specific client
+export const getTasksByClient = async (clientId: string) => {
+  const allTasks = await getTasks();
+  return allTasks.filter((t) => t.clientId === clientId);
+};
+
+// Gets full task catalog
+export const getTaskCatalog = () => {
+  if (process.env.NEXT_PUBLIC_ENABLE_MOCK === '1') {
+    return mockApi.getTaskCatalogFE();
+  }
+
+  return mockApi.getTaskCatalogFE;
+};
+
+// Gets all unique categories for a client
+export const getCategoriesForClient = async (clientId: string) => {
+  const tasks = await getTasksByClient(clientId);
+
+  const clientCats = Array.from(
+    new Set(tasks.map((t) => t.category).filter(Boolean))
+  );
+
+  const catalogCats = mockApi.getTaskCatalogFE().map((c) => c.category);
+
+  return Array.from(new Set([...catalogCats, ...clientCats]));
 };
 
 // Export Client type for convenience

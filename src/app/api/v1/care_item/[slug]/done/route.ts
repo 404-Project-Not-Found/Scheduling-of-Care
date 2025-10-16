@@ -6,73 +6,77 @@
  * Handle api for carer to add comment, upload a file and marking a task as done
  */
 
-import {NextResponse} from 'next/server';
+
+import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import CareItem from '@/models/CareItem';
 
-interface DoneTaskBody {
-    doneAt: string;
-    comment?: string; // Optional
-    file: string;
+interface CompleteBody {
+  file: string;           
+  comment?: string;       
+  doneAt?: string;   
 }
 
 type CareItemLean = {
-    slug: string;
-    status?: string;
-    comments?: string[];
-    files?: string[];
-    doneDate?: string[];
+  slug: string;
+  files?: string[];
+  lastDone?: string;
+  comments?: string[];
+  status?: string;
 };
 
-function returnError(str: string, status: number) {
-    return NextResponse.json({error: str}, {status: status});
+function todayISO(): string {
+  return new Date().toISOString().slice(0, 10);
 }
-/**
- * Update the care item for comments, files and when the task was last done
- */
-export async function POST(req: Request, {params}: {params: {slug: string}}) {
-    await connectDB();
-    const {slug} = params;
 
-    let body: DoneTaskBody;
-    try {
-        body = (await req.json()) as DoneTaskBody;
-    } catch {
-        return NextResponse.json({error: 'Invalid JSON'}, {status: 400});
-    }
-    
-    const fileName = (body.file ?? '').trim();
-    const comment = (body.comment ?? '').trim();
-    const doneAt = (body.doneAt ?? '').trim();
+function isISODateOnly(s: unknown): s is string {
+  return typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
+}
 
-    if(!fileName) returnError('A file must be provided to mark this care item as done', 422);
-    if(!doneAt) returnError('Must note when this care item is marked as done', 422);
+export async function POST(
+  req: Request,
+  { params }: { params: { slug: string } }
+) {
+  await connectDB();
+  const { slug } = params;
 
-    const exist = await CareItem.findOne({slug}).lean<CareItemLean | null>();
+  let body: CompleteBody;
+  try {
+    body = (await req.json()) as CompleteBody;
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+  }
 
-    const setStatus = {status: 'Pending' as const};
-    const pushDone: Partial<Record<'files' | 'comments' | 'doneDates', string>> = { files: fileName, doneDates: doneAt};
+  const file = (body.file ?? '').trim();
+  if (!file) {
+    return NextResponse.json(
+      { error: 'A file must be provided to complete this task.' },
+      { status: 422 }
+    );
+  }
 
-    if(comment) pushDone.comments = comment;
+  const completedAt = isISODateOnly(body.doneAt) ? body.doneAt : todayISO();
+  const comment = (body.comment ?? '').trim();
 
-    const update =
-        Object.keys(pushDone).length > 0
-        ? {$set: setStatus, $push: pushDone}
-        : {$set: setStatus};
-    
-    const updated = await CareItem.findOneAndUpdate(
-        {slug},
-        update,
-        {new: true}
-    ).select('slug status comments files doneDates').lean<CareItemLean | null>();
+  const update: Record<string, unknown> = {
+    $set: { status: 'Completed', lastDone: completedAt },
+    $push: { files: file },
+  };
+  if (comment) {
+    (update.$push as Record<string, unknown>).comments = comment;
+  }
 
-    if(!updated) return returnError('Care item not found', 404);
+  const updated = await CareItem.findOneAndUpdate(
+    { slug: slug.toLowerCase() },
+    update,
+    { new: true }
+  )
+    .select('slug status files comments lastDone')
+    .lean<CareItemLean | null>();
 
-    return NextResponse.json({
-        slug: updated.slug,
-        status: updated.status,
-        comments: Array.isArray(updated.comments) ? updated.comments : [],
-        files: Array.isArray(updated.files) ? updated.files : [],
-        doneDates: Array.isArray(updated.doneDate) ? updated.doneDate : [],
-    }); 
+  if (!updated) {
+    return NextResponse.json({ error: 'Care item not found' }, { status: 404 });
+  }
+
+  return NextResponse.json(updated);
 }
