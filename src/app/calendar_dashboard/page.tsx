@@ -28,7 +28,10 @@ import DashboardChrome from '@/components/top_menu/client_schedule';
 import CalendarPanel from '@/components/dashboard/CalendarPanel';
 import TasksPanel from '@/components/tasks/TasksPanel';
 
-import type { Task } from '@/lib/mock/mockApi';
+//import type { Task } from '@/lib/mock/mockApi';
+import { type NewTask } from '@/lib/care-item-helpers/care_item_utils';
+
+import { nextDueTaskFromLastDone, futureOccurenceAfterDoneWindow } from '@/lib/care-item-helpers/date-helpers';
 
 import {
   getViewerRole,
@@ -40,6 +43,15 @@ import {
   type Client as ApiClient,
 } from '@/lib/data';
 import { title } from 'node:process';
+
+/* ------------------------------ Task Retrieval helper ----------------------------- */
+function monthsBoundsUTC(yyyyMm: string) {
+  const [y, m] = yyyyMm.split('-').map(Number);
+  const first = new Date(Date.UTC(y, m-1, 1));
+  const last = new Date(Date.UTC(y, m, 0));
+  const iso = (d: Date) => d.toISOString().slice(0, 10);
+  return {start: iso(first), end: iso(last)};
+}
 
 /* ------------------------------ Palette ----------------------------- */
 const palette = {
@@ -63,14 +75,15 @@ type ApiClientWithAccess = ApiClient & {
 };
 
 // Extends Task type to safely access clientId, files and comments
-type ClientTask = Task & {
+// updatted
+type ClientTask = NewTask & {
   clientId?: string;
   comments?: string[];
   files?: string[];
 };
 
 type CalendarPanelProps = {
-  tasks: Task[];
+  tasks: NewTask[];
   onDateClick?: (date: string) => void;
   onMonthYearChange?: (year: number, month: number) => void;
 };
@@ -160,7 +173,7 @@ function ClientSchedule() {
   useEffect(() => {
     (async () => {
       try {
-        const list: Task[] = await getTasks();
+        const list: NewTask[] = await getTasks();
         setTasks(Array.isArray(list) ? list : []);
       } catch (err) {
         console.error('Failed to fetch tasks.', err);
@@ -227,14 +240,15 @@ function ClientSchedule() {
     return (t.nextDue ?? '').slice(0, 10);
   }
 
-  const tasksForCalendar: ClientTask[] = tasksByClient.filter((t) => {
-    const due = getDueISO(t);
-    if (!due) return false;
+  const {start, end} = monthsBoundsUTC(visibleMonth);
 
-    if (selectedDate) return due === selectedDate;
+  const tasksForCalendar: ClientTask[] = tasksByClient.flatMap((t) => {
+    const occur = futureOccurenceAfterDoneWindow(
+      t.dateFrom,
+      t.doneDate
+    );
 
-    const month = due.slice(0, 7);
-    return month === visibleMonth;
+    return ;
   });
 
   // If a day is selected we filter by that day; otherwise it's the whole dataset for the visible month (handled in TasksPanel)

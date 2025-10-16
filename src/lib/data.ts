@@ -22,7 +22,7 @@ export type ApiCareItem = {
   label: string;
   status: 'Pending' | 'Overdue' | 'Completed';
   frequency?: string;
-  lastDone?: string;
+  doneDates?: string[];
   nextDue?: string;
   clientId?: string;
   comments?: string[];
@@ -38,7 +38,7 @@ type CareItemListRow = {
   clientId?: string;
   deleted?: boolean;
   frequency?: string;
-  lastDone?: string;
+  doneDates?: string[];
   frequencyDays?: number;
   frequencyCount?: number;
   frequencyUnit?: 'day' | 'week' | 'month' | 'year';

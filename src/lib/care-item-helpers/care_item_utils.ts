@@ -34,6 +34,19 @@ type NormalisedFields = {
   lastDone?: string;
 };
 
+export type NewTask = {
+  id: string;
+  clientId: string; // which client this task belongs to
+  title: string;
+  category?: string; // optional: auto derived from catalog
+  frequency: string;
+  doneDates: string[]; 
+  nextDue: string; // YYYY-MM-DD
+  status: 'Pending' | 'Overdue' | 'Completed';
+  comments: string[];
+  files: string[];
+};
+
 export function parseLegacyFrequency(
   freq?: string
 ): { count: number; unit: Unit } | null {

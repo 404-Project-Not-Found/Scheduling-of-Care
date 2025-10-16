@@ -21,7 +21,7 @@ interface CareItemLean {
   status: string;
   category: string;
   frequency?: string;
-  lastDone?: Date | string | null;
+  
   categoryId?: Types.ObjectId | string | null;
   deleted?: boolean;
   clientId?: Types.ObjectId | string | null;
@@ -84,6 +84,8 @@ function clampToWindow(date: string, start: string, end: string) {
 
 export type Unit = 'day' | 'week' | 'month' | 'year';
 
+
+
 // add count and unit based on real months or years
 export function addCount(ISO: string, count: number, unit: Unit): Date {
   const from = parseISODateOnly(ISO);
@@ -128,6 +130,7 @@ export function generateDueDate(
   return out;
 }
 
+// Don't delete this
 export function toISO(input: unknown): string | undefined {
   if (!input) return undefined;
   const d =
@@ -138,6 +141,64 @@ export function toISO(input: unknown): string | undefined {
         : undefined;
   return d && !Number.isNaN(d.getTime()) ? d.toISOString() : undefined;
 }
+
+// return when a task is last done
+export function getLastDoneTask(doneDates: string[] | undefined, dateFrom: string | null | undefined) {
+  const doneDate = 
+  (Array.isArray(doneDates) && doneDates.length 
+  ? [...doneDates].sort().at(-1)!
+  : toISODateOnly(dateFrom)) || '';
+  if(!doneDate) return undefined;
+  return doneDate;
+  
+}
+
+// return when the task is next due based on when it is last done
+export function nextDueTaskFromLastDone(dateFrom: string | null | undefined, doneDates: string[] | undefined, count: number, unit: Unit) {
+  // if task not yet done once, get the dateFrom
+  const lastDone = getLastDoneTask(doneDates, dateFrom);
+  if(!lastDone) return undefined;
+  return nextDueISO(lastDone, count, unit);
+}
+
+// generate future occurence after when task is last done or dateFrom
+export function futureOccurenceAfterDoneWindow(
+  dateFromISO: string | undefined, 
+  doneDates: string[] | undefined, 
+  opts: {count: number; unit: Unit; dateToISO?: string | null}, 
+  windowStartISO: string, 
+  windowEndISO: string) {
+
+    const lastDone = getLastDoneTask(doneDates, dateFromISO);
+    if(!lastDone) return [];
+
+    const limit = opts.dateToISO ? toISODateOnly(opts.dateToISO) : undefined;
+    const step = (iso : string) => nextDueISO(iso, opts.count, opts.unit);
+
+    // first due after lastDone
+    let due = step(lastDone);
+    while(due < windowStartISO) {
+      // if first >= windowStart
+      const next = step(due);
+      if(!next || next === due) return [];
+      due = next;
+      if(limit && due > limit) return [];
+    }
+
+    const out: string[] = [];
+    let guard = 0;
+    while(due <= windowEndISO && (!limit || due <= limit) && guard < 2048) {
+      out.push(due);
+      const next = step(due);
+      if(!next || next == due) break;
+      due = next;
+      guard++;
+    }
+    return out;
+}
+
+
+
 
 export function toISODateOnly(
   input: Date | string | number | null | undefined
