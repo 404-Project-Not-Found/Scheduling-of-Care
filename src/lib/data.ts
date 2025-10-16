@@ -10,42 +10,9 @@ import * as mockApi from './mock/mockApi';
 import { getSession } from 'next-auth/react';
 import { mockSignOut } from './mock/mockSignout';
 import { signOut as nextAuthSignOut } from 'next-auth/react';
-import {
-  toISODateOnly,
-  nextOccurrenceAfterToday,
-} from '@/lib/care-item-helpers/date-helpers';
+import { latestISO } from './care-item-helpers/date-helpers';
+import { CareItemListRow, doneNextDue, frequencyLabel, normalizeStatus } from './care-item-helpers/get_task_helpers';
 
-// Fetching Task helper
-
-export type ApiCareItem = {
-  slug: string;
-  label: string;
-  status: 'Pending' | 'Overdue' | 'Completed';
-  frequency?: string;
-  doneDates?: string[];
-  nextDue?: string;
-  clientId?: string;
-  comments?: string[];
-  files?: string[];
-};
-
-type CareItemListRow = {
-  label: string;
-  slug: string;
-  status: 'Pending' | 'Overdue' | 'Completed';
-  category: string;
-  categoryId?: string;
-  clientId?: string;
-  deleted?: boolean;
-  frequency?: string;
-  doneDates?: string[];
-  frequencyDays?: number;
-  frequencyCount?: number;
-  frequencyUnit?: 'day' | 'week' | 'month' | 'year';
-  dateFrom?: string;
-  dateTo?: string;
-  notes?: string;
-};
 
 // Flag to determine whether to use mock API or real back-end
 const isMock = process.env.NEXT_PUBLIC_ENABLE_MOCK === '1';
@@ -115,49 +82,34 @@ export const getTasks = async (): Promise<mockApi.Task[]> => {
     return mockApi.getTasksFE();
   }
 
-  const buildFrequency = (row: CareItemListRow): string => {
-    if (row.frequency && row.frequency.trim()) return row.frequency;
-    if (row.frequencyCount && row.frequencyUnit) {
-      const unit =
-        row.frequencyCount === 1 ? row.frequencyUnit : `${row.frequencyUnit}s`;
-      return `Every ${row.frequencyCount} ${unit}`;
-    }
-    if (row.frequencyDays && row.frequencyDays > 0) {
-      const unit = row.frequencyDays === 1 ? 'day' : 'days';
-      return `Every ${row.frequencyDays} ${unit}`;
-    }
-    return '';
-  };
-
   const res = await fetch('/api/v1/care_item?limit=200', { cache: 'no-store' });
   if (!res.ok) {
     throw new Error(`Failed to fetch tasks (${res.status})`);
   }
 
-  const rows: CareItemListRow[] = await res.json();
+  const rows = (await res.json()) as CareItemListRow[];
 
-  const tasks: mockApi.Task[] = rows.map((row, idx) => {
+  const tasks: mockApi.Task[] = rows.filter((r) => !r.deleted).map((row, idx) => {
     const id = row.slug || `task-${idx}`;
 
-    const task: mockApi.Task = {
-      id,
-      title: row.label,
-      status: row.status,
-      category: row.category,
-      clientId: row.clientId ?? '',
-      frequency: buildFrequency(row),
-      lastDone: toISODateOnly(row.lastDone ?? null) || '',
-      nextDue: nextOccurrenceAfterToday(
-        toISODateOnly(row.dateFrom),
-        row.frequencyCount,
-        row.frequencyUnit,
-        row.frequencyDays
-      ),
-      comments: [],
-      files: [],
-    };
+    const lastDone = latestISO(row.doneDates);
+    const nextDue = doneNextDue(row) || '';
 
-    return task;
+    return {
+      id,
+      clientId: row.clientId ?? '',
+      label: (row.label ||'').trim() || 'Untitled',
+      category: row.category || undefined,
+      frequency: frequencyLabel(row),
+      lastDone,
+      nextDue,
+      status: normalizeStatus(row.status, nextDue),
+      comments: Array.isArray(row.comments) ? row.comments : [],
+      files: Array.isArray(row.files) ? row.files : [],
+      dateFrom: row.dateFrom,
+      dateTo: row.dateTo,
+      doneDates: row.doneDates,
+    };
   });
 
   return tasks;

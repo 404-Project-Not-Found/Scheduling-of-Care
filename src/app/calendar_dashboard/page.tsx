@@ -28,10 +28,9 @@ import DashboardChrome from '@/components/top_menu/client_schedule';
 import CalendarPanel from '@/components/dashboard/CalendarPanel';
 import TasksPanel from '@/components/tasks/TasksPanel';
 
-//import type { Task } from '@/lib/mock/mockApi';
-import { type NewTask } from '@/lib/care-item-helpers/care_item_utils';
+import type { Task } from '@/lib/mock/mockApi';
 
-import { nextDueTaskFromLastDone, futureOccurenceAfterDoneWindow } from '@/lib/care-item-helpers/date-helpers';
+import { nextDueTaskFromLastDone, futureOccurenceAfterDoneWindow, formatISODateOnly } from '@/lib/care-item-helpers/date-helpers';
 
 import {
   getViewerRole,
@@ -49,9 +48,12 @@ function monthsBoundsUTC(yyyyMm: string) {
   const [y, m] = yyyyMm.split('-').map(Number);
   const first = new Date(Date.UTC(y, m-1, 1));
   const last = new Date(Date.UTC(y, m, 0));
-  const iso = (d: Date) => d.toISOString().slice(0, 10);
+  const iso = (d: Date) => formatISODateOnly(d);
   return {start: iso(first), end: iso(last)};
 }
+
+
+
 
 /* ------------------------------ Palette ----------------------------- */
 const palette = {
@@ -76,14 +78,19 @@ type ApiClientWithAccess = ApiClient & {
 
 // Extends Task type to safely access clientId, files and comments
 // updatted
-type ClientTask = NewTask & {
+type ClientTask = Task & {
   clientId?: string;
   comments?: string[];
   files?: string[];
+  dateFrom?: string,
+  dateTo?: string,
+  doneDates?: string[],
+  frequencyCount?: number,
+  frequencyUnit?: 'day' | 'week' | 'month' | 'year',
 };
 
 type CalendarPanelProps = {
-  tasks: NewTask[];
+  tasks: Task[];
   onDateClick?: (date: string) => void;
   onMonthYearChange?: (year: number, month: number) => void;
 };
@@ -169,11 +176,12 @@ function ClientSchedule() {
 
   const [isAddingComment, setIsAddingComment] = useState(false);
   const [newComment, setNewComment] = useState('');
+  
 
   useEffect(() => {
     (async () => {
       try {
-        const list: NewTask[] = await getTasks();
+        const list: Task[] = await getTasks();
         setTasks(Array.isArray(list) ? list : []);
       } catch (err) {
         console.error('Failed to fetch tasks.', err);
@@ -240,15 +248,32 @@ function ClientSchedule() {
     return (t.nextDue ?? '').slice(0, 10);
   }
 
-  const {start, end} = monthsBoundsUTC(visibleMonth);
+  function pad2(num: number) {return String(num).padStart(2, '0');}
+
+  const {start, end} = useMemo(() => {
+    const now = new Date();
+    const y = (visibleYear ?? now.getUTCFullYear());
+    const m = (visibleMonth ?? (now.getUTCMonth() + 1));
+    const ym = `${y}-${pad2(m)}`;
+    return monthsBoundsUTC(ym);
+  }, [visibleYear, visibleMonth] );
+
 
   const tasksForCalendar: ClientTask[] = tasksByClient.flatMap((t) => {
+    
+    if(!t.frequencyCount || !t.frequencyUnit) return [];
+
     const occur = futureOccurenceAfterDoneWindow(
       t.dateFrom,
-      t.doneDate
+      t.doneDates,
+      t.frequencyCount,
+      t.frequencyUnit,
+      start,
+      end,
+      t.dateTo
     );
 
-    return ;
+    return occur.map((date) =>({...t, nextDue: date}));
   });
 
   // If a day is selected we filter by that day; otherwise it's the whole dataset for the visible month (handled in TasksPanel)
@@ -280,7 +305,7 @@ function ClientSchedule() {
   /* -------------------- RIGHT PANE: title search -------------------- */
   const [searchTerm, setSearchTerm] = useState('');
   const tasksForRightPane = tasksForCalendar.filter((t) => {
-    const title = (t?.title ?? '').toLowerCase();
+    const title = (t?.label ?? '').toLowerCase();
     const q = (searchTerm ?? '').trim().toLowerCase();
     return title.includes(q);
   });
@@ -314,7 +339,7 @@ function ClientSchedule() {
 
   const getStatusBadgeClasses = (status?: string) => {
     switch ((status || '').toLowerCase()) {
-      case 'due':
+      case 'overdue':
         return 'bg-red-500 text-white';
       case 'pending':
         return 'bg-orange-400 text-white';
@@ -471,7 +496,7 @@ function TaskDetail({
         >
           {'<'}
         </button>
-        <h2 className="text-3xl md:text-4xl font-extrabold">{task.title}</h2>
+        <h2 className="text-3xl md:text-4xl font-extrabold">{task.label}</h2>
       </div>
 
       {/* Detail body */}

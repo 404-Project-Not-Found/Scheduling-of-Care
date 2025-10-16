@@ -17,7 +17,7 @@ type TasksPanelProps = {
 // Map status → pill colors (kept exactly like your original visuals)
 const getStatusColor = (status: string) => {
   switch ((status || '').toLowerCase()) {
-    case 'due':
+    case 'overdue':
       return 'bg-red-500 text-white';
     case 'pending':
       return 'bg-orange-400 text-white';
@@ -83,7 +83,7 @@ export default function TasksPanel({
             onClick={() => onTaskClick(t)}
           >
             <div>
-              <div className="font-bold">{t.title}</div>
+              <div className="font-bold">{t.label}</div>
               <p className="text-sm text-gray-700">
                 Scheduled due: {t.nextDue}
               </p>

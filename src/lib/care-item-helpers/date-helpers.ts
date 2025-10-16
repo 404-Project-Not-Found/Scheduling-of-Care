@@ -37,6 +37,7 @@ export function isISODateOnly(s: unknown): s is string {
   return typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
 }
 
+
 // to store dates as YYY-MM-DD
 export function parseISODateOnly(yyyyMmDd: string): Date {
   if (!isISODateOnly(yyyyMmDd)) {
@@ -62,8 +63,17 @@ export function parseISODateOnly(yyyyMmDd: string): Date {
   return dt;
 }
 
-export function formatISODateOnly(date: Date): string {
-  return date.toISOString().slice(0, 10);
+export function formatISODateOnly(date: Date | string | null): string {
+  if(!date) return '';
+
+  if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) { 
+    return date; 
+  }
+
+  const d = new Date(date instanceof Date ? date : String(date));
+  if(isNaN(d.getTime())) return '';
+
+  return d.toISOString().slice(0, 10);
 }
 
 function toISODate(d: Date) {
@@ -130,7 +140,7 @@ export function generateDueDate(
   return out;
 }
 
-// Don't delete this
+
 export function toISO(input: unknown): string | undefined {
   if (!input) return undefined;
   const d =
@@ -149,9 +159,15 @@ export function getLastDoneTask(doneDates: string[] | undefined, dateFrom: strin
   ? [...doneDates].sort().at(-1)!
   : toISODateOnly(dateFrom)) || '';
   if(!doneDate) return undefined;
-  return doneDate;
-  
+  return doneDate; 
 }
+
+export function latestISO(dates?: string[]): string { 
+  if (!Array.isArray(dates) || dates.length === 0) return ''; 
+  const sorted = dates.slice().sort(); 
+  return sorted[sorted.length - 1] ?? ''; 
+}
+
 
 // return when the task is next due based on when it is last done
 export function nextDueTaskFromLastDone(dateFrom: string | null | undefined, doneDates: string[] | undefined, count: number, unit: Unit) {
@@ -163,37 +179,43 @@ export function nextDueTaskFromLastDone(dateFrom: string | null | undefined, don
 
 // generate future occurence after when task is last done or dateFrom
 export function futureOccurenceAfterDoneWindow(
-  dateFromISO: string | undefined, 
+  dateFrom: string | undefined, 
   doneDates: string[] | undefined, 
-  opts: {count: number; unit: Unit; dateToISO?: string | null}, 
+  frequencyCount: number,
+  frequencyUnit: Unit, 
   windowStartISO: string, 
-  windowEndISO: string) {
+  windowEndISO: string,
+  dateTo?: string
+  ): string[] {
 
-    const lastDone = getLastDoneTask(doneDates, dateFromISO);
+    const lastDone = getLastDoneTask(doneDates, dateFrom);
     if(!lastDone) return [];
 
-    const limit = opts.dateToISO ? toISODateOnly(opts.dateToISO) : undefined;
-    const step = (iso : string) => nextDueISO(iso, opts.count, opts.unit);
+    if(dateTo && windowStartISO > dateTo) return [];
+    
+    const step = (base: string) => nextDueTaskFromLastDone(base, doneDates, frequencyCount, frequencyUnit);
 
-    // first due after lastDone
-    let due = step(lastDone);
-    while(due < windowStartISO) {
-      // if first >= windowStart
-      const next = step(due);
-      if(!next || next === due) return [];
-      due = next;
-      if(limit && due > limit) return [];
+    let occur = step(lastDone);
+    const out: string[] = [];
+    
+    while(occur && occur < windowStartISO) {
+      const next = step(occur);
+      if(!next || next === occur) return [];
+      occur = next;
+      if(dateTo && occur > dateTo) return [];
     }
 
-    const out: string[] = [];
     let guard = 0;
-    while(due <= windowEndISO && (!limit || due <= limit) && guard < 2048) {
-      out.push(due);
-      const next = step(due);
-      if(!next || next == due) break;
-      due = next;
+    while(occur && occur <= windowEndISO && guard < 2048) {
+      if(!dateTo || occur <= dateTo) out.push(occur);
+      else break;
+
+      const next = step(occur);
+      if(!next || next === occur) break;
+      occur = next;
       guard++;
     }
+
     return out;
 }
 

@@ -16,7 +16,7 @@ export default function TasksList({ tasks, onTaskClick }: TasksListProps) {
           className="w-full bg-white text-black border rounded px-3 py-2 cursor-pointer hover:bg-gray-100"
           onClick={() => onTaskClick(t)}
         >
-          <div className="font-bold">{t.title}</div>
+          <div className="font-bold">{t.label}</div>
           <p className="text-sm text-gray-700">Scheduled due: {t.nextDue}</p>
           <p className="text-sm text-gray-700">
             Status: {t.status || 'Pending'}

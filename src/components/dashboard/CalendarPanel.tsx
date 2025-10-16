@@ -14,7 +14,7 @@ const FullCalendar = dynamic(() => import('@fullcalendar/react'), {
 
 type Task = {
   id: string;
-  title: string;
+  label: string;
   nextDue: string; // YYYY-MM-DD
 };
 

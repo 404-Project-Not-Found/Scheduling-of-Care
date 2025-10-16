@@ -244,7 +244,7 @@ export const MOCK_ORGS: Organisation[] = [
 export type Task = {
   id: string;
   clientId: string; // which client this task belongs to
-  title: string;
+  label: string;
   category?: string; // optional: auto derived from catalog
   frequency: string;
   lastDone: string; // YYYY-MM-DD
@@ -262,7 +262,7 @@ const DEMO_TASKS: Task[] = [
   {
     id: '1',
     clientId: FULL_DASH_ID,
-    title: 'Dental Appointment',
+    label: 'Dental Appointment',
     category: 'Appointments',
     frequency: 'Monthly',
     lastDone: '2025-09-15',
@@ -274,7 +274,7 @@ const DEMO_TASKS: Task[] = [
   {
     id: '2',
     clientId: FULL_DASH_ID,
-    title: 'Replace Toothbrush Head',
+    label: 'Replace Toothbrush Head',
     category: 'Hygiene',
     frequency: 'Every 3 months',
     lastDone: '2025-07-13',
@@ -288,7 +288,7 @@ const DEMO_TASKS: Task[] = [
   {
     id: '3',
     clientId: PARTIAL_DASH_ID,
-    title: 'Submit Report',
+    label: 'Submit Report',
     category: 'Administration',
     frequency: 'Weekly',
     lastDone: '2025-09-18',
@@ -313,9 +313,9 @@ export async function getTasksFE(): Promise<Task[]> {
             return {
               id: partial.id ?? `${idx + 1}`,
               clientId: partial.clientId ?? FULL_DASH_ID,
-              title:
-                typeof partial.title === 'string'
-                  ? partial.title
+              label:
+                typeof partial.label === 'string'
+                  ? partial.label
                   : `Task ${idx + 1}`,
               category: partial.category ?? '',
               frequency: partial.frequency ?? '',
@@ -782,7 +782,7 @@ export async function saveRequestsFE(requests: RequestLog[]): Promise<void> {
 export type AccessUser = {
   id: string;
   name: string;
-  role: ViewerRole; // reuse: 'family' | 'carer' | 'management'
+  role: ViewerRole;      // reuse: 'family' | 'carer' | 'management'
 };
 
 /** Per-client mock users who can access this client's data */
@@ -831,18 +831,14 @@ const MOCK_USERS_BY_CLIENT: Record<string, AccessUser[]> = {
 };
 
 /** Fetch users who have access to a given client (mock or backend) */
-export async function getUsersWithAccessFE(
-  clientId: string
-): Promise<AccessUser[]> {
+export async function getUsersWithAccessFE(clientId: string): Promise<AccessUser[]> {
   if (isMock) {
     await new Promise((r) => setTimeout(r, 60));
     return MOCK_USERS_BY_CLIENT[clientId] ?? [];
   }
 
   // real backend (adjust endpoint to your API)
-  const res = await fetch(`/api/v1/clients/${clientId}/access`, {
-    cache: 'no-store',
-  });
+  const res = await fetch(`/api/v1/clients/${clientId}/access`, { cache: 'no-store' });
   if (!res.ok) return [];
   const data = await res.json();
   return Array.isArray(data) ? (data as AccessUser[]) : [];
