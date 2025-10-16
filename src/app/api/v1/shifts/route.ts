@@ -61,16 +61,18 @@ export async function GET() {
     .lean<ShiftPopulated[]>();
 
   // Formatted shifts for API response
-  const formattedShifts = shifts.map((s) => ({
-    id: s._id.toString(),
-    staffId: s.staff._id.toString(),
-    staffName: s.staff.fullName,
-    role: s.staff.role,
-    date: s.date,
-    start: s.start,
-    end: s.end,
-    label: s.label,
-  }));
+  const formattedShifts = shifts
+    .filter((s) => s.staff)
+    .map((s) => ({
+      id: s._id.toString(),
+      staffId: s.staff._id.toString(),
+      staffName: s.staff.fullName,
+      role: s.staff.role,
+      date: s.date,
+      start: s.start,
+      end: s.end,
+      label: s.label,
+    }));
 
   return NextResponse.json({ shifts: formattedShifts }, { status: 200 });
 }

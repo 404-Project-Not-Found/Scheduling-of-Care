@@ -82,6 +82,26 @@ export default function StaffListPage() {
     };
   }, []);
 
+  const removeStaff = async (staffId: string) => {
+    if (!confirm('Are you sure you want to remove this staff member?')) return;
+
+    try {
+      const res = await fetch(`/api/v1/management/staff?id=${staffId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || 'Failed to remove staff.');
+
+      setStaff((prev) => prev.filter((s) => s._id !== staffId));
+      alert('Staff removed successfully!');
+    } catch (err: unknown) {
+      alert(getErrorMessage(err));
+      console.error('Error removing staff:', err);
+    }
+  };
+
   // Search query: filters by name or email (case-insensitive)
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
@@ -233,18 +253,17 @@ export default function StaffListPage() {
                             )}
                           </div>
                         </div>
-                        {/* Status badge */}
-                        {s.status && (
-                          <span
-                            className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                              s.status === 'active'
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-red-100 text-red-800'
-                            }`}
-                          >
-                            Active
-                          </span>
-                        )}
+                        {/* Remove button */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeStaff(s._id);
+                          }}
+                          className="px-4 py-2 rounded-lg text-white text-sm font-semibold hover:opacity-90"
+                          style={{ backgroundColor: colors.header }}
+                        >
+                          Remove
+                        </button>
                       </li>
                     ))}
                   </ul>

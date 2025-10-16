@@ -133,3 +133,50 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: err }, { status: 400 });
   }
 }
+
+/**
+ * Deletes the staff users account completely
+ * @param req
+ * @returns success message
+ */
+export async function DELETE(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.id || session.user.role !== 'management') {
+    return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
+  }
+
+  await connectDB();
+
+  const { searchParams } = new URL(req.url);
+  const staffId = searchParams.get('id');
+
+  if (!staffId || !mongoose.isValidObjectId(staffId)) {
+    return NextResponse.json({ error: 'Invalid staff ID' }, { status: 400 });
+  }
+
+  try {
+    const removed = await User.findOneAndDelete({
+      _id: new mongoose.Types.ObjectId(staffId),
+      organisation: session.user.organisation,
+    });
+
+    if (!removed) {
+      return NextResponse.json(
+        { error: 'Staff not found or not in organisation' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(
+      { message: 'Staff removed successfully!' },
+      { status: 200 }
+    );
+  } catch (err) {
+    console.error('Error removing staff:', err);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
