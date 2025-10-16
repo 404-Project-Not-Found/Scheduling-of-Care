@@ -7,6 +7,9 @@
  * - Management-only "Edit" to change Annual Budget and recalc Remaining.
  * - Layout: full-bleed (no inner white panel), header + content fill viewport.
  * - Fetches rows via getBudgetRowsFE(activeClientId).
+ *
+ * Last Updated by Denise Alexander (16/10/2025): Fixed active client usage, client dropdown
+ * now works correctly.
  */
 
 'use client';
@@ -19,18 +22,28 @@ import DashboardChrome from '@/components/top_menu/client_schedule';
 import Badge from '@/components/ui/Badge';
 
 import {
-  getViewerRoleFE,
-  getClientsFE,
-  readActiveClientFromStorage,
-  writeActiveClientToStorage,
-  getBudgetRowsFE,
+  getViewerRole,
+  getClients,
+  getActiveClient,
+  setActiveClient,
   type Client as ApiClient,
-  type BudgetRow,
-} from '@/lib/mock/mockApi';
+} from '@/lib/data';
+
+import { getBudgetRowsFE, BudgetRow } from '@/lib/mock/mockApi';
 
 /* ---------------------------------- Types ---------------------------------- */
 type Client = { id: string; name: string };
 type Role = 'carer' | 'family' | 'management';
+
+type ClientLite = {
+  id: string;
+  name: string;
+  orgAccess?: 'approved' | 'pending' | 'revoked';
+};
+
+type ApiClientWithAccess = ApiClient & {
+  orgAccess?: 'approved' | 'pending' | 'revoked';
+};
 
 /* ------------------------------- Chrome colors ------------------------------- */
 const colors = {
@@ -63,17 +76,66 @@ export default function BudgetReportPage() {
 function BudgetReportInner() {
   const router = useRouter();
 
-  // ===== Role =====
-  const [role, setRole] = useState<Role>('family');
-  useEffect(() => {
-    setRole(getViewerRoleFE());
-  }, []);
-  const isManagement = role === 'management';
+  /* ------------------------------ Role ------------------------------ */
+  const [role, setRole] = useState<Role>('carer'); // default
 
-  // ===== Clients =====
-  const [clients, setClients] = useState<Client[]>([]);
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await getViewerRole();
+        setRole(r);
+      } catch (err) {
+        console.error('Failed to get role.', err);
+        setRole('carer'); // fallback
+      }
+    })();
+  }, []);
+
+  /* ---------------------------- Clients ----------------------------- */
+  const [clients, setClients] = useState<ClientLite[]>([]);
   const [activeClientId, setActiveClientId] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string>('');
+
+  // Load clients + active client on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const list: ApiClient[] = await getClients();
+        const mapped: ClientLite[] = (list as ApiClientWithAccess[]).map(
+          (c) => ({
+            id: c._id,
+            name: c.name,
+            orgAccess: c.orgAccess,
+          })
+        );
+        setClients(mapped);
+
+        const active = await getActiveClient();
+        setActiveClientId(active.id);
+        setDisplayName(active.name || '');
+      } catch (err) {
+        console.error('Failed to fetch clients.', err);
+        setClients([]);
+        setActiveClientId(null);
+        setDisplayName('');
+      }
+    })();
+  }, []);
+
+  // Change active client (persists with helper)
+  const onClientChange = async (id: string) => {
+    if (!id) {
+      setActiveClientId(null);
+      setDisplayName('');
+      await setActiveClient(null);
+      return;
+    }
+    const c = clients.find((x) => x.id === id);
+    const name = c?.name || '';
+    setActiveClientId(id);
+    setDisplayName(name);
+    await setActiveClient(id, name);
+  };
 
   // ===== Budget rows =====
   const [rows, setRows] = useState<BudgetRow[]>([]);
@@ -84,28 +146,6 @@ function BudgetReportInner() {
     number | null
   >(null);
   const [annualBudgetInput, setAnnualBudgetInput] = useState<string>('');
-
-  /** Load clients */
-  useEffect(() => {
-    (async () => {
-      try {
-        const list = await getClientsFE();
-        const mapped: Client[] = list.map((c: ApiClient) => ({
-          id: c._id,
-          name: c.name,
-        }));
-        setClients(mapped);
-
-        const { id, name } = readActiveClientFromStorage();
-        if (id) {
-          setActiveClientId(id);
-          setDisplayName(name || mapped.find((m) => m.id === id)?.name || '');
-        }
-      } catch {
-        setClients([]);
-      }
-    })();
-  }, []);
 
   /** Load budget rows when active client changes */
   useEffect(() => {
@@ -122,21 +162,6 @@ function BudgetReportInner() {
       }
     })();
   }, [activeClientId]);
-
-  /** Handle client change in banner */
-  const onClientChange = (id: string) => {
-    if (!id) {
-      setActiveClientId(null);
-      setDisplayName('');
-      writeActiveClientToStorage('', '');
-      return;
-    }
-    const c = clients.find((x) => x.id === id);
-    const name = c?.name || '';
-    setActiveClientId(id);
-    setDisplayName(name);
-    writeActiveClientToStorage(id, name);
-  };
 
   // ===== Local UI state =====
   const [q, setQ] = useState('');
@@ -202,7 +227,7 @@ function BudgetReportInner() {
               placeholder="Search"
               className="h-9 rounded-full bg-white text-black px-4 border"
             />
-            {isManagement &&
+            {role === 'management' &&
               (!isEditing ? (
                 <button
                   onClick={() => {
@@ -247,7 +272,7 @@ function BudgetReportInner() {
           {/* Tiles */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-18 mb-10 text-center">
             <div className="rounded-2xl border px-6 py-8 bg-[#F8CBA6]">
-              {isManagement && isEditing ? (
+              {role === 'management' && isEditing ? (
                 <>
                   <input
                     type="number"

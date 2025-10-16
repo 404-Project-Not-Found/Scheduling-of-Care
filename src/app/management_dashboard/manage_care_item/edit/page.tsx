@@ -1,11 +1,38 @@
+/**
+ * File path: /app/management_dashboard/manage_care_item/edit/page.tsx
+ * Frontend Author: Qingyue Zhao
+ * Backend Author: Zahra Rizqita
+ *
+ * Last Updated by Denise Alexander (16/10/2025): Fixed active client usage, client dropdown
+ * now works correctly.
+ */
+
 'use client';
 
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useMemo } from 'react';
 import DashboardChrome from '@/components/top_menu/client_schedule';
 import { type CareItemOption } from '@/lib/catalog';
-import { useActiveClient } from '@/context/ActiveClientContext';
-import { getClients, getActiveClient, Client as ApiClient } from '@/lib/data';
+import {
+  getViewerRole,
+  getClients,
+  getActiveClient,
+  setActiveClient,
+  type Client as ApiClient,
+} from '@/lib/data';
+
+// --------- Type Definitions ---------
+type Role = 'carer' | 'family' | 'management';
+
+type ClientLite = {
+  id: string;
+  name: string;
+  orgAccess?: 'approved' | 'pending' | 'revoked';
+};
+
+type ApiClientWithAccess = ApiClient & {
+  orgAccess?: 'approved' | 'pending' | 'revoked';
+};
 
 type UiClient = { id: string; name: string };
 
@@ -54,12 +81,6 @@ type CatalogItem = {
 export default function EditSelectorPage() {
   const router = useRouter();
 
-  // Topbar client list
-  const [clients, setClients] = useState<Client[]>([]);
-  const { client, handleClientChange, resetClient } = useActiveClient();
-  const activeId = client.id;
-  const activeName = client.name;
-
   // State
   const [careItemOptions, setCareItemOptions] = useState<CareItemOption[]>([]);
   const [loadingTasks, setLoadingTasks] = useState(false);
@@ -84,40 +105,77 @@ export default function EditSelectorPage() {
 
   const [itemSlug, setItemSlug] = useState<string>('');
 
-  // Load client
+  /* ------------------------------ Role ------------------------------ */
+  const [role, setRole] = useState<Role>('carer'); // default
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await getViewerRole();
+        setRole(r);
+      } catch (err) {
+        console.error('Failed to get role.', err);
+        setRole('carer'); // fallback
+      }
+    })();
+  }, []);
+
+  /* ---------------------------- Clients ----------------------------- */
+  const [clients, setClients] = useState<ClientLite[]>([]);
+  const [activeClientId, setActiveClientId] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState<string>('');
+
+  // Load clients + active client on mount
   useEffect(() => {
     (async () => {
       try {
         const list: ApiClient[] = await getClients();
-        const mapped: UiClient[] = list.map((c) => ({
-          id: c._id,
-          name: c.name,
-        }));
+        const mapped: ClientLite[] = (list as ApiClientWithAccess[]).map(
+          (c) => ({
+            id: c._id,
+            name: c.name,
+            orgAccess: c.orgAccess,
+          })
+        );
         setClients(mapped);
 
         const active = await getActiveClient();
-        if (active.id) {
-          handleClientChange(active.id, active.name);
-        } else {
-          resetClient();
-        }
-      } catch {
+        setActiveClientId(active.id);
+        setDisplayName(active.name || '');
+      } catch (err) {
+        console.error('Failed to fetch clients.', err);
         setClients([]);
-        resetClient();
+        setActiveClientId(null);
+        setDisplayName('');
       }
     })();
   }, []);
+
+  // Change active client (persists with helper)
+  const onClientChange = async (id: string) => {
+    if (!id) {
+      setActiveClientId(null);
+      setDisplayName('');
+      await setActiveClient(null);
+      return;
+    }
+    const c = clients.find((x) => x.id === id);
+    const name = c?.name || '';
+    setActiveClientId(id);
+    setDisplayName(name);
+    await setActiveClient(id, name);
+  };
 
   //Load categories -- updated to scope client on 10/10/2025
   useEffect(() => {
     (async () => {
       try {
-        if (!activeId) {
+        if (!activeClientId) {
           setCatalog([]);
           return;
         }
         const url = new URL('/api/v1/category', window.location.origin);
-        url.searchParams.set('clientId', activeId);
+        url.searchParams.set('clientId', activeClientId);
         const res = await fetch(url.toString(), { cache: 'no-store' });
         if (!res.ok) throw new Error('Failed to load category -- Editing task');
         const data: Array<{ name: string; slug: string }> = await res.json();
@@ -126,20 +184,20 @@ export default function EditSelectorPage() {
         setCatalog([]);
       }
     })();
-  }, [activeId]);
+  }, [activeClientId]);
 
   // Load task suggestions when category changes
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      if (!activeId || !category.trim()) {
+      if (!activeClientId || !category.trim()) {
         setCareItemOptions([]);
         return;
       }
       setLoadingTasks(true);
       try {
         const res = await fetch(
-          `/api/v1/task_catalog?clientId=${encodeURIComponent(activeId)}&category=${encodeURIComponent(category)}`,
+          `/api/v1/task_catalog?clientId=${encodeURIComponent(activeClientId)}&category=${encodeURIComponent(category)}`,
           { cache: 'no-store' }
         );
         if (!res.ok) throw new Error('failed');
@@ -163,7 +221,7 @@ export default function EditSelectorPage() {
     return () => {
       cancelled = true;
     };
-  }, [activeId, category]);
+  }, [activeClientId, category]);
 
   // When task is chosen: push to /edit/[slug]
   const handleTaskPick = async (value: string) => {
@@ -176,9 +234,9 @@ export default function EditSelectorPage() {
       return;
     }
 
-    if (activeId && category && value) {
+    if (activeClientId && category && value) {
       const url = new URL('/api/v1/care_item', window.location.origin);
-      url.searchParams.set('clientId', activeId);
+      url.searchParams.set('clientId', activeClientId);
       url.searchParams.set('category', category);
       url.searchParams.set('q', value);
       url.searchParams.set('limit', '1');
@@ -204,16 +262,6 @@ export default function EditSelectorPage() {
   const palette = {
     danger: '#8B0000',
     dangerHover: '#a40f0f',
-  };
-
-  const onClientChange = (id: string) => {
-    const c = clients.find((x) => x.id === id);
-    if (!id) resetClient();
-    else handleClientChange(id, c?.name || '');
-    // reset selection on client change
-    setCategory('');
-    setLabel('');
-    setCareItemOptions([]);
   };
 
   return (
@@ -248,7 +296,7 @@ export default function EditSelectorPage() {
             {/* Category (dropdown) */}
             <Field label="Category">
               <select
-                key={activeId || 'no-client'}
+                key={activeClientId || 'no-client'}
                 value={category}
                 onChange={(e) => {
                   setCategory(e.target.value.trim());

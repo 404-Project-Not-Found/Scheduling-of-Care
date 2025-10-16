@@ -18,15 +18,17 @@ import { useRouter } from 'next/navigation';
 import DashboardChrome from '@/components/top_menu/client_schedule';
 
 import {
-  getViewerRoleFE,
-  getClientsFE,
-  readActiveClientFromStorage,
-  writeActiveClientToStorage,
+  getViewerRole,
+  getClients,
+  getActiveClient,
+  setActiveClient,
   type Client as ApiClient,
-  getRequestsByClientFE,
-} from '@/lib/mock/mockApi';
+} from '@/lib/data';
 
-/** Data shape returned by getRequestsByClientFE() */
+// --------- Type Definitions ---------
+type Role = 'carer' | 'family' | 'management';
+
+/** Data shape returned for back-end mode */
 type ApiRequest = {
   id: string;
   clientId: string;
@@ -36,6 +38,16 @@ type ApiRequest = {
   dateRequested: string;
   status: 'Pending' | 'Implemented';
   resolutionDate: string;
+};
+
+type ClientLite = {
+  id: string;
+  name: string;
+  orgAccess?: 'approved' | 'pending' | 'revoked';
+};
+
+type ApiClientWithAccess = ApiClient & {
+  orgAccess?: 'approved' | 'pending' | 'revoked';
 };
 
 const colors = {
@@ -69,16 +81,19 @@ const statusClasses = (value: 'Pending' | 'Implemented') =>
     ? 'bg-yellow-100 text-yellow-800 border-yellow-300'
     : 'bg-green-100 text-green-800 border-green-300';
 
+async function fetchRequestsByClient(clientId: string): Promise<ApiRequest[]> {
+  const res = await fetch(`/api/v1/clients/${clientId}/requests`, {
+    cache: 'no-store',
+  });
+
+  if (!res.ok) throw new Error(`Failed to fetch requests (${res.status})`);
+
+  return (await res.json()) as ApiRequest[];
+}
+
 /* ------------------------------ Content ------------------------------ */
 function RequestLogInner() {
   const router = useRouter();
-  const role = getViewerRoleFE();
-  const isManagement = role === 'management';
-
-  // Clients for pink banner select
-  const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
-  const [activeClientId, setActiveClientId] = useState<string | null>(null);
-  const [activeClientName, setActiveClientName] = useState<string>('');
 
   // Requests
   const [requests, setRequests] = useState<ApiRequest[]>([]);
@@ -90,28 +105,66 @@ function RequestLogInner() {
   const [sortKey, setSortKey] = useState<keyof ApiRequest | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
 
-  /** Load clients */
+  /* ------------------------------ Role ------------------------------ */
+  const [role, setRole] = useState<Role>('carer'); // default
+
   useEffect(() => {
     (async () => {
       try {
-        const list = await getClientsFE();
-        const mapped = list.map((c: ApiClient) => ({
-          id: c._id,
-          name: c.name,
-        }));
-        setClients(mapped);
-
-        const { id, name } = readActiveClientFromStorage();
-        const useId = id || mapped[0]?.id || null;
-        const useName =
-          name || (mapped.find((m) => m.id === useId)?.name ?? '');
-        setActiveClientId(useId);
-        setActiveClientName(useName);
-      } catch {
-        setClients([]);
+        const r = await getViewerRole();
+        setRole(r);
+      } catch (err) {
+        console.error('Failed to get role.', err);
+        setRole('carer'); // fallback
       }
     })();
   }, []);
+
+  /* ---------------------------- Clients ----------------------------- */
+  const [clients, setClients] = useState<ClientLite[]>([]);
+  const [activeClientId, setActiveClientId] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState<string>('');
+
+  // Load clients + active client on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const list: ApiClient[] = await getClients();
+        const mapped: ClientLite[] = (list as ApiClientWithAccess[]).map(
+          (c) => ({
+            id: c._id,
+            name: c.name,
+            orgAccess: c.orgAccess,
+          })
+        );
+        setClients(mapped);
+
+        const active = await getActiveClient();
+        setActiveClientId(active.id);
+        setDisplayName(active.name || '');
+      } catch (err) {
+        console.error('Failed to fetch clients.', err);
+        setClients([]);
+        setActiveClientId(null);
+        setDisplayName('');
+      }
+    })();
+  }, []);
+
+  // Change active client (persists with helper)
+  const onClientChange = async (id: string) => {
+    if (!id) {
+      setActiveClientId(null);
+      setDisplayName('');
+      await setActiveClient(null);
+      return;
+    }
+    const c = clients.find((x) => x.id === id);
+    const name = c?.name || '';
+    setActiveClientId(id);
+    setDisplayName(name);
+    await setActiveClient(id, name);
+  };
 
   /** Load requests when active client changes */
   useEffect(() => {
@@ -123,7 +176,7 @@ function RequestLogInner() {
       setLoading(true);
       setErrorText('');
       try {
-        const data = await getRequestsByClientFE(activeClientId);
+        const data = await fetchRequestsByClient(activeClientId);
         setRequests(Array.isArray(data) ? data : []);
       } catch {
         setErrorText('Failed to load requests for this client.');
@@ -133,15 +186,6 @@ function RequestLogInner() {
       }
     })();
   }, [activeClientId]);
-
-  /** Pink banner select */
-  const onClientChange = (id: string) => {
-    const c = clients.find((x) => x.id === id) || null;
-    const name = c?.name || '';
-    setActiveClientId(id || null);
-    setActiveClientName(name);
-    writeActiveClientToStorage(id || '', name);
-  };
 
   /** Filter + sort */
   const filtered = useMemo(() => {
@@ -192,38 +236,55 @@ function RequestLogInner() {
   };
 
   /** Inline status change (Management only) */
-  const handleStatusChange = (
+  const handleStatusChange = async (
     reqId: string,
     next: 'Pending' | 'Implemented'
   ) => {
-    if (!isManagement) return;
-    setRequests((prev) =>
-      prev.map((r) =>
-        r.id !== reqId
-          ? r
-          : {
-              ...r,
-              status: next,
-              resolutionDate:
-                next === 'Implemented'
-                  ? new Date().toLocaleDateString('en-GB', {
-                      day: '2-digit',
-                      month: 'short',
-                      year: 'numeric',
-                    })
-                  : '-',
-            }
-      )
-    );
+    if (role !== 'management') return;
+
+    if (!activeClientId) return;
+
+    try {
+      setRequests((prev) =>
+        prev.map((r) =>
+          r.id !== reqId
+            ? r
+            : {
+                ...r,
+                status: next,
+                resolutionDate:
+                  next === 'Implemented'
+                    ? new Date().toLocaleDateString('en-GB', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric',
+                      })
+                    : '-',
+              }
+        )
+      );
+
+      const res = await fetch(`/api/v1/clients/${activeClientId}/requests`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ requestId: reqId, status: next }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to save request status.');
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
     <DashboardChrome
       page="request-log"
       clients={clients}
-      activeClientId={activeClientId}
       onClientChange={onClientChange}
-      activeClientName={activeClientName}
       colors={colors}
     >
       {/* Main content */}
@@ -234,14 +295,31 @@ function RequestLogInner() {
           style={{ backgroundColor: colors.header }}
         >
           <h1 className="text-2xl font-bold text-white">Request Log</h1>
-          <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2">
-            <input
-              type="text"
-              placeholder="Search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="border-none focus:outline-none w-56 text-black text-sm"
-            />
+
+          {/* Right-side: search + add button */}
+          <div className="flex items-center gap-2">
+            {/* Search bar */}
+            <div className=" bg-white rounded-lg px-3 py-2">
+              <input
+                type="text"
+                placeholder="Search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="border-none focus:outline-none w-56 text-black text-sm"
+              />
+            </div>
+            {/* Add request button (available only if client is selected) */}
+            {activeClientId && role === 'family' && (
+              <button
+                className="px-4 py-2 rounded-md font-semibold text-black"
+                style={{ backgroundColor: '#FFA94D' }}
+                onClick={() =>
+                  router.push('/family_dashboard/request_of_change_page')
+                }
+              >
+                + Add new request
+              </button>
+            )}
           </div>
         </div>
 
@@ -259,7 +337,7 @@ function RequestLogInner() {
                     className="p-5 cursor-pointer"
                     onClick={() => toggleSort('task')}
                   >
-                    Task{' '}
+                    Care Item{' '}
                     {sortKey === 'task'
                       ? sortDir === 'asc'
                         ? '⬆'
@@ -305,7 +383,13 @@ function RequestLogInner() {
               </thead>
 
               <tbody>
-                {sorted.length > 0 ? (
+                {!activeClientId ? (
+                  <tr>
+                    <td colSpan={6} className="p-8 text-center text-gray-500">
+                      Select a client to view requests.
+                    </td>
+                  </tr>
+                ) : sorted.length > 0 ? (
                   sorted.map((req) => (
                     <tr
                       key={req.id}
@@ -316,7 +400,7 @@ function RequestLogInner() {
                       <td className="p-5">{req.requestedBy}</td>
                       <td className="p-5">{req.dateRequested}</td>
                       <td className="p-5">
-                        {isManagement ? (
+                        {role === 'management' ? (
                           <select
                             value={req.status}
                             onChange={(e) =>

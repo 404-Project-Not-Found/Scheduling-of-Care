@@ -39,6 +39,7 @@ import {
   setActiveClient,
   type Client as ApiClient,
 } from '@/lib/data';
+
 import { title } from 'node:process';
 
 /* ------------------------------ Palette ----------------------------- */

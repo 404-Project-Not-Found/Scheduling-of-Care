@@ -4,28 +4,26 @@
  * Date Created: 14/10/2025
  */
 
-import { Schema, model, models } from 'mongoose';
+import mongoose, { Schema, models } from 'mongoose';
 
-export interface IFamilyRequest {
-  clientId: string;
-  taskCategory: string;
-  taskSubCategory: string;
-  details: string;
-  reason: string;
-  createdAt: Date;
-}
-
-const familyRequestSchema = new Schema<IFamilyRequest>({
-  clientId: { type: String, required: true },
-  taskCategory: { type: String, required: true },
-  taskSubCategory: { type: String, required: true },
-  details: { type: String, required: true },
-  reason: { type: String, required: true },
-  createdAt: { type: Date, default: Date.now },
-});
+const familyRequestSchema = new Schema(
+  {
+    clientId: { type: String, required: true },
+    task: { type: String, required: true },
+    change: { type: String, required: true },
+    requestedBy: { type: String, required: true },
+    dateRequested: { type: Date, default: Date.now },
+    status: {
+      type: String,
+      enum: ['Pending', 'Implemented'],
+      default: 'Pending',
+    },
+    resolutionDate: { type: Date, default: null },
+  },
+  { timestamps: true }
+);
 
 const FamilyRequest =
-  models.FamilyRequest ||
-  model<IFamilyRequest>('FamilyRequest', familyRequestSchema);
+  models.FamilyRequest || mongoose.model('FamilyRequest', familyRequestSchema);
 
 export default FamilyRequest;

@@ -39,8 +39,8 @@ interface ClientWithOrg {
  */
 export async function GET() {
   const session = await getServerSession(authOptions);
-  // Check if the user is authenticated and has the 'management' role
-  if (!session?.user?.id || session.user.role !== 'management') {
+  // Check if the user is authenticated and has the 'management' or 'carer' role
+  if (!session?.user?.id || session.user.role === 'family') {
     return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
   }
 

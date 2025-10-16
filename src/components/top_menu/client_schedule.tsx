@@ -88,7 +88,6 @@ const ROUTES = {
   staffSchedule: '/management_dashboard/staff_schedule',
   budget: '/calendar_dashboard/budget_report',
   transactions: '/calendar_dashboard/transaction_history',
-  requestForm: '/family_dashboard/request_of_change_page',
   requestLog: '/request-log-page',
   careEdit: '/management_dashboard/manage_care_item/edit',
   careAdd: '/management_dashboard/manage_care_item/add',
@@ -362,7 +361,7 @@ export default function DashboardChrome({
 
           <button
             onClick={goScheduleHome}
-            className={`font-extrabold leading-none text-2xl md:text-3xl ${
+            className={`font-extrabold leading-none text-xl md:text-3xl ${
               page === 'client-schedule' || page === 'staff-schedule'
                 ? 'underline'
                 : 'text-white hover:underline'
@@ -375,7 +374,7 @@ export default function DashboardChrome({
         </div>
 
         {/* Center: Nav */}
-        <nav className="hidden lg:flex items-center gap-14 font-extrabold text-white text-xl px-2">
+        <nav className="hidden lg:flex items-center gap-14 font-extrabold text-white text-lg px-2">
           {safeNavItems.length > 0 ? (
             // Custom nav (already role-filtered)
             <>
@@ -433,7 +432,7 @@ export default function DashboardChrome({
                       if (!activeClient.id) e.preventDefault();
                     }}
                   >
-                    Organisation
+                    Client Organisations
                   </Link>
                 </>
               )}
@@ -450,15 +449,6 @@ export default function DashboardChrome({
               >
                 View Transactions
               </Link>
-
-              {isFamily && (
-                <Link
-                  href={ROUTES.requestForm}
-                  className={activeUnderline(page, 'request-form', role!)}
-                >
-                  Request Form
-                </Link>
-              )}
 
               {isManagement && (
                 <>
@@ -485,14 +475,14 @@ export default function DashboardChrome({
                       </div>
                     </details>
                   </div>
-                  <Link
-                    href={ROUTES.requestLog}
-                    className={activeUnderline(page, 'request-log', role!)}
-                  >
-                    Request Log
-                  </Link>
                 </>
               )}
+              <Link
+                href={ROUTES.requestLog}
+                className={activeUnderline(page, 'request-log', role!)}
+              >
+                Family Requests
+              </Link>
             </>
           )}
         </nav>

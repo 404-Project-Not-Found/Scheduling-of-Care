@@ -1,3 +1,11 @@
+/**
+ * View Transactions
+ * Frontend Authors: Devni Wijesinghe & Qingyue Zhao
+ *
+ * Last Updated by Denise Alexander (16/10/2025): Fixed active client usage, client dropdown
+ * now works correctly.
+ */
+
 'use client';
 
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
@@ -5,13 +13,17 @@ import { useRouter } from 'next/navigation';
 import DashboardChrome from '@/components/top_menu/client_schedule';
 
 import {
-  getViewerRoleFE,
-  getClientsFE,
-  readActiveClientFromStorage,
-  writeActiveClientToStorage,
+  getViewerRole,
+  getClients,
+  getActiveClient,
+  setActiveClient,
   type Client as ApiClient,
-  getTransactionsFE,
-} from '@/lib/mock/mockApi';
+} from '@/lib/data';
+
+import { getTransactionsFE } from '@/lib/mock/mockApi';
+
+// --------- Type Definitions ---------
+type Role = 'carer' | 'family' | 'management';
 
 /** Data shape returned by getTransactionsFE() */
 type ApiTransaction = {
@@ -22,6 +34,16 @@ type ApiTransaction = {
   madeBy: string;
   items: string[];
   receipt: string;
+};
+
+type ClientLite = {
+  id: string;
+  name: string;
+  orgAccess?: 'approved' | 'pending' | 'revoked';
+};
+
+type ApiClientWithAccess = ApiClient & {
+  orgAccess?: 'approved' | 'pending' | 'revoked';
 };
 
 const colors = {
@@ -43,18 +65,6 @@ export default function TransactionHistoryPage() {
 function TransactionHistoryInner() {
   const router = useRouter();
 
-  const [role, setRole] = useState<string | null>(null);
-  useEffect(() => {
-    setRole(getViewerRoleFE());
-  }, []);
-  const isCarer = role === 'carer';
-  /** ---------------------------------------------------------------- */
-
-  // Clients for pink banner select
-  const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
-  const [activeClientId, setActiveClientId] = useState<string | null>(null);
-  const [activeClientName, setActiveClientName] = useState<string>('');
-
   // Transactions
   const [rows, setRows] = useState<ApiTransaction[]>([]);
   const [loading, setLoading] = useState(false);
@@ -63,28 +73,66 @@ function TransactionHistoryInner() {
   // Filters
   const [search, setSearch] = useState<string>('');
 
-  /** Load clients */
+  /* ------------------------------ Role ------------------------------ */
+  const [role, setRole] = useState<Role>('carer'); // default
+
   useEffect(() => {
     (async () => {
       try {
-        const list = await getClientsFE();
-        const mapped = list.map((c: ApiClient) => ({
-          id: c._id,
-          name: c.name,
-        }));
-        setClients(mapped);
-
-        const { id, name } = readActiveClientFromStorage();
-        const useId = id || mapped[0]?.id || null;
-        const useName =
-          name || (mapped.find((m) => m.id === useId)?.name ?? '');
-        setActiveClientId(useId);
-        setActiveClientName(useName);
-      } catch {
-        setClients([]);
+        const r = await getViewerRole();
+        setRole(r);
+      } catch (err) {
+        console.error('Failed to get role.', err);
+        setRole('carer'); // fallback
       }
     })();
   }, []);
+
+  /* ---------------------------- Clients ----------------------------- */
+  const [clients, setClients] = useState<ClientLite[]>([]);
+  const [activeClientId, setActiveClientId] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState<string>('');
+
+  // Load clients + active client on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const list: ApiClient[] = await getClients();
+        const mapped: ClientLite[] = (list as ApiClientWithAccess[]).map(
+          (c) => ({
+            id: c._id,
+            name: c.name,
+            orgAccess: c.orgAccess,
+          })
+        );
+        setClients(mapped);
+
+        const active = await getActiveClient();
+        setActiveClientId(active.id);
+        setDisplayName(active.name || '');
+      } catch (err) {
+        console.error('Failed to fetch clients.', err);
+        setClients([]);
+        setActiveClientId(null);
+        setDisplayName('');
+      }
+    })();
+  }, []);
+
+  // Change active client (persists with helper)
+  const onClientChange = async (id: string) => {
+    if (!id) {
+      setActiveClientId(null);
+      setDisplayName('');
+      await setActiveClient(null);
+      return;
+    }
+    const c = clients.find((x) => x.id === id);
+    const name = c?.name || '';
+    setActiveClientId(id);
+    setDisplayName(name);
+    await setActiveClient(id, name);
+  };
 
   /** Load transactions when active client changes */
   useEffect(() => {
@@ -107,15 +155,6 @@ function TransactionHistoryInner() {
     })();
   }, [activeClientId]);
 
-  /** Pink banner select  */
-  const onClientChange = (id: string) => {
-    const c = clients.find((x) => x.id === id) || null;
-    const name = c?.name || '';
-    setActiveClientId(id || null);
-    setActiveClientName(name);
-    writeActiveClientToStorage(id || '', name);
-  };
-
   /** Filter */
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -132,9 +171,7 @@ function TransactionHistoryInner() {
     <DashboardChrome
       page="transactions"
       clients={clients}
-      activeClientId={activeClientId}
       onClientChange={onClientChange}
-      activeClientName={activeClientName}
       colors={colors}
     >
       {/* Main content */}
@@ -149,7 +186,7 @@ function TransactionHistoryInner() {
 
           {/* Right side: Add button + Search bar */}
           <div className="flex items-center gap-7">
-            {isCarer && (
+            {role === 'carer' && (
               <button
                 className="px-4 py-2 rounded-md font-semibold text-black"
                 style={{ backgroundColor: '#FFA94D' }}
@@ -210,7 +247,7 @@ function TransactionHistoryInner() {
                               className="flex items-center justify-between gap-2"
                             >
                               <span>{i}</span>
-                              {isCarer && (
+                              {role === 'carer' && (
                                 <button
                                   className="px-2 py-1 text-xs bg-[#3d0000] text-white rounded"
                                   onClick={() =>

@@ -22,6 +22,7 @@ import {
 export type ApiCareItem = {
   slug: string;
   label: string;
+  category?: string;
   status: 'Pending' | 'Due' | 'Completed';
   frequency?: string;
   lastDone?: string;
@@ -31,10 +32,17 @@ export type ApiCareItem = {
   files?: string[];
 };
 
+export interface Task {
+  id: string;
+  title: string;
+  category: string;
+  description?: string;
+}
+
 type CareItemListRow = {
   label: string;
   slug: string;
-  status: 'Pending' | 'Due' | 'Completed';
+  status: 'Pending' | 'Overdue' | 'Completed';
   category: string;
   categoryId?: string;
   clientId?: string;
@@ -89,7 +97,9 @@ export const getClients = async (): Promise<mockApi.Client[]> => {
 
   const role = session.user.role;
   const url =
-    role === 'management' ? '/api/v1/management/clients' : '/api/v1/clients';
+    role === 'management' || role === 'carer'
+      ? '/api/v1/management/clients'
+      : '/api/v1/clients';
 
   const res = await fetch(url, { cache: 'no-store' });
   if (!res.ok) {
@@ -249,6 +259,31 @@ export const setActiveClient = async (id: string | null, name: string = '') => {
       body: JSON.stringify({ clientId: id }),
     });
   }
+};
+
+export const getTasksByClient = async (clientId: string) => {
+  const allTasks = await getTasks();
+  return allTasks.filter((t) => t.clientId === clientId);
+};
+
+export const getTaskCatalog = () => {
+  if (process.env.NEXT_PUBLIC_ENABLE_MOCK === '1') {
+    return mockApi.getTaskCatalogFE();
+  }
+
+  return mockApi.getTaskCatalogFE;
+};
+
+export const getCategoriesForClient = async (clientId: string) => {
+  const tasks = await getTasksByClient(clientId);
+
+  const clientCats = Array.from(
+    new Set(tasks.map((t) => t.category).filter(Boolean))
+  );
+
+  const catalogCats = mockApi.getTaskCatalogFE().map((c) => c.category);
+
+  return Array.from(new Set([...catalogCats, ...clientCats]));
 };
 
 // Export Client type for convenience

@@ -14,22 +14,18 @@
 
 'use client';
 
-export const dynamic = 'force-dynamic';
-
 import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardChrome from '@/components/top_menu/client_schedule';
 import {
-  getClientsFE,
-  readActiveClientFromStorage,
-  writeActiveClientToStorage,
-  FULL_DASH_ID,
-  NAME_BY_ID,
+  getClients,
+  getTasksByClient,
+  getCategoriesForClient,
+  setActiveClient,
+  getActiveClient,
   type Client as ApiClient,
-  getTasksFE,
-  type Task as ApiTask,
-  getTaskCatalogFE,
-} from '@/lib/mock/mockApi';
+  type ApiCareItem,
+} from '@/lib/data';
 
 /* UI colors to match chrome */
 const chromeColors = {
@@ -64,113 +60,108 @@ export default function RequestChangeFormPage() {
     name: string;
   }>({ id: null, name: '' });
 
+  const [allTasks, setAllTasks] = useState<ApiCareItem[]>([]);
+  const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
+
+  const [taskName, setTaskName] = useState('');
+  const [category, setCategory] = useState('');
+  const [details, setDetails] = useState('');
+  const [reason, setReason] = useState('');
+  const [submitMessage, setSubmitMessage] = useState('');
+
   useEffect(() => {
     (async () => {
       try {
-        const list = await getClientsFE();
+        const list = await getClients();
         const mapped: Client[] = list.map((c: ApiClient) => ({
           id: c._id,
           name: c.name,
         }));
         setClients(mapped);
 
-        const stored = readActiveClientFromStorage();
-        const resolvedId = stored.id || FULL_DASH_ID;
-        const resolvedName = stored.name || NAME_BY_ID[resolvedId] || '';
-        // IMPORTANT: use resolvedId here
-        setActive({ id: resolvedId, name: resolvedName });
+        const active = await getActiveClient();
+        if (active?.id) {
+          setActive({
+            id: active.id,
+            name:
+              active.name || mapped.find((m) => m.id === active.id)?.name || '',
+          });
+        } else {
+          setActive({ id: null, name: '' });
+        }
       } catch {
         setClients([]);
       }
     })();
   }, []);
 
-  const onClientChange = (id: string) => {
+  useEffect(() => {
+    if (!activeId) {
+      setAllTasks([]);
+      setCategoryOptions([]);
+      return;
+    }
+
+    (async () => {
+      try {
+        const clientTasks = await getTasksByClient(activeId);
+
+        const mapped: ApiCareItem[] = clientTasks.map((t) => ({
+          slug: t.id || '',
+          label: t.title || '',
+          category: t.category || '',
+          status: 'Pending',
+        }));
+
+        setAllTasks(mapped);
+
+        const cats = Array.from(
+          new Set(mapped.map((t) => t.category).filter((c): c is string => !!c))
+        );
+        setCategoryOptions(cats);
+      } catch {
+        setAllTasks([]);
+        setCategoryOptions([]);
+      }
+    })();
+  }, [activeId]);
+
+  const onClientChange = async (id: string) => {
     if (!id) {
       setActive({ id: null, name: '' });
-      writeActiveClientToStorage('', '');
+      setAllTasks([]);
+      setCategoryOptions([]);
+      await setActiveClient(null);
       return;
     }
     const c = clients.find((x) => x.id === id);
     const name = c?.name || '';
     setActive({ id, name });
-    writeActiveClientToStorage(id, name);
+    setTaskName('');
+    setCategory('');
+    await setActiveClient(id, name);
   };
 
-  /* ---------- Form state ---------- */
-  const [allTasks, setAllTasks] = useState<ApiTask[]>([]);
-  const [taskName, setTaskName] = useState(''); // Care Item Sub Category
-  const [category, setCategory] = useState(''); // Care Item Category
-  const [details, setDetails] = useState('');
-  const [reason, setReason] = useState('');
-  const [submitMessage, setSubmitMessage] = useState('');
-
-  // Catalog & helpers
-  const catalog = useMemo(() => getTaskCatalogFE(), []);
-  const labelToCategory = useMemo(() => {
-    const m = new Map<string, string>();
-    catalog.forEach((c) => c.tasks.forEach((t) => m.set(t.label, c.category)));
-    return m;
-  }, [catalog]);
-
-  const norm = (s?: string) => (s || '').trim().toLowerCase();
-
-  // Load tasks (with migration handled in mockApi if needed)
-  useEffect(() => {
-    (async () => {
-      try {
-        const list = await getTasksFE();
-        setAllTasks(list || []);
-      } catch {
-        setAllTasks([]);
-      }
-    })();
-  }, []);
-
-  // Compute tasks by current client
-  const tasksForClient = useMemo(() => {
-    if (!activeId) return [];
-    return (allTasks || []).filter((t: ApiTask) => t.clientId === activeId);
-  }, [allTasks, activeId]);
-
-  // Category-filtered tasks (fallback to catalog mapping if task.category is missing)
-  const tasksForClientAndCategory = useMemo(() => {
+  const tasksForCategory = useMemo(() => {
     if (!category) return [];
-    const target = norm(category);
-    return tasksForClient.filter((t: ApiTask) => {
-      const cat = t.category || labelToCategory.get(t.title) || '';
-      return norm(cat) === target;
-    });
-  }, [tasksForClient, category, labelToCategory]);
 
-  // When a task is selected, also backfill category if empty (defensive)
+    return allTasks.filter((t) => t.category === category);
+  }, [allTasks, category]);
+
+  // When a task is selected
   const onTaskChange = (value: string) => {
     setTaskName(value);
     setSubmitMessage('');
-    if (!category) {
-      const auto = labelToCategory.get(value) || '';
-      setCategory(auto);
-    }
   };
 
   const handleSubmit = async () => {
-    if (
-      !taskName.trim() ||
-      !category.trim() ||
-      !details.trim() ||
-      !reason.trim()
-    ) {
+    if (!activeId || !category || !taskName || !details || !reason) {
       setSubmitMessage('Please fill in all fields before submitting.');
       return;
     }
 
-    if (!activeId) {
-      setSubmitMessage('Please select a client before submitting.');
-      return;
-    }
-
     try {
-      const res = await fetch('/api/v1/family_requests', {
+      const res = await fetch(`/api/v1/clients/${activeId}/requests`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -192,7 +183,7 @@ export default function RequestChangeFormPage() {
       setReason('');
       setSubmitMessage('Request has been submitted successfully!');
 
-      router.push('/calendar_dashboard');
+      router.push('/request-log-page');
     } catch (err) {
       console.error(err);
       setSubmitMessage(
@@ -207,7 +198,7 @@ export default function RequestChangeFormPage() {
     setDetails('');
     setReason('');
     setSubmitMessage('');
-    router.push('/calendar_dashboard');
+    router.push('/request-log-page');
   };
 
   return (
@@ -257,9 +248,9 @@ export default function RequestChangeFormPage() {
                 style={{ borderColor: `${palette.inputBorder}66` }}
               >
                 <option value="">Select a category</option>
-                {catalog.map((c) => (
-                  <option key={c.category} value={c.category}>
-                    {c.category}
+                {categoryOptions.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
                   </option>
                 ))}
               </select>
@@ -278,14 +269,14 @@ export default function RequestChangeFormPage() {
                   <option value="">Select a client first</option>
                 ) : !category ? (
                   <option value="">Select a category first</option>
-                ) : tasksForClientAndCategory.length === 0 ? (
+                ) : tasksForCategory.length === 0 ? (
                   <option value="">No tasks available</option>
                 ) : (
                   <>
                     <option value="">Select a task…</option>
-                    {tasksForClientAndCategory.map((t: ApiTask) => (
-                      <option key={t.id} value={t.title}>
-                        {t.title}
+                    {tasksForCategory.map((t) => (
+                      <option key={t.slug} value={t.label}>
+                        {t.label}
                       </option>
                     ))}
                   </>

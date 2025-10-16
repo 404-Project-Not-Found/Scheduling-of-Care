@@ -12,15 +12,37 @@
  *   category, name, date range, repeat interval, status, etc.
  * - Tasks are stored in localStorage (mock mode) and persisted across reloads.
  * - Buttons at the bottom support Cancel (navigate back) and Add (save task).
+ *
+ * Last Updated by Denise Alexander (16/10/2025): Fixed active client usage, client dropdown
+ * now works correctly.
  */
+
 'use client';
 
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useMemo } from 'react';
 import DashboardChrome from '@/components/top_menu/client_schedule';
 import { fetchCareItemCatalog, type CareItemOption } from '@/lib/catalog';
-import { getClients, Client as ApiClient } from '@/lib/data';
-import { useActiveClient } from '@/context/ActiveClientContext';
+import {
+  getViewerRole,
+  getClients,
+  getActiveClient,
+  setActiveClient,
+  type Client as ApiClient,
+} from '@/lib/data';
+
+// --------- Type Definitions ---------
+type Role = 'carer' | 'family' | 'management';
+
+type ClientLite = {
+  id: string;
+  name: string;
+  orgAccess?: 'approved' | 'pending' | 'revoked';
+};
+
+type ApiClientWithAccess = ApiClient & {
+  orgAccess?: 'approved' | 'pending' | 'revoked';
+};
 
 type UiClient = { id: string; name: string };
 
@@ -41,12 +63,6 @@ const chromeColors = {
 export default function AddTaskPage() {
   const router = useRouter();
 
-  // Topbar client list
-  const [clients, setClients] = useState<UiClient[]>([]);
-  const { client, handleClientChange, resetClient } = useActiveClient();
-  const activeId = client.id;
-  const activeName = client.name;
-
   // Added catalog implementation
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
 
@@ -65,41 +81,78 @@ export default function AddTaskPage() {
   const [frequencyCountStr, setFrequencyCountStr] = useState<string>('');
   const [frequencyUnit, setFrequencyUnit] = useState<Unit>('day');
 
-  // Load clients
+  /* ------------------------------ Role ------------------------------ */
+  const [role, setRole] = useState<Role>('carer'); // default
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await getViewerRole();
+        setRole(r);
+      } catch (err) {
+        console.error('Failed to get role.', err);
+        setRole('carer'); // fallback
+      }
+    })();
+  }, []);
+
+  /* ---------------------------- Clients ----------------------------- */
+  const [clients, setClients] = useState<ClientLite[]>([]);
+  const [activeClientId, setActiveClientId] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState<string>('');
+
+  // Load clients + active client on mount
   useEffect(() => {
     (async () => {
       try {
         const list: ApiClient[] = await getClients();
-        const mapped: UiClient[] = list.map((c) => ({
-          id: c._id,
-          name: c.name,
-        }));
+        const mapped: ClientLite[] = (list as ApiClientWithAccess[]).map(
+          (c) => ({
+            id: c._id,
+            name: c.name,
+            orgAccess: c.orgAccess,
+          })
+        );
         setClients(mapped);
 
-        if (!client.id) {
-          if (mapped[0]) {
-            handleClientChange(mapped[0].id, mapped[0].name);
-          } else {
-            resetClient();
-          }
-        }
-      } catch {
+        const active = await getActiveClient();
+        setActiveClientId(active.id);
+        setDisplayName(active.name || '');
+      } catch (err) {
+        console.error('Failed to fetch clients.', err);
         setClients([]);
+        setActiveClientId(null);
+        setDisplayName('');
       }
     })();
   }, []);
+
+  // Change active client (persists with helper)
+  const onClientChange = async (id: string) => {
+    if (!id) {
+      setActiveClientId(null);
+      setDisplayName('');
+      await setActiveClient(null);
+      return;
+    }
+    const c = clients.find((x) => x.id === id);
+    const name = c?.name || '';
+    setActiveClientId(id);
+    setDisplayName(name);
+    await setActiveClient(id, name);
+  };
 
   // Load categories
   useEffect(() => {
     (async () => {
       try {
-        if (!activeId) {
+        if (!activeClientId) {
           setCatalog([]);
           return;
         }
 
         const url = new URL('/api/v1/category', window.location.origin);
-        url.searchParams.set('clientId', activeId);
+        url.searchParams.set('clientId', activeClientId);
 
         const res = await fetch(url.toString(), { cache: 'no-store' });
         if (!res.ok) throw new Error('Failed to load categories');
@@ -110,7 +163,7 @@ export default function AddTaskPage() {
         setCatalog([]);
       }
     })();
-  }, [activeId]);
+  }, [activeClientId]);
 
   // Fetching catalog
   useEffect(() => {
@@ -120,7 +173,7 @@ export default function AddTaskPage() {
         setCareItemOptions([]);
         return;
       }
-      if (!activeId) {
+      if (!activeClientId) {
         setCareItemOptions([]);
         return;
       }
@@ -128,7 +181,7 @@ export default function AddTaskPage() {
 
       try {
         const res = await fetch(
-          `/api/v1/task_catalog?clientId=${encodeURIComponent(activeId)}&category=${encodeURIComponent(category)}`,
+          `/api/v1/task_catalog?clientId=${encodeURIComponent(activeClientId)}&category=${encodeURIComponent(category)}`,
           { cache: 'no-store' }
         );
         if (!res.ok) throw new Error('failed -- task catalog');
@@ -156,21 +209,13 @@ export default function AddTaskPage() {
     };
   }, [category]);
 
-  const onClientChange = (id: string) => {
-    (async () => {
-      const c = clients.find((x) => x.id === id);
-      if (!id) resetClient();
-      else handleClientChange(id, c?.name || '');
-    })();
-  };
-
   const statusOptions = useMemo(
     () => ['in progress', 'Completed', 'Not started', 'Paused', 'Cancelled'],
     []
   );
 
   const onCreate = async () => {
-    if (!activeId) {
+    if (!activeClientId) {
       alert('Please select a client first.');
       return;
     }
@@ -189,8 +234,8 @@ export default function AddTaskPage() {
     const hasFrequency = Number.isFinite(countNum) && countNum > 0;
 
     const payload = {
-      clientId: activeId ?? undefined,
-      clientName: activeName,
+      clientId: activeClientId ?? undefined,
+      clientName: displayName,
       label: name,
       status: status.trim().toLowerCase(),
       category: category.trim(),
