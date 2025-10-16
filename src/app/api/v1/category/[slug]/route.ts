@@ -9,7 +9,7 @@ import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import Category from '@/models/Category';
 import { Types } from 'mongoose';
-import { slugify } from '@/lib/slug';
+
 
 // Get category by slug so frontend can get specific category -- updated to scope for client
 export async function GET(req: Request, ctx: { params: { slug: string } }) {

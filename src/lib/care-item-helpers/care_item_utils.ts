@@ -40,7 +40,7 @@ export type NewTask = {
   title: string;
   category?: string; // optional: auto derived from catalog
   frequency: string;
-  lastDone: string; 
+  lastDone: string;
   nextDue: string; // YYYY-MM-DD
   status: 'Pending' | 'Overdue' | 'Completed';
   comments: string[];
@@ -99,7 +99,6 @@ export function normaliseCareItemPayLoad(
     frequencyUnit = 'day';
     frequency = `${count} day${count > 1 ? 's' : ''}`;
   }
-
 
   return {
     ...body,

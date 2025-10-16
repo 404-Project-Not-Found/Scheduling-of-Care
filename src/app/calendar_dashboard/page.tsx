@@ -27,8 +27,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import DashboardChrome from '@/components/top_menu/client_schedule';
 import CalendarPanel from '@/components/dashboard/CalendarPanel';
 import TasksPanel from '@/components/tasks/TasksPanel';
-import { futureOccurencesAfterLastDone} from '@/lib/care-item-helpers/date-helpers';
-
+import { futureOccurencesAfterLastDone } from '@/lib/care-item-helpers/date-helpers';
 
 import type { Task } from '@/lib/mock/mockApi';
 
@@ -218,38 +217,47 @@ function ClientSchedule() {
 
   function monthBoundsUTC(yyyyMm: string) {
     const [ys, ms] = yyyyMm.split('-');
-    const y = Number(ys), m = Number(ms);
+    const y = Number(ys),
+      m = Number(ms);
     const first = new Date(Date.UTC(y, m - 1, 1));
-    const last  = new Date(Date.UTC(y, m, 0));
+    const last = new Date(Date.UTC(y, m, 0));
     const iso = (d: Date) => d.toISOString().slice(0, 10);
     return { start: iso(first), end: iso(last) };
   }
 
-  const visibleMonthStr = visibleYear && visibleMonth ? `${visibleYear}-${String(visibleMonth).padStart(2, '0')}` : new Date().toISOString().slice(0, 7);
+  const visibleMonthStr =
+    visibleYear && visibleMonth
+      ? `${visibleYear}-${String(visibleMonth).padStart(2, '0')}`
+      : new Date().toISOString().slice(0, 7);
 
   const { start: monthStart, end: monthEnd } = monthBoundsUTC(visibleMonthStr);
 
-  const windowStart = selectedDate || monthStart; 
-  const windowEnd   = selectedDate || monthEnd;
+  const windowStart = selectedDate || monthStart;
+  const windowEnd = selectedDate || monthEnd;
 
   // Completion-driven using lastDone
   const tasksForCalendar: ClientTask[] = tasksByClient.flatMap((t) => {
-  const count = t.frequencyCount ?? 0;
-  const unit  = t.frequencyUnit as 'day' | 'week' | 'month' | 'year' | undefined;
-  if (!count || !unit) return [];
+    const count = t.frequencyCount ?? 0;
+    const unit = t.frequencyUnit as
+      | 'day'
+      | 'week'
+      | 'month'
+      | 'year'
+      | undefined;
+    if (!count || !unit) return [];
 
-  const occs = futureOccurencesAfterLastDone(
-    t.dateFrom,
-    t.lastDone,           
-    count,
-    unit,
-    windowStart,
-    windowEnd,
-    t.dateTo ?? null,
-  );
+    const occs = futureOccurencesAfterLastDone(
+      t.dateFrom,
+      t.lastDone,
+      count,
+      unit,
+      windowStart,
+      windowEnd,
+      t.dateTo ?? null
+    );
 
-  return occs.map((d) => ({ ...t, nextDue: d }));
-});
+    return occs.map((d) => ({ ...t, nextDue: d }));
+  });
 
   // If a day is selected we filter by that day; otherwise it's the whole dataset for the visible month (handled in TasksPanel)
   const filteredTasks = selectedDate
@@ -470,7 +478,7 @@ function TaskDetail({
 }) {
   const readOnly = role !== 'carer';
 
-    async function markTaskDone(fileName: string, comment?: string) {
+  async function markTaskDone(fileName: string, comment?: string) {
     try {
       const res = await fetch(
         `/api/v1/care_item/${encodeURIComponent(task.id)}/done`,
@@ -523,7 +531,6 @@ function TaskDetail({
       alert('Unexpected error');
     }
   }
-
 
   return (
     <div className="flex flex-col h-full" style={{ color: palette.text }}>

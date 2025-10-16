@@ -8,7 +8,6 @@
 import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import Category from '@/models/Category';
-import CareItem from '@/models/CareItem';
 import { findOrCreateNewCategory } from '@/lib/category-helpers';
 import { Types } from 'mongoose';
 

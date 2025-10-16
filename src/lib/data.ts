@@ -58,6 +58,8 @@ type CareItemListRow = {
   notes?: string;
 };
 
+
+
 // Flag to determine whether to use mock API or real back-end
 const isMock = process.env.NEXT_PUBLIC_ENABLE_MOCK === '1';
 
@@ -158,7 +160,6 @@ export const getTasks = async (): Promise<mockApi.Task[]> => {
 
   const normalizeStatus = (s: string) => {
     const v = (s || '').toLowerCase();
-    if (v === 'in progress') return 'Pending';
     if (v === 'pending') return 'Pending';
     if (v === 'due') return 'Due';
     if (v === 'completed') return 'Completed';
@@ -169,11 +170,8 @@ export const getTasks = async (): Promise<mockApi.Task[]> => {
   const tasks: mockApi.Task[] = rows.map((row, idx) => {
     const id = row.slug || `task-${idx}`;
 
-    
     const baseISO =
-      parseLastDone(row.lastDone) ||
-      toISODateOnly(row.dateFrom ?? null) ||
-      '';
+      parseLastDone(row.lastDone) || toISODateOnly(row.dateFrom ?? null) || '';
 
     const nextDue = getNextDue(
       baseISO,
@@ -182,7 +180,7 @@ export const getTasks = async (): Promise<mockApi.Task[]> => {
       row.frequencyDays ?? null
     );
 
-    const task: any = {
+    const task: unknown = {
       id,
       label: row.label,
       status: normalizeStatus(row.status) as 'Pending' | 'Due' | 'Completed',
@@ -207,9 +205,6 @@ export const getTasks = async (): Promise<mockApi.Task[]> => {
 
   return tasks;
 };
-
-
-
 
 // Saves the provided list of tasks
 export const saveTasks = async (tasks: mockApi.Task[]) => {

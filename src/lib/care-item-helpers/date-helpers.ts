@@ -21,7 +21,7 @@ interface CareItemLean {
   status: string;
   category: string;
   frequency?: string;
-  
+
   categoryId?: Types.ObjectId | string | null;
   deleted?: boolean;
   clientId?: Types.ObjectId | string | null;
@@ -36,7 +36,6 @@ interface CareItemLean {
 export function isISODateOnly(s: unknown): s is string {
   return typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
 }
-
 
 // to store dates as YYY-MM-DD
 export function parseISODateOnly(yyyyMmDd: string): Date {
@@ -64,14 +63,14 @@ export function parseISODateOnly(yyyyMmDd: string): Date {
 }
 
 export function formatISODateOnly(date: Date | string | null): string {
-  if(!date) return '';
+  if (!date) return '';
 
-  if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) { 
-    return date; 
+  if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return date;
   }
 
   const d = new Date(date instanceof Date ? date : String(date));
-  if(isNaN(d.getTime())) return '';
+  if (isNaN(d.getTime())) return '';
 
   return d.toISOString().slice(0, 10);
 }
@@ -93,8 +92,6 @@ function clampToWindow(date: string, start: string, end: string) {
 }
 
 export type Unit = 'day' | 'week' | 'month' | 'year';
-
-
 
 // add count and unit based on real months or years
 export function addCount(ISO: string, count: number, unit: Unit): Date {
@@ -140,7 +137,6 @@ export function generateDueDate(
   return out;
 }
 
-
 export function toISO(input: unknown): string | undefined {
   if (!input) return undefined;
   const d =
@@ -152,50 +148,54 @@ export function toISO(input: unknown): string | undefined {
   return d && !Number.isNaN(d.getTime()) ? d.toISOString() : undefined;
 }
 
-
-
-export function latestISO(dates?: string[]): string | undefined { 
-  if (!Array.isArray(dates) || dates.length === 0) return undefined; 
-  const sorted = dates.slice().sort(); 
-  return sorted[sorted.length - 1] ?? ''; 
+export function latestISO(dates?: string[]): string | undefined {
+  if (!Array.isArray(dates) || dates.length === 0) return undefined;
+  const sorted = dates.slice().sort();
+  return sorted[sorted.length - 1] ?? '';
 }
 
-
-
-export function futureOccurencesAfterLastDone(dateFrom: string | undefined, lastDone: string | undefined, count: number | undefined, unit: Unit | undefined, winStartISO: string, winEndISO: string, dateTo: string | null) {
-  if(!count || !unit) return [];
-  const base = (lastDone && /^\d{4}-\d{2}-\d{2}$/.test(lastDone))
-    ? lastDone
-    : (dateFrom && /^\d{4}-\d{2}-\d{2}$/.test(dateFrom) ? dateFrom : undefined);
+export function futureOccurencesAfterLastDone(
+  dateFrom: string | undefined,
+  lastDone: string | undefined,
+  count: number | undefined,
+  unit: Unit | undefined,
+  winStartISO: string,
+  winEndISO: string,
+  dateTo: string | null
+) {
+  if (!count || !unit) return [];
+  const base =
+    lastDone && /^\d{4}-\d{2}-\d{2}$/.test(lastDone)
+      ? lastDone
+      : dateFrom && /^\d{4}-\d{2}-\d{2}$/.test(dateFrom)
+        ? dateFrom
+        : undefined;
   if (!base) return [];
-  if(!isISODateOnly(base)) return [];
+  if (!isISODateOnly(base)) return [];
 
   let occur = formatISODateOnly(addCount(base, count, unit));
 
   const limit = dateTo && isISODateOnly(dateTo) ? dateTo : undefined;
   const step = (iso: string) => formatISODateOnly(addCount(iso, count, unit));
-  
-  while(occur < winStartISO) {
+
+  while (occur < winStartISO) {
     const next = step(occur);
-    if(!next || next == occur) return [];
+    if (!next || next == occur) return [];
     occur = next;
-    if(limit && occur > limit) return [];
+    if (limit && occur > limit) return [];
   }
 
   const out: string[] = [];
   let guard = 0;
-  while(occur <= winEndISO && (!limit || occur <= limit) && guard < 2048) {
+  while (occur <= winEndISO && (!limit || occur <= limit) && guard < 2048) {
     out.push(occur);
     const next = step(occur);
-    if(!next || next == occur) break;
+    if (!next || next == occur) break;
     occur = next;
     guard++;
   }
   return out;
 }
-
-
-
 
 export function toISODateOnly(
   input: Date | string | number | null | undefined
@@ -226,12 +226,12 @@ export function getNextDue(
   frequencyDays?: number | null
 ): string {
   const startISO = toISODateOnly(start);
-  if(!startISO) return '';
+  if (!startISO) return '';
 
   const step =
-    (count && count > 0 && unit)
+    count && count > 0 && unit
       ? (iso: string) => nextDueISO(iso, count, unit)
-      : (frequencyDays && frequencyDays > 0)
+      : frequencyDays && frequencyDays > 0
         ? (iso: string) => toISODateOnly(addCount(iso, frequencyDays, 'day'))
         : null;
 
@@ -239,7 +239,3 @@ export function getNextDue(
 
   return step(startISO);
 }
-
-
-
-

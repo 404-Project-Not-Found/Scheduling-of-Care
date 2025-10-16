@@ -2,19 +2,18 @@
  * Filename: /app/api/care-item/[slug]/done/route.ts
  * Author: Zahra Rizqita
  * Date Created: 15/10/2025
- * 
+ *
  * Handle api for carer to add comment, upload a file and marking a task as done
  */
-
 
 import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import CareItem from '@/models/CareItem';
 
 interface CompleteBody {
-  file: string;           
-  comment?: string;       
-  doneAt?: string;   
+  file: string;
+  comment?: string;
+  doneAt?: string;
 }
 
 type CareItemLean = {

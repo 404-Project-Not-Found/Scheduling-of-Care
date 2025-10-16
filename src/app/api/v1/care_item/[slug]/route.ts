@@ -7,7 +7,7 @@
 
 import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
-import CareItem, { CareItemDoc, isUnit, Unit } from '@/models/CareItem';
+import CareItem, { CareItemDoc, Unit } from '@/models/CareItem';
 import { Types } from 'mongoose';
 import { toISO } from '@/lib/care-item-helpers/date-helpers';
 import { findOrCreateNewCategory } from '@/lib/category-helpers';
@@ -15,7 +15,7 @@ import {
   normaliseCareItemPayLoad,
   errorJson,
 } from '@/lib/care-item-helpers/care_item_utils';
-import { error } from 'console';
+
 
 export const runtime = 'nodejs';
 

@@ -782,7 +782,7 @@ export async function saveRequestsFE(requests: RequestLog[]): Promise<void> {
 export type AccessUser = {
   id: string;
   name: string;
-  role: ViewerRole;      // reuse: 'family' | 'carer' | 'management'
+  role: ViewerRole; // reuse: 'family' | 'carer' | 'management'
 };
 
 /** Per-client mock users who can access this client's data */
@@ -831,14 +831,18 @@ const MOCK_USERS_BY_CLIENT: Record<string, AccessUser[]> = {
 };
 
 /** Fetch users who have access to a given client (mock or backend) */
-export async function getUsersWithAccessFE(clientId: string): Promise<AccessUser[]> {
+export async function getUsersWithAccessFE(
+  clientId: string
+): Promise<AccessUser[]> {
   if (isMock) {
     await new Promise((r) => setTimeout(r, 60));
     return MOCK_USERS_BY_CLIENT[clientId] ?? [];
   }
 
   // real backend (adjust endpoint to your API)
-  const res = await fetch(`/api/v1/clients/${clientId}/access`, { cache: 'no-store' });
+  const res = await fetch(`/api/v1/clients/${clientId}/access`, {
+    cache: 'no-store',
+  });
   if (!res.ok) return [];
   const data = await res.json();
   return Array.isArray(data) ? (data as AccessUser[]) : [];

@@ -209,10 +209,7 @@ export default function AddTaskPage() {
     };
   }, [category]);
 
-  const statusOptions = useMemo(
-    () => ['Pending' , 'Due' , 'Completed'],
-    []
-  );
+  const statusOptions = useMemo(() => ['Pending', 'Due', 'Completed'], []);
 
   const onCreate = async () => {
     if (!activeClientId) {
