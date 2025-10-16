@@ -66,7 +66,7 @@ export async function GET(req: Request) {
       .lean<CategoryLean | null>();
     if (!cat)
       return errorJson('Category not found for given slug and clientId', 404);
-    catId = cat._id; 
+    catId = cat._id;
     displayName = cat.name;
   }
   // Nothing provided

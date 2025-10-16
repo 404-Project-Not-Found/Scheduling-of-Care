@@ -16,7 +16,6 @@ import {
   errorJson,
 } from '@/lib/care-item-helpers/care_item_utils';
 
-
 export const runtime = 'nodejs';
 
 type PutBody = {

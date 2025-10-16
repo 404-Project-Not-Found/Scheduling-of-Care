@@ -58,8 +58,6 @@ type CareItemListRow = {
   notes?: string;
 };
 
-
-
 // Flag to determine whether to use mock API or real back-end
 const isMock = process.env.NEXT_PUBLIC_ENABLE_MOCK === '1';
 
