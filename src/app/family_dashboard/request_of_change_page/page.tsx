@@ -97,8 +97,6 @@ export default function RequestChangeFormPage() {
     writeActiveClientToStorage(id, name);
   };
 
-  const onLogoClick = () => router.push('/empty_dashboard');
-
   /* ---------- Form state ---------- */
   const [allTasks, setAllTasks] = useState<ApiTask[]>([]);
   const [taskName, setTaskName] = useState(''); // Care Item Sub Category
@@ -216,7 +214,6 @@ export default function RequestChangeFormPage() {
     <DashboardChrome
       page="request-form"
       colors={chromeColors}
-      onLogoClick={onLogoClick}
       clients={clients}
       onClientChange={onClientChange}
     >

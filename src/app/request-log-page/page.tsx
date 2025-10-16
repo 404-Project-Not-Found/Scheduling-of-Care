@@ -225,7 +225,6 @@ function RequestLogInner() {
       onClientChange={onClientChange}
       activeClientName={activeClientName}
       colors={colors}
-      onLogoClick={() => router.push('/empty_dashboard')}
     >
       {/* Main content */}
       <div className="flex-1 h-[680px] bg-white/80 overflow-auto">

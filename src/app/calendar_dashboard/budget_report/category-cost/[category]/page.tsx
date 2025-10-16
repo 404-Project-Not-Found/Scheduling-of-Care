@@ -144,7 +144,7 @@ function CategoryCostInner() {
   };
 
   const onLogoClick = () => {
-    router.push('/schedule_dashboard');
+    router.push('/icon_dashboard');
   };
 
   /* ===== Local state ===== */

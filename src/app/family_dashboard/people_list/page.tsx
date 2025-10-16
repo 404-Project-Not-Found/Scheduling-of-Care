@@ -101,7 +101,6 @@ function FamilyClientListInner() {
         banner: colors.banner,
         text: colors.text,
       }}
-      onLogoClick={() => router.push('/empty_dashboard')}
     >
       <div className="w-full h-full" style={{ backgroundColor: colors.pageBg }}>
         <div className="max-w-[1380px] h-[680px] mx-auto px-6">

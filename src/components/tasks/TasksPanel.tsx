@@ -12,6 +12,8 @@ type TasksPanelProps = {
   month?: number;
   /** Optional: year scope. Example: 2025 */
   year?: number;
+  /** Only show "no care items" message after the client is loaded */
+  clientLoaded?: boolean;
 };
 
 // Map status → pill colors (kept exactly like your original visuals)
@@ -59,6 +61,7 @@ export default function TasksPanel({
   selectedDate,
   year,
   month,
+  clientLoaded,
 }: TasksPanelProps) {
   // Apply the new (optional) scope filtering, then sort by date ascending.
   const scoped = filterByScope(tasks, selectedDate, year, month);
@@ -69,7 +72,7 @@ export default function TasksPanel({
   return (
     <div className="h-full flex flex-col">
       {/* Optional empty state – keeps layout intact */}
-      {sorted.length === 0 && (
+      {sorted.length === 0 && clientLoaded && (
         <div className="text-sm text-gray-600 italic pb-2">
           No care items for the selected month and year.
         </div>

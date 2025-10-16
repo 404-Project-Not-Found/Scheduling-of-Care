@@ -113,20 +113,14 @@ If local development do the following:
     <pre><code>git clone https://github.com/404-Project-Not-Found/Schedule-of-Care-Program.git
 cd Schedule-of-Care-Program</code></pre>
     <li>Install dependencies</li>
-    <pre><code>pnpm install
-# or 
-npm install 
-#or 
-yarn install</code></pre>
+    <pre><code>npm install
+
     <li>Set up environment variables</li>
     create a <code>.env.local</code> file in the root with the following as example:
     <pre><code>MONGODB_URI="your-mongodb-connection"</code></pre>
     <li>Run the development server</li>
-    <pre><code>pnpm dev
-#or
-npm run dev
-#or
-yarn dev</code></pre>
+    <pre><code>npm dev
+
 </ol>
 Open <a href="http://localhost:3000">http://localhost:3000</a> on your browser to view the result
 

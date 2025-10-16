@@ -1,6 +1,7 @@
 /**
  * File path: /app/management_dashboard/manage_care_item/add/page.tsx
  * Frontend Author: Qingyue Zhao
+ * Backend Author: Zahra Rizqita
  * Last Update: 2025-10-02
  *
  * Description:
@@ -12,67 +13,23 @@
  * - Tasks are stored in localStorage (mock mode) and persisted across reloads.
  * - Buttons at the bottom support Cancel (navigate back) and Add (save task).
  */
-
 'use client';
 
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useMemo } from 'react';
 import DashboardChrome from '@/components/top_menu/client_schedule';
-import {
-  readActiveClientFromStorage,
-  writeActiveClientToStorage,
-  getClientsFE,
-  FULL_DASH_ID,
-  NAME_BY_ID,
-  type Client as ApiClient,
-} from '@/lib/mock/mockApi';
+import { fetchCareItemCatalog, type CareItemOption } from '@/lib/catalog';
+import { getClients, Client as ApiClient } from '@/lib/data';
+import { useActiveClient } from '@/context/ActiveClientContext';
+
+type UiClient = { id: string; name: string };
 
 type Unit = 'day' | 'week' | 'month' | 'year';
 
-type Task = {
-  label: string;
-  slug: string;
-  status: string;
+type CatalogItem = {
   category: string;
-  clientName?: string;
-  deleted?: boolean;
-  frequency?: string;
-  lastDone?: string;
-  frequencyDays?: number;
-  frequencyCount?: number;
-  frequencyUnit?: Unit;
-  dateFrom?: string;
-  dateTo?: string;
+  tasks: { label: string; slug: string }[];
 };
-
-function saveTasks(tasks: Task[]) {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem('tasks', JSON.stringify(tasks));
-}
-function loadTasks(): Task[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    return JSON.parse(localStorage.getItem('tasks') || '[]') as Task[];
-  } catch {
-    return [];
-  }
-}
-
-const unitToDays: Record<Unit, number> = {
-  day: 1,
-  week: 7,
-  month: 30,
-  year: 365,
-};
-const toDays = (count: number, unit: Unit) =>
-  Math.max(1, Math.floor(count || 1)) * unitToDays[unit];
-const slugify = (s: string) =>
-  s
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-');
 
 const chromeColors = {
   header: '#3A0000',
@@ -81,52 +38,21 @@ const chromeColors = {
   pageBg: '#FAEBDC',
 };
 
-type Client = { id: string; name: string };
-
 export default function AddTaskPage() {
   const router = useRouter();
 
   // Topbar client list
-  const [clients, setClients] = useState<Client[]>([]);
-  const [{ id: activeId, name: activeName }, setActive] = useState<{
-    id: string | null;
-    name: string;
-  }>({
-    id: null,
-    name: '',
-  });
+  const [clients, setClients] = useState<UiClient[]>([]);
+  const { client, handleClientChange, resetClient } = useActiveClient();
+  const activeId = client.id;
+  const activeName = client.name;
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const list = await getClientsFE();
-        const mapped: Client[] = list.map((c: ApiClient) => ({
-          id: c._id,
-          name: c.name,
-        }));
-        setClients(mapped);
+  // Added catalog implementation
+  const [catalog, setCatalog] = useState<CatalogItem[]>([]);
 
-        const stored = readActiveClientFromStorage();
-        const resolvedId = stored.id || FULL_DASH_ID;
-        const resolvedName = stored.name || NAME_BY_ID[resolvedId] || '';
-        setActive({ id: stored.id || null, name: resolvedName });
-      } catch {
-        setClients([]);
-      }
-    })();
-  }, []);
-
-  const onClientChange = (id: string) => {
-    if (!id) {
-      setActive({ id: null, name: '' });
-      writeActiveClientToStorage('', '');
-      return;
-    }
-    const c = clients.find((x) => x.id === id);
-    const name = c?.name || '';
-    setActive({ id, name });
-    writeActiveClientToStorage(id, name);
-  };
+  // State
+  const [careItemOptions, setCareItemOptions] = useState<CareItemOption[]>([]);
+  const [careItemLoading, setCareItemLoading] = useState(false);
 
   // Form states
   const [label, setLabel] = useState('');
@@ -139,66 +65,168 @@ export default function AddTaskPage() {
   const [frequencyCountStr, setFrequencyCountStr] = useState<string>('');
   const [frequencyUnit, setFrequencyUnit] = useState<Unit>('day');
 
+  // Load clients
+  useEffect(() => {
+    (async () => {
+      try {
+        const list: ApiClient[] = await getClients();
+        const mapped: UiClient[] = list.map((c) => ({
+          id: c._id,
+          name: c.name,
+        }));
+        setClients(mapped);
+
+        if (!client.id) {
+          if (mapped[0]) {
+            handleClientChange(mapped[0].id, mapped[0].name);
+          } else {
+            resetClient();
+          }
+        }
+      } catch {
+        setClients([]);
+      }
+    })();
+  }, []);
+
+  // Load categories
+  useEffect(() => {
+    (async () => {
+      try {
+        if (!activeId) {
+          setCatalog([]);
+          return;
+        }
+
+        const url = new URL('/api/v1/category', window.location.origin);
+        url.searchParams.set('clientId', activeId);
+
+        const res = await fetch(url.toString(), { cache: 'no-store' });
+        if (!res.ok) throw new Error('Failed to load categories');
+
+        const data: Array<{ name: string; slug: string }> = await res.json();
+        setCatalog(data.map((c) => ({ category: c.name, tasks: [] })));
+      } catch {
+        setCatalog([]);
+      }
+    })();
+  }, [activeId]);
+
+  // Fetching catalog
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!category.trim()) {
+        setCareItemOptions([]);
+        return;
+      }
+      if (!activeId) {
+        setCareItemOptions([]);
+        return;
+      }
+      setCareItemLoading(true);
+
+      try {
+        const res = await fetch(
+          `/api/v1/task_catalog?clientId=${encodeURIComponent(activeId)}&category=${encodeURIComponent(category)}`,
+          { cache: 'no-store' }
+        );
+        if (!res.ok) throw new Error('failed -- task catalog');
+        const data: { category: string; tasks: CareItemOption[] } =
+          await res.json();
+
+        // Safety de-dupe (belt & braces)
+        const seen = new Set<string>();
+        const uniq: CareItemOption[] = [];
+        for (const t of data.tasks ?? []) {
+          const norm = t.label.trim().toLowerCase().replace(/\s+/g, ' ');
+          if (seen.has(norm)) continue;
+          seen.add(norm);
+          uniq.push({ label: t.label, slug: t.slug });
+        }
+        setCareItemOptions(uniq);
+      } catch {
+        setCareItemOptions([]);
+      } finally {
+        if (!cancelled) setCareItemLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [category]);
+
+  const onClientChange = (id: string) => {
+    (async () => {
+      const c = clients.find((x) => x.id === id);
+      if (!id) resetClient();
+      else handleClientChange(id, c?.name || '');
+    })();
+  };
+
   const statusOptions = useMemo(
     () => ['in progress', 'Completed', 'Not started', 'Paused', 'Cancelled'],
     []
   );
 
-  const onCreate = () => {
+  const onCreate = async () => {
+    if (!activeId) {
+      alert('Please select a client first.');
+      return;
+    }
+
     const name = label.trim();
     if (!name) {
       alert('Please enter the task name.');
       return;
     }
-    const tasks = loadTasks();
-
-    const base = slugify(name) || 'task';
-    let slug = base;
-    let i = 2;
-    while (tasks.some((t) => t.slug === slug)) slug = `${base}-${i++}`;
+    if (!category.trim()) {
+      alert('Please enter a category.');
+      return;
+    }
 
     const countNum = parseInt(frequencyCountStr, 10);
     const hasFrequency = Number.isFinite(countNum) && countNum > 0;
-    const frequencyDays = hasFrequency
-      ? toDays(countNum, frequencyUnit)
-      : undefined;
-    const legacyStr = hasFrequency
-      ? `${countNum} ${frequencyUnit}${countNum > 1 ? 's' : ''}`
-      : undefined;
 
-    const newTask: Task = {
+    const payload = {
+      clientId: activeId ?? undefined,
       clientName: activeName,
       label: name,
-      slug,
-      status: status.trim(),
+      status: status.trim().toLowerCase(),
       category: category.trim(),
       frequencyCount: hasFrequency ? countNum : undefined,
       frequencyUnit: hasFrequency ? frequencyUnit : undefined,
-      frequencyDays,
       dateFrom: dateFrom || undefined,
       dateTo: dateTo || undefined,
-      frequency: legacyStr,
-      lastDone: dateFrom && dateTo ? `${dateFrom} to ${dateTo}` : '',
-      deleted: false,
+      notes: notes.trim() || undefined,
     };
 
-    saveTasks([...(tasks || []), newTask]);
-    router.push('/calendar_dashboard');
-  };
+    try {
+      const res = await fetch('/api/v1/care_item', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
 
-  const onLogoClick = () => {
-    router.push('/empty_dashboard');
+      if (!res.ok) {
+        const msg = await res.json().catch(() => ({}));
+        alert(`Adding task failed: ${msg?.error || res.statusText}`);
+        return;
+      }
+
+      router.push('/calendar_dashboard');
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      alert(`Network error: ${message}`);
+    }
   };
 
   return (
     <DashboardChrome
       page="care-add"
       clients={clients}
-      activeClientId={activeId}
-      activeClientName={activeName}
       onClientChange={onClientChange}
       colors={chromeColors}
-      onLogoClick={onLogoClick}
     >
       {/* Fill entire area below the topbar */}
       <div className="w-full h-[720px] bg-[#FAEBDC] flex flex-col">

@@ -1,4 +1,4 @@
-/* ===== FullCalendar 基础覆写 ===== */
+/* ===== FullCalendar ===== */
 .fc-theme-standard .fc-scrollgrid {
   border: none !important;
 }
@@ -33,30 +33,30 @@
   color: #d96f3d !important;
 }
 
-/* ===== 日期数字的通用样式（放在高亮之前）===== */
+/* ===== General style for date numbers (placed before highlights) ===== */
 .fc-daygrid-day-number {
   color: #000 !important;
   font-weight: 500;
   line-height: 0.9;
   font-size: 18px;
-  /* 你要“更往左下”就调这里的 margin（上 20px，左 12px 举例）*/
+  /* To move it further toward bottom-left, adjust margin here (e.g., top 20px, left 12px) */
   margin: 16px 30 -2 0;
-  padding: 0; /* 不要影响高亮，由高亮自己指定 */
+  padding: 0; /* Do not affect highlight area — highlight styles will override */
   text-align: left;
-  display: block; /* 高亮里会再覆盖为 inline-block */
+  display: block; /* Will be overridden as inline-block in highlight styles */
 }
 
-/* 第一行与周几的距离 */
+/* Space between the first row and weekday headers */
 .fc-daygrid-day-top {
   padding-top: 12px;
 }
 
-/* ===== 高亮（放在最后，带 !important 防止被覆盖）===== */
+/* ===== Highlights (placed last, with !important to prevent override) ===== */
 
-/* 今日：红色圆圈 */
+/* Today: red circle */
 .fc-daygrid-day.fc-today-custom .fc-daygrid-day-number {
-  position: relative; /* 给伪元素定位的锚点 */
-  z-index: 1; /* 确保文字在前面 */
+  position: relative; /* Anchor point for pseudo-element */
+  z-index: 1; /* Ensure the text is above the circle */
 }
 
 .fc-daygrid-day.fc-today-custom .fc-daygrid-day-number::before {
@@ -69,10 +69,10 @@
   background-color: #ff9999;
   border-radius: 50%;
   transform: translate(-50%, -50%);
-  z-index: -1; /* 圆圈在文字下层 */
+  z-index: -1; /* Circle sits below the text */
 }
 
-/* 有任务：浅蓝矩形 */
+/* Days with tasks: light blue rectangle */
 .fc-daygrid-day.fc-task-day .fc-daygrid-day-number {
   position: relative;
   z-index: 1;

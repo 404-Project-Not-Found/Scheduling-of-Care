@@ -138,11 +138,6 @@ function BudgetReportInner() {
     writeActiveClientToStorage(id, name);
   };
 
-  const onLogoClick = () => {
-    if (typeof window !== 'undefined') localStorage.setItem('activeRole', role);
-    router.push('/empty_dashboard');
-  };
-
   // ===== Local UI state =====
   const [q, setQ] = useState('');
   const [year, setYear] = useState('2025');
@@ -174,7 +169,6 @@ function BudgetReportInner() {
       clients={clients}
       onClientChange={onClientChange}
       colors={colors}
-      onLogoClick={onLogoClick}
     >
       <div className="flex-1 h-[680px] bg-white/50 overflow-auto">
         {/* Top bar */}

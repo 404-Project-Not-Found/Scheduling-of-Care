@@ -2,7 +2,6 @@
  * File path: /app/page.tsx
  * Authors: Qingyue Zhao & Denise Alexander
  * Date Created: 05/09/2025
- * Last Updated by Denise Alexander - 7/10/2025: redirection after login changed to /schedule_dashboard.
  */
 
 'use client';
@@ -74,7 +73,7 @@ export default function Home() {
       if (role) {
         localStorage.setItem('lastLoginEmail', emailTrimmed);
         await mockSignIn(role);
-        window.location.href = '/schedule_dashboard';
+        window.location.href = '/icon_dashboard';
         return;
       }
 
@@ -99,7 +98,7 @@ export default function Home() {
         return;
       }
 
-      window.location.href = '/schedule_dashboard';
+      window.location.href = '/icon_dashboard';
     } catch (err: unknown) {
       setError(
         err instanceof Error ? err.message : 'An unexpected error occurred'

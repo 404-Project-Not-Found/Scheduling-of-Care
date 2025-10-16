@@ -8,34 +8,24 @@
  *   as the "Care Items" title, aligned to the RIGHT.
  * - The search filters tasks by title only (case-insensitive).
  *
- * Last Updated by Denise Alexander - 7/10/2025: back-end integrated for
+ * Updated by Denise Alexander - 7/10/2025: back-end integrated for
  * fetching user role and clients.
- */
-/**
- * Calendar Dashboard (Schedule)
- * Frontend Authors: Vanessa Teo & Devni Wijesinghe & Qingyue Zhao
- * ------------------------------------------------------------
- * - Uses the shared <DashboardChrome /> for the top chrome.
- * - Client selection persists via localStorage helpers.
- * - Right column now has a search field on the same row
- *   as the "Care Items" title, aligned to the RIGHT.
- * - The search filters tasks by title only (case-insensitive).
  *
- * Enhancement in this version:
- * - The big brown calendar title (month/year) drives the right-pane title:
+ * Last Updated by Qingyue Zhao - 8/10/2025:
+ * - The calendar title (month/year) drives the right-pane title:
  *   * When a day is selected -> "Care items on YYYY-MM-DD"
  *   * Otherwise -> "All care items in <Month Year>"
  * - TasksPanel receives either `selectedDate` or `year`+`month` to filter items,
- *   without adding any extra dropdown in the layout.
+ *  add a dropdown of list of users with access to the selected client
  */
 
 'use client';
 
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import DashboardChrome from '@/components/top_menu/client_schedule';
-import CalendarPanel from '@/components/calendar/CalendarPanel';
+import CalendarPanel from '@/components/dashboard/CalendarPanel';
 import TasksPanel from '@/components/tasks/TasksPanel';
 
 import type { Task } from '@/lib/mock/mockApi';
@@ -80,6 +70,12 @@ type ClientTask = Task & {
 };
 
 /* ---------------------------- Main Page ----------------------------- */
+type CalendarPanelProps = {
+  tasks: Task[];
+  onDateClick?: (date: string) => void;
+  onMonthYearChange?: (year: number, month: number) => void;
+};
+
 export default function Page() {
   return (
     <Suspense fallback={<div className="p-6 text-gray-500">Loading…</div>}>
@@ -155,13 +151,14 @@ function ClientSchedule() {
   };
 
   /* ------------------------------ Tasks ----------------------------- */
-  const [selectedDate, setSelectedDate] = useState(''); // YYYY-MM-DD when a day is clicked
+  const [selectedDate, setSelectedDate] = useState('');
   const [tasks, setTasks] = useState<ClientTask[]>([]);
   const [selectedTask, setSelectedTask] = useState<ClientTask | null>(null);
 
   const [isAddingComment, setIsAddingComment] = useState(false);
   const [newComment, setNewComment] = useState('');
 
+  // Load tasks
   useEffect(() => {
     (async () => {
       try {
@@ -197,11 +194,38 @@ function ClientSchedule() {
   }, [addedFile, selectedTask, role]);
 
   /* --------------- Derived: filter by client and date --------------- */
+  // These are set whenever the calendar view (brown title) changes.
+  const [visibleYear, setVisibleYear] = useState<number | null>(null); // e.g. 2025
+  const [visibleMonth, setVisibleMonth] = useState<number | null>(null); // 1..12
+
   const noClientSelected = !activeClientId;
 
-  const tasksByClient: ClientTask[] = !activeClientId
-    ? []
-    : tasks.filter((t) => !t.clientId || t.clientId === activeClientId);
+  const tasksByClient: ClientTask[] = activeClientId
+    ? tasks.filter(
+        (t): t is ClientTask => (t.clientId ?? '') === activeClientId
+      )
+    : [];
+
+  function getDueISO(t: ClientTask): string {
+    return (t.nextDue ?? '').slice(0, 10);
+  }
+
+  const tasksForCalendar: ClientTask[] = tasksByClient.filter((t) => {
+    const due = getDueISO(t);
+    if (!due) return false;
+
+    if (selectedDate) return due === selectedDate;
+
+    if (!visibleYear || !visibleMonth) return true; // show all if no month/year
+
+    const [y, m] = due.split('-').map(Number);
+
+    if (visibleYear && visibleMonth) {
+      return y === visibleYear && m === visibleMonth;
+    }
+
+    return true;
+  });
 
   // If a day is selected we filter by that day; otherwise it's the whole dataset for the visible month (handled in TasksPanel)
   const filteredTasks = selectedDate
@@ -209,10 +233,6 @@ function ClientSchedule() {
     : tasksByClient;
 
   /* ------------- Visible month/year coming from Calendar ------------- */
-  // These are set whenever the calendar view (brown title) changes.
-  const [visibleYear, setVisibleYear] = useState<number | null>(null); // e.g. 2025
-  const [visibleMonth, setVisibleMonth] = useState<number | null>(null); // 1..12
-
   const MONTH_NAMES = useMemo(
     () => [
       'January',
@@ -253,9 +273,11 @@ function ClientSchedule() {
 
   /* -------------------- RIGHT PANE: title search -------------------- */
   const [searchTerm, setSearchTerm] = useState('');
-  const tasksForRightPane = filteredTasks.filter((t) =>
-    t.title.toLowerCase().includes(searchTerm.trim().toLowerCase())
-  );
+  const tasksForRightPane = tasksForCalendar.filter((t) => {
+    const title = (t?.title ?? '').toLowerCase();
+    const q = (searchTerm ?? '').trim().toLowerCase();
+    return title.includes(q);
+  });
 
   /* ----------------------------- Actions ---------------------------- */
   const addComment = (taskId: string, comment: string) => {
@@ -299,16 +321,12 @@ function ClientSchedule() {
 
   // Logo → home
   const onLogoClick = () => {
-    router.push('/schedule_dashboard');
+    router.push('/icon_dashboard');
   };
-
-  /* ------------------------------ Render ---------------------------- */
-  // Cast once so we can pass onMonthYearChange safely even if your CalendarPanel.d.ts isn't updated yet.
-  // const CalendarPanelAny = CalendarPanel as any;
 
   return (
     <DashboardChrome
-      page="schedule"
+      page="client-schedule"
       clients={clients}
       onClientChange={onClientChange}
       colors={{
@@ -323,13 +341,11 @@ function ClientSchedule() {
         {/* LEFT: Calendar */}
         <section className="flex-1 bg-white overflow-auto p-4">
           <CalendarPanel
-            tasks={filteredTasks /* empty when no client is selected */}
+            tasks={tasksForCalendar}
             onDateClick={(date: string) => setSelectedDate(date)}
-            // When the calendar's brown title (view) changes, update month/year
-            // and clear any selected day so the right title shows the month scope.
-            onMonthYearChange={(y: number, m: number) => {
-              setVisibleYear(y);
-              setVisibleMonth(m);
+            onMonthYearChange={(year: number, month: number) => {
+              setVisibleYear(year);
+              setVisibleMonth(month);
             }}
           />
         </section>
@@ -365,9 +381,7 @@ function ClientSchedule() {
                   />
                 </div>
                 {noClientSelected && (
-                  <p className="text-lg opacity-80">
-                    Select a client to view tasks.
-                  </p>
+                  <p className="text-lg">Loading client&apos;s care items...</p>
                 )}
               </div>
 
@@ -376,12 +390,10 @@ function ClientSchedule() {
                 <TasksPanel
                   tasks={tasksForRightPane}
                   onTaskClick={(task) => setSelectedTask(task)}
-                  // Drive the list scope:
-                  // If a date is selected, TasksPanel will show that day only.
-                  // Otherwise it will use year/month (visible calendar title).
                   selectedDate={selectedDate || undefined}
                   year={visibleYear ?? undefined}
                   month={visibleMonth ?? undefined}
+                  clientLoaded={!noClientSelected}
                 />
               </div>
             </>
