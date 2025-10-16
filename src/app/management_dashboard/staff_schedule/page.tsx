@@ -1,3 +1,11 @@
+/**
+ * File path: src/app/management_dashboard/staff_schedule/page.tsx
+ * Frontend Author: Devni Wijesinghe
+ 
+ * Last Updated by Denise Alexander - 16/10/2025: back-end integrated to fetch staff
+ * shift schedules from DB.
+ */
+
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
@@ -18,6 +26,7 @@ const palette = {
   peachHover: 'rgba(249,201,177,0.9)', // hover deeper
 };
 
+/* ---- Types ---- */
 type Staff = {
   id: string;
   name: string;
@@ -25,7 +34,9 @@ type Staff = {
   org?: string;
   email?: string;
 };
+
 type ShiftEntry = { id?: string; start: string; end: string; label?: string };
+
 type ScheduleByStaff = Record<string, Record<string, ShiftEntry>>;
 
 interface StaffApiResponse {
@@ -44,6 +55,7 @@ interface ShiftApiResponse {
   label?: string;
 }
 
+/* ---- Helper Functions ---- */
 function isoDate(d: Date) {
   const tzOff = d.getTimezoneOffset();
   const local = new Date(d.getTime() - tzOff * 60000);
@@ -76,6 +88,7 @@ export default function StaffSchedulePage() {
   const router = useRouter();
   const onLogoClick = () => router.push('/management_dashboard');
 
+  /* ---- States ---- */
   const [role, setRole] = useState<'family' | 'carer' | 'management' | null>(
     null
   );
@@ -84,6 +97,7 @@ export default function StaffSchedulePage() {
   const [weekStart, setWeekStart] = useState<Date>(() =>
     startOfWeek(new Date())
   );
+
   const [modal, setModal] = useState<{
     open: boolean;
     staffId?: string;
@@ -92,29 +106,34 @@ export default function StaffSchedulePage() {
     end?: string;
     label?: string;
   }>({ open: false });
+
   const [shiftPresets, setShiftPresets] = useState({
     Morning: { start: '07:00', end: '15:00' },
     Afternoon: { start: '15:00', end: '22:00' },
     Evening: { start: '22:00', end: '07:00' },
   });
+
   const [search, setSearch] = useState('');
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const isManagement = role === 'management';
   const isReadonly = !isManagement;
 
+  // Fetch staff & shifts
   useEffect(() => {
     (async () => {
       const r = await getViewerRole();
       setRole(r);
 
       try {
+        /* ---- Staff ---- */
         const resStaff = await fetch('/api/v1/management/staff');
         const staffData = await resStaff.json();
         const staffArray: StaffApiResponse[] = Array.isArray(staffData.staff)
           ? staffData.staff
           : [];
 
+        // Map API data to local Staff type
         setStaff(
           staffArray.map((s) => ({
             id: s._id,
@@ -125,6 +144,7 @@ export default function StaffSchedulePage() {
           }))
         );
 
+        /* ---- Shifts ---- */
         const resShifts = await fetch('/api/v1/shifts');
         const data = await resShifts.json();
         const shifts: ShiftApiResponse[] = Array.isArray(data.shifts)
@@ -146,6 +166,7 @@ export default function StaffSchedulePage() {
     })();
   }, []);
 
+  /* ---- Computed values ---- */
   const days = useMemo(() => {
     return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(weekStart);
@@ -180,6 +201,7 @@ export default function StaffSchedulePage() {
     return `${a.toLocaleDateString(undefined, opts)} - ${b.toLocaleDateString(undefined, opts)}`;
   }, [days]);
 
+  /* ---- Actions ---- */
   const changeWeek = (weeks: number) => {
     const newDate = new Date(weekStart);
     newDate.setDate(newDate.getDate() + weeks * 7);

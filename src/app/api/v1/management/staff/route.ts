@@ -2,15 +2,18 @@
  * File path: /management/staff/route.ts
  * Author: Denise Alexander
  * Date Created: 26/09/2025
+ *
+ * Last Updated by Denise Alexander - 16/10/2025: added logic for family users
+ * to view staff list from all organisations they have clients in.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
-import User from '@/models/User';
-import Client from '@/models/Client';
+import User, { IUser } from '@/models/User';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import mongoose from 'mongoose';
+import { getOrgIds } from '@/lib/get_org_ids';
 
 // Type for staff documents returned from MongoDB
 type StaffDoc = {
@@ -23,11 +26,7 @@ type StaffDoc = {
   org?: string;
 };
 
-interface OrgHistoryItem {
-  organisation: mongoose.Types.ObjectId;
-  status: 'pending' | 'approved' | 'revoked';
-}
-
+// Staff doc with populated organisation
 interface PopStaffDoc extends Omit<StaffDoc, 'org'> {
   organisation?: {
     _id: mongoose.Types.ObjectId;
@@ -47,42 +46,13 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
   }
 
-  await connectDB();
+  const user = session.user as unknown as IUser;
+  // For management/carer users, gets their organisation
+  // For family users, it retrieves all approved organisations for all their clients
+  const orgIds = await getOrgIds(user);
 
-  let orgIds: string[] = [];
-
-  // Validates organisation ID
-  if (session.user.role === 'management' || session.user.role === 'carer') {
-    const orgId = session.user.organisation;
-    if (!orgId || !mongoose.isValidObjectId(orgId)) {
-      return NextResponse.json(
-        { error: 'Organisation not found or invalid.' },
-        { status: 400 }
-      );
-    }
-    orgIds = [orgId];
-  } else if (session.user.role === 'family') {
-    const clients = await Client.find({ createdBy: session.user.id })
-      .select('organisationHistory')
-      .lean<
-        {
-          organisationHistory: OrgHistoryItem[];
-        }[]
-      >();
-
-    const approvedOrgsIds = clients.flatMap((client) =>
-      (client.organisationHistory || [])
-        .filter((entry) => entry.status === 'approved')
-        .map((entry) => entry.organisation?.toString())
-    );
-
-    orgIds = Array.from(
-      new Set(approvedOrgsIds.filter((id): id is string => Boolean(id)))
-    );
-
-    if (!orgIds.length) {
-      return NextResponse.json({ staff: [] }, { status: 200 });
-    }
+  if (!orgIds.length) {
+    return NextResponse.json({ staff: [] }, { status: 200 });
   }
 
   // Fetches staff members belonging to the organisation

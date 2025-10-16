@@ -1,3 +1,9 @@
+/**
+ * File path: /models/Shift.ts
+ * Author: Denise Alexander
+ * Date Created: 16/10/2025
+ */
+
 import mongoose, { Schema, model, models } from 'mongoose';
 
 const ShiftSchema = new Schema(

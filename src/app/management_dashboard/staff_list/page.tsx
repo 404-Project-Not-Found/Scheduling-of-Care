@@ -97,6 +97,7 @@ export default function StaffListPage() {
     );
   }, [q, staff]);
 
+  // Capitalises first letter of the word
   function capitalise(str?: string) {
     if (!str) return '';
 
