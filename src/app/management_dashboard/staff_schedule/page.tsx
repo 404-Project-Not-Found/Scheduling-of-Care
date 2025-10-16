@@ -23,6 +23,7 @@ type Staff = {
   name: string;
   role?: 'Carer' | 'Management';
   org?: string;
+  email?: string;
 };
 type ShiftEntry = { id?: string; start: string; end: string; label?: string };
 type ScheduleByStaff = Record<string, Record<string, ShiftEntry>>;
@@ -32,6 +33,7 @@ interface StaffApiResponse {
   name: string;
   role: string;
   org: string;
+  email: string;
 }
 
 interface ShiftApiResponse {
@@ -119,6 +121,7 @@ export default function StaffSchedulePage() {
             name: s.name,
             role: s.role === 'management' ? 'Management' : 'Carer',
             org: s.org,
+            email: s.email,
           }))
         );
 
@@ -329,15 +332,6 @@ export default function StaffSchedulePage() {
 
           {/* Right buttons — management only */}
           <div className="flex items-center gap-6 justify-end w-1/3">
-            {/* Print — visible to everyone */}
-            <button
-              onClick={() => typeof window !== 'undefined' && window.print()}
-              className="inline-flex items-center px-6 py-3 rounded-2xl border border-black/30 bg-white font-extrabold text-xl hover:bg-black/5 transition-colors"
-              title="Print"
-              aria-label="Print"
-            >
-              Print
-            </button>
             {isManagement && (
               <>
                 <button
@@ -358,6 +352,15 @@ export default function StaffSchedulePage() {
                 </button>
               </>
             )}
+            {/* Print — visible to everyone */}
+            <button
+              onClick={() => typeof window !== 'undefined' && window.print()}
+              className="inline-flex items-center px-6 py-3 rounded-2xl border border-black/30 bg-white font-extrabold text-xl hover:bg-black/5 transition-colors"
+              title="Print"
+              aria-label="Print"
+            >
+              Print
+            </button>
           </div>
         </div>
 
@@ -425,10 +428,11 @@ export default function StaffSchedulePage() {
                               {s.name}
                             </div>
                             <div className="text-sm text-black/70">
-                              {s.org ? s.org : ''}
+                              {s.email ? s.email : ''}
                             </div>
                             <div className="text-sm text-black/70">
-                              {s.role || 'Carer'}
+                              {s.org ? s.org : ''}
+                              {` · ${s.role || 'Carer'}`}
                             </div>
                           </div>
                         </div>

@@ -21,6 +21,7 @@ type Staff = {
   avatarUrl?: string;
   role?: 'management' | 'carer';
   status?: 'active' | 'inactive';
+  org?: string;
 };
 
 //----------------- Type Definitions -----------------
@@ -57,13 +58,18 @@ export default function StaffListPage() {
     let alive = true;
 
     (async () => {
+      setLoading(true);
       try {
         const res = await fetch('/api/v1/management/staff', {
           cache: 'no-store',
         });
         if (!res.ok) throw new Error(`Failed to load staff (${res.status})`);
-        const data = (await res.json()) as Staff[];
-        if (alive) setStaff(data);
+
+        const data = await res.json();
+        if (!data.staff || !Array.isArray(data.staff))
+          throw new Error('Invalid response format.');
+
+        if (alive) setStaff(Array.isArray(data.staff) ? data.staff : []);
       } catch (err: unknown) {
         if (alive) setError(getErrorMessage(err));
       } finally {
@@ -79,13 +85,23 @@ export default function StaffListPage() {
   // Search query: filters by name or email (case-insensitive)
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
+    const list = Array.isArray(staff) ? staff : [];
     if (!term) return staff;
-    return staff.filter(
+
+    return list.filter(
       (s) =>
         s.name.toLowerCase().includes(term) ||
-        (s.email?.toLowerCase().includes(term) ?? false)
+        (s.email?.toLowerCase().includes(term) ?? false) ||
+        (s.role?.toLowerCase().includes(term) ?? false) ||
+        (s.org?.toLowerCase().includes(term) ?? false)
     );
   }, [q, staff]);
+
+  function capitalise(str?: string) {
+    if (!str) return '';
+
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  }
 
   return (
     <DashboardChrome
@@ -93,10 +109,6 @@ export default function StaffListPage() {
       headerTitle="Staff Schedule"
       navItems={[
         { label: 'Staff List', href: '/management_dashboard/staff_list' },
-        {
-          label: 'Assign Carer',
-          href: '/management_dashboard/assign_carer/manage',
-        },
       ]}
       showClientPicker={false}
       bannerTitle=""
@@ -216,7 +228,7 @@ export default function StaffListPage() {
                             )}
                             {s.role && (
                               <div className="text-sm text-black/70">
-                                {s.role}
+                                {capitalise(s.role)}
                               </div>
                             )}
                           </div>
