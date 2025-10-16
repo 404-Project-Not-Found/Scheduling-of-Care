@@ -159,7 +159,6 @@ function AddTransactionInner() {
       onClientChange={onClientChange}
       activeClientName={activeClientName}
       colors={{ header: colors.header, banner: colors.banner, text: '#000' }}
-      onLogoClick={() => router.push('/empty_dashboard')}
     >
       <div
         className="flex-1 h-[680px] overflow-auto"

@@ -221,19 +221,12 @@ export default function AddTaskPage() {
     }
   };
 
-  const onLogoClick = () => {
-    router.push('/empty_dashboard');
-  };
-
   return (
     <DashboardChrome
       page="care-add"
       clients={clients}
-      activeClientId={activeId}
-      activeClientName={activeName}
       onClientChange={onClientChange}
       colors={chromeColors}
-      onLogoClick={onLogoClick}
     >
       {/* Fill entire area below the topbar */}
       <div className="w-full h-[720px] bg-[#FAEBDC] flex flex-col">

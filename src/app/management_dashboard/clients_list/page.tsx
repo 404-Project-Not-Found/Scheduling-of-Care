@@ -211,7 +211,6 @@ function ClientListInner() {
         banner: colors.banner,
         text: colors.text,
       }}
-      onLogoClick={() => router.push('/empty_dashboard')}
     >
       {/* Page body */}
       <div className="w-full h-full" style={{ backgroundColor: colors.pageBg }}>

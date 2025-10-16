@@ -85,6 +85,7 @@ type ChromeProps = {
 
 const ROUTES = {
   schedule: '/calendar_dashboard',
+  staffSchedule: '/management_dashboard/staff_schedule',
   budget: '/calendar_dashboard/budget_report',
   transactions: '/calendar_dashboard/transaction_history',
   requestForm: '/family_dashboard/request_of_change_page',
@@ -93,9 +94,7 @@ const ROUTES = {
   careAdd: '/management_dashboard/manage_care_item/add',
   clientList: '/management_dashboard/clients_list',
   peopleList: '/family_dashboard/people_list',
-  defaultHome: '/empty_dashboard',
   accountUpdate: '/calendar_dashboard/update_details',
-  homeByRole: '/empty_dashboard',
   profile: '/client_profile',
   organisationAccess: (clientId: string) =>
     '/family_dashboard/manage_org_access/${clientId}',
@@ -210,15 +209,6 @@ export default function DashboardChrome({
     resetClient,
   } = useActiveClient();
 
-  const effectiveClientId =
-    (typeof activeClientId !== 'undefined'
-      ? activeClientId
-      : activeClient.id) ?? '';
-  const effectiveClientName =
-    (typeof activeClientName !== 'undefined'
-      ? activeClientName
-      : activeClient.name) ?? '';
-
   // Load viewer role once
   useEffect(() => {
     const loadRole = async () => {
@@ -245,7 +235,7 @@ export default function DashboardChrome({
       return;
     }
     // Default: go to Client Schedule
-    router.push(ROUTES.clientSchedule);
+    router.push(ROUTES.schedule);
   };
 
   // -------- Derived UI text --------

@@ -88,15 +88,6 @@ export default function RegisterClientPage() {
         style={{ backgroundColor: palette.header }}
       >
         <div className="px-6 py-5 relative">
-          <Link
-            href="/empty_dashboard"
-            aria-label="Back to Management Dashboard"
-            className="absolute left-6 top-1/2 -translate-y-1/2 font-semibold tracking-wide
-                       text-lg md:text-xl lg:text-2xl px-2 py-1 text-white"
-          >
-            {'<'} back
-          </Link>
-
           <h1 className="text-3xl md:text-4xl font-extrabold tracking-wide text-center">
             Register Client with Access Code
           </h1>

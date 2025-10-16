@@ -206,10 +206,6 @@ export default function EditSelectorPage() {
     dangerHover: '#a40f0f',
   };
 
-  const onLogoClick = () => {
-    router.push('/empty_dashboard');
-  };
-
   const onClientChange = (id: string) => {
     const c = clients.find((x) => x.id === id);
     if (!id) resetClient();
@@ -224,11 +220,8 @@ export default function EditSelectorPage() {
     <DashboardChrome
       page="care-edit-picker"
       clients={clients}
-      activeClientId={activeId}
-      activeClientName={activeName}
       onClientChange={onClientChange}
       colors={chromeColors}
-      onLogoClick={onLogoClick}
     >
       {/* Fill entire area below the topbar */}
       <div className="w-full h-[720px] bg-[#FAEBDC] flex flex-col">
