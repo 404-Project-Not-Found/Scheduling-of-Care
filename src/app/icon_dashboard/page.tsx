@@ -93,9 +93,9 @@ const BUTTONS: Record<StrictRole, ButtonDef[]> = {
       href: '/calendar_dashboard/transaction_history',
     },
     {
-      label: 'Update Details',
+      label: 'Family Requests',
       icon: ClipboardList,
-      href: '/calendar_dashboard/update_details',
+      href: '/request-log-page',
     },
     { label: 'FAQ', icon: HelpCircle, href: '/faq' },
   ],
@@ -303,11 +303,9 @@ export default function DashboardPage() {
           className="text-base md:text-lg leading-relaxed"
           style={{ color: palette.header }}
         >
-          {role === 'family'
+          {role === 'family' || role === 'carer'
             ? 'Use the buttons below to view client & staff schedules, budgets, requests and transactions.'
-            : role === 'carer'
-              ? 'Use the buttons below to view client and staff schedules, budgets and transactions.'
-              : 'Use the buttons below to manage client & staff schedules, budget and requests.'}
+            : 'Use the buttons below to manage client & staff schedules, budget and requests.'}
         </p>
       </div>
 

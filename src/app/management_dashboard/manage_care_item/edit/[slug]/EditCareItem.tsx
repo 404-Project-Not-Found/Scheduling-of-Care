@@ -353,10 +353,6 @@ export default function EditCareItem({ slug }: { slug: string }) {
     router.push('/calendar_dashboard');
   };
 
-  const onLogoClick = () => {
-    router.push('/empty_dashboard');
-  };
-
   return (
     <DashboardChrome
       page="care-edit"

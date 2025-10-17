@@ -2,6 +2,7 @@
  * File path: /management/clients/route.ts
  * Author: Denise Alexander
  * Date Created: 26/09/2025
+ *
  * Last Updated by Denise Alexander - 7/10/2025: to fetch the most recent update to organisation-client link
  * status.
  */
@@ -38,8 +39,8 @@ interface ClientWithOrg {
  */
 export async function GET() {
   const session = await getServerSession(authOptions);
-  // Check if the user is authenticated and has the 'management' role
-  if (!session?.user?.id || session.user.role !== 'management') {
+  // Check if the user is authenticated and has the 'management' or 'carer' role
+  if (!session?.user?.id || session.user.role === 'family') {
     return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
   }
 

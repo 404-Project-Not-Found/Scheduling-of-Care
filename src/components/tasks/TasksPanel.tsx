@@ -103,7 +103,7 @@ export default function TasksPanel({
 
   return (
     <div className="h-full flex flex-col">
-      {sorted.length === 0 && clientLoaded && (
+      {sorted.length === 0 && clientLoaded && clientLoaded && (
         <div className="text-sm text-gray-600 italic pb-2">
           No care items for the selected month and year.
         </div>
