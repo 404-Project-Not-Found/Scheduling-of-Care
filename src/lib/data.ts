@@ -24,7 +24,7 @@ export type ApiCareItem = {
   slug: string;
   label: string;
   category?: string;
-  status: 'Pending' | 'Due' | 'Completed';
+  status: 'Waiting Verification' | 'Overdue' | 'Completed' | 'Due';
   frequency?: string;
   lastDone?: string;
   nextDue?: string;
@@ -43,7 +43,7 @@ export interface Task {
 type CareItemListRow = {
   label: string;
   slug: string;
-  status: 'Pending' | 'Due' | 'Completed';
+  status: 'Waiting Verification' | 'Overdue' | 'Completed' | 'Due';
   category: string;
   categoryId?: string;
   clientId?: string;
@@ -158,11 +158,11 @@ export const getTasks = async (): Promise<mockApi.Task[]> => {
 
   const normalizeStatus = (s: string) => {
     const v = (s || '').toLowerCase();
-    if (v === 'pending') return 'Pending';
+    if (v === 'waiting verification') return 'Waiting Verification';
     if (v === 'due') return 'Due';
+    if (v === 'overdue') return 'Overdue';
     if (v === 'completed') return 'Completed';
-    // fallback
-    return 'Pending';
+    return 'due';
   };
 
   const tasks: mockApi.Task[] = rows.map((row, idx) => {
@@ -181,7 +181,7 @@ export const getTasks = async (): Promise<mockApi.Task[]> => {
     const task: unknown = {
       id,
       label: row.label,
-      status: normalizeStatus(row.status) as 'Pending' | 'Due' | 'Completed',
+      status: normalizeStatus(row.status) as 'Pending' | 'Overdue' | 'Completed',
       category: row.category,
       clientId: row.clientId ?? '',
       frequency: buildFrequency(row),
@@ -189,8 +189,6 @@ export const getTasks = async (): Promise<mockApi.Task[]> => {
       nextDue,
       comments: [],
       files: [],
-
-      // 🔑 include structured fields so the calendar can generate occurrences
       dateFrom: toISODateOnly(row.dateFrom ?? null) || undefined,
       dateTo: toISODateOnly(row.dateTo ?? null) || undefined,
       frequencyCount: row.frequencyCount ?? undefined,

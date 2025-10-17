@@ -13,8 +13,10 @@
  * - Tasks are stored in localStorage (mock mode) and persisted across reloads.
  * - Buttons at the bottom support Cancel (navigate back) and Add (save task).
  *
- * Last Updated by Denise Alexander (16/10/2025): Fixed active client usage, client dropdown
+ * Updated by Denise Alexander (16/10/2025): Fixed active client usage, client dropdown
  * now works correctly.
+ * 
+ * Last Updated by Zahra Rizqita (17/10/2025): Remove status in adding page
  */
 
 'use client';
@@ -72,7 +74,7 @@ export default function AddTaskPage() {
 
   // Form states
   const [label, setLabel] = useState('');
-  const [status, setStatus] = useState('in progress');
+  const [status, setStatus] = useState('');
   const [category, setCategory] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -209,7 +211,7 @@ export default function AddTaskPage() {
     };
   }, [category]);
 
-  const statusOptions = useMemo(() => ['Pending', 'Due', 'Completed'], []);
+  // const statusOptions = useMemo(() => ['Pending', 'Due', 'Completed'], []);
 
   const onCreate = async () => {
     if (!activeClientId) {
@@ -344,21 +346,6 @@ export default function AddTaskPage() {
                 </select>
               </div>
             </Field>
-
-            <Field label="Status">
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                className="w-full rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black"
-              >
-                {statusOptions.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </select>
-            </Field>
-
             <Field label="Notes">
               <input
                 value={notes}

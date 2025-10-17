@@ -27,7 +27,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import DashboardChrome from '@/components/top_menu/client_schedule';
 import CalendarPanel from '@/components/dashboard/CalendarPanel';
 import TasksPanel from '@/components/tasks/TasksPanel';
-import { futureOccurencesAfterLastDone } from '@/lib/care-item-helpers/date-helpers';
+import { futureOccurencesAfterLastDone, getNextDue } from '@/lib/care-item-helpers/date-helpers';
 
 import type { Task } from '@/lib/mock/mockApi';
 
@@ -77,6 +77,9 @@ type ClientTask = Task & {
   frequencyUnit?: 'day' | 'week' | 'month' | 'year';
   completedDates?: string[];
 };
+
+// Type status
+type StatusUI = 'Waiting Verification' | 'Completed' | 'Overdue' | 'Due' | 'Pending';
 
 /* ---------------------------- Main Page ----------------------------- */
 type CalendarPanelProps = {
@@ -337,12 +340,14 @@ function ClientSchedule() {
       prev ? { ...prev, files: [...(prev.files || []), fileName] } : prev
     );
   };
-
+  
   const getStatusBadgeClasses = (status?: string) => {
     switch ((status || '').toLowerCase()) {
-      case 'due':
+      case 'waiting verification':
+        return 'bg-yellow-400 text-white';
+      case 'overdue':
         return 'bg-red-500 text-white';
-      case 'pending':
+      case 'due':
         return 'bg-orange-400 text-white';
       case 'completed':
         return 'bg-green-500 text-white';
@@ -350,6 +355,53 @@ function ClientSchedule() {
         return 'bg-gray-300 text-black';
     }
   };
+
+  async function markTaskDone(task: ClientTask, fileName: string, comment?: string) {
+    const slug = task.id;             
+    const doneAt = task.nextDue;      
+
+    if (!doneAt) {
+      alert('No occurrence date found for this task.');
+      return;
+    }
+    if (!fileName) {
+      alert('Upload a file before marking as done.');
+      return;
+    }
+
+    const res = await fetch(`/api/v1/care_item/${encodeURIComponent(slug)}/done`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ file: fileName, comment: comment || '', doneAt }),
+    });
+
+    if (!res.ok) {
+      alert('Failed to mark as done.');
+      return;
+    }
+
+    const updated = await res.json(); 
+
+    // Update the base task in list state
+    setTasks(prev =>
+      prev.map(t =>
+        t.id === slug
+          ? {
+              ...t,
+              lastDone: updated.lastDone ?? doneAt,
+              files: Array.isArray(updated.files) ? updated.files : t.files,
+              comments: Array.isArray(updated.comments) ? updated.comments : t.comments,
+              nextDue: getNextDue(
+                updated.lastDone ?? doneAt,
+                (t as any).frequencyCount ?? null,
+                (t as any).frequencyUnit ?? null,
+                (t as any).frequencyDays ?? null
+              ),
+            }
+          : t
+      )
+    );
+  }
 
   // Logo → home
   const onLogoClick = () => {
@@ -426,6 +478,7 @@ function ClientSchedule() {
                   year={visibleYear ?? undefined}
                   month={visibleMonth ?? undefined}
                   clientLoaded={!noClientSelected}
+                  onMarkDone={markTaskDone}
                 />
               </div>
             </>
@@ -451,6 +504,23 @@ function ClientSchedule() {
 }
 
 /* ---------------------- Right column: Task details ------------------- */
+function isoToday(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function derivedOccurrenceStatus(t: { status?: string; nextDue?: string }): StatusUI {
+ 
+  if ((t.status || '').toLowerCase() === 'waiting verification') return 'Waiting Verification';
+
+  const due = t.nextDue?.slice(0, 10) ?? '';
+  if (!due) return 'Due';
+
+  const today = isoToday();
+  if (due < today) return 'Overdue';
+  if (due === today) return 'Due';
+  return 'Due';
+}
+
 function TaskDetail({
   role,
   task,
@@ -477,60 +547,6 @@ function TaskDetail({
   setIsAddingComment: (v: boolean) => void;
 }) {
   const readOnly = role !== 'carer';
-
-  async function markTaskDone(fileName: string, comment?: string) {
-    try {
-      const res = await fetch(
-        `/api/v1/care_item/${encodeURIComponent(task.id)}/done`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ file: fileName, comment }),
-        }
-      );
-
-      if (!res.ok) {
-        console.error('Failed to mark task as done:', await res.text());
-        alert('Failed to mark as done');
-        return;
-      }
-
-      const updated = await res.json();
-
-      // Update local task state
-      setTasks((prev) =>
-        prev.map((t) =>
-          t.id === task.id
-            ? {
-                ...t,
-                status: updated.status ?? 'Completed',
-                lastDone: updated.lastDone ?? t.lastDone,
-                files: updated.files ?? t.files,
-                comments: updated.comments ?? t.comments,
-              }
-            : t
-        )
-      );
-
-      // Also update currently selected task (detail view)
-      setSelectedTask((prev) =>
-        prev
-          ? {
-              ...prev,
-              status: updated.status ?? 'Completed',
-              lastDone: updated.lastDone ?? prev.lastDone,
-              files: updated.files ?? prev.files,
-              comments: updated.comments ?? prev.comments,
-            }
-          : prev
-      );
-
-      alert('Task marked as done!');
-    } catch (err) {
-      console.error('Error marking task done:', err);
-      alert('Unexpected error');
-    }
-  }
 
   return (
     <div className="flex flex-col h-full" style={{ color: palette.text }}>
@@ -563,15 +579,19 @@ function TaskDetail({
         </p>
         <p>
           <span className="font-extrabold">Status:</span>{' '}
-          <span
-            className={`px-3 py-1 rounded-full text-sm font-extrabold ${getStatusBadgeClasses(
-              task.status
-            )}`}
-          >
-            {task.status}
-          </span>
+          {(() => {
+            const derived = derivedOccurrenceStatus(task);
+            return (
+              <span
+                className={`px-3 py-1 rounded-full text-sm font-extrabold ${getStatusBadgeClasses(
+                  derived
+                )}`}
+              >
+                {derived}
+              </span>
+            );
+          })()}
         </p>
-
         {/* Comments */}
         <div className="mt-2">
           <h3 className="font-extrabold text-2xl mb-2">Comments</h3>
@@ -639,12 +659,11 @@ function TaskDetail({
               <button
                 className="px-5 py-2 border rounded bg-white"
                 onClick={() => {
-                  const uploadedFile = task.files?.[task.files.length - 1]; // last uploaded file
-                  if (!uploadedFile) {
-                    alert('You must upload a file before marking as done.');
-                    return;
-                  }
-                  markTaskDone(uploadedFile);
+                  setTasks((prev) =>
+                    prev.map((t) =>
+                      t.id === task.id ? { ...t, status: 'Completed' } : t
+                    )
+                  );
                 }}
               >
                 Mark as done
@@ -673,6 +692,13 @@ function TaskDetail({
             <button
               className="px-5 py-2 border rounded bg-white"
               onClick={() => {
+                const currStatus = (task.status || '').toLowerCase();
+
+                if(currStatus !== 'waiting verification') {
+                  alert('This task cannot be marked as completed yet. The carer must first mark the task as done.');
+                  return;
+                }
+
                 setTasks((prev) =>
                   prev.map((t) =>
                     t.id === task.id ? { ...t, status: 'Completed' } : t

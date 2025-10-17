@@ -58,7 +58,7 @@ export async function POST(
   const comment = (body.comment ?? '').trim();
 
   const update: Record<string, unknown> = {
-    $set: { status: 'Completed', lastDone: completedAt },
+    $set: { status: 'Waiting Verification', lastDone: completedAt },
     $push: { files: file },
   };
   if (comment) {

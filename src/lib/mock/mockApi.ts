@@ -249,7 +249,7 @@ export type Task = {
   frequency: string;
   lastDone: string; // YYYY-MM-DD
   nextDue: string; // YYYY-MM-DD
-  status: 'Pending' | 'Due' | 'Completed';
+  status: 'Waiting Verification' | 'Overdue' | 'Completed' | 'Due';
   comments: string[];
   files: string[];
 };
@@ -267,7 +267,7 @@ const DEMO_TASKS: Task[] = [
     frequency: 'Monthly',
     lastDone: '2025-09-15',
     nextDue: '2025-10-01',
-    status: 'Pending',
+    status: 'Due',
     comments: ['Carer note: Arrived on time, patient was calm.'],
     files: ['dental_referral.pdf'],
   },
@@ -279,7 +279,7 @@ const DEMO_TASKS: Task[] = [
     frequency: 'Every 3 months',
     lastDone: '2025-07-13',
     nextDue: '2025-10-13',
-    status: 'Pending',
+    status: 'Waiting Verification',
     comments: ['Carer note: Current head slightly worn.'],
     files: ['toothbrush_receipt.png'],
   },
@@ -321,7 +321,7 @@ export async function getTasksFE(): Promise<Task[]> {
               frequency: partial.frequency ?? '',
               lastDone: partial.lastDone ?? partial.nextDue ?? '',
               nextDue: partial.nextDue ?? '',
-              status: partial.status ?? 'Pending',
+              status: partial.status ?? 'Due',
               comments: partial.comments ?? [],
               files: partial.files ?? [],
             };
