@@ -181,7 +181,10 @@ export const getTasks = async (): Promise<mockApi.Task[]> => {
     const task: unknown = {
       id,
       label: row.label,
-      status: normalizeStatus(row.status) as 'Pending' | 'Overdue' | 'Completed',
+      status: normalizeStatus(row.status) as
+        | 'Pending'
+        | 'Overdue'
+        | 'Completed',
       category: row.category,
       clientId: row.clientId ?? '',
       frequency: buildFrequency(row),

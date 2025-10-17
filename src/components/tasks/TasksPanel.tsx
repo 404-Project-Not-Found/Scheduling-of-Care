@@ -38,12 +38,21 @@ const getStatusColor = (status: string) => {
 // Helpers
 const pad2 = (n: number) => String(n).padStart(2, '0');
 
-type StatusUI = 'Waiting Verification' | 'Completed' | 'Overdue' | 'Due' | 'Pending';
+type StatusUI =
+  | 'Waiting Verification'
+  | 'Completed'
+  | 'Overdue'
+  | 'Due'
+  | 'Pending';
 
 const isoToday = () => new Date().toISOString().slice(0, 10);
 
-function derivedOccurrenceStatus(t: { status?: string; nextDue?: string }): StatusUI {
-  if ((t.status || '').toLowerCase() === 'waiting verification') return 'Waiting Verification';
+function derivedOccurrenceStatus(t: {
+  status?: string;
+  nextDue?: string;
+}): StatusUI {
+  if ((t.status || '').toLowerCase() === 'waiting verification')
+    return 'Waiting Verification';
 
   const due = t.nextDue?.slice(0, 10) ?? '';
   if (!due) return 'Due';
@@ -92,7 +101,6 @@ export default function TasksPanel({
   // ➜ derive "today" once
   const todayStr = new Date().toISOString().slice(0, 10);
 
-
   return (
     <div className="h-full flex flex-col">
       {sorted.length === 0 && clientLoaded && (
@@ -107,7 +115,7 @@ export default function TasksPanel({
 
           return (
             <li
-              key={`${t.id}-${t.nextDue ?? ''}`} 
+              key={`${t.id}-${t.nextDue ?? ''}`}
               className="w-full bg-white text-black border rounded px-3 py-2 cursor-pointer hover:bg-gray-100 flex justify-between items-center"
               onClick={() => onTaskClick(t)}
             >

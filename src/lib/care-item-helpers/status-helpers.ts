@@ -2,7 +2,9 @@
  * Helper to align status
  */
 
-export function occurrenceStatus(nextDue?: string): 'Overdue' | 'Due' | 'Pending' {
+export function occurrenceStatus(
+  nextDue?: string
+): 'Overdue' | 'Due' | 'Pending' {
   if (!nextDue) return 'Pending';
   const today = new Date().toISOString().slice(0, 10);
   if (nextDue < today) return 'Overdue';
@@ -16,7 +18,7 @@ export function getStatusColor(status: string) {
     case 'overdue':
       return 'bg-red-500 text-white';
     case 'due':
-      return 'bg-red-500/80 text-white'; 
+      return 'bg-red-500/80 text-white';
     case 'not completed':
       return 'bg-orange-400 text-white';
     case 'completed':

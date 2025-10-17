@@ -27,7 +27,10 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import DashboardChrome from '@/components/top_menu/client_schedule';
 import CalendarPanel from '@/components/dashboard/CalendarPanel';
 import TasksPanel from '@/components/tasks/TasksPanel';
-import { futureOccurencesAfterLastDone, getNextDue } from '@/lib/care-item-helpers/date-helpers';
+import {
+  futureOccurencesAfterLastDone,
+  getNextDue,
+} from '@/lib/care-item-helpers/date-helpers';
 
 import type { Task } from '@/lib/mock/mockApi';
 
@@ -75,11 +78,17 @@ type ClientTask = Task & {
   dateTo?: string;
   frequencyCount?: number;
   frequencyUnit?: 'day' | 'week' | 'month' | 'year';
-  completedDates?: string[];
+  lastDone: string;
+  frequencyDays?: number;
 };
 
 // Type status
-type StatusUI = 'Waiting Verification' | 'Completed' | 'Overdue' | 'Due' | 'Pending';
+type StatusUI =
+  | 'Waiting Verification'
+  | 'Completed'
+  | 'Overdue'
+  | 'Due'
+  | 'Pending';
 
 /* ---------------------------- Main Page ----------------------------- */
 type CalendarPanelProps = {
@@ -340,7 +349,7 @@ function ClientSchedule() {
       prev ? { ...prev, files: [...(prev.files || []), fileName] } : prev
     );
   };
-  
+
   const getStatusBadgeClasses = (status?: string) => {
     switch ((status || '').toLowerCase()) {
       case 'waiting verification':
@@ -356,9 +365,13 @@ function ClientSchedule() {
     }
   };
 
-  async function markTaskDone(task: ClientTask, fileName: string, comment?: string) {
-    const slug = task.id;             
-    const doneAt = task.nextDue;      
+  async function markTaskDone(
+    task: ClientTask,
+    fileName: string,
+    comment?: string
+  ) {
+    const slug = task.id;
+    const doneAt = task.nextDue;
 
     if (!doneAt) {
       alert('No occurrence date found for this task.');
@@ -369,37 +382,50 @@ function ClientSchedule() {
       return;
     }
 
-    const res = await fetch(`/api/v1/care_item/${encodeURIComponent(slug)}/done`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ file: fileName, comment: comment || '', doneAt }),
-    });
+    const res = await fetch(
+      `/api/v1/care_item/${encodeURIComponent(slug)}/done`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          file: fileName,
+          comment: comment || '',
+          doneAt,
+        }),
+      }
+    );
 
     if (!res.ok) {
       alert('Failed to mark as done.');
       return;
     }
 
-    const updated = await res.json(); 
+    const updated = await res.json();
 
     // Update the base task in list state
-    setTasks(prev =>
-      prev.map(t =>
-        t.id === slug
-          ? {
-              ...t,
-              lastDone: updated.lastDone ?? doneAt,
-              files: Array.isArray(updated.files) ? updated.files : t.files,
-              comments: Array.isArray(updated.comments) ? updated.comments : t.comments,
-              nextDue: getNextDue(
-                updated.lastDone ?? doneAt,
-                (t as any).frequencyCount ?? null,
-                (t as any).frequencyUnit ?? null,
-                (t as any).frequencyDays ?? null
-              ),
-            }
-          : t
-      )
+    setTasks((prev: ClientTask[]) =>
+      prev.map((t) => {
+        if (t.id !== slug) return t;
+
+        const freqCount = t.frequencyCount ?? null;
+        const freqUnit = t.frequencyUnit ?? null;
+        const freqDays = t.frequencyDays ?? null;
+
+        return {
+          ...t,
+          lastDone: updated.lastDone ?? doneAt,
+          files: Array.isArray(updated.files) ? updated.files : t.files,
+          comments: Array.isArray(updated.comments)
+            ? updated.comments
+            : t.comments,
+          nextDue: getNextDue(
+            updated.lastDone ?? doneAt,
+            freqCount,
+            freqUnit,
+            freqDays
+          ),
+        };
+      })
     );
   }
 
@@ -508,9 +534,12 @@ function isoToday(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-function derivedOccurrenceStatus(t: { status?: string; nextDue?: string }): StatusUI {
- 
-  if ((t.status || '').toLowerCase() === 'waiting verification') return 'Waiting Verification';
+function derivedOccurrenceStatus(t: {
+  status?: string;
+  nextDue?: string;
+}): StatusUI {
+  if ((t.status || '').toLowerCase() === 'waiting verification')
+    return 'Waiting Verification';
 
   const due = t.nextDue?.slice(0, 10) ?? '';
   if (!due) return 'Due';
@@ -694,8 +723,10 @@ function TaskDetail({
               onClick={() => {
                 const currStatus = (task.status || '').toLowerCase();
 
-                if(currStatus !== 'waiting verification') {
-                  alert('This task cannot be marked as completed yet. The carer must first mark the task as done.');
+                if (currStatus !== 'waiting verification') {
+                  alert(
+                    'This task cannot be marked as completed yet. The carer must first mark the task as done.'
+                  );
                   return;
                 }
 
