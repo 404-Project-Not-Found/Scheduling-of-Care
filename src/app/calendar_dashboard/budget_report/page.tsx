@@ -14,6 +14,8 @@
 
 'use client';
 
+import { Search } from 'lucide-react';
+
 import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -220,12 +222,16 @@ function BudgetReportInner() {
           </div>
 
           {/* RIGHT: search + edit */}
-          <div className="flex items-center gap-3">
+          <div className="relative flex items-center gap-3">
+            <Search
+              size={20}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-black/60 pointer-events-none"
+            />
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search"
-              className="h-9 rounded-full bg-white text-black px-4 border"
+              className="h-9 rounded-full bg-white text-black px-10 border"
             />
             {role === 'management' &&
               (!isEditing ? (

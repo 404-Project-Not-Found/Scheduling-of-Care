@@ -18,6 +18,8 @@
 
 'use client';
 
+import { Plus, Search } from 'lucide-react';
+
 import React, { Suspense, useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -127,13 +129,18 @@ function FamilyClientListInner() {
                   className="w-full h-12 rounded-full bg-white border text-black px-10 focus:outline-none"
                   style={{ borderColor: '#3A0000' }}
                 />
+                <Search
+                  size={20}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-black/60 pointer-events-none"
+                />
               </div>
               <button
                 onClick={() => router.push('/client_profile?new=true')}
-                className="rounded-xl px-5 py-3 text-lg font-bold text-white hover:opacity-90"
+                className="flex items-center gap-2 rounded-xl px-5 py-3 text-lg font-bold text-white hover:opacity-90"
                 style={{ backgroundColor: colors.header }}
               >
-                + Add new Client
+                <Plus size={20} strokeWidth={2.5} />
+                Add new Client
               </button>
             </div>
 
@@ -173,7 +180,7 @@ function FamilyClientListInner() {
                             style={{
                               width: 64,
                               height: 64,
-                              border: '4px solid #3A0000',
+                              border: '1px solid #3A0000',
                               backgroundColor: '#fff',
                               color: '#3A0000',
                               fontWeight: 900,
@@ -202,7 +209,13 @@ function FamilyClientListInner() {
                               router.push(`/client_profile?id=${c.id}`);
                             }}
                             className="px-4 py-2 rounded-lg text-white text-sm font-semibold hover:opacity-90"
-                            style={{ backgroundColor: '#4CAF50' }}
+                            style={{
+                              background:
+                                'linear-gradient(90deg, #F9C9B1 0%, #FAEBDC 100%)',
+                              color: '#3A0000',
+                              border: '1px solid #3A0000',
+                              boxShadow: '0 1px 4px rgba(58, 0, 0, 0.2)',
+                            }}
                             disabled={loadingClientId === c.id}
                           >
                             {loadingClientId === c.id
@@ -214,7 +227,13 @@ function FamilyClientListInner() {
                           <button
                             onClick={() => goToOrgAccess(c)}
                             className="px-4 py-2 rounded-lg text-white text-sm font-semibold hover:opacity-90"
-                            style={{ backgroundColor: '#E91E63' }}
+                            style={{
+                              background:
+                                'linear-gradient(90deg, #803030 0%, #B44C4C 100%)',
+                              color: '#FFFFFF',
+                              border: '1px solid #5A1A1A',
+                              boxShadow: '0 2px 6px rgba(58, 0, 0, 0.25)',
+                            }}
                           >
                             Manage organisation access
                           </button>

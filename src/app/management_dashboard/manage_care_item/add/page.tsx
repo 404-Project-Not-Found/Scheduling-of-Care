@@ -375,13 +375,24 @@ export default function AddTaskPage() {
             <div className="pt-6 flex items-center justify-center gap-30">
               <button
                 onClick={() => router.push('/calendar_dashboard')}
-                className="px-6 py-2.5 rounded-full border border-[#3A0000] text-gray-700 hover:bg-gray-200"
+                className="rounded-xl px-4 py-2 text-lg font-bold text-white bg-[#3A0000]/80 hover:opacity-50 w-auto"
+                style={{
+                  background:
+                    'linear-gradient(90deg, #3A0000 0%, #5C1A1A 100%)',
+                  boxShadow: '0 2px 6px rgba(58, 0, 0, 0.25)',
+                }}
               >
                 Cancel
               </button>
               <button
                 onClick={onCreate}
-                className="rounded-full bg-[#F39C6B] hover:bg-[#ef8a50] text-[#1c130f] text-xl font-bold px-8 py-2.5 shadow"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-black"
+                style={{
+                  background:
+                    'linear-gradient(90deg, #FFA94D 0%, #F9C77D 100%)',
+                  border: '1.5px solid #E89B42',
+                  boxShadow: '0 2px 6px rgba(250, 180, 90, 0.4)',
+                }}
               >
                 Add
               </button>

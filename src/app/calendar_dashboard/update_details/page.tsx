@@ -152,10 +152,10 @@ export default function UpdateDetailsPage() {
       {/* Top-left logo */}
       <div className="absolute top-6 left-6">
         <Image
-          src="/logo-name.png"
+          src="/logo.png"
           alt="Scheduling of Care"
-          width={220}
-          height={80}
+          width={100}
+          height={60}
           className="object-contain"
           priority
         />
@@ -249,7 +249,11 @@ export default function UpdateDetailsPage() {
           <div className="mt-10 flex items-center justify-end gap-6">
             <button
               type="button"
-              className="px-6 py-2.5 rounded-full border text-gray-700 hover:bg-gray-200"
+              className="rounded-xl px-4 py-2 text-lg font-bold text-white bg-[#3A0000]/80 hover:opacity-50 w-auto"
+              style={{
+                background: 'linear-gradient(90deg, #3A0000 0%, #5C1A1A 100%)',
+                boxShadow: '0 2px 6px rgba(58, 0, 0, 0.25)',
+              }}
               onClick={handleCancel}
             >
               Cancel
@@ -257,11 +261,11 @@ export default function UpdateDetailsPage() {
 
             <button
               type="button"
-              className="px-7 py-2.5 rounded-full font-semibold border"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-black"
               style={{
-                backgroundColor: colors.orange,
-                borderColor: '#f08a00',
-                color: colors.header,
+                background: 'linear-gradient(90deg, #FFA94D 0%, #F9C77D 100%)',
+                border: '1.5px solid #E89B42',
+                boxShadow: '0 2px 6px rgba(250, 180, 90, 0.4)',
               }}
               onClick={handleSave}
             >

@@ -19,6 +19,7 @@ import { useParams, useRouter } from 'next/navigation';
 
 import DashboardChrome from '@/components/top_menu/client_schedule';
 import Badge from '@/components/ui/Badge';
+import { ArrowLeft, Search } from 'lucide-react';
 
 import {
   getViewerRole,
@@ -202,21 +203,26 @@ function CategoryCostInner() {
           <div className="flex items-center gap-8">
             <Link
               href="/calendar_dashboard/budget_report"
-              className="text-white/90 hover:text-white font-semibold"
+              className="flex item-center gap-2 text-white/90 hover:text-white font-semibold"
             >
-              &lt; Back
+              <ArrowLeft size={22} strokeWidth={2.5} />
+              Back
             </Link>
             <h2 className="text-white text-2xl font-semibold">
               {categoryName} Budget
             </h2>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="relative flex items-center gap-3">
+            <Search
+              size={20}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-black/60 pointer-events-none"
+            />
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search"
-              className="h-9 rounded-full bg-white text-black px-4 border"
+              className="h-9 rounded-full bg-white text-black px-10 border"
             />
             {isManagement &&
               (!isEditing ? (

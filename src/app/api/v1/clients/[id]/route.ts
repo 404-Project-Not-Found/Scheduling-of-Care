@@ -63,6 +63,7 @@ export async function PUT(
 
   // Parse new client data
   const data = await req.json();
+
   //Update the client and return the updated document
   const updated = await Client.findByIdAndUpdate(id, data, {
     new: true,

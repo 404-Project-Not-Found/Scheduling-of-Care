@@ -16,6 +16,8 @@
 
 'use client';
 
+import { Plus, Search } from 'lucide-react';
+
 import React, { useState, useEffect, Suspense, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardChrome from '@/components/top_menu/client_schedule';
@@ -302,25 +304,34 @@ function RequestLogInner() {
           {/* Right-side: search + add button */}
           <div className="flex items-center gap-2">
             {/* Search bar */}
-            <div className=" bg-white rounded-lg px-3 py-2">
+            <div className=" relative bg-white rounded-lg px-3 py-2 flex items-center">
+              <Search
+                size={20}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-black/60 pointer-events-none"
+              />
               <input
                 type="text"
                 placeholder="Search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="border-none focus:outline-none w-56 text-black text-sm"
+                className="border-none focus:outline-none w-56 text-black text-sm pl-10"
               />
             </div>
             {/* Add request button (available only if client is selected) */}
-            {activeClientId && role === 'family' && (
+            {role === 'family' && (
               <button
-                className="px-4 py-2 rounded-md font-semibold text-black"
-                style={{ backgroundColor: '#FFA94D' }}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-black hover:opacity-90 transition"
+                style={{
+                  background:
+                    'linear-gradient(90deg, #FFC87C 0%, #FFDDA3 100%)',
+                  boxShadow: '0 2px 6px rgba(255, 168, 77, 0.4)',
+                }}
                 onClick={() =>
                   router.push('/family_dashboard/request_of_change_page')
                 }
               >
-                + Add new request
+                <Plus size={20} strokeWidth={2.5} />
+                Add new request
               </button>
             )}
           </div>

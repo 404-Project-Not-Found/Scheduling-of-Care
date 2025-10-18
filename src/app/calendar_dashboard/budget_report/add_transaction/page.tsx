@@ -9,6 +9,7 @@ import React, { useEffect, useMemo, useRef, useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardChrome from '@/components/top_menu/client_schedule';
 import { useTransactions } from '@/context/TransactionContext';
+import { ArrowLeft } from 'lucide-react';
 
 import {
   getClientsFE,
@@ -174,9 +175,10 @@ function AddTransactionInner() {
             onClick={() =>
               router.push('/calendar_dashboard/transaction_history')
             }
-            className="text-lg font-semibold text-white hover:underline"
+            className="flex items-center gap-2 text-lg font-semibold text-white hover:underline"
           >
-            &lt; Back
+            <ArrowLeft size={22} strokeWidth={2.5} />
+            Back
           </button>
         </div>
 

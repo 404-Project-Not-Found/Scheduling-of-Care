@@ -33,6 +33,13 @@ export type ApiCareItem = {
   files?: string[];
 };
 
+export interface AccessUser {
+  _id: string;
+  fullName: string;
+  email: string;
+  role: 'carer' | 'family' | 'management';
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -68,6 +75,23 @@ export const signOutUser = async () => {
     return;
   }
   await nextAuthSignOut({ redirect: false });
+};
+
+export const getUsersWithAccess = async (
+  clientId: string
+): Promise<AccessUser[]> => {
+  if (!clientId) return [];
+
+  const res = await fetch(`/api/v1/clients/${clientId}/access`, {
+    cache: 'no-store',
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch users with access (${res.status})`);
+  }
+
+  const data = await res.json();
+  return data;
 };
 
 // Gets the role of the currently authenticated user
@@ -290,5 +314,26 @@ export const getCategoriesForClient = async (clientId: string) => {
   return Array.from(new Set([...catalogCats, ...clientCats]));
 };
 
+type MedicalNotes = {
+  diagnosedDisabilities?: string;
+  currentMedication?: string;
+  allergies?: string;
+  recentMedicalHistory?: string;
+  primaryHealthContact?: string;
+};
+
 // Export Client type for convenience
-export type Client = mockApi.Client;
+export type Client = {
+  _id: string;
+  name: string;
+  dob: string;
+  gender: string;
+  accessCode: string;
+  avatarUrl?: string;
+  phoneNumber?: string;
+  email?: string;
+  emergencyContact?: string;
+  primaryCaregiver?: string;
+  address?: string;
+  medicalNotes?: MedicalNotes;
+};

@@ -8,6 +8,14 @@
 
 'use client';
 
+import {
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  Settings,
+  Printer,
+  UserRoundCog,
+} from 'lucide-react';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardChrome from '@/components/top_menu/client_schedule';
@@ -277,7 +285,10 @@ export default function StaffSchedulePage() {
         bannerTitle=""
         showClientPicker={false}
         navItems={[
-          { label: 'Staff List', href: '/management_dashboard/staff_list' },
+          {
+            label: 'Staff List',
+            href: '/management_dashboard/staff_list',
+          },
         ]}
         clients={[]}
         onClientChange={() => {}}
@@ -290,22 +301,28 @@ export default function StaffSchedulePage() {
       >
         {/* Top toolbar */}
         <div
-          className="flex justify-between items-center px-6 py-4 shadow-md mt-4"
+          className="flex items-center justify-between px-6 py-4 shadow-md mt-4"
           style={{ backgroundColor: palette.banner }}
         >
           {/* Search Bar */}
-          <div className="relative flex-1 max-w-[350px]">
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search for staff, role or organisation"
-              className="w-full h-12 rounded-full bg-white border text-black px-10 focus:outline-none"
-              style={{ borderColor: '#3A0000' }}
-            />
+          <div className="flex-1 max-w-[350px]">
+            <div className="relative">
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search for staff, role or organisation"
+                className="w-full h-12 rounded-full bg-white border text-black px-10 focus:outline-none"
+                style={{ borderColor: '#3A0000' }}
+              />
+              <Search
+                size={20}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-black/60 pointer-events-none"
+              />
+            </div>
           </div>
           {/* Week navigation */}
           <div
-            className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-4 px-6 py-2 rounded-2xl min-w-[450px]"
+            className="flex items-center gap-4 px-6 py-2 rounded-2xl mx-6 bg-white"
             style={{ backgroundColor: palette.pageBg }}
           >
             <button
@@ -324,10 +341,10 @@ export default function StaffSchedulePage() {
               aria-label="Previous week"
               title="Previous week"
             >
-              ◀
+              <ChevronLeft size={24} />
             </button>
             <div
-              className="flex-1 text-center font-bold text-xl"
+              className="text-center font-bold text-xl"
               style={{ color: palette.header }}
             >
               {weekLabel}
@@ -348,28 +365,28 @@ export default function StaffSchedulePage() {
               aria-label="Next week"
               title="Next week"
             >
-              ▶
+              <ChevronRight size={24} />
             </button>
           </div>
 
           {/* Right buttons — management only */}
-          <div className="flex items-center gap-6 justify-end w-1/3">
+          <div className="flex items-center gap-4">
             {isManagement && (
               <>
                 <button
-                  onClick={() => setSettingsOpen(true)}
-                  className="px-5 py-2.5 rounded-2xl text-base font-semibold transition-colors"
-                  style={{
-                    backgroundColor: palette.pageBg,
-                    color: '#000000ff',
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.backgroundColor = '#e2987aff')
+                  onClick={() =>
+                    router.push('/management_dashboard/staff_list')
                   }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.backgroundColor = palette.pageBg)
-                  }
+                  className="relative z-20 inline-flex items-center gap-2 px-4 py-2 rounded-2xl border border-black/30 hover:border-black/50 bg-white font-extrabold text-xl"
                 >
+                  <UserRoundCog size={24} />
+                  Manage Staff
+                </button>
+                <button
+                  onClick={() => setSettingsOpen(true)}
+                  className="relative z-20 inline-flex items-center gap-2 px-4 py-2 rounded-2xl border border-black/30 hover:border-black/50 bg-white font-extrabold text-xl"
+                >
+                  <Settings size={24} />
                   Shift Settings
                 </button>
               </>
@@ -377,10 +394,11 @@ export default function StaffSchedulePage() {
             {/* Print — visible to everyone */}
             <button
               onClick={() => typeof window !== 'undefined' && window.print()}
-              className="inline-flex items-center px-6 py-3 rounded-2xl border border-black/30 bg-white font-extrabold text-xl hover:bg-black/5 transition-colors"
+              className="relative z-20 inline-flex items-center gap-2 px-4 py-2 rounded-2xl border border-black/30 hover:border-black/50 bg-white font-extrabold text-xl"
               title="Print"
               aria-label="Print"
             >
+              <Printer size={24} />
               Print
             </button>
           </div>

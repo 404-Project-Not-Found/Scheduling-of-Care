@@ -21,6 +21,8 @@
 
 'use client';
 
+import { ArrowLeft, Search } from 'lucide-react';
+
 import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -373,13 +375,20 @@ function ClientSchedule() {
                       </span>
                     )}
                   </h2>
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Search care items"
-                    className="h-11 w-full max-w-[320px] rounded-lg border px-4 text-black bg-white focus:outline-none focus:ring-2 focus:ring-[#F9C9B1]"
-                  />
+                  {/* Input with search icon */}
+                  <div className="relative mt-2 w-full max-w-[320px]">
+                    <Search
+                      size={20}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-black/60 pointer-events-none"
+                    />
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      placeholder="Search care items"
+                      className="h-11 w-full rounded-lg border pl-10 pr-4 text-black bg-white focus:outline-none focus:ring-2 focus:ring-[#F9C9B1]"
+                    />
+                  </div>
                 </div>
                 {noClientSelected && (
                   <p className="text-lg">Loading client&apos;s care items...</p>
@@ -460,7 +469,7 @@ function TaskDetail({
           aria-label="Back to tasks"
           title="Back"
         >
-          {'<'}
+          <ArrowLeft size={22} strokeWidth={2.5} />
         </button>
         <h2 className="text-3xl md:text-4xl font-extrabold">{task.title}</h2>
       </div>

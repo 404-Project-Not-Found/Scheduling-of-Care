@@ -18,6 +18,9 @@ import {
   Receipt,
   ClipboardList,
   HelpCircle,
+  User,
+  LogOut,
+  Info,
 } from 'lucide-react';
 
 const palette = {
@@ -120,7 +123,11 @@ const BUTTONS: Record<StrictRole, ButtonDef[]> = {
       icon: Receipt,
       href: '/calendar_dashboard/transaction_history',
     },
-    { label: 'Request Log', icon: ClipboardList, href: '/request-log-page' },
+    {
+      label: 'Family Requests',
+      icon: ClipboardList,
+      href: '/request-log-page',
+    },
     { label: 'FAQ', icon: HelpCircle, href: '/faq' },
   ],
 };
@@ -129,6 +136,7 @@ export default function DashboardPage() {
   const [role, setRole] = useState<Role>(null);
   const [title, setTitle] = useState('Dashboard');
   const router = useRouter();
+  const [userName, setUserName] = useState<string>(''); // new
 
   // Mock flag
   const isMock =
@@ -180,6 +188,18 @@ export default function DashboardPage() {
         return;
       }
 
+      // Get user's name
+      if (isMock) {
+        // Mock name
+        const em = (localStorage.getItem('lastLoginEmail') || '').split('@')[0];
+        setUserName(em.charAt(0).toUpperCase() + em.slice(1));
+      } else {
+        const session = await getSession();
+        if (session?.user?.name) {
+          setUserName(session.user.name);
+        }
+      }
+
       const r = session.user.role as Role;
       setRole(r);
       switch (r) {
@@ -213,6 +233,13 @@ export default function DashboardPage() {
     router.push('/');
   };
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  };
+
   // Loading state while role is unknown
   if (!role) {
     return (
@@ -234,7 +261,11 @@ export default function DashboardPage() {
       {/* ===== Header ===== */}
       <div
         className="w-full flex items-center justify-between px-8 py-5"
-        style={{ backgroundColor: palette.header, color: palette.white }}
+        style={{
+          background:
+            'linear-gradient(90deg, #3A0000 0%, #803030 50%, #D4A77A 100%)',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+        }}
       >
         {/* Logo + Title */}
         <div className="flex items-center gap-8 flex-wrap">
@@ -246,66 +277,78 @@ export default function DashboardPage() {
             className="object-contain"
             priority
           />
-          <h1 className="text-2xl md:text-3xl font-bold underline">{title}</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-white">{title}</h1>
         </div>
 
         {/* Right: Avatar dropdown */}
         <div className="relative flex items-center gap-4">
           {showAvatar && (
-            <div className="relative">
-              <button
-                onClick={() => setUserMenuOpen((v) => !v)}
-                className="h-16 w-16 rounded-full overflow-hidden border-2 border-white/80 hover:border-white focus:outline-none focus:ring-2 focus:ring-white/70"
-                aria-haspopup="menu"
-                aria-expanded={userMenuOpen}
-                title="Account"
-              >
-                <Image
-                  src={avatarSrc}
-                  alt="Profile"
-                  width={64}
-                  height={64}
-                  className="h-full w-full object-cover"
-                  priority
-                />
-              </button>
-              {userMenuOpen && (
-                <div
-                  className="absolute right-0 mt-3 w-80 rounded-md border border-white/30 bg-white text-black shadow-2xl z-50"
-                  role="menu"
+            <>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setUserMenuOpen((v) => !v)}
+                  className="h-16 w-16 rounded-full flex items-center justify-center overflow-hidden border-2 border-white/80 hover:border-black/50 focus:outline-none focus:ring-2 focus:ring-white/70"
+                  style={{ backgroundColor: 'white' }}
+                  aria-haspopup="menu"
+                  aria-expanded={userMenuOpen}
+                  title="Account"
                 >
-                  <button
-                    className="w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5"
-                    onClick={goProfile}
+                  <User
+                    size={50}
+                    strokeWidth={0.3}
+                    fill={palette.header}
+                    color={palette.header}
+                  />
+                </button>
+                <span className="text-white font-bold text-2xl drop-shadow-sm">
+                  {getGreeting()}, {userName || 'there'} 👋
+                </span>
+                {userMenuOpen && (
+                  <div
+                    className="absolute right-0 mt-2 w-60 bg-white border border-gray-200 rounded-xl shadow-lg z-50"
+                    role="menu"
                   >
-                    Update your details
-                  </button>
-                  <button
-                    className="w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5"
-                    onClick={doSignOut}
-                  >
-                    Log out
-                  </button>
-                </div>
-              )}
-            </div>
+                    <button
+                      className="w-full px-4 py-3 flex items-center gap-2 font-extrabold hover:bg-gray-50 rounded-lg"
+                      style={{ color: palette.header }}
+                      onClick={goProfile}
+                    >
+                      <User size={30} strokeWidth={2} color={palette.header} />
+                      Update your details
+                    </button>
+                    <button
+                      className="w-full px-4 py-3 flex items-center gap-2 font-extrabold hover:bg-gray-50 rounded-lg"
+                      style={{ color: palette.header }}
+                      onClick={doSignOut}
+                    >
+                      <LogOut
+                        size={30}
+                        strokeWidth={2}
+                        color={palette.header}
+                      />
+                      Log out
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </div>
       </div>
 
       {/* ===== Banner ===== */}
       <div
-        className="w-full px-6 md:px-8 py-5 md:py-6 flex items-center gap-3"
+        className="w-full px-6 md:px-8 py-5 md:py-6 flex items-center gap-3 shadow-sm shadow-black/20"
         style={{ backgroundColor: palette.banner }}
       >
-        <BellIcon />
+        <Info strokeWidth={2} />
         <p
           className="text-base md:text-lg leading-relaxed"
           style={{ color: palette.header }}
         >
           {role === 'family' || role === 'carer'
             ? 'Use the buttons below to view client & staff schedules, budgets, requests and transactions.'
-            : 'Use the buttons below to manage client & staff schedules, budget and requests.'}
+            : 'Use the buttons below to manage client & staff schedules, budgets and requests.'}
         </p>
       </div>
 

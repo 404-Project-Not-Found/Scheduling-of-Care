@@ -45,8 +45,24 @@ export async function POST(req: NextRequest) {
   try {
     // Create client, attaching `createdBy` to track ownership
     const newClient = await Client.create({
-      ...data,
+      name: data.name,
+      dob: data.dob,
+      gender: data.gender,
+      accessCode: data.accessCode,
       createdBy: session.user.id,
+      avatarUrl: data.avatarUrl || '',
+      phoneNumber: data.phoneNumber || '',
+      email: data.email || '',
+      emergencyContact: data.emergencyContact || '',
+      primaryCaregiver: data.primaryCaregiver || '',
+      address: data.address || '',
+      medicalNotes: {
+        diagnosedDisabilities: data.medicalNotes?.diagnosedDisabilities || '',
+        currentMedication: data.medicalNotes?.currentMedication || '',
+        allergies: data.medicalNotes?.allergies || '',
+        recentMedicalHistory: data.medicalNotes?.recentMedicalHistory || '',
+        primaryHealthContact: data.medicalNotes?.primaryHealthContact || '',
+      },
     });
     // return created client
     return NextResponse.json(newClient, { status: 201 });

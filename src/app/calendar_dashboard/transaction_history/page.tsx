@@ -8,6 +8,8 @@
 
 'use client';
 
+import { Search } from 'lucide-react';
+
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardChrome from '@/components/top_menu/client_schedule';
@@ -199,13 +201,17 @@ function TransactionHistoryInner() {
                 Add new transaction
               </button>
             )}
-            <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2">
+            <div className="relative flex items-center gap-2 bg-white rounded-lg px-3 py-2">
+              <Search
+                size={20}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-black/60 pointer-events-none"
+              />
               <input
                 type="text"
                 placeholder="Search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="border-none focus:outline-none w-56 text-black text-sm"
+                className="h-9 rounded-full bg-white text-black px-10"
               />
             </div>
           </div>

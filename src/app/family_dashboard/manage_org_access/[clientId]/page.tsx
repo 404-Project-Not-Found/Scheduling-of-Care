@@ -30,6 +30,7 @@ import DashboardChrome from '@/components/top_menu/client_schedule';
 import { useRouter } from 'next/navigation';
 import { useActiveClient } from '@/context/ActiveClientContext';
 import { getClients, type Client as ApiClient } from '@/lib/data';
+import { ArrowLeft, CircleAlert } from 'lucide-react';
 
 const colors = {
   pageBg: '#ffd9b3',
@@ -177,10 +178,11 @@ export default function ManageOrganisationAccessPage() {
             <span>Manage Organisation Access</span>
             <button
               onClick={() => router.push('/family_dashboard/people_list')}
-              className="text-base md:text-lg font-semibold bg-white/10 px-4 py-1.5 rounded hover:bg-white/20 transition"
+              className="flex items-center gap-2 text-base md:text-lg font-semibold bg-white/10 px-4 py-1.5 rounded hover:bg-white/20 transition"
               aria-label="Back"
             >
-              &lt; Back
+              <ArrowLeft size={22} strokeWidth={2.5} />
+              Back
             </button>
           </div>
 
@@ -191,17 +193,24 @@ export default function ManageOrganisationAccessPage() {
           >
             {/* Notice bar */}
             <div
-              className="w-full px-5 py-3 text-black"
+              className="w-full flex item-center gap-2 px-5 py-3 text-black"
               style={{ backgroundColor: colors.notice }}
             >
+              <CircleAlert />
               <p className="text-center font-semibold">
-                Privacy Notice: This information is visible only to you (family
-                / POA) and will not be shared with anyone.
+                Privacy Notice: This information is visible only to you (Family
+                / POA) and will not be shared with anyone else.
               </p>
             </div>
-
+            <Legend className="mt-4" />
             {/* Lists */}
-            <div className="flex-1 px-6 py-6 pb-6 overflow-auto text-black">
+            <div
+              className="mx-6 rounded-xl overflow-auto max-h-[500px] p-4"
+              style={{
+                backgroundColor: '#F2E5D2',
+                border: '1px solid rgba(58,0,0,0.25)',
+              }}
+            >
               {loading ? (
                 <div className="text-black/70">Loading…</div>
               ) : errorText ? (
@@ -269,7 +278,12 @@ function Group({
                 {item.status === 'approved' && onRevoke && (
                   <button
                     onClick={() => onRevoke(item.id)}
-                    className="px-4 py-1.5 rounded-xl text-lg font-medium text-white bg-orange-500 hover:bg-orange-600 transition-colors"
+                    className="px-4 py-1.5 rounded-xl text-lg font-semibold text-white transition-all duration-200 hover:brightness-110 hover:shadow-md"
+                    style={{
+                      background:
+                        'linear-gradient(90deg, #E67E22 0%, #F4A261 100%)',
+                      boxShadow: '0 2px 6px rgba(244, 162, 97, 0.3)',
+                    }}
                   >
                     Revoke
                   </button>
@@ -279,7 +293,12 @@ function Group({
                     {onApprove && (
                       <button
                         onClick={() => onApprove(item.id)}
-                        className="px-4 py-1.5 rounded-xl text-lg font-medium text-white bg-green-600 hover:bg-green-700 transition-colors"
+                        className="px-4 py-1.5 rounded-xl text-lg font-semibold text-white transition-all duration-200 hover:brightness-110 hover:shadow-md"
+                        style={{
+                          background:
+                            'linear-gradient(90deg, #4CAF50 0%, #6EDC6E 100%)',
+                          boxShadow: '0 2px 6px rgba(76, 175, 80, 0.3)',
+                        }}
                       >
                         Approve
                       </button>
@@ -287,7 +306,12 @@ function Group({
                     {onRemove && (
                       <button
                         onClick={() => onRemove(item.id)}
-                        className="px-4 py-1.5 rounded-xl text-lg font-medium text-white bg-red-600 hover:bg-red-700 transition-colors"
+                        className="px-4 py-1.5 rounded-xl text-lg font-semibold text-white transition-all duration-200 hover:brightness-110 hover:shadow-md"
+                        style={{
+                          background:
+                            'linear-gradient(90deg, #D7263D 0%, #F05E73 100%)',
+                          boxShadow: '0 2px 6px rgba(215, 38, 61, 0.3)',
+                        }}
                       >
                         Reject
                       </button>
@@ -300,5 +324,52 @@ function Group({
         </ul>
       )}
     </section>
+  );
+}
+
+function Legend({ className = '' }: { className?: string }) {
+  const legendItems = [
+    {
+      action: 'Approve',
+      description: 'Gives organisation access to client',
+      style: {
+        background: 'linear-gradient(90deg, #3BAE5C 0%, #6BD674 100%)',
+        boxShadow: '0 2px 6px rgba(59, 174, 92, 0.3)',
+      },
+    },
+    {
+      action: 'Reject',
+      description: 'Rejects organisation request to client access',
+      style: {
+        background: 'linear-gradient(90deg, #C0392B 0%, #E57373 100%)',
+        boxShadow: '0 2px 6px rgba(192, 57, 43, 0.35)',
+      },
+    },
+    {
+      action: 'Revoke',
+      description: 'Removes organisation access to client',
+      style: {
+        background: 'linear-gradient(90deg, #B3541E 0%, #D6864C 100%)',
+        boxShadow: '0 2px 6px rgba(179, 84, 30, 0.35)',
+      },
+    },
+  ];
+
+  return (
+    <div
+      className={`mb-4 flex justify-center gap-6 text-sm flex-wrap ${className}`}
+    >
+      {legendItems.map((item, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <button
+            className="px-3 py-1.5 rounded-xl text-white text-sm font-semibold cursor-default"
+            style={item.style}
+          >
+            {item.action}
+          </button>
+          <span className="text-gray-800">{item.description}</span>
+        </div>
+      ))}
+    </div>
   );
 }

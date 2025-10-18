@@ -20,6 +20,8 @@
 
 'use client';
 
+import { Search, Plus } from 'lucide-react';
+
 import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSession } from 'next-auth/react';
@@ -239,14 +241,19 @@ function ClientListInner() {
                   className="w-full h-12 rounded-full bg-white border text-black px-10 focus:outline-none"
                   style={{ borderColor: '#3A0000' }}
                 />
+                <Search
+                  size={20}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-black/60 pointer-events-none"
+                />
               </div>
               {/* CTA: Register new client */}
               <button
                 onClick={addNewClient}
-                className="rounded-xl px-5 py-3 text-lg font-bold text-white hover:opacity-90"
+                className="flex items-center gap-2 rounded-xl px-5 py-3 text-lg font-bold text-white hover:opacity-90"
                 style={{ backgroundColor: colors.header }}
               >
-                + Register new client
+                <Plus size={20} strokeWidth={2.5} />
+                Register new client
               </button>
             </div>
 
@@ -281,7 +288,7 @@ function ClientListInner() {
                             style={{
                               width: 64,
                               height: 64,
-                              border: '4px solid #3A0000',
+                              border: '1px solid #3A0000',
                               backgroundColor: '#fff',
                               color: '#3A0000',
                               fontWeight: 900,
@@ -319,7 +326,13 @@ function ClientListInner() {
                                 tryOpenClient(c);
                               }}
                               className="px-4 py-2 rounded-lg text-white text-sm font-semibold hover:opacity-90"
-                              style={{ backgroundColor: colors.header }}
+                              style={{
+                                background:
+                                  'linear-gradient(90deg, #803030 0%, #B44C4C 100%)',
+                                color: '#FFFFFF',
+                                border: '1px solid #5A1A1A',
+                                boxShadow: '0 2px 6px rgba(58, 0, 0, 0.25)',
+                              }}
                             >
                               View profile
                             </button>

@@ -288,7 +288,8 @@ export default function SignupPage() {
             {orgAction === 'create' && role === 'management' && (
               <>
                 <label htmlFor="orgName" className="text-[20px] font-medium">
-                  Enter Organisation Name
+                  Enter Organisation Name{' '}
+                  <span className="text-red-600">*</span>
                 </label>
                 <input
                   id="orgName"
@@ -303,7 +304,8 @@ export default function SignupPage() {
               (role === 'carer' || role === 'management') && (
                 <>
                   <label htmlFor="invite" className="text-[20px] font-medium">
-                    Enter Organisation Invite Code
+                    Enter Organisation Invite Code{' '}
+                    <span className="text-red-600">*</span>
                   </label>
                   <input
                     id="invite"
@@ -320,7 +322,7 @@ export default function SignupPage() {
         {/* Full Name */}
         <div className="flex flex-col gap-2">
           <label htmlFor="userName" className="text-[20px] font-medium">
-            Enter Full Name
+            Enter Full Name <span className="text-red-600">*</span>
           </label>
           <input
             id="userName"
@@ -335,7 +337,7 @@ export default function SignupPage() {
         {/* Email */}
         <div className="flex flex-col gap-2">
           <label htmlFor="email" className="text-[20px] font-medium">
-            Enter Email
+            Enter Email <span className="text-red-600">*</span>
           </label>
           <input
             id="email"
@@ -350,7 +352,7 @@ export default function SignupPage() {
         {/* Password with strength meter */}
         <div className="flex flex-col gap-2">
           <label htmlFor="password" className="text-[20px] font-medium">
-            Create Password
+            Create Password <span className="text-red-600">*</span>
           </label>
           <div className="relative w-full">
             <input
@@ -437,7 +439,7 @@ export default function SignupPage() {
         {/* Confirm password */}
         <div className="flex flex-col gap-2">
           <label htmlFor="confirm" className="text-[20px] font-medium">
-            Retype Password
+            Retype Password <span className="text-red-600">*</span>
           </label>
           <input
             id="confirm"
