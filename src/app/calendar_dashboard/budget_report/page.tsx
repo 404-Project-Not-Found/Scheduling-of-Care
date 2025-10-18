@@ -270,7 +270,7 @@ function BudgetReportInner() {
         {/* Main content */}
         <div className="w-full px-12 py-10">
           {/* Tiles */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-18 mb-10 text-center">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10 text-center">
             <div className="rounded-2xl border px-6 py-8 bg-[#F8CBA6]">
               {role === 'management' && isEditing ? (
                 <>
@@ -311,8 +311,14 @@ function BudgetReportInner() {
               </div>
               <div className="text-sm">Remaining Balance</div>
             </div>
+            {/* Need to change - budget surplus is unallocated funds */}  
+            <div className="rounded-2xl border px-6 py-8 bg-white">
+              <div className="text-2xl font-bold text-black">
+                ${effectiveAllocated.toLocaleString()} 
+              </div>
+              <div className="text-sm">Budget Surplus</div>
+            </div>
           </div>
-
           {/* Table */}
           <div className="rounded-2xl border border-[#3A0000] bg-white overflow-hidden">
             <table className="w-full text-left text-sm bg-white">
