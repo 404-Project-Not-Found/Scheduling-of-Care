@@ -74,7 +74,7 @@ export default function AddTaskPage() {
 
   // Form states
   const [label, setLabel] = useState('');
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState('Due');
   const [category, setCategory] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -236,7 +236,7 @@ export default function AddTaskPage() {
       clientId: activeClientId ?? undefined,
       clientName: displayName,
       label: name,
-      status: status.trim().toLowerCase(),
+      status: (status || 'due').toLowerCase(),
       category: category.trim(),
       frequencyCount: hasFrequency ? countNum : undefined,
       frequencyUnit: hasFrequency ? frequencyUnit : undefined,

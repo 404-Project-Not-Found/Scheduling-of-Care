@@ -7,6 +7,9 @@
 import { NextResponse } from 'next/server';
 import { Unit, isUnit } from '@/models/CareItem';
 import { isISODateOnly } from './date-helpers';
+import { Types } from 'mongoose';
+import { connectDB } from '../mongodb';
+import CareItem from '@/models/CareItem';
 
 // Days in a day and a week always same unlike a month and a year
 const unitDayWeekSame: Record<Extract<Unit, 'day' | 'week'>, number> = {
@@ -113,4 +116,21 @@ export function normaliseCareItemPayLoad(
 
 export function errorJson(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });
+}
+
+export async function getCareItemForClient(clientId: string): Promise<string[]> {
+  await connectDB();
+
+  if (!Types.ObjectId.isValid(clientId)) {
+    throw new Error('Invalid clientId');
+  }
+
+  const items = await CareItem.find({
+    clientId: new Types.ObjectId(clientId),
+    deleted: { $ne: true },
+  })
+    .select({ _id: 1 })
+    .lean();
+
+  return items.map((i) => i.slug.toString());
 }

@@ -1,5 +1,5 @@
 /**
- * Helper to align status
+ * Helper to
  */
 
 export function occurrenceStatus(

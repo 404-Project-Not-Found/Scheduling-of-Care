@@ -3,6 +3,8 @@
 import type { Task } from '@/lib/mock/mockApi';
 import { getNextDue } from '@/lib/care-item-helpers/date-helpers';
 
+type StatusUI = 'Waiting Verification' | 'Completed' | 'Overdue' | 'Due' | 'Pending';
+
 type TasksPanelProps = {
   tasks: Task[];
   onTaskClick: (task: Task) => void;
@@ -17,6 +19,8 @@ type TasksPanelProps = {
   clientLoaded?: boolean;
   // Check if a task is marked as done
   onMarkDone?: (task: Task, fileName: string, comment?: string) => void;
+  // UI override, map task to date with status
+  statusOverride?: Record<string, StatusUI>;
 };
 
 // Map status → pill colors (kept exactly like your original visuals)
@@ -37,23 +41,14 @@ const getStatusColor = (status: string) => {
 
 // Helpers
 const pad2 = (n: number) => String(n).padStart(2, '0');
-
-type StatusUI =
-  | 'Waiting Verification'
-  | 'Completed'
-  | 'Overdue'
-  | 'Due'
-  | 'Pending';
-
 const isoToday = () => new Date().toISOString().slice(0, 10);
+const occurKey = (id?: string, due?: string) => `${id ?? ''}__${(due ?? '').slice(0, 10)}`
+
 
 function derivedOccurrenceStatus(t: {
   status?: string;
   nextDue?: string;
 }): StatusUI {
-  if ((t.status || '').toLowerCase() === 'waiting verification')
-    return 'Waiting Verification';
-
   const due = t.nextDue?.slice(0, 10) ?? '';
   if (!due) return 'Due';
 
@@ -92,6 +87,7 @@ export default function TasksPanel({
   year,
   month,
   clientLoaded,
+  statusOverride
 }: TasksPanelProps) {
   const scoped = filterByScope(tasks, selectedDate, year, month);
   const sorted = [...scoped].sort(
@@ -111,7 +107,8 @@ export default function TasksPanel({
 
       <ul className="space-y-3">
         {sorted.map((t) => {
-          const displayStatus = derivedOccurrenceStatus(t);
+          const key = occurKey(t.id, t.nextDue);
+          const displayStatus: StatusUI = statusOverride?.[key] ?? derivedOccurrenceStatus(t);
 
           return (
             <li

@@ -11,12 +11,17 @@
  * Updated by Denise Alexander - 7/10/2025: back-end integrated for
  * fetching user role and clients.
  *
- * Last Updated by Qingyue Zhao - 8/10/2025:
+ * Updated by Qingyue Zhao - 8/10/2025:
  * - The calendar title (month/year) drives the right-pane title:
  *   * When a day is selected -> "Care items on YYYY-MM-DD"
  *   * Otherwise -> "All care items in <Month Year>"
  * - TasksPanel receives either `selectedDate` or `year`+`month` to filter items,
  *  add a dropdown of list of users with access to the selected client
+ * 
+ * Last Updated by Zahra Rizqita - 17/10/2025 
+ * - Checking when task is marked as done by carer and when management mark task as completed
+ * - Implement status change when this happens
+ * - Real time update for task implementation
  */
 
 'use client';
@@ -90,6 +95,7 @@ type StatusUI =
   | 'Due'
   | 'Pending';
 
+
 /* ---------------------------- Main Page ----------------------------- */
 type CalendarPanelProps = {
   tasks: Task[];
@@ -104,6 +110,9 @@ export default function Page() {
     </Suspense>
   );
 }
+
+const occKey = (slug: string, date: string) => `${slug}__${(date || '').slice(0, 10)}`;
+
 
 function ClientSchedule() {
   const router = useRouter();
@@ -129,6 +138,7 @@ function ClientSchedule() {
   const [clients, setClients] = useState<ClientLite[]>([]);
   const [activeClientId, setActiveClientId] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string>('');
+  const [occurStatus, setOccurStatus] = useState<Record<string, StatusUI>>({});
 
   // Load clients + active client on mount
   useEffect(() => {
@@ -175,6 +185,7 @@ function ClientSchedule() {
   const [selectedDate, setSelectedDate] = useState('');
   const [tasks, setTasks] = useState<ClientTask[]>([]);
   const [selectedTask, setSelectedTask] = useState<ClientTask | null>(null);
+
 
   const [isAddingComment, setIsAddingComment] = useState(false);
   const [newComment, setNewComment] = useState('');
@@ -247,6 +258,15 @@ function ClientSchedule() {
   const windowStart = selectedDate || monthStart;
   const windowEnd = selectedDate || monthEnd;
 
+  function deriveStatusFromDate(due?: string) : StatusUI {
+    const date = (due || '').slice(0, 10);
+    if(!date) return 'Due';
+    const today = isoToday();
+    if(date < today) return 'Overdue';
+    if(date === today) return 'Due';
+    return 'Due';
+  }
+
   // Completion-driven using lastDone
   const tasksForCalendar: ClientTask[] = tasksByClient.flatMap((t) => {
     const count = t.frequencyCount ?? 0;
@@ -268,8 +288,14 @@ function ClientSchedule() {
       t.dateTo ?? null
     );
 
-    return occs.map((d) => ({ ...t, nextDue: d }));
+    return occs.map((d) => {
+      const key = occKey(t.id, d);
+      const uiStatus = occurStatus[key] ?? deriveStatusFromDate(d);
+
+      return { ...t, nextDue: d, status: uiStatus } as ClientTask;
+    });
   });
+
 
   // If a day is selected we filter by that day; otherwise it's the whole dataset for the visible month (handled in TasksPanel)
   const filteredTasks = selectedDate
@@ -403,30 +429,8 @@ function ClientSchedule() {
     const updated = await res.json();
 
     // Update the base task in list state
-    setTasks((prev: ClientTask[]) =>
-      prev.map((t) => {
-        if (t.id !== slug) return t;
-
-        const freqCount = t.frequencyCount ?? null;
-        const freqUnit = t.frequencyUnit ?? null;
-        const freqDays = t.frequencyDays ?? null;
-
-        return {
-          ...t,
-          lastDone: updated.lastDone ?? doneAt,
-          files: Array.isArray(updated.files) ? updated.files : t.files,
-          comments: Array.isArray(updated.comments)
-            ? updated.comments
-            : t.comments,
-          nextDue: getNextDue(
-            updated.lastDone ?? doneAt,
-            freqCount,
-            freqUnit,
-            freqDays
-          ),
-        };
-      })
-    );
+    const key = occKey(slug, doneAt);
+    setOccurStatus((prev) => ({ ...prev, [key]: 'Waiting Verification' }));
   }
 
   // Logo → home
@@ -505,6 +509,7 @@ function ClientSchedule() {
                   month={visibleMonth ?? undefined}
                   clientLoaded={!noClientSelected}
                   onMarkDone={markTaskDone}
+                  statusOverride={occurStatus}
                 />
               </div>
             </>
@@ -521,6 +526,9 @@ function ClientSchedule() {
               setNewComment={setNewComment}
               isAddingComment={isAddingComment}
               setIsAddingComment={setIsAddingComment}
+              onMarkDone={markTaskDone}
+              occurStatus={occurStatus}
+              setOccurStatus={setOccurStatus}
             />
           )}
         </section>
@@ -562,6 +570,9 @@ function TaskDetail({
   setNewComment,
   isAddingComment,
   setIsAddingComment,
+  onMarkDone,
+  occurStatus,
+  setOccurStatus
 }: {
   role: 'carer' | 'family' | 'management';
   task: Task;
@@ -574,8 +585,12 @@ function TaskDetail({
   setNewComment: (v: string) => void;
   isAddingComment: boolean;
   setIsAddingComment: (v: boolean) => void;
+  onMarkDone: (task: Task, fileName: string, comment?: string) => Promise<void>;
+  occurStatus: Record<string, StatusUI>;
+  setOccurStatus: React.Dispatch<React.SetStateAction<Record<string, StatusUI>>>;
 }) {
   const readOnly = role !== 'carer';
+  const lastUploadedFile = (Array.isArray(task.files) && task.files[task.files.length - 1]) || '';
 
   return (
     <div className="flex flex-col h-full" style={{ color: palette.text }}>
@@ -609,14 +624,12 @@ function TaskDetail({
         <p>
           <span className="font-extrabold">Status:</span>{' '}
           {(() => {
-            const derived = derivedOccurrenceStatus(task);
+            const key = occKey(task.id as string, task.nextDue || '');
+            const overridden = occurStatus[key];
+            const display = overridden ?? derivedOccurrenceStatus(task);
             return (
-              <span
-                className={`px-3 py-1 rounded-full text-sm font-extrabold ${getStatusBadgeClasses(
-                  derived
-                )}`}
-              >
-                {derived}
+              <span className={`px-3 py-1 rounded-full text-sm font-extrabold ${getStatusBadgeClasses(display)}`}>
+                {display}
               </span>
             );
           })()}
@@ -686,13 +699,17 @@ function TaskDetail({
           {role === 'carer' && (
             <>
               <button
-                className="px-5 py-2 border rounded bg-white"
-                onClick={() => {
-                  setTasks((prev) =>
-                    prev.map((t) =>
-                      t.id === task.id ? { ...t, status: 'Completed' } : t
-                    )
-                  );
+                className={`px-5 py-2 border rounded bg-white ${ !lastUploadedFile ? 'opacity-70' : '' }`}
+                title={!lastUploadedFile ? 'Upload a file first' : 'Mark this task as done'}
+                onClick={async () => {
+                  if(!lastUploadedFile) {
+                    alert('Please upload a file before marking as done');
+                    return;
+                  }
+
+                  await onMarkDone(task, lastUploadedFile, newComment?.trim() || undefined);
+                  setNewComment('');
+                  setIsAddingComment(false);
                 }}
               >
                 Mark as done
@@ -719,22 +736,22 @@ function TaskDetail({
 
           {role === 'management' && (
             <button
-              className="px-5 py-2 border rounded bg-white"
+              className={`px-5 py-2 border rounded bg-white ${ occurStatus[occKey(task.id, task.nextDue)] !== 'Waiting Verification' ? 'opacity-70' : '' }`}
               onClick={() => {
-                const currStatus = (task.status || '').toLowerCase();
+                const due = task.nextDue;
+                if(!due) return;
 
-                if (currStatus !== 'waiting verification') {
+                const key = occKey(task.id, due);
+                const curr = occurStatus[key];
+
+                if (curr !== 'Waiting Verification') {
                   alert(
                     'This task cannot be marked as completed yet. The carer must first mark the task as done.'
                   );
                   return;
                 }
 
-                setTasks((prev) =>
-                  prev.map((t) =>
-                    t.id === task.id ? { ...t, status: 'Completed' } : t
-                  )
-                );
+                setOccurStatus(prev => ({ ...prev, [key]: 'Completed' }));
               }}
             >
               Mark as completed
