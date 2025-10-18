@@ -123,7 +123,7 @@ export const getClientById = async (id: string) => {
 };
 
 // Fetches all tasks visible to the current user
-export const getTasks = async (): Promise<mockApi.Task[]> => {
+export const getTasks = async (): Promise<mockApi.Task[] & {slug?: string}> => {
   if (isMock) {
     return mockApi.getTasksFE();
   }
@@ -180,6 +180,7 @@ export const getTasks = async (): Promise<mockApi.Task[]> => {
 
     const task: unknown = {
       id,
+      slug: row.slug ?? undefined,
       label: row.label,
       status: normalizeStatus(row.status) as
         | 'Pending'
@@ -199,7 +200,7 @@ export const getTasks = async (): Promise<mockApi.Task[]> => {
       frequencyDays: row.frequencyDays ?? undefined,
     };
 
-    return task as mockApi.Task;
+    return task as mockApi.Task & {slug?: string};
   });
 
   return tasks;

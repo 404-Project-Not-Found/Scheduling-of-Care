@@ -13,7 +13,7 @@ export type OccurrenceStatus =
     | 'Due';
 
 export interface IOccurrence extends mongoose.Document {
-  careItemId: Types.ObjectId;
+  careItemSlug: string;
   clientId: Types.ObjectId;
   date: Date;
   status: OccurrenceStatus;
@@ -28,7 +28,7 @@ export interface IOccurrence extends mongoose.Document {
 }
 
 const OccurrenceSchema = new Schema({
-  careItemId: { type: Schema.Types.ObjectId, ref: 'CareItem', required: true, index: true },
+  careItemSlug: { type: String,required: true, index: true },
   clientId: { type: Schema.Types.ObjectId, ref: 'Client', required: true, index: true },
   date:   { type: Date,   required: true, index: true },
   status: {
@@ -44,6 +44,6 @@ const OccurrenceSchema = new Schema({
   verifiedAt: Date,
 }, { timestamps: true });
 
-OccurrenceSchema.index({ careItemId: 1, date: 1 }, { unique: true });
+OccurrenceSchema.index({ careItemSlug: 1, date: 1 }, { unique: true });
 
 export default mongoose.models.Occurrence || mongoose.model('Occurrence', OccurrenceSchema);

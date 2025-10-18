@@ -688,6 +688,7 @@ export async function addTransactionFE(tx: Transaction): Promise<void> {
 
 export type RequestLog = {
   id: string;
+  slug: string;
   clientId: string;
   task: string;
   change: string;
@@ -702,6 +703,7 @@ const REQUESTS_LS_KEY = 'requests';
 const DEMO_REQUESTS: RequestLog[] = [
   {
     id: 'r1',
+    slug: 'toothbrush-heads',
     clientId: FULL_DASH_ID, // 'mock1'
     task: 'Toothbrush Heads',
     change: 'Change supplier to Colgate',
@@ -712,6 +714,7 @@ const DEMO_REQUESTS: RequestLog[] = [
   },
   {
     id: 'r2',
+    slug: 'dental-appointments',
     clientId: FULL_DASH_ID,
     task: 'Dental Appointments',
     change: 'Reschedule to 25th Sep',
@@ -722,6 +725,7 @@ const DEMO_REQUESTS: RequestLog[] = [
   },
   {
     id: 'r3',
+    slug: 'socks',
     clientId: FULL_DASH_ID,
     task: 'Socks',
     change: 'Request larger size',

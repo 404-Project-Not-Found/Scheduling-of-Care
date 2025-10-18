@@ -359,7 +359,6 @@ export default function EditCareItem({ slug }: { slug: string }) {
       clients={clients}
       onClientChange={onClientChange}
       colors={chromeColors}
-      onLogoClick={onLogoClick}
     >
       {/* Fill entire area below the topbar */}
       <div className="w-full h-[720px] bg-[#FAEBDC] flex flex-col">

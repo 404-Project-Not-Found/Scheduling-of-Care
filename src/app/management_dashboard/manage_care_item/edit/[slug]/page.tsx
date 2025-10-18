@@ -6,8 +6,6 @@
  * Wrapper for search Params
  */
 
-'use client';
-
 import { Suspense } from 'react';
 import EditCareItem from './EditCareItem';
 

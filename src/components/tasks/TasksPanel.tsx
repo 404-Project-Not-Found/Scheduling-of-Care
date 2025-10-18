@@ -2,13 +2,15 @@
 
 import type { Task } from '@/lib/mock/mockApi';
 import { getNextDue } from '@/lib/care-item-helpers/date-helpers';
+import { ClientTask } from '@/app/calendar_dashboard/page';
 
 type StatusUI = 'Waiting Verification' | 'Completed' | 'Overdue' | 'Due' | 'Pending';
 
-type TasksPanelProps = {
-  tasks: Task[];
-  onTaskClick: (task: Task) => void;
+type MaybeSlugTask = Task & { slug?: string };
 
+type TasksPanelProps = {
+  tasks: ClientTask[];
+  onTaskClick: (task: ClientTask) => void;
   /** Optional: exact day scope. If provided, it wins over year/month. */
   selectedDate?: string; // 'YYYY-MM-DD'
   /** Optional: month scope. Use together with `year`. 1..12 */
@@ -18,7 +20,7 @@ type TasksPanelProps = {
   /** Only show "no care items" message after the client is loaded */
   clientLoaded?: boolean;
   // Check if a task is marked as done
-  onMarkDone?: (task: Task, fileName: string, comment?: string) => void;
+  onMarkDone?: (task: ClientTask, fileName: string, comment?: string) => void;
   // UI override, map task to date with status
   statusOverride?: Record<string, StatusUI>;
 };
@@ -42,7 +44,9 @@ const getStatusColor = (status: string) => {
 // Helpers
 const pad2 = (n: number) => String(n).padStart(2, '0');
 const isoToday = () => new Date().toISOString().slice(0, 10);
-const occurKey = (id?: string, due?: string) => `${id ?? ''}__${(due ?? '').slice(0, 10)}`
+type WithOptionalSlug = { id: string; slug?: string };
+const getSlug = (t: ClientTask): string => t.slug ?? t.id;
+const occurKey = (slugOrId: string, due?: string) => `${slugOrId}__${(due ?? '').slice(0, 10)}`;
 
 
 function derivedOccurrenceStatus(t: {
@@ -65,11 +69,11 @@ function derivedOccurrenceStatus(t: {
  * - Else -> no extra filtering (use the `tasks` as-is).
  */
 function filterByScope(
-  tasks: Task[],
+  tasks: ClientTask[],
   selectedDate?: string,
   year?: number,
   month?: number
-): Task[] {
+): ClientTask[] {
   if (selectedDate) {
     return tasks.filter((t) => (t.nextDue || '') === selectedDate);
   }
@@ -91,8 +95,11 @@ export default function TasksPanel({
 }: TasksPanelProps) {
   const scoped = filterByScope(tasks, selectedDate, year, month);
   const sorted = [...scoped].sort(
-    (a, b) => new Date(a.nextDue).getTime() - new Date(b.nextDue).getTime()
-  );
+    (a, b) => {
+      const ta = a.nextDue ? new Date(a.nextDue).getTime() : 0;
+      const tb = b.nextDue ? new Date(b.nextDue).getTime() : 0;
+      return ta - tb;
+    });
 
   // ➜ derive "today" once
   const todayStr = new Date().toISOString().slice(0, 10);
@@ -107,12 +114,12 @@ export default function TasksPanel({
 
       <ul className="space-y-3">
         {sorted.map((t) => {
-          const key = occurKey(t.id, t.nextDue);
+          const key = occurKey(getSlug(t), t.nextDue);
           const displayStatus: StatusUI = statusOverride?.[key] ?? derivedOccurrenceStatus(t);
 
           return (
             <li
-              key={`${t.id}-${t.nextDue ?? ''}`}
+              key={`${getSlug(t)}-${t.nextDue ?? ''}`}
               className="w-full bg-white text-black border rounded px-3 py-2 cursor-pointer hover:bg-gray-100 flex justify-between items-center"
               onClick={() => onTaskClick(t)}
             >
