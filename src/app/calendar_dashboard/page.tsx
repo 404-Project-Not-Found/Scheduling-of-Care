@@ -23,6 +23,7 @@
 
 import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import ViewToggle from '@/components/ui/ViewToggle';
 
 import DashboardChrome from '@/components/top_menu/client_schedule';
 import CalendarPanel from '@/components/dashboard/CalendarPanel';
@@ -87,6 +88,7 @@ function ClientSchedule() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const addedFile = searchParams.get('addedFile');
+  const view = (searchParams.get('view') ?? 'calendar') as 'calendar' | 'list';
 
   /* ------------------------------ Role ------------------------------ */
   const [role, setRole] = useState<Role>('carer'); // default
@@ -327,10 +329,15 @@ function ClientSchedule() {
       }}
       onLogoClick={onLogoClick}
     >
-      {/* Two-column layout; left calendar, right task list/detail */}
-      <div className="flex flex-1 h-[680px]">
-        {/* LEFT: Calendar */}
-        <section className="flex-1 bg-white overflow-auto p-4">
+      <div className="flex items-center justify-end px-6 pt-4">
+        <ViewToggle compact />
+      </div>
+
+      {view === 'calendar' ? (
+        <section
+          className="w-full overflow-auto p-4 h-[680px]"
+          style={{ backgroundColor: palette.pageBg }}
+        >
           <CalendarPanel
             tasks={tasksForCalendar}
             onDateClick={(date: string) => setSelectedDate(date)}
@@ -340,23 +347,19 @@ function ClientSchedule() {
             }}
           />
         </section>
-
-        {/* RIGHT: Tasks */}
+      ) : (
         <section
-          className="flex-1 overflow-auto"
+          className="w-full overflow-auto h-[680px]"
           style={{ backgroundColor: palette.pageBg }}
         >
           {!selectedTask ? (
             <>
-              {/* Title row */}
               <div className="px-6 py-10 flex flex-col gap-4">
                 <div className="flex items-center justify-between gap-4">
                   <h2 className="leading-tight">
-                    {/* First line (big) */}
                     <span className="block text-3xl md:text-4xl font-extrabold">
                       {titleParts.main}
                     </span>
-                    {/* Second line (smaller) */}
                     {titleParts.sub && (
                       <span className="block text-lg md:text-lg font-semibold text-black/70">
                         {titleParts.sub}
@@ -378,14 +381,10 @@ function ClientSchedule() {
                 )}
               </div>
 
-              {/* Task list */}
               <div className="px-6 pb-8">
                 <TasksPanel
                   tasks={tasksForRightPane}
                   onTaskClick={(task) => setSelectedTask(task)}
-                  // Drive the list scope:
-                  // If a date is selected, TasksPanel will show that day only.
-                  // Otherwise it will use year/month (visible calendar title).
                   selectedDate={selectedDate || undefined}
                   year={visibleYear ?? undefined}
                   month={visibleMonth ?? undefined}
@@ -408,7 +407,7 @@ function ClientSchedule() {
             />
           )}
         </section>
-      </div>
+      )}
     </DashboardChrome>
   );
 }

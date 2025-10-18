@@ -1,5 +1,1 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
-# Run prettier and ESLint on staged files
-npx --no-install lint-staged
+npm test
