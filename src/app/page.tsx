@@ -130,23 +130,23 @@ export default function Home() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 h-full w-full">
         {/* Left section */}
-        <section className="bg-[#F3C8A5] relative flex flex-col h-full">
-          <div className="flex flex-col items-start h-full pl-0 lg:pl-18 pr-8 lg:pr-10 justify-start mt-33">
+        <section className="relative flex flex-col h-full bg-gradient-to-br from-[#F3C8A5] to-[#F9D2B1] p-12 lg:p-24">
+          <div className="flex flex-col justify-center h-full max-w-lg">
             <Image
               src="/logo-name.png"
               alt="App Logo"
-              width={500}
+              width={400}
               height={100}
               priority
               className="mb-10 -ml-16 lg:-ml-12"
             />
-            <h1 className="text-6xl font-extrabold tracking-tight mb-5">
+            <h1 className="text-4xl lg:text-5xl font-extrabold tracking-tight mb-6 text-[#3A0000] drop-shadow-md">
               Welcome!
             </h1>
-            <p className="max-w-[42rem] text-[19px] leading-6">
+            <p className="text-lg lg:text-xl ttext-[#3A0000]/90 leading-relaxed mb-6">
               Our platform helps streamline care management by connecting
-              parents/power of attorney, carers, clients, and management in one
-              place. Easily schedule, manage, and track care activities with
+              family, power of attorney, carers, clients, and management all in
+              one place. Easily schedule, manage, and track care activities with
               clarity and confidence.
             </p>
           </div>

@@ -125,7 +125,6 @@ function ClientListInner() {
           return {
             id: c._id,
             name: c.name,
-            dashboardType: c.dashboardType,
             orgAccess: latestOrg?.status ?? 'pending',
           };
         })
