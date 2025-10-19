@@ -1,8 +1,87 @@
-
-import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
-import { BudgetYear } from "@/models/Budget";
+/**
+ * Filename: /app/api/v1/clients/[id]/budget/manage/route.ts
+ * Author: Zahra Rizqita
+ * Date Created: 10/10/2025
+ *
+ * Handle api for budget, get category-level rows for the report
+ */
+import {NextResponse} from 'next/server';
 import { Types } from 'mongoose';
+import { connectDB } from '@/lib/mongodb';
+import { BudgetYear, type BudgetYearLean, type CategoryBudget } from '@/models/Budget';
+import { Transaction } from '@/models/Transaction';
 
+type BudgetRow = {
+    item: string;
+    category: string;
+    allocated: number;
+    spent: number;
+}
 
+interface SpentAggRow {
+    _id: Types.ObjectId;
+    spent: number;
+}
+
+export async function GET(
+  req: Request, {params}:
+  {params: {clientId: string}}
+) {
+  await connectDB();
+
+  const url = new URL(req.url);
+  const yearParam = url.searchParams.get('year');
+  const year = Number.isFinite(Number(yearParam)) 
+  ? Number(yearParam) 
+  : new Date().getFullYear();
+
+  let clientId: Types.ObjectId;
+  try {
+    clientId = new Types.ObjectId(params.clientId);
+  } catch {
+    return NextResponse.json(
+        { error: 'Invalid clientId' },
+        { status: 422}
+    );
+  }
+
+  const budget = await BudgetYear.findOne({clientId, year}).lean<BudgetYearLean>();
+  if(!budget) return NextResponse.json([] as BudgetRow[]);
+
+  // Aggregate net spend per category for this client or year
+  const spentAggr = await Transaction.aggregate<SpentAggRow>([
+    {$match: {clientId, year, voidedAt: {$exists: false}}},
+    {$unwind: '$lines'}, 
+    {
+      $group: {
+        _id: '$lines.categoryId',
+        spent: {
+          $sum: {
+            $cond: [{ $eq: ['$type', 'Purchase'] }, '$lines.amount', { $multiply: [-1, '$lines.amount'] }],
+          },
+        },
+      },
+    },
+  ]);
+
+  const spentByCat = new Map<string, number>(
+    spentAggr.map((r) => [String(r._id), Number.isFinite(r.spent) ? r.spent: 0])
+  );
+
+  const rows: BudgetRow[] = budget.categories.map((cat: CategoryBudget): BudgetRow => {
+      const key = String(cat.categoryId);
+      const spent = spentByCat.get(key) ?? 0;
+      const allocated = Math.round(cat.allocated);
+      const categoryName = (cat.categoryName ?? 'Unknown').trim();
+
+      return {
+        item: categoryName,
+        category: categoryName,
+        allocated,
+        spent: Math.round(spent),
+      }
+  });
+
+  return NextResponse.json(rows);
+}
 

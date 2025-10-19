@@ -119,7 +119,7 @@ function AddTransactionInner() {
   const tasksForClientAndCategory = useMemo(() => {
     if (!category) return [];
     return tasksForClient.filter((t: ApiTask) => {
-      const cat = t.category || labelToCategory.get(t.title) || '';
+      const cat = t.category || labelToCategory.get(t.label) || '';
       return cat.toLowerCase() === category.toLowerCase();
     });
   }, [tasksForClient, category, labelToCategory]);
@@ -229,8 +229,8 @@ function AddTransactionInner() {
                 <>
                   <option value="">Select a Care Item</option>
                   {tasksForClientAndCategory.map((t: ApiTask) => (
-                    <option key={t.id} value={t.title}>
-                      {t.title}
+                    <option key={t.id} value={t.label}>
+                      {t.label}
                     </option>
                   ))}
                 </>

@@ -52,7 +52,7 @@ export async function GET(
 
   return NextResponse.json(rows.map(r => ({ 
     careItemSlug: r.careItemSlug, 
-    date: (r.date instanceof Date ? r.date.toISOString().slice(0, 10) : String(r.date)), 
+    date: r.date, 
     status: normalize(r.status) 
   })));
 }
