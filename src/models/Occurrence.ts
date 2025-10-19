@@ -46,4 +46,5 @@ const OccurrenceSchema = new Schema({
 
 OccurrenceSchema.index({ careItemSlug: 1, date: 1 }, { unique: true });
 
-export default mongoose.models.Occurrence || mongoose.model('Occurrence', OccurrenceSchema);
+export default mongoose.models.Occurrence || mongoose.model<IOccurrence>('Occurrence', OccurrenceSchema);
+

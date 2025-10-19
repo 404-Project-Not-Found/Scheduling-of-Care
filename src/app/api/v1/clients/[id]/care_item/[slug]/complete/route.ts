@@ -40,7 +40,7 @@ export async function POST(
   occur.verifiedAt = new Date();
   await occur.save();
   
-  await CareItem.updateOne({slug}, {$set: {lastDone: date}});
+  await CareItem.updateOne({slug}, {$set: {lastDone: dateISO}});
 
   return NextResponse.json(occur.toObject());
 }

@@ -234,6 +234,31 @@ function ClientSchedule() {
     }
   }, [addedFile, selectedTask, role]);
 
+  useEffect(() => {
+    (async () => {
+      if(!selectedTask || !activeClientId || !selectedTask.nextDue) return;
+      const url = `/api/v1/clients/${activeClientId}/care_item/${encodeURIComponent(selectedTask.slug)}/occurrence?date=${selectedTask.nextDue.slice(0,10)}&include=files,comments`;
+      const res = await fetch(url, { cache: 'no-store' } );
+      if(!res.ok) return;
+
+      const data: {files?: string[]; comments?: string[]} = await res.json();
+
+      setSelectedTask(prev => 
+          prev && prev.slug === selectedTask.slug
+          ? {...prev, files: data.files ?? [], comments: data.comments ?? []}
+          : prev
+      );
+
+      setTasks(prev =>
+        prev.map(t =>
+          t.slug === selectedTask.slug
+            ? {...t, files: data.files ?? [], comments: data.comments ?? []}
+            : t
+        )
+      );
+    })();
+  }, [selectedTask?.slug, selectedTask?.nextDue, activeClientId]);
+
   /* --------------- Derived: filter by client and date --------------- */
   // These are set whenever the calendar view (brown title) changes.
   const [visibleYear, setVisibleYear] = useState<number | null>(null); // e.g. 2025
@@ -293,7 +318,7 @@ function ClientSchedule() {
       slugs: slugs.join(','),
     });
 
-    const res = await fetch(`/api/v1/occurence?${params.toString()}`);
+    const res = await fetch(`/api/v1/clients/${activeClientId}/occurence?${params.toString()}`);
     if (!res.ok) return;
 
     const rows: Array<{ careItemSlug: string; date: string; status: StatusUI }> = await res.json();
@@ -455,7 +480,7 @@ function ClientSchedule() {
     }
     try{
       const res = await fetch(
-        `/api/v1/clients/${encodeURIComponent(activeClientId)}/care_item/${encodeURIComponent(slug)}/done`,
+        `/api/v1/clients/${activeClientId}/care_item/${encodeURIComponent(slug)}/done`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
