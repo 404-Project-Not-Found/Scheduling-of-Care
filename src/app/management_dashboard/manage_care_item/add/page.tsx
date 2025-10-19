@@ -246,7 +246,7 @@ export default function AddTaskPage() {
     };
 
     try {
-      const res = await fetch('/api/v1/care_item', {
+      const res = await fetch(`/api/v1/clients/${activeClientId}/care_item`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

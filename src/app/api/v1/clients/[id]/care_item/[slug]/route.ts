@@ -1,5 +1,5 @@
 /**
- * Filename: /app/api/care-item/[slug]/route.ts
+ * Filename: /app/api/v1/client/[id]/care-item/[slug]/route.ts
  * Author: Zahra Rizqita
  * Date Created: 24/09/2025
  * Updated -- 09/10/2025 -- client-scoped
@@ -63,7 +63,7 @@ export async function PUT(
   try {
     body = (await req.json()) as PutBody;
   } catch {
-    return errorJson('Invalid JSON - api/v1/care_item/[slug]/PUT');
+    return errorJson('Invalid JSON - api/v1/client/[id]/care_item/[slug]/PUT');
   }
 
   // Load existing to find current client

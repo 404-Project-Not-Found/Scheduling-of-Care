@@ -123,7 +123,7 @@ export const getClientById = async (id: string) => {
 };
 
 // Fetches all tasks visible to the current user
-export const getTasks = async (): Promise<mockApi.Task[] & {slug?: string}> => {
+export const getTasks = async (clientId: string | null | undefined): Promise<mockApi.Task[] & {slug?: string}> => {
   if (isMock) {
     return mockApi.getTasksFE();
   }
@@ -142,7 +142,7 @@ export const getTasks = async (): Promise<mockApi.Task[] & {slug?: string}> => {
     return '';
   };
 
-  const res = await fetch('/api/v1/care_item?limit=200', { cache: 'no-store' });
+  const res = await fetch(`/api/v1/clients/${clientId}/care_item?limit=200`, { cache: 'no-store' });
   if (!res.ok) {
     throw new Error(`Failed to fetch tasks (${res.status})`);
   }
@@ -183,9 +183,10 @@ export const getTasks = async (): Promise<mockApi.Task[] & {slug?: string}> => {
       slug: row.slug ?? undefined,
       label: row.label,
       status: normalizeStatus(row.status) as
-        | 'Pending'
+        | 'Due'
         | 'Overdue'
-        | 'Completed',
+        | 'Completed'
+        | 'Waiting Verification',
       category: row.category,
       clientId: row.clientId ?? '',
       frequency: buildFrequency(row),
@@ -210,17 +211,6 @@ export const getTasks = async (): Promise<mockApi.Task[] & {slug?: string}> => {
 export const saveTasks = async (tasks: mockApi.Task[]) => {
   if (isMock) {
     return mockApi.saveTasksFE(tasks);
-  }
-
-  const deriveNextDue = (row: CareItemListRow): string => {
-    if (row.dateTo && row.dateTo.trim()) return row.dateTo;
-    if (row.dateFrom && row.dateFrom.trim()) return row.dateFrom;
-    return '';
-  };
-
-  const res = await fetch('/api/v1/care_item?limit=200', { cache: 'no-store' });
-  if (!res.ok) {
-    throw new Error(`Failed to fetch tasks (${res.status})`);
   }
 };
 
@@ -294,7 +284,7 @@ export const setActiveClient = async (id: string | null, name: string = '') => {
 
 // Fetches tasks for a specific client
 export const getTasksByClient = async (clientId: string) => {
-  const allTasks = await getTasks();
+  const allTasks = await getTasks(clientId);
   return allTasks.filter((t) => t.clientId === clientId);
 };
 

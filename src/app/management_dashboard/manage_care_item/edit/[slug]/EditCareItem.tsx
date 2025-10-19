@@ -173,7 +173,7 @@ export default function EditCareItem({ slug }: { slug: string }) {
     if (!slug || clients.length === 0) return;
     (async () => {
       const res = await fetch(
-        `/api/v1/care_item/${encodeURIComponent(cleanSlug)}`,
+        `/api/v1/clients/${activeId}/care_item/${encodeURIComponent(cleanSlug)}`,
         { cache: 'no-store' }
       );
       if (!res.ok) {
@@ -283,7 +283,7 @@ export default function EditCareItem({ slug }: { slug: string }) {
     if (!confirm('Discard this task and go back?')) return;
 
     const res = await fetch(
-      `/api/v1/care_item/${encodeURIComponent(slugForDel)}`,
+      `/api/v1/clients/${activeId}/care_item/${encodeURIComponent(slugForDel)}`,
       { method: 'DELETE' }
     );
     if (!res.ok) {
@@ -337,7 +337,7 @@ export default function EditCareItem({ slug }: { slug: string }) {
     };
 
     const res = await fetch(
-      `/api/v1/care_item/${encodeURIComponent(slugForSave)}`,
+      `/api/v1/clients/${activeId}/care_item/${encodeURIComponent(slugForSave)}`,
       {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },

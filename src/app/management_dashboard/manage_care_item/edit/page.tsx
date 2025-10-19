@@ -235,7 +235,7 @@ export default function EditSelectorPage() {
     }
 
     if (activeClientId && category && value) {
-      const url = new URL('/api/v1/care_item', window.location.origin);
+      const url = new URL(`/api/v1/clients/${activeClientId}/care_item`, window.location.origin);
       url.searchParams.set('clientId', activeClientId);
       url.searchParams.set('category', category);
       url.searchParams.set('q', value);

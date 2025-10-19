@@ -22,6 +22,7 @@
  * - Checking when task is marked as done by carer and when management mark task as completed
  * - Implement status change when this happens
  * - Real time update for task implementation
+ * - Real time update for task verification
  */
 
 'use client';
@@ -197,7 +198,7 @@ function ClientSchedule() {
   useEffect(() => {
     (async () => {
       try {
-        const list = await getTasks();
+        const list = await getTasks(activeClientId);
         setTasks(
           (Array.isArray(list) ? list : []).map((t: MaybeSlugTask) => ({
             ...t,
@@ -440,7 +441,6 @@ function ClientSchedule() {
       alert('This care item has no slug, cannot be marked as done');
       return;
     }
-
     if (!doneAt) {
       alert('No occurrence date found for this task.');
       return;
@@ -449,9 +449,13 @@ function ClientSchedule() {
       alert('Upload a file before marking as done.');
       return;
     }
+    if(!activeClientId) {
+      alert('Select a client first,');
+      return;
+    }
     try{
       const res = await fetch(
-        `/api/v1/care_item/${encodeURIComponent(slug)}/done`,
+        `/api/v1/clients/${encodeURIComponent(activeClientId)}/care_item/${encodeURIComponent(slug)}/done`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -559,6 +563,7 @@ function ClientSchedule() {
             <TaskDetail
               role={role}
               task={selectedTask}
+              clientId={activeClientId}
               setTasks={setTasks}
               setSelectedTask={setSelectedTask}
               addComment={addComment}
@@ -603,6 +608,7 @@ function derivedOccurrenceStatus(t: {
 function TaskDetail({
   role,
   task,
+  clientId,
   setTasks,
   setSelectedTask,
   addComment,
@@ -618,6 +624,7 @@ function TaskDetail({
 }: {
   role: 'carer' | 'family' | 'management';
   task: ClientTask;
+  clientId: string | null,
   setTasks: React.Dispatch<React.SetStateAction<ClientTask[]>>;
   setSelectedTask: React.Dispatch<React.SetStateAction<ClientTask | null>>;
   addComment: (taskId: string, comment: string) => void;
@@ -793,7 +800,7 @@ function TaskDetail({
                   return;
                 }
                 try {
-                  const res = await fetch(`/api/v1/care_item/${encodeURIComponent(task.slug)}/complete`, {
+                  const res = await fetch(`/api/v1/clients/${clientId}/care_item/${encodeURIComponent(task.slug)}/complete`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({date: due}),
