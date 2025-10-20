@@ -36,6 +36,8 @@ const unslug = (s: string) =>
     .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
     .join(' ');
 
+const LOW_BUDGET_THRESHOLD = 0.15;
+
 type Tone = 'green' | 'yellow' | 'red';
 const getStatus = (remaining: number): { tone: Tone; label: string } => {
   if (remaining < 0) return { tone: 'red', label: 'Exceeded' };

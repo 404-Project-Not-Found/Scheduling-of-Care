@@ -29,7 +29,9 @@ import {
   type Client as ApiClient,
 } from '@/lib/data';
 
-import { getBudgetRowsFE, BudgetRow } from '@/lib/mock/mockApi';
+// import { getBudgetRowsFE, BudgetRow } from '@/lib/mock/mockApi';
+
+import { getBudgetRows, getBudgetSummary, openBudgetSSE, getAvailableYears, type BudgetRow, type BudgetSummary } from '@/lib/budget-helpers';
 
 /* ---------------------------------- Types ---------------------------------- */
 type Client = { id: string; name: string };
@@ -52,11 +54,13 @@ const colors = {
   text: '#2b2b2b',
 };
 
-/* ---------------------------------- Utils ---------------------------------- */
+/* ---------------------------------- Status  ---------------------------------- */
+const LOW_BUDGET_THRESHOLD = 0.15;
 type Tone = 'green' | 'yellow' | 'red';
-const getStatus = (remaining: number): { tone: Tone; label: string } => {
-  if (remaining < 0) return { tone: 'red', label: 'Exceeded' };
-  if (remaining <= 5) return { tone: 'yellow', label: 'Nearly Exceeded' };
+const getStatus = (remaining: number, allocated: number): { tone: Tone; label: string } => {
+  if (remaining <= 0) return { tone: 'red', label: 'Used up' }
+  const ratio = remaining/(allocated || 1);
+  if (ratio <= LOW_BUDGET_THRESHOLD) return { tone: 'yellow', label: 'Nearly used up' };
   return { tone: 'green', label: 'Within Limit' };
 };
 
@@ -90,6 +94,10 @@ function BudgetReportInner() {
       }
     })();
   }, []);
+
+  // -- Banner Warning State
+  const [showWarning, setShowWarning] = useState(false);
+  const [warningText, setWarningText] = useState('')
 
   /* ---------------------------- Clients ----------------------------- */
   const [clients, setClients] = useState<ClientLite[]>([]);
@@ -137,8 +145,100 @@ function BudgetReportInner() {
     await setActiveClient(id, name);
   };
 
+  // ===== Query and year =====
+  const [q, setQ] = useState('');
+  const [years, setYears] = useState<number[]>([])
+  const [todayDate, setTodaysDate] = useState<String>();
+  const [year, setYear] = useState<number>(new Date().getFullYear());
+
+  // get current date
+  useEffect(() => {
+    const d = new Date();
+    const fmt = new Intl.DateTimeFormat('en-AU', {dateStyle: 'long', timeZone:'Australia/Melbourne'});
+    setTodaysDate(fmt.format(d));
+  }, [activeClientId]);
+
+  // get years available in database
+  useEffect(() => {
+    let abort = new AbortController();
+    const load = async () => {
+      if(!activeClientId) {
+        setYears([]);
+        return;
+      }
+      try {
+        const list = await getAvailableYears(activeClientId, abort.signal);
+        if(list.length > 0) {
+          setYears(list);
+          if(!list.includes(year)) setYear(list[0]);
+        }
+        else {
+          const curr = new Date().getFullYear();
+          setYears([curr]);
+          setYear(curr);
+        }
+      } catch(e) {
+        console.error('Failed to load years:', e);
+        const curr = new Date().getFullYear();
+        setYears([curr]);
+        setYear(curr);
+      }
+    };
+    load();
+    return () => abort.abort();
+  }, [activeClientId]);
   // ===== Budget rows =====
   const [rows, setRows] = useState<BudgetRow[]>([]);
+  const [summary, setSummary] = useState <BudgetSummary>({
+    annualAllocated: 0,
+    spent: 0,
+    remaining: 0,
+    surplus: 0
+  });
+
+  // fetch rows + summary when client/year changes
+  useEffect(() => {
+    let abort = new AbortController();
+    const load = async () => {
+      if(!activeClientId) {
+        setRows([]);
+        setSummary({annualAllocated: 0, spent: 0, remaining: 0, surplus: 0});
+        return;
+      }
+      try {
+        const [r, s] = await Promise.all([
+          getBudgetRows(activeClientId, year, abort.signal),
+          getBudgetSummary(activeClientId, year, abort.signal),
+        ]);
+        setRows(r);
+        setSummary(s);
+      } catch(e) {
+        console.error('Failed to load budget data: 0');
+        setRows([]);
+        setSummary({annualAllocated: 0, spent: 0, remaining: 0, surplus: 0});
+      }
+    };
+    load();
+    return () => abort.abort();
+  }, [activeClientId, year]);
+
+  // Real time update via SSE
+  useEffect(() => {
+    if (!activeClientId) return;
+    const stop = openBudgetSSE(activeClientId, year, async () => {
+      try {
+        const [r, s] = await Promise.all([
+          getBudgetRows(activeClientId, year),
+          getBudgetSummary(activeClientId, year),
+        ]);
+        setRows(r);
+        setSummary(s);
+      } catch (e) {
+        console.error('Refresh failed:', e);
+      }
+    });
+    return () => stop();
+  }, [activeClientId, year]);
 
   // ===== Editing state =====
   const [isEditing, setIsEditing] = useState(false);
@@ -147,25 +247,37 @@ function BudgetReportInner() {
   >(null);
   const [annualBudgetInput, setAnnualBudgetInput] = useState<string>('');
 
-  /** Load budget rows when active client changes */
-  useEffect(() => {
-    if (!activeClientId) {
-      setRows([]);
-      return;
-    }
-    (async () => {
-      try {
-        const budgetRows = await getBudgetRowsFE(activeClientId);
-        setRows(budgetRows);
-      } catch {
-        setRows([]);
-      }
-    })();
-  }, [activeClientId]);
+  const startEdit = () => {
+    setIsEditing(true);
+    setAnnualBudgetInput(String(summary.annualAllocated));
+  };
 
-  // ===== Local UI state =====
-  const [q, setQ] = useState('');
-  const [year, setYear] = useState('2025');
+  const saveAnnual = async () => {
+    if(!activeClientId) return;
+    const val = parseFloat(annualBudgetInput);
+    if(!Number.isFinite(val) || val < 0) return;
+
+    try{
+      const res = await fetch(`/api/v1/clients/${encodeURIComponent(activeClientId)}/budget/manage`, {
+        method: 'PATCH',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({action: 'setAnnual', year, amount: val}),
+      });
+      if(!res.ok){
+        console.error('Failed to save annuyal budget', await res.text());
+      }
+      const [r, s] = await Promise.all([
+        getBudgetRows(activeClientId, year),
+        getBudgetSummary(activeClientId, year),
+      ]);
+      setRows(r);
+      setSummary(s);
+    } catch(e) {
+      console.error(e);
+    } finally {
+      setIsEditing(false);
+    }
+  }
 
   /** Filter by search */
   const filtered = useMemo(() => {
@@ -176,6 +288,7 @@ function BudgetReportInner() {
         r.item.toLowerCase().includes(t) || r.category.toLowerCase().includes(t)
     );
   }, [q, rows]);
+
 
   /** Totals */
   const totals = useMemo(() => {
@@ -208,14 +321,21 @@ function BudgetReportInner() {
                 Select year:
               </span>
               <select
-                value={year}
-                onChange={(e) => setYear(e.target.value)}
+                value={String(year)}
+                onChange={(e) => setYear(Number(e.target.value))}
                 className="rounded-md bg-white text-sm px-3 py-1 border"
               >
-                <option value="2025">2025</option>
-                <option value="2024">2024</option>
-                <option value="2023">2023</option>
+                {years.map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
               </select>
+              {year === new Date().getFullYear() && (
+                <span className="font-semibold text-white text-lg ml-2">
+                  As of: {todayDate}
+                </span>
+              )}
             </div>
           </div>
 
@@ -230,12 +350,7 @@ function BudgetReportInner() {
             {role === 'management' &&
               (!isEditing ? (
                 <button
-                  onClick={() => {
-                    setIsEditing(true);
-                    setAnnualBudgetInput(
-                      String(annualBudgetOverride ?? totals.allocated)
-                    );
-                  }}
+                  onClick={startEdit}
                   className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10"
                 >
                   Edit
@@ -243,12 +358,7 @@ function BudgetReportInner() {
               ) : (
                 <>
                   <button
-                    onClick={() => {
-                      const val = parseFloat(annualBudgetInput);
-                      if (!Number.isFinite(val) || val < 0) return;
-                      setAnnualBudgetOverride(val);
-                      setIsEditing(false);
-                    }}
+                    onClick={saveAnnual}
                     className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10"
                   >
                     Save
@@ -269,6 +379,18 @@ function BudgetReportInner() {
 
         {/* Main content */}
         <div className="w-full px-12 py-10">
+          {/* Warning banner */}
+          {showWarning && (
+            <div className="mb-6 rounded-xl border border-yellow-400 bg-yellow-100 text-yellow-900 px-6 py-4 flex justify-between items-center">
+              <div className="font-semibold">{warningText}</div>
+              <button
+                onClick={() => setShowWarning(false)}
+                className="ml-4 px-3 py-1 text-sm font-bold rounded-md bg-yellow-200 hover:bg-yellow-300"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
           {/* Tiles */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10 text-center">
             <div className="rounded-2xl border px-6 py-8 bg-[#F8CBA6]">
@@ -276,8 +398,8 @@ function BudgetReportInner() {
                 <>
                   <input
                     type="number"
-                    min="0"
-                    step="1"
+                    min={0}
+                    step={1}
                     value={annualBudgetInput}
                     onChange={(e) => setAnnualBudgetInput(e.target.value)}
                     className="w-full max-w-[220px] mx-auto text-center text-2xl font-bold rounded-md bg-white text-black px-3 py-2 border"
@@ -287,7 +409,7 @@ function BudgetReportInner() {
               ) : (
                 <>
                   <div className="text-2xl font-bold">
-                    ${effectiveAllocated.toLocaleString()}
+                    ${summary.annualAllocated.toLocaleString()}
                   </div>
                   <div className="text-sm">Annual Budget</div>
                 </>
@@ -296,7 +418,7 @@ function BudgetReportInner() {
 
             <div className="rounded-2xl border px-6 py-8 bg-white">
               <div className="text-2xl font-bold">
-                ${totals.spent.toLocaleString()}
+                ${summary.spent.toLocaleString()}
               </div>
               <div className="text-sm">Spent to Date</div>
             </div>
@@ -314,11 +436,44 @@ function BudgetReportInner() {
             {/* Need to change - budget surplus is unallocated funds */}  
             <div className="rounded-2xl border px-6 py-8 bg-white">
               <div className="text-2xl font-bold text-black">
-                ${effectiveAllocated.toLocaleString()} 
+                ${summary.surplus.toLocaleString()} 
               </div>
               <div className="text-sm">Budget Surplus</div>
             </div>
           </div>
+          {/* Warning Banner */}
+          {(() => {
+            const lowCategories = rows
+              .filter((r) => {
+                if (r.allocated <= 0) return false;
+                const remaining = r.allocated - r.spent;
+                const ratio = remaining / r.allocated;
+                return ratio > 0 && ratio <= LOW_BUDGET_THRESHOLD;
+              })
+              .map((r) => ({
+                name: r.category,
+                remaining: r.allocated - r.spent,
+                percent: ((r.allocated - r.spent) / r.allocated) * 100,
+              }));
+
+            if (lowCategories.length === 0) return null;
+
+            return (
+              <div className="mb-6 rounded-lg border border-yellow-400 bg-yellow-100 px-6 py-4 text-yellow-800">
+                <div className="font-semibold mb-2">
+                  ⚠️ The following categories are nearing their budget limit:
+                </div>
+                <ul className="list-disc list-inside space-y-1">
+                  {lowCategories.map((c) => (
+                    <li key={c.name}>
+                      <span className="font-medium">{c.name}</span> — remaining $
+                      {c.remaining.toFixed(2)} ({c.percent.toFixed(1)}%)
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })()}
           {/* Table */}
           <div className="rounded-2xl border border-[#3A0000] bg-white overflow-hidden">
             <table className="w-full text-left text-sm bg-white">
@@ -334,7 +489,7 @@ function BudgetReportInner() {
               <tbody>
                 {filtered.map((r, i) => {
                   const remaining = r.allocated - r.spent;
-                  const status = getStatus(remaining);
+                  const status = getStatus(remaining, r.allocated);
                   return (
                     <tr
                       key={i}
@@ -366,6 +521,19 @@ function BudgetReportInner() {
                   );
                 })}
               </tbody>
+              {filtered.length > 0 && (
+                <tfoot>
+                  <tr className="bg-black/5 font-semibold">
+                    <td className="px-4 py-4">Subtotal (filtered)</td>
+                    <td className="px-4 py-4">${totals.allocated}</td>
+                    <td className="px-4 py-4">${totals.spent}</td>
+                    <td className="px-4 py-4">
+                      {totals.remaining < 0 ? `-$${Math.abs(totals.remaining)}` : `$${totals.remaining}`}
+                    </td>
+                    <td />
+                  </tr>
+                </tfoot>
+              )}
             </table>
           </div>
         </div>
