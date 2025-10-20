@@ -2,9 +2,6 @@
  * File path: /icon_dashboard/page.tsx
  * Authors: Denise Alexander & Devni Wijesinghe
  * Function: Role-aware schedule dashboard that shows different actions per role.
- *
- * Last Updated by Denise Alexander (20/10/2025): made design and layout changes
- * for consistency and better navigation.
  */
 
 'use client';

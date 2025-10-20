@@ -5,11 +5,9 @@
  *
  * Updated by Denise Alexander - 7/10/2025: enables either mock mode or real back-end API.
  * Updated by Zahra Rizqita - 13/10/2025: implement fetching and saving task.
- * Updated by Denise Alexander - 16/10/2025: added new helper functions for family
- * requests handling.
  *
- * Last Updated by Denise Alexander - 20/10/2025: added new function that retrieves users who
- * have access to a client.
+ * Last Updated by Denise Alexander - 16/10/2025: added new helper functions for family
+ * requests handling.
  */
 
 import * as mockApi from './mock/mockApi';
@@ -79,7 +77,6 @@ export const signOutUser = async () => {
   await nextAuthSignOut({ redirect: false });
 };
 
-// Gets all users who have access to a client
 export const getUsersWithAccess = async (
   clientId: string
 ): Promise<AccessUser[]> => {
