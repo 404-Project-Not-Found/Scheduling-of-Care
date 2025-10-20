@@ -460,7 +460,7 @@ function BudgetReportInner() {
               </select>
               {year === new Date().getFullYear() && (
                 <span className="font-semibold text-white text-lg ml-2">
-                  As of: {todayDate}
+                  As of {todayDate}
                 </span>
               )}
             </div>

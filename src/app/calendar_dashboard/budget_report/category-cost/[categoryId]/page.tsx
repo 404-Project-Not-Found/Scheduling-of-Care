@@ -27,20 +27,31 @@ import {
   setActiveClient,
   type Client as ApiClient,
 } from '@/lib/data';
-// import { getBudgetRowsFE, type BudgetRow } from '@/lib/mock/mockApi';
-import { getCategoryDetail, setCategoryAllocation, setItemAllocation, openBudgetSSE, type CategoryDetail, getBudgetSummary, type BudgetSummary } from '@/lib/budget-helpers';
+
+import { 
+  getCategoryDetail, 
+  setCategoryAllocation, 
+  setItemAllocation, 
+  openBudgetSSE, 
+  type CategoryDetail, 
+  getBudgetSummary, 
+  type BudgetSummary,
+  getAvailableYears,
+} from '@/lib/budget-helpers';
 
 /* ------------------------------- Utils ------------------------------- */
 
 const LOW_BUDGET_THRESHOLD = 0.15;
 type Tone = 'green' | 'yellow' | 'red';
 const getStatus = (remaining: number, allocated: number): { tone: Tone; label: string } => {
-  if (remaining <= 0) return { tone: 'red', label: 'Used up' }
+  if(allocated === 0) return {tone: 'green', label: 'Used up'};
+  if (remaining <= 0) return { tone: 'red', label: 'Used up' };
   const ratio = remaining/(allocated || 1);
   if (ratio <= LOW_BUDGET_THRESHOLD) return { tone: 'yellow', label: 'Nearly used up' };
   return { tone: 'green', label: 'Within Limit' };
 };
 
+const capitalise = (s: string) => (s ? s[0].toUpperCase() + s.slice(1): 1);
 /* ------------------------------- Chrome colors ------------------------------- */
 const colors = {
   header: '#3A0000',
@@ -124,35 +135,76 @@ function CategoryCostInner() {
     router.push('/icon_dashboard');
   };
 
-  /* ===== Budget ===== */
+  /* ===== Dynamic Date ===== */
   const [q, setQ] = useState('');
-  const [year, setYear] = useState<number>(2025);
+  const [years, setYears] = useState<number[]>([2025]);
+  const [year, setYear] = useState<number>(new Date().getFullYear());
+  const [todayDate, setTodaysDate] = useState<string>();
+  
+  // get current date
+  useEffect(() => {
+    const d = new Date();
+    const fmt = new Intl.DateTimeFormat('en-AU', {dateStyle: 'long', timeZone:'Australia/Melbourne'});
+    setTodaysDate(fmt.format(d));
+  }, [activeClientId]);
+  
+  // get years available in database
+  useEffect(() => {
+    let abort = new AbortController();
+    const load = async () => {
+      if(!activeClientId) {
+        setYears([]);
+        return;
+      }
+      try {
+        const list = await getAvailableYears(activeClientId, abort.signal);
+        if(list.length > 0) {
+          setYears(list);
+          if(!list.includes(year)) setYear(list[0]);
+        }
+        else {
+          const curr = new Date().getFullYear();
+          setYears([curr]);
+         setYear(curr);
+        }
+      } catch(e) {
+        console.error('Failed to load years:', e);
+        const curr = new Date().getFullYear();
+        setYears([curr]);
+      setYear(curr);
+      }
+    };
+    load();
+    return () => abort.abort();
+  }, [activeClientId]);
+  
+  /* ===== Budget ===== */
   const [detail, setDetail] = useState<CategoryDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [summary, setSummary] = useState<BudgetSummary>({annualAllocated: 0, spent: 0, remaining: 0, surplus: 0})
 
   const reload = async () => {
-  if (!activeClientId) { setDetail(null); return; }
-  setLoading(true);
-  try {
-    const [d, s] = await Promise.all([
-      getCategoryDetail(activeClientId, categoryId, year),
-      getBudgetSummary(activeClientId, year),
-    ]);
-    setDetail(d);
-    setSummary(s);
-    setCategoryAmountInput(String(d.allocated ?? 0));
-    const next: Record<string, string> = {};
-    d.items.forEach((it) => { next[it.careItemSlug] = String(it.allocated ?? 0); });
-    setItemEdits(next);
-  } catch (e) {
-    console.error(e);
-    setDetail(null);
-    setSummary({ annualAllocated: 0, spent: 0, remaining: 0, surplus: 0 });
-  } finally {
-    setLoading(false);
-  }
-};
+    if (!activeClientId) { setDetail(null); return; }
+    setLoading(true);
+    try {
+      const [d, s] = await Promise.all([
+        getCategoryDetail(activeClientId, categoryId, year),
+        getBudgetSummary(activeClientId, year),
+      ]);
+      setDetail(d);
+      setSummary(s);
+      setCategoryAmountInput(String(d.allocated ?? 0));
+      const next: Record<string, string> = {};
+      d.items.forEach((it) => { next[it.careItemSlug] = String(it.allocated ?? 0); });
+      setItemEdits(next);
+    } catch (e) {
+      console.error(e);
+      setDetail(null);
+      setSummary({ annualAllocated: 0, spent: 0, remaining: 0, surplus: 0 });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => { void reload(); }, [activeClientId, year, categoryId]);
 
@@ -167,6 +219,8 @@ function CategoryCostInner() {
   // load edit input
   const [categoryAmountInput, setCategoryAmountInput] = useState<string>('');
   const [itemEdits, setItemEdits] = useState<Record<string, string>>({});
+
+  const isPastYear = year < new Date().getFullYear();
 
   const saveCategory = async () => {
     if(!activeClientId || !detail) return;
@@ -223,13 +277,17 @@ function CategoryCostInner() {
       .sort((a, b) => a.ratio - b.ratio);
   }, [filterItems]);
 
+  const niceCategoryName = useMemo(
+    () => capitalise(detail?.categoryName ?? 'Category'),
+    [detail?.categoryName]
+  );
   return (
     <DashboardChrome
       page="budget"
       clients={clients}
       onClientChange={onClientChange}
       colors={colors}
-      onLogoClick={() => router.push('/icon_dashboard')}
+      onLogoClick={onLogoClick}
     >
       <div className="flex-1 h-[680px] bg-white/50 overflow-auto">
         {/* Top bar */}
@@ -239,7 +297,7 @@ function CategoryCostInner() {
               &lt; Back
             </Link>
             <h2 className="text-white text-2xl font-semibold">
-              {detail?.categoryName ?? 'Category'} Budget
+              {niceCategoryName} Budget 
             </h2>
             <div className="flex items-center gap-2">
               <span className="font-semibold text-white text-lg">Select year:</span>
@@ -248,10 +306,15 @@ function CategoryCostInner() {
                 onChange={(e) => setYear(Number(e.target.value))}
                 className="rounded-md bg-white text-sm px-3 py-1 border"
               >
-                <option value="2025">2025</option>
-                <option value="2024">2024</option>
-                <option value="2023">2023</option>
+                {years.map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
               </select>
+              {year === new Date().getFullYear() && todayDate && (
+                <span className="font-semibold text-white text-lg ml-2">As of {todayDate}</span>
+              )}
             </div>
           </div>
 
@@ -286,13 +349,18 @@ function CategoryCostInner() {
             </ul>
           </div>
         )}
+        {isPastYear && (
+          <div className="w-full bg-yellow-100 border-y border-yellow-300 px-6 py-3 text-yellow-900">
+            The selected year ({year}) is read-only. Switch to {new Date().getFullYear()} to edit.
+          </div>
+        )}
 
         {/* Content */}
         <div className="w-full px-12 py-10">
           {/* Tiles */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-18 mb-10 text-center">
             <div className="rounded-2xl border px-6 py-8 bg-[#F8CBA6]">
-              {isManagement ? (
+              {isManagement && !isPastYear ? (
                 <>
                   <input
                     type="number"
@@ -304,18 +372,24 @@ function CategoryCostInner() {
                     className="w-full max-w-[220px] mx-auto text-center text-2xl font-bold rounded-md bg-white text-black px-3 py-2 border"
                     disabled={!detail || loading}
                   />
-                  <div className="text-sm mt-2">{detail?.categoryName ?? 'Category'} Budget (saved on blur)</div>
+                  <div className="text-sm mt-2">
+                    {niceCategoryName} Budget 
+                  </div>
                 </>
               ) : (
                 <>
-                  <div className="text-2xl font-bold">${(detail?.allocated ?? 0).toLocaleString()}</div>
-                  <div className="text-sm">{detail?.categoryName ?? 'Category'} Budget</div>
+                  <div className="text-2xl font-bold">
+                    ${(detail?.allocated ?? 0).toLocaleString()}
+                  </div>
+                  <div className="text-sm">{niceCategoryName} Budget</div>
                 </>
               )}
             </div>
 
             <div className="rounded-2xl border px-6 py-8 bg-white">
-              <div className="text-2xl font-bold">${(detail?.spent ?? 0).toLocaleString()}</div>
+              <div className="text-2xl font-bold">
+                ${(detail?.spent ?? 0).toLocaleString()}
+              </div>
               <div className="text-sm">Spent to Date</div>
             </div>
 
@@ -325,6 +399,7 @@ function CategoryCostInner() {
               </div>
               <div className="text-sm">Remaining Balance</div>
             </div>
+
             <div className="rounded-2xl border px-6 py-8 bg-white">
               <div className="text-2xl font-bold">${summary.surplus.toLocaleString()}</div>
               <div className="text-sm">Yearly Surplus</div>
@@ -340,14 +415,14 @@ function CategoryCostInner() {
                   <th className="px-4 py-4">Allocated</th>
                   <th className="px-4 py-4">Spent</th>
                   <th className="px-4 py-4">Remaining</th>
-                  {isManagement && <th className="px-4 py-4">Edit Allocation</th>}
                   <th className="px-4 py-4">Status</th>
+                  {isManagement && <th className="px-4 py-4">Actions</th>}
                 </tr>
               </thead>
               <tbody>
                 {(detail?.items ?? []).map((it) => {
                   const rem = it.allocated - it.spent;
-                  const status = getStatus(it.allocated, rem);
+                  const status = getStatus(rem, it.allocated);
                   return (
                     <tr key={it.careItemSlug} className="border-b last:border-b border-[#3A0000]/20">
                       <td className="px-4 py-5 font-semibold">{it.label}</td>
@@ -358,28 +433,32 @@ function CategoryCostInner() {
                       </td>
                       {isManagement && (
                         <td className="px-4 py-5">
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="number"
-                              min={0}
-                              step={1}
-                              value={itemEdits[it.careItemSlug] ?? ''}
-                              onChange={(e) =>
-                                setItemEdits((p) => ({ ...p, [it.careItemSlug]: e.target.value }))
-                              }
-                              className="w-28 rounded-md border px-2 py-1 text-right"
-                              disabled={loading}
-                              onBlur={() => void saveItem(it.careItemSlug)}
-                            />
-                            <button
-                              onClick={() => void saveItem(it.careItemSlug)}
-                              className="px-2 py-1 rounded-md border hover:bg-black/5"
-                              disabled={loading}
-                              title="Save"
-                            >
-                              Save
-                            </button>
-                          </div>
+                          {isPastYear ? (
+                            <span className="text-gray-400">—</span>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="number"
+                                min={0}
+                                step={1}
+                                value={itemEdits[it.careItemSlug] ?? ''}
+                                onChange={(e) =>
+                                  setItemEdits((p) => ({ ...p, [it.careItemSlug]: e.target.value }))
+                                }
+                                className="w-28 rounded-md border px-2 py-1 text-right"
+                                disabled={loading}
+                                onBlur={() => void saveItem(it.careItemSlug)}
+                              />
+                              <button
+                                onClick={() => void saveItem(it.careItemSlug)}
+                                className="px-2 py-1 rounded-md border hover:bg-black/5"
+                                disabled={loading}
+                                title="Save"
+                              >
+                                Save
+                              </button>
+                            </div>
+                          )}
                         </td>
                       )}
                       <td className="px-4 py-5">
