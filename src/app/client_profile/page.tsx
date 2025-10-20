@@ -34,8 +34,7 @@ import {
 type Role = 'family' | 'carer' | 'management';
 
 const colors = {
-  pageBg: '#F7ECD9',
-  pageBg2: '#ffd9b3',
+  pageBg: '#ffd9b3',
   cardBg: '#F7ECD9',
   header: '#3A0000',
   banner: '#F9C9B1',
@@ -295,7 +294,7 @@ function ClientProfilePageInner() {
       >
         <div
           className="flex-1 flex items-center justify-center"
-          style={{ backgroundColor: colors.pageBg2 }}
+          style={{ backgroundColor: colors.pageBg }}
         >
           <h2 className="text-2xl md:text-3xl font-extrabold">
             Loading client profile…
@@ -346,22 +345,21 @@ function ClientProfilePageInner() {
         banner: colors.banner,
         text: colors.text,
       }}
-      hideBanner={isNew} // no pink banner with selected client when creating new client profile
+      hideBanner={true}
     >
-      {isNew && <div className="py-4" />}
-
+      {/* Page body */}
       <div
-        className="w-full min-h-screen flex justify-center"
+        className="w-full min-h-screen"
         style={{ backgroundColor: colors.pageBg }}
       >
-        <div className="w-full rounded-xl bg-[#f6efe2]">
-          {/* Section bar */}
+        <div className="max-w-[1380px] mx-auto px-6">
+          {/* Section title */}
           <div
-            className="w-full px-6 py-4 text-white text-2xl md:text-3xl font-extrabold flex items-center justify-between"
+            className="w-full mt-6 rounded-t-xl px-6 py-4 text-white text-2xl md:text-3xl font-extrabold flex items-center justify-between"
             style={{ backgroundColor: colors.header }}
           >
             <div>{pageTitle}</div>
-
+            {error && <div className="text-red-600 text-lg mb-4">{error}</div>}
             <button
               onClick={() => router.push(backHref)}
               className="flex items-center gap-2 text-base md:text-lg font-semibold bg-white/10 px-4 py-1.5 rounded hover:bg-white/20 transition"
@@ -372,240 +370,237 @@ function ClientProfilePageInner() {
             </button>
           </div>
 
-          {error && <div className="text-red-600 text-lg mb-4">{error}</div>}
-
-          {/* Content: two columns*/}
-          <form
-            onSubmit={(e) => {
-              e.preventDefault(); // prevent full page reload
-              saveClient();
-            }}
+          {/* Controls + List */}
+          <div
+            className="w-full h-[calc(100%-3rem)] rounded-b-xl bg-[#f6efe2] border-x border-b flex flex-col"
+            style={{ borderColor: '#3A000022' }}
           >
             <div
-              className={`w-full mx-auto px-3 ${
-                isManagement ? 'pt-3 pb-3' : 'pt-3 pb-3'
-              } flex-none`}
+              className="w-full min-h-screen flex justify-center"
+              style={{ backgroundColor: colors.pageBg }}
             >
-              <div className="flex flex-wrap gap-12 px-6 py-6">
-                {/* Column 1: avatar */}
-                <div className="flex-[0.6] flex flex-col items-center gap-6">
+              <div className="w-full rounded-xl bg-[#f6efe2]">
+                {/* Content: two columns*/}
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault(); // prevent full page reload
+                    saveClient();
+                  }}
+                >
                   <div
-                    className="rounded-full flex items-center justify-center overflow-hidden"
-                    style={{
-                      width: 200,
-                      height: 200,
-                      border: `1px solid ${colors.header}`,
-                      backgroundColor: '#fff',
-                    }}
+                    className={`w-full mx-auto px-3 ${
+                      isManagement ? 'pt-3 pb-3' : 'pt-3 pb-3'
+                    } flex-none`}
                   >
-                    {avatarUrl ? (
-                      <Image
-                        src={avatarUrl}
-                        alt="Profile avatar"
-                        width={100}
-                        height={100}
-                        className="object-cover rounded-full"
-                      />
-                    ) : (
-                      <div className="flex items-center justify-center w-full h-full">
-                        <User
-                          size={150}
-                          strokeWidth={0.3}
-                          fill={colors.header}
-                          color={colors.header}
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Upload only for family */}
-                  {isFamily && (
-                    <>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleFileChange}
-                      />
-                      <div className="flex justify-center">
-                        <button
-                          onClick={openFilePicker}
-                          className="rounded-xl px-4 py-2 text-lg font-bold text-white hover:opacity-90"
+                    <div className="flex flex-wrap gap-12 px-6 py-6">
+                      {/* Column 1: avatar */}
+                      <div className="flex-[0.6] flex flex-col items-center gap-6">
+                        <div
+                          className="rounded-full flex items-center justify-center overflow-hidden"
                           style={{
-                            background:
-                              'linear-gradient(90deg, #F9C9B1 0%, #FAEBDC 100%)',
-                            color: '#3A0000',
-                            border: '1px solid #B47A64',
-                            boxShadow: '0 2px 6px rgba(250, 235, 220, 0.6)',
+                            width: 200,
+                            height: 200,
+                            border: `1px solid ${colors.header}`,
+                            backgroundColor: '#fff',
                           }}
                         >
-                          Upload photo
-                        </button>
+                          {avatarUrl ? (
+                            <Image
+                              src={avatarUrl}
+                              alt="Profile avatar"
+                              width={100}
+                              height={100}
+                              className="object-cover rounded-full"
+                            />
+                          ) : (
+                            <div className="flex items-center justify-center w-full h-full">
+                              <User
+                                size={150}
+                                strokeWidth={0.3}
+                                fill={colors.header}
+                                color={colors.header}
+                              />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Upload only for family */}
+                        {isFamily && (
+                          <>
+                            <input
+                              ref={fileInputRef}
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={handleFileChange}
+                            />
+                            <div className="flex justify-center">
+                              <button
+                                onClick={openFilePicker}
+                                className="rounded-md px-5 py-2.5 text-lg font-medium text-[#3A0000] bg-[#F3E9DF] border border-[#D8C6B9] hover:bg-[#E9DED2] transition"
+                              >
+                                Upload photo
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </div>
-                    </>
-                  )}
-                </div>
 
-                {/* Column 2: Client Info */}
-                <div className="flex-[2.8] flex flex-col gap-4 rounded-xl">
-                  {/* Personal Information */}
-                  <AccordionSection title="Personal Information">
-                    <TextInput
-                      label="Full Name"
-                      value={name}
-                      onChange={setName}
-                      required
-                      readOnly={!isFamily}
-                    />
-                    <TextInput
-                      label="Date of Birth"
-                      value={dob}
-                      onChange={setDob}
-                      readOnly={!isFamily}
-                      required
-                    />
-                    <SelectInput
-                      label="Gender"
-                      value={gender}
-                      onChange={setGender}
-                      required
-                      readOnly={!isFamily}
-                      options={[
-                        { label: 'Select gender', value: '' },
-                        { label: 'Male', value: 'Male' },
-                        { label: 'Female', value: 'Female' },
-                        {
-                          label: 'Prefer not to say',
-                          value: 'Prefer not to say',
-                        },
-                      ]}
-                    />
+                      {/* Column 2: Client Info */}
+                      <div className="flex-[2.8] flex flex-col gap-4 rounded-xl">
+                        {/* Personal Information */}
+                        <AccordionSection title="Personal Information">
+                          <TextInput
+                            label="Full Name"
+                            value={name}
+                            onChange={setName}
+                            required
+                            readOnly={!isFamily}
+                          />
+                          <TextInput
+                            label="Date of Birth"
+                            value={dob}
+                            onChange={setDob}
+                            readOnly={!isFamily}
+                            required
+                          />
+                          <SelectInput
+                            label="Gender"
+                            value={gender}
+                            onChange={setGender}
+                            required
+                            readOnly={!isFamily}
+                            options={[
+                              { label: 'Select gender', value: '' },
+                              { label: 'Male', value: 'Male' },
+                              { label: 'Female', value: 'Female' },
+                              {
+                                label: 'Prefer not to say',
+                                value: 'Prefer not to say',
+                              },
+                            ]}
+                          />
 
-                    <TextInput
-                      label="Access Code"
-                      value={accessCode}
-                      onChange={setAccessCode}
-                      required
-                      readOnly={!isFamily}
-                    />
-                    <div className="text-[15px] mt-2 text-black/80">
-                      Don’t have an access code?{' '}
-                      <button
-                        type="button"
-                        className="underline"
-                        onClick={() => setShowAccessCodeDrawer(true)}
-                      >
-                        Create one here
-                      </button>
+                          <TextInput
+                            label="Access Code"
+                            value={accessCode}
+                            onChange={setAccessCode}
+                            required
+                            readOnly={!isFamily}
+                          />
+                          {isFamily && (
+                            <div className="text-[15px] mt-2 text-black/80">
+                              Don’t have an access code?{' '}
+                              <button
+                                type="button"
+                                className="underline"
+                                onClick={() => setShowAccessCodeDrawer(true)}
+                              >
+                                Create one here
+                              </button>
+                            </div>
+                          )}
+                        </AccordionSection>
+
+                        {/* Contact Details */}
+                        <AccordionSection title="Contact Details">
+                          <TextInput
+                            label="Phone Number"
+                            value={phoneNumber}
+                            onChange={setPhoneNumber}
+                            required
+                            readOnly={!isFamily}
+                          />
+                          <TextInput
+                            label="Email"
+                            value={email}
+                            onChange={setEmail}
+                            required
+                            readOnly={!isFamily}
+                          />
+                          <TextInput
+                            label="Address"
+                            value={address}
+                            onChange={setAddress}
+                            required
+                            readOnly={!isFamily}
+                          />
+                          <TextInput
+                            label="Emergency Contact"
+                            value={emergencyContact}
+                            onChange={setEmergencyContact}
+                            required
+                            readOnly={!isFamily}
+                          />
+                          <TextInput
+                            label="Primary Caregiver/Legal Guardian"
+                            value={primaryCaregiver}
+                            onChange={setPrimaryCaregiver}
+                            required
+                            readOnly={!isFamily}
+                          />
+                        </AccordionSection>
+
+                        {/* Health and Medical History */}
+                        <AccordionSection title="Health and Medical History">
+                          <TextAreaInput
+                            label="Diagnosed Disabilities"
+                            value={diagnosedDisabilities}
+                            onChange={setDiagnosedDisabilities}
+                            readOnly={!isFamily}
+                          />
+                          <TextAreaInput
+                            label="Current Medication"
+                            value={currentMedication}
+                            onChange={setCurrentMedication}
+                            readOnly={!isFamily}
+                          />
+                          <TextAreaInput
+                            label="Allergies"
+                            value={allergies}
+                            onChange={setAllergies}
+                            readOnly={!isFamily}
+                          />
+                          <TextAreaInput
+                            label="Recent Medical History"
+                            value={recentMedicalHistory}
+                            onChange={setRecentMedicalHistory}
+                            readOnly={!isFamily}
+                          />
+                          <TextAreaInput
+                            label="Primary Healthcare Provider Contact"
+                            value={primaryHealthContact}
+                            onChange={setPrimaryHealthContact}
+                            readOnly={!isFamily}
+                          />
+                        </AccordionSection>
+                      </div>
+                      {/* Footer buttons: hidden for management */}
+                      {!isManagement && (
+                        <div className="w-full flex justify-end px-8 py-3 gap-4">
+                          {/* Cancel */}
+                          <button
+                            onClick={onCancel}
+                            className="rounded-md px-5 py-2.5 text-lg font-medium text-[#3A0000] bg-[#F3E9DF] border border-[#D8C6B9] hover:bg-[#E9DED2] transition"
+                          >
+                            Cancel
+                          </button>
+
+                          {/* Save */}
+                          <button
+                            onClick={onSave}
+                            className="rounded-md px-5 py-2.5 text-lg font-medium text-white bg-[#3A0000] hover:bg-[#502121] transition"
+                          >
+                            {isCarer ? 'Save Notes' : 'Save'}
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  </AccordionSection>
-
-                  {/* Contact Details */}
-                  <AccordionSection title="Contact Details">
-                    <TextInput
-                      label="Phone Number"
-                      value={phoneNumber}
-                      onChange={setPhoneNumber}
-                      required
-                      readOnly={!isFamily}
-                    />
-                    <TextInput
-                      label="Email"
-                      value={email}
-                      onChange={setEmail}
-                      required
-                      readOnly={!isFamily}
-                    />
-                    <TextInput
-                      label="Address"
-                      value={address}
-                      onChange={setAddress}
-                      required
-                      readOnly={!isFamily}
-                    />
-                    <TextInput
-                      label="Emergency Contact"
-                      value={emergencyContact}
-                      onChange={setEmergencyContact}
-                      required
-                      readOnly={!isFamily}
-                    />
-                    <TextInput
-                      label="Primary Caregiver/Legal Guardian"
-                      value={primaryCaregiver}
-                      onChange={setPrimaryCaregiver}
-                      required
-                      readOnly={!isFamily}
-                    />
-                  </AccordionSection>
-
-                  {/* Health and Medical History */}
-                  <AccordionSection title="Health and Medical History">
-                    <TextAreaInput
-                      label="Diagnosed Disabilities"
-                      value={diagnosedDisabilities}
-                      onChange={setDiagnosedDisabilities}
-                      readOnly={!isFamily}
-                    />
-                    <TextAreaInput
-                      label="Current Medication"
-                      value={currentMedication}
-                      onChange={setCurrentMedication}
-                      readOnly={!isFamily}
-                    />
-                    <TextAreaInput
-                      label="Allergies"
-                      value={allergies}
-                      onChange={setAllergies}
-                      readOnly={!isFamily}
-                    />
-                    <TextAreaInput
-                      label="Recent Medical History"
-                      value={recentMedicalHistory}
-                      onChange={setRecentMedicalHistory}
-                      readOnly={!isFamily}
-                    />
-                    <TextAreaInput
-                      label="Primary Healthcare Provider Contact"
-                      value={primaryHealthContact}
-                      onChange={setPrimaryHealthContact}
-                      readOnly={!isFamily}
-                    />
-                  </AccordionSection>
-                </div>
-                {/* Footer buttons: hidden for management.
-           NOTE: no bottom padding, no big top margin; stays close to content. */}
-                {!isManagement && (
-                  <div className="w-full flex justify-end px-8 py-2 gap-4">
-                    <button
-                      onClick={onCancel}
-                      className="rounded-xl px-4 py-2 text-lg font-bold text-white bg-[#3A0000]/80 hover:opacity-50 w-auto"
-                      style={{
-                        background:
-                          'linear-gradient(90deg, #3A0000 0%, #5C1A1A 100%)',
-                        boxShadow: '0 2px 6px rgba(58, 0, 0, 0.25)',
-                      }}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={onSave}
-                      className="flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-black"
-                      style={{
-                        background:
-                          'linear-gradient(90deg, #FFA94D 0%, #F9C77D 100%)',
-                        border: '1.5px solid #E89B42',
-                        boxShadow: '0 2px 6px rgba(250, 180, 90, 0.4)',
-                      }}
-                    >
-                      {isCarer ? 'Save Notes' : 'Save'}
-                    </button>
                   </div>
-                )}
+                </form>
               </div>
             </div>
-          </form>
+          </div>
         </div>
       </div>
 

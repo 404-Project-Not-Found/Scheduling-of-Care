@@ -274,13 +274,16 @@ export default function AddTaskPage() {
       colors={chromeColors}
     >
       {/* Fill entire area below the topbar */}
-      <div className="w-full h-[720px] bg-[#FAEBDC] flex flex-col">
+      <div className="w-full bg-[#FFF5EC] px-6 py-5">
         {/* Section title bar */}
-        <div className="bg-[#3A0000] text-white px-6 py-3">
-          <h2 className="text-xl md:text-3xl font-extrabold px-5">
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <h2 className="text-[#3A0000] text-3xl font-semibold">
             Add New Care Item
           </h2>
         </div>
+
+        {/* Divider */}
+        <hr className="mt-4 mb-2 w-340 mx-auto border-t border-[#3A0000]/25 rounded-full" />
 
         {/* Form content */}
         <div className="flex-1 p-16 text-xl">
@@ -372,27 +375,19 @@ export default function AddTaskPage() {
             </Field>
 
             {/* Footer buttons */}
-            <div className="pt-6 flex items-center justify-center gap-30">
+            <div className="pt-8 flex items-center justify-center gap-4">
+              {/* Cancel Button */}
               <button
                 onClick={() => router.push('/calendar_dashboard')}
-                className="rounded-xl px-4 py-2 text-lg font-bold text-white bg-[#3A0000]/80 hover:opacity-50 w-auto"
-                style={{
-                  background:
-                    'linear-gradient(90deg, #3A0000 0%, #5C1A1A 100%)',
-                  boxShadow: '0 2px 6px rgba(58, 0, 0, 0.25)',
-                }}
+                className="rounded-md px-5 py-2.5 text-lg font-medium text-[#3A0000] bg-[#F3E9DF] border border-[#D8C6B9] hover:bg-[#E9DED2] transition"
               >
                 Cancel
               </button>
+
+              {/* Add Button */}
               <button
                 onClick={onCreate}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-black"
-                style={{
-                  background:
-                    'linear-gradient(90deg, #FFA94D 0%, #F9C77D 100%)',
-                  border: '1.5px solid #E89B42',
-                  boxShadow: '0 2px 6px rgba(250, 180, 90, 0.4)',
-                }}
+                className="rounded-md px-5 py-2.5 text-lg font-medium text-white bg-[#3A0000] hover:bg-[#502121] transition"
               >
                 Add
               </button>

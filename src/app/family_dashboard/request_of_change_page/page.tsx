@@ -14,6 +14,8 @@
 
 'use client';
 
+import { AlertCircle } from 'lucide-react';
+
 import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardChrome from '@/components/top_menu/client_schedule';
@@ -221,27 +223,32 @@ export default function RequestChangeFormPage() {
       onClientChange={onClientChange}
     >
       {/* Fill entire area below the top bar */}
-      <div
-        className="w-full h-[680px]"
-        style={{ backgroundColor: palette.pageBg, color: palette.text }}
-      >
+      <div className="flex-1 min-h-screen bg-[#FFF5EC] overflow-auto">
         {/* Section header */}
-        <div
-          className="px-6 py-3 text-white"
-          style={{ backgroundColor: palette.sectionHeader }}
-        >
-          <h2 className="text-xl md:text-3xl font-extrabold px-5">
+        <div className="w-full px-6 py-5">
+          {/* Section header with back button */}
+          <h2 className="text-[#3A0000] text-3xl font-semibold mb-3">
             Request of Change Form
           </h2>
-        </div>
 
-        {/* Notice banner */}
-        <div className="px-6 py-4" style={{ backgroundColor: palette.notice }}>
-          <h3 className="text-base md:text-lg px-5 text-black">
-            <strong>Notice:</strong> Please describe what you’d like to change
-            about the care item. Management will review your request and respond
-            accordingly.
-          </h3>
+          {/* Divider */}
+          <hr className="mt-4 mb-4 w-340 border-t border-[#3A0000]/25 rounded-full" />
+
+          {/* Privacy Notice Banner */}
+          <div className="mt-6 mb-4 mx-auto flex items-start gap-4 bg-[#F9C9B1]/60 border border-[#3A0000]/30 rounded-xl px-6 py-4 shadow-sm">
+            <AlertCircle
+              size={28}
+              strokeWidth={2.5}
+              className="text-[#3A0000] flex-shrink-0 mt-1"
+            />
+            <div className="text-[#3A0000]">
+              <h3 className="text-lg font-semibold mb-1">Notice</h3>
+              <p className="text-base leading-relaxed">
+                Please describe what you’d like to change about the care item.
+                Management will review your request and respond accordingly.
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Form body */}
@@ -323,18 +330,17 @@ export default function RequestChangeFormPage() {
             </Field>
 
             {/* Footer buttons */}
-            <div className="pt-2 flex items-center justify-center gap-20">
+            <div className="pt-2 flex items-center justify-center gap-4">
               <button
                 onClick={handleCancel}
-                className="px-6 py-2.5 rounded-full border text-gray-800 hover:bg-gray-200"
-                style={{ borderColor: chromeColors.header }}
+                className="rounded-md px-5 py-2.5 text-lg font-medium text-[#3A0000] bg-[#F3E9DF] border border-[#D8C6B9] hover:bg-[#E9DED2] transition"
               >
                 Cancel
               </button>
+
               <button
                 onClick={handleSubmit}
-                className="rounded-full text-[#1c130f] font-bold px-7.5 py-2.5 shadow"
-                style={{ backgroundColor: palette.button }}
+                className="rounded-md px-5 py-2.5 text-lg font-medium text-white bg-[#3A0000] hover:bg-[#502121] transition"
               >
                 Submit
               </button>

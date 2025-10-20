@@ -130,24 +130,24 @@ export default function Home() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 h-full w-full">
         {/* Left section */}
-        <section className="relative flex flex-col h-full bg-gradient-to-br from-[#F3C8A5] to-[#F9D2B1] p-12 lg:p-24">
-          <div className="flex flex-col justify-center h-full max-w-lg">
+        <section className="relative flex flex-col justify-center h-full bg-gradient-to-br from-[#F3C8A5] to-[#F9D2B1] px-10 lg:px-20 py-16 overflow-hidden">
+          {/* Content */}
+          <div className="relative z-10 flex flex-col justify-center h-full max-w-2xl mx-auto text-center lg:text-left">
             <Image
               src="/logo-name.png"
               alt="App Logo"
-              width={400}
-              height={100}
+              width={380}
+              height={90}
               priority
-              className="mb-10 -ml-16 lg:-ml-12"
+              className="mb-8 mx-auto lg:mx-0 drop-shadow-lg"
             />
-            <h1 className="text-4xl lg:text-5xl font-extrabold tracking-tight mb-6 text-[#3A0000] drop-shadow-md">
+            <h1 className="text-5xl lg:text-6xl font-extrabold tracking-tight mb-6 text-[#3A0000] drop-shadow-md">
               Welcome!
             </h1>
-            <p className="text-lg lg:text-xl ttext-[#3A0000]/90 leading-relaxed mb-6">
-              Our platform helps streamline care management by connecting
-              family, power of attorney, carers, clients, and management all in
-              one place. Easily schedule, manage, and track care activities with
-              clarity and confidence.
+            <p className="text-lg lg:text-xl text-[#3A0000]/90 leading-relaxed mb-8">
+              Connect families, management, and carers seamlessly and manage
+              care schedules, budgets, and daily activities — all in one place
+              with clarity and compassion.
             </p>
           </div>
         </section>

@@ -22,7 +22,6 @@ import {
   ChevronDown,
   User,
   ArrowLeft,
-  CalendarDays,
   Users,
   FileText,
   Receipt,
@@ -33,7 +32,6 @@ import {
   SquareCheckBig,
   SquarePlus,
   Settings2,
-  BookUser,
   Printer,
 } from 'lucide-react';
 
@@ -204,8 +202,6 @@ export default function DashboardChrome({
   topRight,
   colors,
   children,
-  headerHeight = 64,
-  bannerHeight = 64, // kept for API compatibility
   onPrint,
   showAvatar = true,
   onProfile,
@@ -275,10 +271,10 @@ export default function DashboardChrome({
     headerTitle ??
     (page === 'staff-list'
       ? 'Staff List'
-      : isFamily
+      : isFamily || isCarer
         ? 'Client Schedule'
         : isCarer
-          ? 'Carer Dashboard'
+          ? 'Client Dashboard'
           : 'Client Schedule');
 
   // -------- Banner picker visibility --------
@@ -392,15 +388,6 @@ export default function DashboardChrome({
             }`}
           >
             <span className="font-extrabold leading-none text-lg md:text-2xl inline-flex items-center gap-2 text-left">
-              {page === 'client-schedule' && (
-                <CalendarDays
-                  className="w-15 h-15 text-white"
-                  strokeWidth={1.3}
-                />
-              )}
-              {page === 'staff-schedule' && (
-                <Users className="w-9 h-9 text-white" strokeWidth={1.3} />
-              )}
               {computedHeaderTitle}
             </span>
           </button>
@@ -667,7 +654,7 @@ export default function DashboardChrome({
                     {computedBannerTitle}
                   </h1>
 
-                  {activeClient.id && role === 'family' && (
+                  {activeClient.id && (
                     <div className="ml-6 pl-6 border-l border-black/20 hidden md:block">
                       <AccessDropdown clientId={activeClient.id} />
                     </div>

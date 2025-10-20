@@ -197,16 +197,22 @@ function BudgetReportInner() {
       onClientChange={onClientChange}
       colors={colors}
     >
-      <div className="flex-1 h-[680px] bg-white/50 overflow-auto">
+      <div className="flex-1 min-h-screen bg-[#FFF5EC] overflow-auto">
         {/* Top bar */}
-        <div className="w-full bg-[#3A0000] px-6 py-4 flex items-center justify-between">
-          {/* LEFT: title + year */}
-          <div className="flex items-center gap-10">
-            <h2 className="text-white text-2xl font-semibold">
-              Annual Budget{' '}
-            </h2>
+        <div className="w-full px-6 py-5">
+          {/* LINE 1: Title */}
+          <h2 className="text-[#3A0000] text-3xl font-semibold mb-3">
+            Annual Budget
+          </h2>
+
+          {/* Divider */}
+          <hr className="mt-4 mb-4 w-340 mx-auto border-t border-[#3A0000]/25 rounded-full" />
+
+          {/* LINE 2: Year selector + search + edit */}
+          <div className="flex items-center justify-between flex-wrap gap-4 w-full">
+            {/* LEFT: Year selector */}
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-white text-lg">
+              <span className="font-semibold text-[#3A0000] text-lg">
                 Select year:
               </span>
               <select
@@ -219,65 +225,85 @@ function BudgetReportInner() {
                 <option value="2023">2023</option>
               </select>
             </div>
-          </div>
 
-          {/* RIGHT: search + edit */}
-          <div className="relative flex items-center gap-3">
-            <Search
-              size={20}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-black/60 pointer-events-none"
-            />
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search"
-              className="h-9 rounded-full bg-white text-black px-10 border"
-            />
-            {role === 'management' &&
-              (!isEditing ? (
-                <button
-                  onClick={() => {
-                    setIsEditing(true);
-                    setAnnualBudgetInput(
-                      String(annualBudgetOverride ?? totals.allocated)
-                    );
-                  }}
-                  className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10"
-                >
-                  Edit
-                </button>
-              ) : (
-                <>
+            {/* RIGHT: Search + Edit */}
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <Search
+                  size={20}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-black/60 pointer-events-none"
+                />
+                <input
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="Search"
+                  className="h-9 rounded-full bg-white text-black border px-10"
+                />
+              </div>
+
+              {role === 'management' &&
+                (!isEditing ? (
                   <button
                     onClick={() => {
-                      const val = parseFloat(annualBudgetInput);
-                      if (!Number.isFinite(val) || val < 0) return;
-                      setAnnualBudgetOverride(val);
-                      setIsEditing(false);
+                      setIsEditing(true);
+                      setAnnualBudgetInput(
+                        String(annualBudgetOverride ?? totals.allocated)
+                      );
                     }}
-                    className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10"
-                  >
-                    Save
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsEditing(false);
-                      setAnnualBudgetInput('');
+                    className="px-4 py-1.5 rounded-md font-semibold text-[#3A0000] transition"
+                    style={{
+                      background:
+                        'linear-gradient(90deg, #F9C9B1 0%, #FBE8D4 100%)',
+                      border: '1px solid #B47A64',
+                      boxShadow: '0 2px 5px rgba(180, 122, 100, 0.25)',
                     }}
-                    className="px-3 py-1 rounded-md bg-white/80 text-black font-semibold hover:bg-white"
                   >
-                    Cancel
+                    Edit
                   </button>
-                </>
-              ))}
+                ) : (
+                  <>
+                    <button
+                      onClick={() => {
+                        const val = parseFloat(annualBudgetInput);
+                        if (!Number.isFinite(val) || val < 0) return;
+                        setAnnualBudgetOverride(val);
+                        setIsEditing(false);
+                      }}
+                      className="px-4 py-1.5 rounded-md font-semibold text-[#3A0000] transition"
+                      style={{
+                        background:
+                          'linear-gradient(90deg, #F8CBA6 0%, #FBE8D4 100%)',
+                        border: '1px solid #B47A64',
+                        boxShadow: '0 2px 5px rgba(180, 122, 100, 0.25)',
+                      }}
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsEditing(false);
+                        setAnnualBudgetInput('');
+                      }}
+                      className="px-4 py-1.5 rounded-md font-semibold text-[#3A0000] transition hover:opacity-80"
+                      style={{
+                        backgroundColor: '#EBD5C4',
+                        border: '1px solid #C9A794',
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </>
+                ))}
+            </div>
           </div>
         </div>
 
         {/* Main content */}
-        <div className="w-full px-12 py-10">
+        <div className="w-full px-6 py-3">
           {/* Tiles */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-18 mb-10 text-center">
-            <div className="rounded-2xl border px-6 py-8 bg-[#F8CBA6]">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8 text-center">
+            {/* Annual Budget */}
+            <div className="rounded-xl border px-5 py-6 bg-white shadow-sm">
               {role === 'management' && isEditing ? (
                 <>
                   <input
@@ -286,43 +312,59 @@ function BudgetReportInner() {
                     step="1"
                     value={annualBudgetInput}
                     onChange={(e) => setAnnualBudgetInput(e.target.value)}
-                    className="w-full max-w-[220px] mx-auto text-center text-2xl font-bold rounded-md bg-white text-black px-3 py-2 border"
+                    className="w-full max-w-[200px] mx-auto text-center text-xl font-bold rounded-md bg-white text-black px-3 py-2 border"
                   />
-                  <div className="text-sm mt-2">Annual Budget</div>
+                  <div className="text-base mt-2 text-[#3A0000]/80">
+                    Annual Budget
+                  </div>
                 </>
               ) : (
                 <>
-                  <div className="text-2xl font-bold">
+                  <div className="text-xl font-bold text-[#3A0000]">
                     ${effectiveAllocated.toLocaleString()}
                   </div>
-                  <div className="text-sm">Annual Budget</div>
+                  <div className="text-base text-[#3A0000]/80">
+                    Annual Budget
+                  </div>
                 </>
               )}
             </div>
 
-            <div className="rounded-2xl border px-6 py-8 bg-white">
-              <div className="text-2xl font-bold">
+            {/* Spent */}
+            <div className="rounded-xl border px-5 py-6 bg-white shadow-sm">
+              <div className="text-xl font-bold text-[#3A0000]">
                 ${totals.spent.toLocaleString()}
               </div>
-              <div className="text-sm">Spent to Date</div>
+              <div className="text-base text-[#3A0000]/80">Spent to Date</div>
             </div>
 
-            <div className="rounded-2xl border px-6 py-8 bg-white">
+            {/* Remaining */}
+            <div className="rounded-xl border px-5 py-6 bg-white shadow-sm">
               <div
-                className={`text-2xl font-bold ${effectiveRemaining < 0 ? 'text-red-600' : 'text-green-600'}`}
+                className={`text-xl font-bold ${
+                  effectiveRemaining < 0 ? 'text-red-600' : 'text-green-700'
+                }`}
               >
                 {effectiveRemaining < 0
                   ? `-$${Math.abs(effectiveRemaining).toLocaleString()}`
                   : `$${effectiveRemaining.toLocaleString()}`}
               </div>
-              <div className="text-sm">Remaining Balance</div>
+              <div className="text-base text-[#3A0000]/80">
+                Remaining Balance
+              </div>
             </div>
           </div>
 
           {/* Table */}
-          <div className="rounded-2xl border border-[#3A0000] bg-white overflow-hidden">
+          <div className="rounded-2xl border border-[#3A0000]/30 bg-white overflow-hidden">
             <table className="w-full text-left text-sm bg-white">
-              <thead className="bg-[#3A0000] text-lg text-white">
+              <thead
+                className="text-[#3A0000] text-lg font-semibold"
+                style={{
+                  backgroundColor: '#FBE8D4',
+                  borderBottom: '2px solid rgba(58, 0, 0, 0.15)',
+                }}
+              >
                 <tr>
                   <th className="px-4 py-4">Category</th>
                   <th className="px-4 py-4">Allocated</th>

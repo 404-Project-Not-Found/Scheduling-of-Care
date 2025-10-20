@@ -213,7 +213,6 @@ function FamilyClientListInner() {
                               background:
                                 'linear-gradient(90deg, #F9C9B1 0%, #FAEBDC 100%)',
                               color: '#3A0000',
-                              border: '1px solid #3A0000',
                               boxShadow: '0 1px 4px rgba(58, 0, 0, 0.2)',
                             }}
                             disabled={loadingClientId === c.id}
@@ -231,7 +230,6 @@ function FamilyClientListInner() {
                               background:
                                 'linear-gradient(90deg, #803030 0%, #B44C4C 100%)',
                               color: '#FFFFFF',
-                              border: '1px solid #5A1A1A',
                               boxShadow: '0 2px 6px rgba(58, 0, 0, 0.25)',
                             }}
                           >

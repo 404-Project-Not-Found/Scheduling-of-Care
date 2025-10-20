@@ -1,6 +1,6 @@
 /**
  * File path: /icon_dashboard/page.tsx
- * Author: Denise Alexander & Devni Wijesinghe
+ * Authors: Denise Alexander & Devni Wijesinghe
  * Function: Role-aware schedule dashboard that shows different actions per role.
  */
 
@@ -21,14 +21,15 @@ import {
   User,
   LogOut,
   Info,
+  Contact,
 } from 'lucide-react';
 
 const palette = {
   header: '#3A0000',
-  banner: '#F9C9B1',
+  banner: '#E2C4A8',
   text: '#2b2b2b',
   white: '#FFFFFF',
-  pageBg: '#fff5ecff',
+  pageBg: '#FAEBDC',
 };
 
 type Role = 'family' | 'management' | 'carer' | null;
@@ -40,97 +41,38 @@ type ButtonDef = {
   href: string;
 };
 
-/**
- * Role -> which buttons to show
- * - family: Client/Staff Schedule + Budget + Transactions + Family Requests + FAQ
- * - management: Client/Staff Schedule + Budget + Transactions + Request Log(renamed) + FAQ
- */
-const BUTTONS: Record<StrictRole, ButtonDef[]> = {
-  family: [
-    {
-      label: 'Client Schedule',
-      icon: CalendarDays,
-      href: '/calendar_dashboard',
-    },
-    {
-      label: 'Staff Schedule',
-      icon: Users,
-      href: '/management_dashboard/staff_schedule',
-    },
-    {
-      label: 'Budget Report',
-      icon: FileText,
-      href: '/calendar_dashboard/budget_report',
-    },
-    {
-      label: 'Transactions',
-      icon: Receipt,
-      href: '/calendar_dashboard/transaction_history',
-    },
-    {
-      label: 'Family Requests',
-      icon: ClipboardList,
-      href: '/request-log-page',
-    },
-    { label: 'FAQ', icon: HelpCircle, href: '/faq' },
-  ],
-  carer: [
-    {
-      label: 'Client Schedule',
-      icon: CalendarDays,
-      href: '/calendar_dashboard',
-    },
-    {
-      label: 'Staff Schedule',
-      icon: Users,
-      href: '/management_dashboard/staff_schedule',
-    },
-    {
-      label: 'Budget Report',
-      icon: FileText,
-      href: '/calendar_dashboard/budget_report',
-    },
-    {
-      label: 'Transactions',
-      icon: Receipt,
-      href: '/calendar_dashboard/transaction_history',
-    },
-    {
-      label: 'Family Requests',
-      icon: ClipboardList,
-      href: '/request-log-page',
-    },
-    { label: 'FAQ', icon: HelpCircle, href: '/faq' },
-  ],
-  management: [
-    {
-      label: 'Client Schedule',
-      icon: CalendarDays,
-      href: '/calendar_dashboard',
-    },
-    {
-      label: 'Staff Schedule',
-      icon: Users,
-      href: '/management_dashboard/staff_schedule',
-    },
-    {
-      label: 'Budget Report',
-      icon: FileText,
-      href: '/calendar_dashboard/budget_report',
-    },
-    {
-      label: 'Transactions',
-      icon: Receipt,
-      href: '/calendar_dashboard/transaction_history',
-    },
-    {
-      label: 'Family Requests',
-      icon: ClipboardList,
-      href: '/request-log-page',
-    },
-    { label: 'FAQ', icon: HelpCircle, href: '/faq' },
-  ],
-};
+const BUTTONS: ButtonDef[] = [
+  {
+    label: 'Client Schedule',
+    icon: CalendarDays,
+    href: '/calendar_dashboard',
+  },
+  {
+    label: 'Staff Schedule',
+    icon: Users,
+    href: '/management_dashboard/staff_schedule',
+  },
+  {
+    label: 'Budget Reports',
+    icon: FileText,
+    href: '/calendar_dashboard/budget_report',
+  },
+  {
+    label: 'Transactions',
+    icon: Receipt,
+    href: '/calendar_dashboard/transaction_history',
+  },
+  {
+    label: 'Family Requests',
+    icon: ClipboardList,
+    href: '/request-log-page',
+  },
+  {
+    label: 'FAQ',
+    icon: HelpCircle,
+    href: '/faq',
+  },
+];
 
 export default function DashboardPage() {
   const [role, setRole] = useState<Role>(null);
@@ -251,7 +193,7 @@ export default function DashboardPage() {
     );
   }
 
-  const actions = BUTTONS[role as StrictRole];
+  const actions = BUTTONS;
 
   return (
     <div
@@ -263,28 +205,39 @@ export default function DashboardPage() {
         className="w-full flex items-center justify-between px-8 py-5"
         style={{
           background:
-            'linear-gradient(90deg, #3A0000 0%, #803030 50%, #D4A77A 100%)',
+            'linear-gradient(90deg, #3A0000 0%, #803030 60%, #D4A77A 115%)',
           boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
         }}
       >
         {/* Logo + Title */}
-        <div className="flex items-center gap-8 flex-wrap">
-          <Image
-            src="/logo.png"
-            alt="Logo"
-            width={80}
-            height={30}
-            className="object-contain"
-            priority
-          />
-          <h1 className="text-2xl md:text-3xl font-bold text-white">{title}</h1>
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex items-center">
+            <Image
+              src="/logo.png"
+              alt="Logo"
+              width={60}
+              height={60}
+              className="object-contain"
+              priority
+            />
+          </div>
+          <h1
+            className="text-4xl md:text-4xl font-semibold text-white tracking-tight drop-shadow-md"
+            style={{
+              fontFamily: `'DM Sans', sans-serif`,
+              letterSpacing: '-0.4px',
+            }}
+          >
+            Scheduling of Care
+          </h1>
         </div>
 
         {/* Right: Avatar dropdown */}
         <div className="relative flex items-center gap-4">
           {showAvatar && (
-            <>
-              <div className="flex items-center gap-3">
+            <div className="relative flex items-center gap-3">
+              {/* Avatar Button (anchor for menu) */}
+              <div className="relative">
                 <button
                   onClick={() => setUserMenuOpen((v) => !v)}
                   className="h-16 w-16 rounded-full flex items-center justify-center overflow-hidden border-2 border-white/80 hover:border-black/50 focus:outline-none focus:ring-2 focus:ring-white/70"
@@ -300,29 +253,28 @@ export default function DashboardPage() {
                     color={palette.header}
                   />
                 </button>
-                <span className="text-white font-bold text-2xl drop-shadow-sm">
-                  {getGreeting()}, {userName || 'there'} 👋
-                </span>
+
+                {/* Dropdown Menu */}
                 {userMenuOpen && (
                   <div
-                    className="absolute right-0 mt-2 w-60 bg-white border border-gray-200 rounded-xl shadow-lg z-50"
+                    className="absolute right-0 top-[calc(100%+0.5rem)] w-60 bg-white border border-gray-200 rounded-xl shadow-lg z-50"
                     role="menu"
                   >
                     <button
-                      className="w-full px-4 py-3 flex items-center gap-2 font-extrabold hover:bg-gray-50 rounded-lg"
+                      className="w-full px-4 py-3 flex items-center gap-2 font-extrabold hover:bg-gray-50 rounded-lg text-left"
                       style={{ color: palette.header }}
                       onClick={goProfile}
                     >
-                      <User size={30} strokeWidth={2} color={palette.header} />
+                      <User size={24} strokeWidth={2} color={palette.header} />
                       Update your details
                     </button>
                     <button
-                      className="w-full px-4 py-3 flex items-center gap-2 font-extrabold hover:bg-gray-50 rounded-lg"
+                      className="w-full px-4 py-3 flex items-center gap-2 font-extrabold hover:bg-gray-50 rounded-lg text-left"
                       style={{ color: palette.header }}
                       onClick={doSignOut}
                     >
                       <LogOut
-                        size={30}
+                        size={24}
                         strokeWidth={2}
                         color={palette.header}
                       />
@@ -331,50 +283,83 @@ export default function DashboardPage() {
                   </div>
                 )}
               </div>
-            </>
+            </div>
           )}
         </div>
       </div>
 
-      {/* ===== Banner ===== */}
-      <div
-        className="w-full px-6 md:px-8 py-5 md:py-6 flex items-center gap-3 shadow-sm shadow-black/20"
-        style={{ backgroundColor: palette.banner }}
-      >
-        <Info strokeWidth={2} />
-        <p
-          className="text-base md:text-lg leading-relaxed"
-          style={{ color: palette.header }}
-        >
-          {role === 'family' || role === 'carer'
-            ? 'Use the buttons below to view client & staff schedules, budgets, requests and transactions.'
-            : 'Use the buttons below to manage client & staff schedules, budgets and requests.'}
+      <section className="w-full px-12 pt-6 pb-4">
+        <h2 className="text-3xl md:text-3xl font-extrabold text-[#3A0000] tracking-tight">
+          {getGreeting()}, {userName || 'there'} 👋
+        </h2>
+        <p className="text-[#3A0000]/80 text-base md:text-lg font-medium mt-1">
+          Welcome back to your {title}!
         </p>
-      </div>
+        <div className="mt-4 w-325 mx-auto border-t-1 border-[#3A0000]/25 rounded-full"></div>
+      </section>
 
-      {/* ===== Role-based button grid ===== */}
-      <div
-        className="flex-1 flex items-center justify-center px-10 py-20"
-        style={{ backgroundColor: 'transparent' }}
-      >
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-15 w-full max-w-6xl">
-          {actions.map(({ label, icon: Icon, href }) => (
-            <button
-              key={label}
-              onClick={() => router.push(href)}
-              className="group flex flex-col items-center justify-center rounded-2xl shadow-lg bg-[#F5D8C2] hover:bg-[#F2C9AA] transition-colors duration-300 p-10 border-2 border-[#3A0000]/20 hover:border-[#2B0000]/30"
-            >
-              <Icon
-                className="w-14 h-14 mb-4 text-[#3A0000] transition-colors duration-200 group-hover:text-[#2B0000]"
-                strokeWidth={2.2}
-              />
-              <span className="text-2xl font-semibold text-[#3A0000] transition-colors duration-200 group-hover:text-[#2B0000]">
-                {label}
-              </span>
-            </button>
-          ))}
+      {/* ===== Main Dashboards ===== */}
+      <main className="flex flex-col items-center justify-center w-full px-8 py-14">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 w-full max-w-6xl">
+          {['Client Schedule', 'Staff Schedule'].map((mainLabel) => {
+            const mainAction = actions.find((a) => a.label === mainLabel);
+            if (!mainAction) return null;
+            const Icon = mainAction.icon;
+
+            return (
+              <div
+                key={mainLabel}
+                onClick={() => router.push(mainAction.href)}
+                className="group flex flex-col justify-between text-center 
+          bg-white
+          rounded-3xl p-10 shadow-md hover:shadow-[0_6px_20px_rgba(58,0,0,0.25)] 
+          hover:-translate-y-1 transition-all border border-[#3A0000]/15 cursor-pointer 
+          min-h-[340px]"
+              >
+                <div>
+                  <div
+                    className="relative inline-flex items-center justify-center w-20 h-20 mx-auto mb-5
+              rounded-full bg-[#3A0000]/10 group-hover:bg-[#3A0000]/15 transition"
+                  >
+                    <Icon className="w-12 h-12 text-[#3A0000] group-hover:scale-110 transition-transform" />
+                  </div>
+                  <h2 className="text-3xl font-extrabold text-[#3A0000] mb-3 drop-shadow-sm">
+                    {mainLabel}
+                  </h2>
+                  <p className="text-[#3A0000]/90 font-medium text-base mb-6 leading-relaxed">
+                    {(() => {
+                      if (mainLabel === 'Client Schedule') {
+                        if (role === 'management')
+                          return 'View and manage all client schedules and care plans.';
+                        if (role === 'family')
+                          return 'View and manage your loved ones’ care schedules.';
+                        if (role === 'carer')
+                          return 'Complete assigned care items and track client routines.';
+                      } else if (mainLabel === 'Staff Schedule') {
+                        if (role === 'management')
+                          return 'View and manage all staff members and their shift schedules.';
+                        if (role === 'family')
+                          return 'View staff schedules involved in your loved one’s care.';
+                        if (role === 'carer')
+                          return 'View your shifts and the overall staff schedule.';
+                      }
+                      return '';
+                    })()}
+                  </p>
+                  <span
+                    className="relative text-[#3A0000]/80 text-md font-semibold group-hover:text-[#3A0000]
+              after:content-[''] after:absolute after:left-1/2 after:-translate-x-1/2 after:bottom-[-3px]
+              after:w-0 after:h-[2px] after:rounded-full after:bg-[#3A0000]/70
+              group-hover:after:w-[80%] after:transition-all after:duration-300 after:ease-out"
+                  >
+                    View Schedule →
+                  </span>
+                </div>
+              </div>
+            );
+          })}
         </div>
-      </div>
+      </main>
 
       {/* ===== Main content placeholder ===== */}
       <section className="w-full flex-1">
@@ -383,21 +368,5 @@ export default function DashboardPage() {
         </div>
       </section>
     </div>
-  );
-}
-
-/* ===== Helper icon (inline SVG) ===== */
-function BellIcon() {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      className="text-[#4A0A0A]"
-      aria-hidden="true"
-    >
-      <path d="M12 2a6 6 0 00-6 6v3.586l-1.707 1.707A1 1 0 005 15h14a1 1 0 00.707-1.707L18 11.586V8a6 6 0 00-6-6zm0 20a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
-    </svg>
   );
 }

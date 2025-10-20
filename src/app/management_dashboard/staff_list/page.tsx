@@ -270,7 +270,6 @@ export default function StaffListPage() {
                             background:
                               'linear-gradient(90deg, #803030 0%, #B44C4C 100%)',
                             color: '#FFFFFF',
-                            border: '1px solid #5A1A1A',
                             boxShadow: '0 2px 6px rgba(58, 0, 0, 0.25)',
                           }}
                         >

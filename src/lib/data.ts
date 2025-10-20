@@ -327,8 +327,8 @@ export type Client = {
   _id: string;
   name: string;
   dob: string;
-  gender: string;
-  accessCode: string;
+  gender?: string;
+  accessCode?: string;
   avatarUrl?: string;
   phoneNumber?: string;
   email?: string;

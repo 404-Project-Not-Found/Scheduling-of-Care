@@ -249,25 +249,16 @@ export default function UpdateDetailsPage() {
           <div className="mt-10 flex items-center justify-end gap-6">
             <button
               type="button"
-              className="rounded-xl px-4 py-2 text-lg font-bold text-white bg-[#3A0000]/80 hover:opacity-50 w-auto"
-              style={{
-                background: 'linear-gradient(90deg, #3A0000 0%, #5C1A1A 100%)',
-                boxShadow: '0 2px 6px rgba(58, 0, 0, 0.25)',
-              }}
               onClick={handleCancel}
+              className="px-5 py-2.5 rounded-md text-lg font-medium text-[#3A0000] bg-[#F3E9DF] border border-[#D8C6B9] hover:bg-[#E9DED2] transition"
             >
               Cancel
             </button>
 
             <button
               type="button"
-              className="flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-black"
-              style={{
-                background: 'linear-gradient(90deg, #FFA94D 0%, #F9C77D 100%)',
-                border: '1.5px solid #E89B42',
-                boxShadow: '0 2px 6px rgba(250, 180, 90, 0.4)',
-              }}
               onClick={handleSave}
+              className="px-5 py-2.5 rounded-md text-lg font-medium text-white bg-[#3A0000] hover:bg-[#502121] transition"
             >
               Save
             </button>
