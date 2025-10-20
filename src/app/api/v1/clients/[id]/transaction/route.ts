@@ -78,7 +78,7 @@ export async function GET(
   }
 
   const trans = await Transaction
-    .find({clientId, year, voicedAt: {$exists: false}})
+    .find({clientId, year, voidedAt: {$exists: false}})
     .sort({date: -1, _id: -1})
     .lean();
 
@@ -194,7 +194,7 @@ export async function POST(
         _id: origTransId,
         clientId,
         type: 'Purchase',
-        voicedAt: {$exists: false},
+        voidedAt: {$exists: false},
     }).lean();
 
     if(!original) return NextResponse.json({error: 'Original purchase not found'}, {status: 404});
@@ -227,7 +227,7 @@ export async function POST(
           clientId,
           year,
           type: 'Refund',
-          voicedAt: { $exists: false },
+          voidedAt: { $exists: false },
           'lines.refundOfTransId': origTransId,
           'lines.refundOfLineId': refundLineId,
         },
@@ -286,7 +286,7 @@ async function updateBudgetTotalsAndSurplus(
   refundDelta: number
 ): Promise<void> {
   const sumRows = await Transaction.aggregate<{ _id: 'Purchase' | 'Refund'; sum: number }>([
-    { $match: { clientId, year, voicedAt: { $exists: false } } },
+    { $match: { clientId, year, voidedAt: { $exists: false } } },
     { $unwind: '$lines' },
     { $group: { _id: '$type', sum: { $sum: '$lines.amount' } } },
   ]);

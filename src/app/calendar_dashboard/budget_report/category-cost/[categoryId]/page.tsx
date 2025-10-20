@@ -251,10 +251,12 @@ function CategoryCostInner() {
     const amount = Number(itemAllocInput[slug] ?? '0');
     if (!Number.isFinite(amount) || amount < 0) return;
     try {
+      setEditingItemSlug(null);
       await setItemAllocation(activeClientId, year, categoryId, slug, amount);
       await reload();
     } catch (e) {
       console.error('setItem failed', e);
+      setEditingItemSlug(slug);
     }
   };
 

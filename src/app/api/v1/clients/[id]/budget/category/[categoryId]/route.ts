@@ -9,6 +9,8 @@ import { connectDB } from "@/lib/mongodb";
 import { BudgetYear } from "@/models/Budget";
 import { Types } from 'mongoose';
 import { Transaction } from "@/models/Transaction";
+import CareItem from '@/models/CareItem'; 
+import { slugify } from '@/lib/slug';
 
 type CategoryItem = {
   careItemSlug: string;
@@ -36,8 +38,8 @@ export async function GET(
 ){
   await connectDB();
 
-  const {id} = await params;
-  const {categoryId}= await params;
+  const {id, categoryId} = await params
+
   let clientId: Types.ObjectId;
   let catId: Types.ObjectId;
   try {
@@ -57,13 +59,13 @@ export async function GET(
   const nameCat = (budgetCat?.categoryName ?? 'Category').trim() || 'Category';
   const allocatedCat = Math.round(budgetCat?.allocated ?? 0);
 
-  const itemAgg = await Transaction.aggregate<ItemSpentRow>([
-    {$match: {clientId, year, voicedAt: {$exists: false}}},
+  const spendAgg = await Transaction.aggregate<ItemSpentRow>([
+    {$match: {clientId, year, voidedAt: {$exists: false}}},
     {$unwind: '$lines'},
-    {$match: {'lines.categoryid': catId}},
+    {$match: {'lines.categoryId': catId}},
     {
       $group: {
-        _id: 'lines.careItemSlug',
+        _id: {$toLower: '$lines.careItemSlug'},
         label: {$last: '$lines.label'},
         spent: {
           $sum: {
@@ -78,42 +80,65 @@ export async function GET(
     },
   ]);
 
-  const spentBySlug = new Map<string, {spent: number; label?: string}>(
-    itemAgg.map((r) => [r._id, {spent: Number(r.spent ?? 0), label: r.label}])
-  );
-
-  const items: CategoryItem[] = [];
-
-  for (const bi of budgetCat?.items ?? []) {
-    const slug = bi.careItemSlug;
-    const fromAgg = spentBySlug.get(slug);
-    const spent = Math.round(fromAgg?.spent ?? 0);
-    const label =
-      (bi.label && bi.label.trim()) ||
-      (fromAgg?.label && fromAgg.label.trim()) ||
-      slug;
-    items.push({
-      careItemSlug: slug,
-      label,
-      allocated: Math.round(bi.allocated ?? 0),
-      spent,
+  const spentBySlug = new Map<string, { spent: number; label?: string }>();
+  for (const r of spendAgg) {
+    const derivedSlug = r._id && r._id.trim()
+      ? r._id
+      : (r.label ? slugify(r.label).toLowerCase() : '');
+    if (!derivedSlug) continue;
+    spentBySlug.set(derivedSlug, {
+      spent: Math.round(Number(r.spent ?? 0)),
+      label: r.label,
     });
   }
 
-  for (const [slug, info] of spentBySlug.entries()) {
-    const already = items.find((i) => i.careItemSlug === slug);
-    if (already) continue;
-    const label = (info.label && info.label.trim()) || slug;
+  const catalogLabels = await CareItem.distinct('label', {
+    clientId,
+    categoryId: catId,
+    deleted: { $ne: true },
+  }) as string[];
+
+  const catalog = (catalogLabels ?? [])
+  .map((lbl) => {
+    const label = (lbl || '').trim();
+    if (!label) return null;
+    return { slug: slugify(label).toLowerCase(), label };
+  })
+  .filter(Boolean) as Array<{ slug: string; label: string }>;
+
+  const unionSlugs = new Set<string>();
+
+  for (const bi of budgetCat?.items ?? []) {
+    const s = String(bi.careItemSlug || '').toLowerCase().trim();
+    if (s) unionSlugs.add(s);
+  }
+
+  for (const s of spentBySlug.keys()) unionSlugs.add(s);
+
+  for (const { slug } of catalog) unionSlugs.add(slug);
+
+  const items: CategoryItem[] = [];
+  for (const slug of unionSlugs) {
+    const fromBudget = (budgetCat?.items ?? [])
+      .find((i) => String(i.careItemSlug).toLowerCase().trim() === slug);
+    const fromSpend = spentBySlug.get(slug);
+    const fromCatalog = catalog.find((c) => c.slug === slug);
+
+    const label =
+      (fromBudget?.label && fromBudget.label.trim()) ||
+      (fromSpend?.label && fromSpend.label.trim()) ||
+      (fromCatalog?.label && fromCatalog.label.trim()) ||
+      slug;
+
     items.push({
       careItemSlug: slug,
       label,
-      allocated: 0,
-      spent: Math.round(info.spent ?? 0),
+      allocated: Math.round(fromBudget?.allocated ?? 0),
+      spent: Math.round(fromSpend?.spent ?? 0),
     });
   }
 
   items.sort((a, b) => a.label.localeCompare(b.label));
-
   const spentCat = items.reduce((s, it) => s + it.spent, 0);
 
   const result: CategoryDetail = {

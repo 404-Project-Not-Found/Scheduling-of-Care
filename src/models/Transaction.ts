@@ -21,7 +21,7 @@ export interface TransactionDoc extends Document {
   receiptUrl?: string;
   lines: (IOTransactionLine & Document)[];
   note?: string;
-  voicedAt?: Date;
+  voidedAt?: Date;
 }
 
 const TransactionLineSchema = new Schema(
@@ -54,7 +54,7 @@ const TransactionSchema = new Schema(
       },
     },
     note: String,
-    voicedAt: Date,
+    voidedAt: Date,
   }, {timestamps: true}
 );
 
