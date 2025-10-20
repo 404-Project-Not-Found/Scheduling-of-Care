@@ -218,9 +218,25 @@ function CategoryCostInner() {
 
   // load edit input
   const [categoryAmountInput, setCategoryAmountInput] = useState<string>('');
-  const [itemEdits, setItemEdits] = useState<Record<string, string>>({});
 
   const isPastYear = year < new Date().getFullYear();
+
+  /** Editing state for category */
+  const [isEditingCategory, setIsEditingCategory] = useState(false);
+
+
+  const startEditCategory = () => {
+    if(!detail) return;
+    setCategoryAmountInput(String(detail.allocated ?? 0));
+    setIsEditingCategory(true);
+  };
+
+  const cancelEditCategory = () => {
+    if (!detail) return;
+    setCategoryAmountInput(String(detail.allocated ?? 0));
+    setIsEditingCategory(false);
+  };
+
 
   const saveCategory = async () => {
     if(!activeClientId || !detail) return;
@@ -233,6 +249,17 @@ function CategoryCostInner() {
       console.error('setCategory failed', e);
     }
   };
+  /** Editing state for care item */
+  const [editingItemSlug, setEditingItemSlug] = useState<string | null>(null);
+  const [itemEdits, setItemEdits] = useState<Record<string, string>>({});
+  const [itemAllocInput, setItemAllocInput] = useState<Record<string, string>>({});
+
+  const startEditItem = (slug: string, currentAllocated: number) => { 
+    setItemAllocInput((p) => ({ ...p, [slug]: String(currentAllocated) })); 
+    setEditingItemSlug(slug); 
+  }; 
+  
+  const cancelEditItem = () => { setEditingItemSlug(null); };
 
   const saveItem = async (slug: string) => {
     if (!activeClientId) return;
@@ -293,12 +320,13 @@ function CategoryCostInner() {
         {/* Top bar */}
         <div className="w-full bg-[#3A0000] px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-8">
-            <Link href="/calendar_dashboard/budget_report" className="text-white/90 hover:text-white font-semibold">
+            <Link
+              href="/calendar_dashboard/budget_report"
+              className="text-white/90 hover:text-white font-semibold"
+            >
               &lt; Back
             </Link>
-            <h2 className="text-white text-2xl font-semibold">
-              {niceCategoryName} Budget 
-            </h2>
+            <h2 className="text-white text-2xl font-semibold">{niceCategoryName} Budget</h2>
             <div className="flex items-center gap-2">
               <span className="font-semibold text-white text-lg">Select year:</span>
               <select
@@ -313,7 +341,7 @@ function CategoryCostInner() {
                 ))}
               </select>
               {year === new Date().getFullYear() && todayDate && (
-                <span className="font-semibold text-white text-lg ml-2">As of {todayDate}</span>
+                <span className="font-semibold text-white text-lg ml-2">As of: {todayDate}</span>
               )}
             </div>
           </div>
@@ -362,19 +390,51 @@ function CategoryCostInner() {
             <div className="rounded-2xl border px-6 py-8 bg-[#F8CBA6]">
               {isManagement && !isPastYear ? (
                 <>
-                  <input
-                    type="number"
-                    min={0}
-                    step={1}
-                    value={categoryAmountInput}
-                    onChange={(e) => setCategoryAmountInput(e.target.value)}
-                    onBlur={() => void saveCategory()}
-                    className="w-full max-w-[220px] mx-auto text-center text-2xl font-bold rounded-md bg-white text-black px-3 py-2 border"
-                    disabled={!detail || loading}
-                  />
-                  <div className="text-sm mt-2">
-                    {niceCategoryName} Budget 
-                  </div>
+                  {!isEditingCategory ? (
+                    <>
+                      <div className="text-2xl font-bold">
+                        ${(detail?.allocated ?? 0).toLocaleString()}
+                      </div>
+                      <div className="text-sm">{niceCategoryName} Budget</div>
+                      <div className="mt-3">
+                        <button
+                          onClick={startEditCategory}
+                          className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10"
+                        >
+                          Edit
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <input
+                        type="number"
+                        min={0}
+                        step={1}
+                        value={categoryAmountInput}
+                        onChange={(e) => setCategoryAmountInput(e.target.value)}
+                        className="w-full max-w-[220px] mx-auto text-center text-2xl font-bold rounded-md bg-white text-black px-3 py-2 border"
+                        disabled={!detail || loading}
+                      />
+                      <div className="text-sm mt-2">{niceCategoryName} Budget</div>
+                      <div className="mt-3 flex gap-2 justify-center">
+                        <button
+                          onClick={saveCategory}
+                          className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10"
+                          disabled={loading}
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={cancelEditCategory}
+                          className="px-3 py-1 rounded-md bg-white/80 text-black font-semibold hover:bg-white"
+                          disabled={loading}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </>
               ) : (
                 <>
@@ -387,15 +447,15 @@ function CategoryCostInner() {
             </div>
 
             <div className="rounded-2xl border px-6 py-8 bg-white">
-              <div className="text-2xl font-bold">
-                ${(detail?.spent ?? 0).toLocaleString()}
-              </div>
+              <div className="text-2xl font-bold">${(detail?.spent ?? 0).toLocaleString()}</div>
               <div className="text-sm">Spent to Date</div>
             </div>
 
             <div className="rounded-2xl border px-6 py-8 bg-white">
               <div className={`text-2xl font-bold ${remaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                {remaining < 0 ? `-$${Math.abs(remaining).toLocaleString()}` : `$${remaining.toLocaleString()}`}
+                {remaining < 0
+                  ? `-$${Math.abs(remaining).toLocaleString()}`
+                  : `$${remaining.toLocaleString()}`}
               </div>
               <div className="text-sm">Remaining Balance</div>
             </div>
@@ -406,7 +466,6 @@ function CategoryCostInner() {
             </div>
           </div>
 
-          {/* Items table with persistent edits */}
           <div className="rounded-2xl border border-[#3A0000] bg-white overflow-hidden">
             <table className="w-full text-left text-sm bg-white">
               <thead className="bg-[#3A0000] text-lg text-white">
@@ -416,53 +475,73 @@ function CategoryCostInner() {
                   <th className="px-4 py-4">Spent</th>
                   <th className="px-4 py-4">Remaining</th>
                   <th className="px-4 py-4">Status</th>
-                  {isManagement && <th className="px-4 py-4">Actions</th>}
+                  <th className="px-4 py-4">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {(detail?.items ?? []).map((it) => {
                   const rem = it.allocated - it.spent;
                   const status = getStatus(rem, it.allocated);
+
+                  const isRowEditing = editingItemSlug === it.careItemSlug;
+
                   return (
                     <tr key={it.careItemSlug} className="border-b last:border-b border-[#3A0000]/20">
                       <td className="px-4 py-5 font-semibold">{it.label}</td>
-                      <td className="px-4 py-5">${it.allocated}</td>
-                      <td className="px-4 py-5">${it.spent}</td>
-                      <td className={`px-4 py-5 ${rem < 0 ? 'text-red-600' : ''}`}>
-                        {rem < 0 ? `-$${Math.abs(rem)}` : `$${rem}`}
+                      <td className="px-4 py-5">
+                        {isRowEditing ? (
+                          <input
+                            type="number"
+                            min={0}
+                            step={1}
+                            value={itemAllocInput[it.careItemSlug] ?? String(it.allocated)}
+                            onChange={(e) =>
+                              setItemAllocInput((p) => ({ ...p, [it.careItemSlug]: e.target.value }))
+                            }
+                            className="w-28 text-right rounded-md bg-white text-black px-2 py-1 border"
+                            disabled={loading}
+                          />
+                        ) : (
+                          `$${it.allocated}`
+                        )}
                       </td>
-                      {isManagement && (
-                        <td className="px-4 py-5">
-                          {isPastYear ? (
-                            <span className="text-gray-400">—</span>
-                          ) : (
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="number"
-                                min={0}
-                                step={1}
-                                value={itemEdits[it.careItemSlug] ?? ''}
-                                onChange={(e) =>
-                                  setItemEdits((p) => ({ ...p, [it.careItemSlug]: e.target.value }))
-                                }
-                                className="w-28 rounded-md border px-2 py-1 text-right"
-                                disabled={loading}
-                                onBlur={() => void saveItem(it.careItemSlug)}
-                              />
+                      <td className="px-4 py-5">${it.spent.toLocaleString()}</td>
+                      <td className={`px-4 py-5 ${rem < 0 ? 'text-red-600' : ''}`}>
+                        {rem < 0 ? `-$${Math.abs(rem).toLocaleString()}` : `$${rem.toLocaleString()}`}
+                      </td>
+                      <td className="px-4 py-5">
+                        <Badge tone={status.tone}>{status.label}</Badge>
+                      </td>
+                      <td className="px-4 py-5">
+                        {isManagement && !isPastYear ? (
+                          isRowEditing ? (
+                            <div className="flex gap-2">
                               <button
                                 onClick={() => void saveItem(it.careItemSlug)}
-                                className="px-2 py-1 rounded-md border hover:bg-black/5"
+                                className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10"
                                 disabled={loading}
-                                title="Save"
                               >
                                 Save
                               </button>
+                              <button
+                                onClick={cancelEditItem}
+                                className="px-3 py-1 rounded-md bg-white/80 text-black font-semibold hover:bg-white"
+                                disabled={loading}
+                              >
+                                Cancel
+                              </button>
                             </div>
-                          )}
-                        </td>
-                      )}
-                      <td className="px-4 py-5">
-                        <Badge tone={status.tone}>{status.label}</Badge>
+                          ) : (
+                            <button
+                              onClick={() => startEditItem(it.careItemSlug, it.allocated)}
+                              className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10"
+                            >
+                              Edit
+                            </button>
+                          )
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
                       </td>
                     </tr>
                   );
