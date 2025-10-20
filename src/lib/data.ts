@@ -33,6 +33,8 @@ export type ApiCareItem = {
   files?: string[];
 };
 
+
+
 export interface Task {
   id: string;
   title: string;
@@ -68,6 +70,23 @@ export const signOutUser = async () => {
     return;
   }
   await nextAuthSignOut({ redirect: false });
+};
+
+export const getUsersWithAccess = async (
+  clientId: string
+): Promise<AccessUser[]> => {
+  if (!clientId) return [];
+
+  const res = await fetch(`/api/v1/clients/${clientId}/access`, {
+    cache: 'no-store',
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch users with access (${res.status})`);
+  }
+
+  const data = await res.json();
+  return data;
 };
 
 // Gets the role of the currently authenticated user

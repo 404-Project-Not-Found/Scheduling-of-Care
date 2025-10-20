@@ -19,6 +19,16 @@ import {
   type Client as ApiClient,
 } from '@/lib/data';
 
+type ClientLite = {
+  id: string;
+  name: string;
+  orgAccess?: 'approved' | 'pending' | 'revoked';
+};
+
+type ApiClientWithAccess = ApiClient & {
+  orgAccess?: 'approved' | 'pending' | 'revoked';
+};
+
 import { 
   addTransactionFE,
   getRefundablesFE,
@@ -97,36 +107,53 @@ function AddTransactionInner() {
   const [transType, setTransType] = useState<transKind>('Purchase');
   const[date, setDate] = useState('');
 
-  /* ---------- Top bar client dropdown ---------- */
-  const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
-  const [activeClientId, setActiveClientId] = useState<string | null>(null);
-  const [activeClientName, setActiveClientName] = useState<string>('');
+
   const [year, setYear] = useState<number>(2025);
 
+  /* ---------- Top bar client dropdown ---------- */
+  const [clients, setClients] = useState<ClientLite[]>([]);
+  const [activeClientId, setActiveClientId] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState<string>('');
+
+
+  // Load clients + active client on mount
   useEffect(() => {
     (async () => {
       try {
-        const list = await getClients();
-        const mapped = (list as ApiClient[]).map((c) => ({ id: c._id, name: c.name }));
+        const list: ApiClient[] = await getClients();
+        const mapped: ClientLite[] = (list as ApiClientWithAccess[]).map(
+          (c) => ({
+            id: c._id,
+            name: c.name,
+            orgAccess: c.orgAccess,
+          })
+        );
         setClients(mapped);
 
         const active = await getActiveClient();
-        const useId = active.id || mapped[0]?.id || null;
-        const useName = active.name || (mapped.find((m) => m.id === useId)?.name ?? '');
-        setActiveClientId(useId);
-        setActiveClientName(useName);
-      } catch {
+        setActiveClientId(active.id);
+        setDisplayName(active.name || '');
+      } catch (err) {
+        console.error('Failed to fetch clients.', err);
         setClients([]);
+        setActiveClientId(null);
+        setDisplayName('');
       }
     })();
   }, []);
 
   const onClientChange = async (id: string) => {
-    const c = clients.find((x) => x.id === id) || null;
+    if (!id) {
+      setActiveClientId(null);
+      setDisplayName('');
+      await setActiveClient(null);
+      return;
+    }
+    const c = clients.find((x) => x.id === id);
     const name = c?.name || '';
-    setActiveClientId(id || null);
-    setActiveClientName(name);
-    await setActiveClient(id || '', name);
+    setActiveClientId(id);
+    setDisplayName(name);
+    await setActiveClient(id, name);
   };
 
   /* ---------- Carer dropdown ---------- */
@@ -165,7 +192,7 @@ function AddTransactionInner() {
               const data = (await r.json()) as Array<{ _id: string; name: string }>;
               return data.map<CategoryLite>((c) => ({ id: String(c._id), name: String(c.name) }));
             }),
-          fetch(`/api/v1/clients/${encodeURIComponent(activeClientId)}/care_item`, { cache: 'no-store', signal: abort.signal })
+          fetch(`/api/v1/clients/${encodeURIComponent(activeClientId)}/care_item/transaction`, { cache: 'no-store', signal: abort.signal })
             .then(async (r) => {
               if (!r.ok) throw new Error('ci');
               const data = (await r.json()) as Array<{
@@ -277,7 +304,7 @@ function AddTransactionInner() {
   }, [refundables]);
 
   const catIdsWithRefundables = useMemo(
-    () => Array.from(refundables.keys()),
+    () => Array.from(refundables.keys()).map(String),
     [refundableByCategory]
   );
 
@@ -419,9 +446,7 @@ function AddTransactionInner() {
     <DashboardChrome
       page="transactions"
       clients={clients}
-      activeClientId={activeClientId}
       onClientChange={onClientChange}
-      activeClientName={activeClientName}
       colors={{ header: colors.header, banner: colors.banner, text: '#000' }}
     >
       <div className="flex-1 h-[680px] overflow-auto" style={{ backgroundColor: colors.pageBg }}>
@@ -662,7 +687,7 @@ function AddTransactionInner() {
               ) : (
                 <>
                   <div className="text-xl font-bold" style={{ color: colors.label }}>
-                    Refund Lines (Category → Care Item → Purchase occurrence)
+                    Refund Lines 
                   </div>
 
                   {refundLines.map((l) => {
