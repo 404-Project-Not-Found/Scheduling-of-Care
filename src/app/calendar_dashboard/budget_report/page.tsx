@@ -8,8 +8,10 @@
  * - Layout: full-bleed (no inner white panel), header + content fill viewport.
  * - Fetches rows via getBudgetRowsFE(activeClientId).
  *
- * Last Updated by Denise Alexander (16/10/2025): Fixed active client usage, client dropdown
+ * Updated by Denise Alexander (16/10/2025): Fixed active client usage, client dropdown
  * now works correctly.
+ * 
+ * Updated by Zahra Rizqita (18/10/2025): Backend implemented -- mockApi no longer functional
  */
 
 'use client';
@@ -498,8 +500,7 @@ function BudgetReportInner() {
                       <td className="px-4 py-5">
                         <Link
                           href={`/calendar_dashboard/budget_report/category-cost/${encodeURIComponent(
-                            r.category.trim().toLowerCase().replace(/\s+/g, '-')
-                          )}`}
+                            r.categoryId)}`}
                           className="font-bold text-black underline"
                         >
                           {r.category}

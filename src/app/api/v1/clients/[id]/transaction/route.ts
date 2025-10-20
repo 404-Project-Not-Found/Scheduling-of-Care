@@ -124,7 +124,12 @@ export async function POST(
     return NextResponse.json({ error: 'Invalid clientId' }, { status: 422 });
   }
 
-  const madeByUserId = new Types.ObjectId(body.madeByUserId);
+  let madeByUserId: Types.ObjectId;
+  try {
+    madeByUserId = new Types.ObjectId(body.madeByUserId);
+  } catch {
+    return NextResponse.json({ error: 'Invalid madeByUserId' }, { status: 422 });
+  }
 
   // purchase
   if (body.type === 'Purchase') {
@@ -173,19 +178,25 @@ export async function POST(
   }[] = [];
 
   for (const r of body.lines) {
-    const origTxId = new Types.ObjectId(r.refundOfTransId);
-    const refundLineId = new Types.ObjectId(r.refundOfLineId);
+    let origTransId: Types.ObjectId;
+    let refundLineId: Types.ObjectId;
+    try {
+      origTransId = new Types.ObjectId(r.refundOfTransId);
+      refundLineId = new Types.ObjectId(r.refundOfLineId);
+    } catch {
+      return NextResponse.json({ error: 'Invalid refund reference ids' }, { status: 422 });
+    }
 
     // verify transaction exists
-    const exists = await Transaction.exists({
-      _id: origTxId,
-      clientId,
-      type: 'Purchase',
-      voicedAt: { $exists: false },
-    });
-    if (!exists) {
-      return NextResponse.json({ error: 'Original purchase not found' }, { status: 404 });
-    }
+    const original = await Transaction.findOne({
+        _id: origTransId,
+        clientId,
+        type: 'Purchase',
+        voicedAt: {$exist: false},
+    }).lean();
+
+    if(!original) return NextResponse.json({error: 'Original purchase not found'}, {status: 404});
+    if(original.year !== year) return NextResponse.json({error: 'Refund must be in the same year as original purchase'}, {status: 409});
 
     const lineRows = await Transaction.aggregate<{
       line: {
@@ -196,7 +207,7 @@ export async function POST(
         amount: number;
       };
     }>([
-      { $match: { _id: origTxId, clientId } },
+      { $match: { _id: origTransId, clientId } },
       { $unwind: '$lines' },
       { $match: { 'lines._id': refundLineId } },
       { $project: { line: '$lines' } },
@@ -215,14 +226,14 @@ export async function POST(
           year,
           type: 'Refund',
           voicedAt: { $exists: false },
-          'lines.refundOfTransId': origTxId,
+          'lines.refundOfTransId': origTransId,
           'lines.refundOfLineId': refundLineId,
         },
       },
       { $unwind: '$lines' },
       {
         $match: {
-          'lines.refundOfTransId': origTxId,
+          'lines.refundOfTransId': origTransId,
           'lines.refundOfLineId': refundLineId,
         },
       },
@@ -245,7 +256,7 @@ export async function POST(
       careItemSlug: origLine.careItemSlug,
       label: r.label ?? origLine.label ?? origLine.careItemSlug,
       amount: amt,
-      refundOfTransId: origTxId,
+      refundOfTransId: origTransId,
       refundOfLineId: refundLineId,
     });
   }

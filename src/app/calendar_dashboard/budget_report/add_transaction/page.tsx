@@ -1,6 +1,7 @@
 /*
  * File path: /calendar_dashboard/add_transaction/page.tsx
  * Frontend Author: Devni Wijesinghe (refactor to use DashboardChrome by QY)
+ * Backend Author: Zahra Rizqita
  */
 
 'use client';
@@ -11,14 +12,26 @@ import DashboardChrome from '@/components/top_menu/client_schedule';
 import { useTransactions } from '@/context/TransactionContext';
 
 import {
-  getClientsFE,
-  readActiveClientFromStorage,
-  writeActiveClientToStorage,
+  getViewerRole,
+  getClients,
+  getActiveClient,
+  setActiveClient,
   type Client as ApiClient,
-  getTaskCatalogFE,
-  getTasksFE,
-  type Task as ApiTask,
-} from '@/lib/mock/mockApi';
+} from '@/lib/data';
+
+import { 
+  addTransactionFE,
+  type CreatePurchaseBody,
+  type CreateRefundBody,
+  type PurchaseLineInput
+} from '@/lib/transaction-helpers';
+
+import {
+  getBudgetCategories,
+  getBudgetRows,
+  type CategoryLite,
+  type BudgetRow
+} from '@/lib/budget-helpers';
 
 const colors = {
   pageBg: '#FAEBDC',
@@ -49,21 +62,18 @@ function AddTransactionInner() {
   const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
   const [activeClientId, setActiveClientId] = useState<string | null>(null);
   const [activeClientName, setActiveClientName] = useState<string>('');
+  const [year, setYear] = useState<number>(2025);
 
   useEffect(() => {
     (async () => {
       try {
-        const list = await getClientsFE();
-        const mapped = list.map((c: ApiClient) => ({
-          id: c._id,
-          name: c.name,
-        }));
+        const list = await getClients();
+        const mapped = (list as ApiClient[]).map((c) => ({ id: c._id, name: c.name }));
         setClients(mapped);
 
-        const { id, name } = readActiveClientFromStorage();
-        const useId = id || mapped[0]?.id || null;
-        const useName =
-          name || (mapped.find((m) => m.id === useId)?.name ?? '');
+        const active = await getActiveClient();
+        const useId = active.id || mapped[0]?.id || null;
+        const useName = active.name || (mapped.find((m) => m.id === useId)?.name ?? '');
         setActiveClientId(useId);
         setActiveClientName(useName);
       } catch {
@@ -72,79 +82,124 @@ function AddTransactionInner() {
     })();
   }, []);
 
-  const onClientChange = (id: string) => {
+  const onClientChange = async (id: string) => {
     const c = clients.find((x) => x.id === id) || null;
     const name = c?.name || '';
     setActiveClientId(id || null);
     setActiveClientName(name);
-    writeActiveClientToStorage(id || '', name);
+    await setActiveClient(id || '', name);
   };
 
   /* ---------- Care Item Catalog + Tasks ---------- */
-  const [allTasks, setAllTasks] = useState<ApiTask[]>([]);
-  const catalog = useMemo(() => getTaskCatalogFE(), []); // 返回 [{category, tasks:[{label}]}]
-
-  const labelToCategory = useMemo(() => {
-    const m = new Map<string, string>();
-    catalog.forEach((c) => c.tasks.forEach((t) => m.set(t.label, c.category)));
-    return m;
-  }, [catalog]);
-
+  const [categories, setCategories] = useState<CategoryLite[]>([]);
+  const [budgetRows, setBudgetRows] = useState<BudgetRow[]>([]);
   useEffect(() => {
+    let abort = new AbortController();
     (async () => {
+      if (!activeClientId) { setCategories([]); setBudgetRows([]); return; }
       try {
-        const list = await getTasksFE();
-        setAllTasks(list || []);
+        const [cats, rows] = await Promise.all([
+          getBudgetCategories(activeClientId, year, abort.signal),
+          getBudgetRows(activeClientId, year, abort.signal),
+        ]);
+        setCategories(cats);
+        setBudgetRows(rows);
       } catch {
-        setAllTasks([]);
+        setCategories([]);
+        setBudgetRows([]);
       }
     })();
-  }, []);
+    return () => abort.abort();
+  }, [activeClientId, year]);
+
+  const careItemOptionsByCat = useMemo(() => {
+    const m = new Map<string, string[]>();
+    budgetRows.forEach((r) => {
+      const key = r.category.toLowerCase();
+      m.set(key, [...(m.get(key) ?? []), r.item])
+    });
+    return m;
+  }, [budgetRows]);
 
   /* ---------- Form state ---------- */
-  const [category, setCategory] = useState('');
-  const [taskName, setTaskName] = useState('');
-  const [date, setDate] = useState('');
-  const [carer, setCarer] = useState('');
+  type transKind = 'Purchase' | 'Refund';
+  const [transType, setTransType] = useState<transKind>('Purchase');
+  const[date, setDate] = useState('');
+  const [madeByUserId, setMadeByUserId] = useState('demo-user-id'); // which carer
+  const [note, setNote] = useState('');
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // 根据 clientId + category 过滤 tasks
-  const tasksForClient = useMemo(() => {
-    if (!activeClientId) return [];
-    return (allTasks || []).filter((t) => t.clientId === activeClientId);
-  }, [allTasks, activeClientId]);
+  type Line = {
+    id: string;
+    categoryId: string;
+    categoryName: string;
+    careItemSlug: string;
+    label: string;
+    amount: string;
+  };
 
-  const tasksForClientAndCategory = useMemo(() => {
-    if (!category) return [];
-    return tasksForClient.filter((t: ApiTask) => {
-      const cat = t.category || labelToCategory.get(t.label) || '';
-      return cat.toLowerCase() === category.toLowerCase();
-    });
-  }, [tasksForClient, category, labelToCategory]);
+  const [lines, setLines] = useState<Line[]>([
+    { id: 'l1', categoryId: '', categoryName: '', careItemSlug: '', label: '', amount: '' },
+  ]);
 
-  const handleSubmit = () => {
+  const addLine = () =>
+    setLines((prev) => [
+      ...prev,
+      { id: `l${Date.now()}`, categoryId: '', categoryName: '', careItemSlug: '', label: '', amount: '' },
+    ]);
+
+  const removeLine = (id: string) =>
+    setLines((prev) => (prev.length > 1 ? prev.filter((l) => l.id !== id) : prev));
+
+  const updateLine = (id: string, patch: Partial<Line>) =>
+    setLines((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l)));
+
+  const slugify = (s: string) =>
+    s.toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
+
+  /* --------------------------- Submit -------------------------------*/
+  const handleSubmit = async () => {
     if (!activeClientId) {
-      alert('Please select a client in the pink banner first.');
+      alert('Please select a client in the banner first.');
       return;
     }
-    if (!category || !taskName || !date || !carer || !receiptFile) {
-      alert(
-        'Please complete Category, Name, Date, Carer, and upload a receipt.'
-      );
+    if (!date) {
+      alert('Please choose a date.');
+      return;
+    }
+    if (lines.some((l) => !l.categoryId || !l.label || !l.amount)) {
+      alert('Each line needs a Category, Care Item and Amount.');
       return;
     }
 
-    addTransaction({
-      type: category,
-      date,
-      madeBy: carer,
-      receipt: receiptFile.name,
-      items: [taskName],
-    });
+    const receiptUrl = receiptFile ? `/uploads/${receiptFile.name}` : undefined;
 
-    router.push('/calendar_dashboard/transaction_history');
+    if (transType === 'Purchase') {
+      const payload: CreatePurchaseBody = {
+        type: 'Purchase',
+        date, // YYYY-MM-DD
+        madeByUserId,
+        receiptUrl,
+        note,
+        lines: lines.map<PurchaseLineInput>((l) => ({
+          categoryId: l.categoryId,
+          careItemSlug: l.careItemSlug || slugify(l.label),
+          label: l.label,
+          amount: Number(l.amount),
+        })),
+      };
+      try {
+        await addTransactionFE(activeClientId, payload);
+        router.push('/calendar_dashboard/transaction_history');
+      } catch (e) {
+        console.error(e);
+        alert('Failed to add transaction.');
+      }
+    } else {
+      alert('Refund UI not implemented in this form. Switch Type to Purchase.');
+    }
   };
 
   const inputCls =

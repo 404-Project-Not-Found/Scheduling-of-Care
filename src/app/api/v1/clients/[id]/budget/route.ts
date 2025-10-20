@@ -12,6 +12,7 @@ import { BudgetYear, type BudgetYearLean, type CategoryBudget } from '@/models/B
 import { Transaction } from '@/models/Transaction';
 
 type BudgetRow = {
+    categoryId: string;
     item: string;
     category: string;
     allocated: number;
@@ -75,6 +76,7 @@ export async function GET(
       const categoryName = (cat.categoryName ?? 'Unknown').trim();
 
       return {
+        categoryId: String(cat.categoryId),
         item: categoryName,
         category: categoryName,
         allocated,

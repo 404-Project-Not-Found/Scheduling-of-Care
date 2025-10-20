@@ -47,6 +47,18 @@ export type CreateRefundBody = {
   lines: RefundLineInput[];
 };
 
+export type RefundableLine = {
+  purchaseTransId: string;
+  purchaseDate: string;
+  lineId: string;
+  categoryId: string;
+  careItemSlug: string;
+  label?: string;
+  originalAmount: number;
+  refundedSoFar: number;
+  remainingRefundable: number;
+};
+
 export type CreateTransactionBody = CreatePurchaseBody | CreateRefundBody;
 
 

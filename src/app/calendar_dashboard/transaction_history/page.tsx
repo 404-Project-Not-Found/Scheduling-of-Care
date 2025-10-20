@@ -20,7 +20,7 @@ import {
   type Client as ApiClient,
 } from '@/lib/data';
 
-import { getTransactionsFE } from '@/lib/mock/mockApi';
+import { getTransactionsFE } from '@/lib/transaction-helpers';
 
 // --------- Type Definitions ---------
 type Role = 'carer' | 'family' | 'management';
@@ -134,6 +134,25 @@ function TransactionHistoryInner() {
     await setActiveClient(id, name);
   };
 
+  /** Year selection */
+  const [year, setYear] = useState<number>(2025);
+
+  useEffect(() => {
+  if (!activeClientId) { setRows([]); return; }
+  (async () => {
+    setLoading(true); setErrorText('');
+    try {
+      const data = await getTransactionsFE(activeClientId, year);
+      setRows(Array.isArray(data) ? data : []);
+    } catch {
+      setErrorText('Failed to load transactions for this client.');
+      setRows([]);
+    } finally {
+      setLoading(false);
+    }
+  })();
+}, [activeClientId, year]);
+
   /** Load transactions when active client changes */
   useEffect(() => {
     if (!activeClientId) {
@@ -144,7 +163,7 @@ function TransactionHistoryInner() {
       setLoading(true);
       setErrorText('');
       try {
-        const data = await getTransactionsFE(activeClientId);
+        const data = await getTransactionsFE(activeClientId, year);
         setRows(Array.isArray(data) ? data : []);
       } catch {
         setErrorText('Failed to load transactions for this client.');
@@ -182,7 +201,21 @@ function TransactionHistoryInner() {
           style={{ backgroundColor: colors.header }}
         >
           {/* Left side: Title */}
-          <h1 className="text-2xl font-bold text-white">Transaction History</h1>
+          <div className="flex items-center gap-4">
+            <h1 className="text-2xl font-bold text-white">Transaction History</h1>
+            <span className="text-white/90 font-bold text-sm">View year:</span>
+            <select
+              value={String(year)}
+              onChange={(e) => setYear(Number(e.target.value))}
+              className="rounded bg-white text-black px-2 py-1 text-sm"
+              aria-label="Select year to view transactions"
+              title="View transaction history of year"
+            >
+              <option value="2025">2025</option>
+              <option value="2024">2024</option>
+              <option value="2023">2023</option>
+            </select>
+          </div>
 
           {/* Right side: Add button + Search bar */}
           <div className="flex items-center gap-7">
@@ -198,6 +231,7 @@ function TransactionHistoryInner() {
               >
                 Add new transaction
               </button>
+              
             )}
             <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2">
               <input

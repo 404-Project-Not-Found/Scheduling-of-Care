@@ -5,6 +5,7 @@
  */
 
 export type BudgetRow = {
+  categoryId: string;
   item: string;
   category: string;
   allocated: number;
@@ -27,6 +28,24 @@ export type BudgetAlertPayload = {
   planned: number;
 };
 
+export type CategoryItem = {
+  careItemSlug: string;
+  label: string;
+  allocated: number;
+  spent: number;
+};
+
+export type CategoryDetail = {
+  categoryName: string;
+  allocated: number;
+  spent: number;
+  items: CategoryItem[];
+};
+
+export type CategoryLite = { id: string; name: string };
+
+/*--------------------------- functions ----------------------------------------- */
+
 export async function getBudgetRows(
   clientId: string,
   year: number,
@@ -43,6 +62,7 @@ export async function getBudgetRows(
   if (!Array.isArray(data)) return [];
   return data
     .map((r) => ({
+      categoryId: String((r as {categoryId: unknown}).categoryId ?? ''),
       item: String((r as { item: unknown }).item ?? ''),
       category: String((r as { category: unknown }).category ?? ''),
       allocated: Number((r as { allocated: unknown }).allocated ?? 0),
@@ -128,4 +148,105 @@ export async function sendBudgetAlert(
     // eslint-disable-next-line no-console
     console.error('sendBudgetAlert failed', res.status, await res.text());
   }
+}
+
+export async function getCategoryDetail(
+  clientId: string,
+  categoryId: string,
+  year: number,
+  signal?: AbortSignal
+): Promise<CategoryDetail> {
+  const url = `/api/v1/clients/${encodeURIComponent(
+    clientId
+  )}/budget/category/${encodeURIComponent(categoryId)}?year=${encodeURIComponent(
+    String(year)
+  )}`;
+  const res = await fetch(url, { cache: 'no-store', signal });
+  if (!res.ok) throw new Error(`fetchCategoryDetail failed (${res.status})`);
+  const data = (await res.json()) as CategoryDetail;
+  return {
+    categoryName: String(data.categoryName ?? 'Category'),
+    allocated: Number(data.allocated ?? 0),
+    spent: Number(data.spent ?? 0),
+    items: Array.isArray(data.items)
+      ? data.items.map((it) => ({
+          careItemSlug: String(it.careItemSlug),
+          label: String(it.label ?? it.careItemSlug),
+          allocated: Number(it.allocated ?? 0),
+          spent: Number(it.spent ?? 0),
+        }))
+      : [],
+  };
+}
+
+export async function setCategoryAllocation(
+  clientId: string,
+  year: number,
+  categoryId: string,
+  amount: number,
+  categoryName?: string,
+  signal?: AbortSignal
+): Promise<void> {
+  const res = await fetch(
+    `/api/v1/clients/${encodeURIComponent(clientId)}/budget/manage`,
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      cache: 'no-store',
+      body: JSON.stringify({
+        action: 'setCategory',
+        year,
+        categoryId,
+        amount,
+        categoryName, // optional
+      }),
+      signal,
+    }
+  );
+  if (!res.ok) throw new Error(`setCategoryAllocation failed (${res.status})`);
+}
+
+export async function setItemAllocation(
+  clientId: string,
+  year: number,
+  categoryId: string,
+  careItemSlug: string,
+  amount: number,
+  label?: string,
+  signal?: AbortSignal
+): Promise<void> {
+  const res = await fetch(
+    `/api/v1/clients/${encodeURIComponent(clientId)}/budget/manage`,
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      cache: 'no-store',
+      body: JSON.stringify({
+        action: 'setItem',
+        year,
+        categoryId,
+        careItemSlug,
+        amount,
+        label, 
+      }),
+      signal,
+    }
+  );
+  if (!res.ok) throw new Error(`setItemAllocation failed (${res.status})`);
+}
+
+export async function getBudgetCategories(
+  clientId: string,
+  year: number,
+  signal?: AbortSignal
+): Promise<CategoryLite[]> {
+  const rows = await getBudgetRows(clientId, year, signal);
+  const seen = new Map<string, CategoryLite>();
+  rows.forEach((r) => {
+    const key = r.category.toLowerCase();
+    if (!seen.has(key)) {
+      seen.set(key, { id: key, name: r.category });
+    }
+  });
+  return [...seen.values()];
 }

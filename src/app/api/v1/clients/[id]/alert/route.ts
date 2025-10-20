@@ -11,7 +11,6 @@
 import { NextResponse } from "next/server"; 
 import { Types } from "mongoose";
 import { connectDB } from "@/lib/mongodb";
-import {sendEmail} from "./mail"
 
 type AlertBody = {
   year: number;
@@ -59,6 +58,5 @@ export async function POST(
 
     // TODO figure out how to send this
 
-    await SendmailTransport({})
     return NextResponse.json({ ok: true, subject, msg });
 }
