@@ -11,6 +11,8 @@ import { BudgetYear } from "@/models/Budget";
 import { Types } from 'mongoose';
 import { getViewerRole } from "@/lib/data";
 import { Transaction } from "@/models/Transaction";
+import { publishBudgetChange } from "@/lib/sse-bus";
+
 
 type FETransaction = { 
   id: string; clientId:
@@ -61,9 +63,9 @@ type TypeSumRow = {_id: 'Purchase' | 'Refund'; sum: number};
 
 export async function GET(
   req: Request,
-  {params}: {params: Promise<{id: string}>}
+  ctx: {params: Promise<{id: string}>}
 ){
-  const {id} = await params;
+  const {id} = await ctx.params;
   await connectDB();
 
   const url = new URL(req.url);
@@ -113,7 +115,7 @@ export async function POST(
     return NextResponse.json({ error: 'Invalid date' }, { status: 422 });
   }
 
-  const year = date.getUTCFullYear();
+  const year = date.getFullYear();
   const currentYear = new Date().getUTCFullYear();
   if (year < currentYear) {
     return NextResponse.json({ error: 'Past year is read-only' }, { status: 409 });
@@ -161,7 +163,8 @@ export async function POST(
       lines,
     });
 
-    await updateBudgetTotalsAndSurplus(clientId, year, 0);
+    await updateBudgetTotalsAndSurplus(clientId, year);
+    publishBudgetChange(String(id), year);
     return NextResponse.json({ ok: true, id: String(created._id) });
   }
 
@@ -273,17 +276,15 @@ export async function POST(
     note: body.note,
     lines: refundLines,
   });
-
-  const refundDelta = refundLines.reduce((s, l) => s + l.amount, 0);
-  await updateBudgetTotalsAndSurplus(clientId, year, refundDelta);
+  await updateBudgetTotalsAndSurplus(clientId, year);
+  publishBudgetChange(String(id), year);
 
   return NextResponse.json({ ok: true, id: String(createdRefund._id) });
 }
 
 async function updateBudgetTotalsAndSurplus(
   clientId: Types.ObjectId,
-  year: number,
-  refundDelta: number
+  year: number
 ): Promise<void> {
   const sumRows = await Transaction.aggregate<{ _id: 'Purchase' | 'Refund'; sum: number }>([
     { $match: { clientId, year, voidedAt: { $exists: false } } },
@@ -301,8 +302,10 @@ async function updateBudgetTotalsAndSurplus(
   if (!budget) return;
 
   budget.totals.spent = Math.max(0, purchases - refunds);
-  if (refundDelta > 0) {
-    budget.surplus = Math.max(0, budget.surplus + refundDelta);
-  }
+
+  const allocated = budget.totals.allocated ?? 0;
+  const annual = budget.annualAllocated ?? 0;
+  budget.surplus = Math.max(0, annual - allocated);
+
   await budget.save();
 }

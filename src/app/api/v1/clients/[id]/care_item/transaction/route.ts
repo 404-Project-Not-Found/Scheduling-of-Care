@@ -3,7 +3,7 @@ import { Types } from 'mongoose';
 import { connectDB } from '@/lib/mongodb';
 import CareItem from '@/models/CareItem';
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }): Promise<NextResponse> {
+export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string }> }): Promise<NextResponse> {
   await connectDB();
   const { searchParams } = new URL(req.url);
 
@@ -14,7 +14,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const includeDeleted = (searchParams.get('includeDeleted') || 'false').toLowerCase() === 'true';
   const limit = Math.min(parseInt(searchParams.get('limit') || '20', 10) || 20, 100);
 
-  const idFromPath = (params?.id || '').trim();
+  const {id: idFromPath} = await ctx.params;
+
   if (!idFromPath || !Types.ObjectId.isValid(idFromPath)) {
     return NextResponse.json({ error: 'Invalid client id in path' }, { status: 400 });
   }

@@ -9,6 +9,7 @@
 import React, { useEffect, useMemo, useRef, useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardChrome from '@/components/top_menu/client_schedule';
+import { toISODateOnly } from "@/lib/care-item-helpers/date-helpers";
 
 import { slugify } from '@/lib/slug';
 
@@ -105,7 +106,7 @@ export default function AddTransactionPage() {
 function AddTransactionInner() {
   const router = useRouter();
   const [transType, setTransType] = useState<transKind>('Purchase');
-  const[date, setDate] = useState('');
+  const[date, setDate] = useState(new Date());
 
 
   const [year, setYear] = useState<number>(2025);
@@ -304,7 +305,7 @@ function AddTransactionInner() {
   }, [refundables]);
 
   const catIdsWithRefundables = useMemo(
-    () => Array.from(refundables.keys()).map(String),
+    () => Array.from(refundableByCategory).map(String),
     [refundableByCategory]
   );
 
@@ -336,10 +337,6 @@ function AddTransactionInner() {
       alert('Please select a client in the banner first.');
       return;
     }
-    if (!date) {
-      alert('Please choose a date.');
-      return;
-    }
 
     const receiptUrl = receiptFile ? `/uploads/${receiptFile.name}` : undefined;
 
@@ -356,12 +353,18 @@ function AddTransactionInner() {
         alert('Each purchase line needs Category, Care Item and Amount.');
         return;
       }
-      const lines: PurchaseLineInput[] = purchaseLines.map((l) => ({
-        categoryId: l.categoryId,
-        careItemSlug: l.careItemSlug,
-        label: l.label,
-        amount: Number(l.amount),
-      }));
+      const lines: PurchaseLineInput[] = purchaseLines.map((l) => {
+        const normalizedSlug = (l.careItemSlug || slugify(l.label || '')).toLowerCase();
+        const fallbackLabel = l.label 
+          || careItems.find((ci) => ci.categoryId === l.categoryId && ci.slug === l.careItemSlug)?.label 
+          || normalizedSlug;
+        return {
+          categoryId: l.categoryId,
+          careItemSlug: normalizedSlug,
+          label: fallbackLabel,
+          amount: Number(l.amount),
+        }
+      });
       if (lines.some((l) => !Number.isFinite(l.amount) || l.amount <= 0)) {
         alert('Amounts must be positive numbers.');
         return;
@@ -457,15 +460,6 @@ function AddTransactionInner() {
         >
           <span>Add Transaction</span>
           <div className="flex items-center gap-4">
-            <select
-              value={String(year)}
-              onChange={(e) => setYear(Number(e.target.value))}
-              className="rounded bg-white text-black px-3 py-1 text-base"
-            >
-              <option value="2025">2025</option>
-              <option value="2024">2024</option>
-              <option value="2023">2023</option>
-            </select>
             <button
               onClick={() => router.push('/calendar_dashboard/transaction_history')}
               className="text-lg font-semibold text-white hover:underline"
@@ -709,7 +703,7 @@ function AddTransactionInner() {
                           <select
                             value={l.categoryId}
                             onChange={(e) =>
-                              updateRefundLine(l.id, { categoryId: e.target.value, careItemSlug: '', occurrenceKey: '' })
+                              updateRefundLine(l.id, { categoryId: e.target.value.toLowerCase(), careItemSlug: '', occurrenceKey: '' })
                             }
                             className={`${inputCls} w-[360px]`}
                             style={inputStyle}

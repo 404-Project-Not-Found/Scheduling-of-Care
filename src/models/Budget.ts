@@ -35,6 +35,8 @@ export interface BudgetYearDoc {
   surplus: number;
   categories: CategoryBudget[];
   totals: BudgetTotals;
+  openingCarryover?: number;
+  rolledFromYear?: number;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -72,6 +74,8 @@ const BudgetYearSchema = new Schema<BudgetYearDoc>(
       spent: {type: Number, default: 0},
       allocated: {type: Number, default: 0},
     },
+    openingCarryover: {type: Number, default: 0},
+    rolledFromYear: {type: Number, default: undefined},
   }, 
   {timestamps: true}
 );

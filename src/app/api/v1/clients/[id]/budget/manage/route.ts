@@ -17,7 +17,8 @@ type Action =
   | 'setCategory'
   | 'setItem'
   | 'releaseCategory'
-  | 'releaseItem';
+  | 'releaseItem'
+  | 'rolloverFromPrev';
 
 interface SetAnnualBody {
   action: 'setAnnual';
@@ -55,12 +56,23 @@ interface ReleaseItemBody {
   careItemSlug: string;
 }
 
+interface RolloverBody {
+  action: 'rolloverFromPrev';
+  fromYear: number;
+  year: number; //current year
+  copyCategories: boolean;
+  bringSurplus: boolean;
+  overwriteIfExists?: boolean
+  resetItemAllocations?: boolean;
+}
+
 type ManageBody = 
   | SetAnnualBody
   | SetCategoryBody
   | SetItemBody
   | ReleaseCategoryBody
-  | ReleaseItemBody;
+  | ReleaseItemBody
+  | RolloverBody;
 
 function recomputeTotals(doc: BudgetYearHydrated) {
   const categories: CategoryBudget[] = doc.categories;
@@ -190,8 +202,76 @@ export async function PATCH(
       item.allocated = 0;
       item.releasedAt = new Date();
       recomputeTotals(doc);
-      
       break;
+    }
+    case 'rolloverFromPrev': {
+      const { fromYear, year, copyCategories, bringSurplus, overwriteIfExists, resetItemAllocations } = body;
+
+      if (!Number.isFinite(fromYear) || !Number.isFinite(year)) {
+       return NextResponse.json({ error: 'Invalid year' }, { status: 422 });
+      }
+
+      if (year < new Date().getFullYear()) {
+        return NextResponse.json({ error: 'Cannot roll into a past year' }, { status: 409 });
+      }
+
+      const prev = await BudgetYear.findOne({ clientId, year: fromYear }).lean();
+      if(!prev) return NextResponse.json({ error: `Budget ${year} already exists` }, { status: 409 });
+
+      let next = await BudgetYear.findOne({ clientId, year: year });
+      if(next && !overwriteIfExists) {
+        return NextResponse.json({ error: `Budget ${year} already exists` }, { status: 409 });
+      }
+      if(!next) {
+        next = await BudgetYear.create({
+          clientId,
+          year,
+          annualAllocated: 0,
+          categories: [],
+          surplus: 0,
+          totals: {spent:0, allocated:0},
+        });
+      }
+
+      const priorSurplus = Math.max(0, Math.round((prev.annualAllocated ?? 0) - (prev.totals?.allocated ?? 0)));
+
+      if (copyCategories) {
+        next.categories = (prev.categories ?? []).map((c) => ({
+          categoryId: c.categoryId,
+          categoryName: c.categoryName,
+          allocated: Math.max(0, c.allocated ?? 0),
+          items: (c.items ?? []).map((i) => ({
+          careItemSlug: (i.careItemSlug ?? '').toLowerCase(),
+          label: i.label,
+          allocated: resetItemAllocations ? 0 : Math.max(0, i.allocated ?? 0),
+          spent: 0,
+        })),
+          spent: 0,
+        }));
+      }
+
+      if (bringSurplus && priorSurplus > 0) {
+        next.openingCarryover = (next.openingCarryover ?? 0) + priorSurplus;
+        next.annualAllocated = Math.max(0, (next.annualAllocated ?? 0) + priorSurplus);
+      }
+
+      const totalAllocated = (next.categories ?? []).reduce((sum, c) => sum + (c.allocated ?? 0), 0);
+      next.totals = { spent: 0, allocated: totalAllocated };
+      next.surplus = Math.max(0, (next.annualAllocated ?? 0) - totalAllocated);
+      next.rolledFromYear = fromYear;
+
+      next.markModified('categories');
+      await next.save();
+      publishBudgetChange(id, year);
+
+      return NextResponse.json({
+        ok: true,
+        year,
+        annualAllocated: next.annualAllocated ?? 0,
+        openingCarryover: next.openingCarryover ?? 0,
+        totals: next.totals,
+        surplus: next.surplus,
+      });
     }
     default: return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
   }

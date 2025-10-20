@@ -11,6 +11,8 @@
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardChrome from '@/components/top_menu/client_schedule';
+import { getAvailableYears } from '@/lib/budget-helpers';
+
 
 import {
   getViewerRole,
@@ -135,7 +137,44 @@ function TransactionHistoryInner() {
   };
 
   /** Year selection */
-  const [year, setYear] = useState<number>(2025);
+  const [years, setYears] = useState<number[]>([2025]);
+  const [year, setYear] = useState<number>(new Date().getFullYear());
+  const [todayDate, setTodaysDate] = useState<string>();
+
+  useEffect(() => {
+      const d = new Date();
+      const fmt = new Intl.DateTimeFormat('en-AU', {dateStyle: 'long', timeZone:'Australia/Melbourne'});
+      setTodaysDate(fmt.format(d));
+    }, []);
+  
+  useEffect(() => {
+    let abort = new AbortController();
+    const load = async () => {
+      if(!activeClientId) {
+        setYears([]);
+        return;
+      }
+      try {
+        const list = await getAvailableYears(activeClientId, abort.signal);
+        if(list.length > 0) {
+          setYears(list);
+          if(!list.includes(year)) setYear(list[0]);
+        }
+        else {
+          const curr = new Date().getFullYear();
+          setYears([curr]);
+          setYear(curr);
+        }
+      } catch(e) {
+        console.error('Failed to load years:', e);
+        const curr = new Date().getFullYear();
+        setYears([curr]);
+        setYear(curr);
+      }
+    };
+    load();
+    return () => abort.abort();
+  }, [activeClientId]);
 
   useEffect(() => {
   if (!activeClientId) { setRows([]); return; }
@@ -190,9 +229,11 @@ function TransactionHistoryInner() {
               aria-label="Select year to view transactions"
               title="View transaction history of year"
             >
-              <option value="2025">2025</option>
-              <option value="2024">2024</option>
-              <option value="2023">2023</option>
+              {years.map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
             </select>
           </div>
 

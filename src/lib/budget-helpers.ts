@@ -17,6 +17,7 @@ export type BudgetSummary = {
   spent: number;
   remaining: number;
   surplus: number;
+  openingCarryover?: number;
 };
 
 export type BudgetAlertPayload = {
@@ -97,6 +98,7 @@ export async function getBudgetSummary(
     spent: Number(data.spent ?? 0),
     remaining: Number(data.remaining ?? 0),
     surplus: Number(data.surplus ?? 0),
+    openingCarryover: Number(data.openingCarryover ?? 0),
   };
 }
 

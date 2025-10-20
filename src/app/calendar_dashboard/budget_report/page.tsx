@@ -405,6 +405,42 @@ function BudgetReportInner() {
     }
   };
 
+  const handleRollover = async (
+    activeClientId: string,
+    year: number,
+    setRows: (r: any) => void,
+    setSummary: (s: any) => void
+  ) => {
+    if (!activeClientId) return;
+
+    try {
+      await fetch(`/api/v1/clients/${encodeURIComponent(activeClientId)}/budget/manage`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        cache: 'no-store',
+        body: JSON.stringify({
+          action: 'rolloverFromPrev',
+          fromYear: year - 1,
+          toYear: year,
+          copyCategories: true,
+          bringSurplus: true,
+          resetItemAllocations: false,
+          overwriteIfExists: true,
+        }),
+      });
+
+      const [rows, summary] = await Promise.all([
+        getBudgetRows(activeClientId, year),
+        getBudgetSummary(activeClientId, year),
+      ]);
+
+      setRows(rows);
+      setSummary(summary);
+    } catch (err) {
+      console.error('Rollover failed', err);
+    }
+  };
+
   /** Filter by search */
   const filtered = useMemo(() => {
     const t = q.trim().toLowerCase();
@@ -474,6 +510,15 @@ function BudgetReportInner() {
               placeholder="Search"
               className="h-9 rounded-full bg-white text-black px-4 border"
             />
+            {role === 'management' && years.includes(year - 1) && year === new Date().getFullYear() && (
+              <button
+                onClick={() => handleRollover(activeClientId!, year, setRows, setSummary)}
+                className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10"
+                title={`Copy categories and carry surplus from ${year - 1}`}
+              >
+                Roll over from {year-1}
+              </button>
+            )}
             {role === 'management'&& !isPastYear &&
               (!isEditing ? (
                 <button

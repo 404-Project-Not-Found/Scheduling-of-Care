@@ -15,6 +15,7 @@ type SummaryResponse = {
   spent: number;
   remaining: number;
   surplus: number;
+  openingCarryover?: number;
 }
 
 export async function GET(
@@ -46,6 +47,6 @@ export async function GET(
   const remaining = Math.max(0, annualAllocated - spent);
   const surplus = Math.max(0, Math.round(doc.surplus ?? (annualAllocated - (doc.totals?.allocated ?? 0))));
 
-  const resBody: SummaryResponse = {annualAllocated, spent, remaining, surplus};
+  const resBody: SummaryResponse = {annualAllocated, spent, remaining, surplus, openingCarryover: Number(doc.openingCarryover ?? 0)};
   return NextResponse.json(resBody);
 }
