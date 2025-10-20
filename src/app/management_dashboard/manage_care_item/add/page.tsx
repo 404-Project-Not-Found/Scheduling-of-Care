@@ -153,7 +153,7 @@ export default function AddTaskPage() {
           return;
         }
 
-        const url = new URL('/api/v1/category', window.location.origin);
+        const url = new URL(`/api/v1/clients/${activeClientId}/category`, window.location.origin);
         url.searchParams.set('clientId', activeClientId);
 
         const res = await fetch(url.toString(), { cache: 'no-store' });

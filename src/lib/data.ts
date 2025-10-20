@@ -310,5 +310,6 @@ export const getCategoriesForClient = async (clientId: string) => {
   return Array.from(new Set([...catalogCats, ...clientCats]));
 };
 
+
 // Export Client type for convenience
 export type Client = mockApi.Client;

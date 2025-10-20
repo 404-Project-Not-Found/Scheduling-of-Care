@@ -59,7 +59,37 @@ export type RefundableLine = {
   remainingRefundable: number;
 };
 
+
+export type PurchaseLineDraft = {
+  id: string;
+  categoryId: string;
+  careItemSlug: string;
+  label: string;
+  amount: string;
+};
+
+export type RefundLineDraft = {
+  id: string;
+  categoryId: string;
+  careItemSlug: string;
+  occurrenceKey: string;
+  amount: string;
+};
+
 export type CreateTransactionBody = CreatePurchaseBody | CreateRefundBody;
+
+// helper for refund transaction
+export type RefundablesFE = {
+  purchaseTransId: string;
+  purchaseDate: string;
+  lineId: string;
+  categoryId: string;
+  careItemSlug: string;
+  label?: string;
+  originalAmount: number;
+  refundedSoFar: number;
+  remainingRefundable: number;
+};
 
 
 export async function getTransactionsFE(
@@ -120,3 +150,34 @@ async function safeText(res: Response): Promise<string> {
     return '';
   }
 }
+
+export async function getRefundablesFE(
+  clientId: string,
+  year: number,
+  signal?: AbortSignal
+): Promise<RefundablesFE[]> {
+  const url = `/api/v1/clients/${encodeURIComponent(clientId)}/transactions/refundables?year=${encodeURIComponent(
+    String(year)
+  )}`;
+
+  const res = await fetch(url, { cache: 'no-store', signal });
+  if (!res.ok) throw new Error(`Failed to fetch refundables (${res.status})`);
+
+  const data = (await res.json()) as unknown[];
+
+  const parsed: RefundablesFE[] = (Array.isArray(data) ? data : []).map((r) => ({
+    purchaseTransId: String((r as any).purchaseTransId),
+    purchaseDate: String((r as any).purchaseDate),
+    lineId: String((r as any).lineId),
+    categoryId: String((r as any).categoryId),
+    careItemSlug: String((r as any).careItemSlug),
+    label: (r as any).label != null ? String((r as any).label) : undefined,
+    originalAmount: Number((r as any).originalAmount ?? 0),
+    refundedSoFar: Number((r as any).refundedSoFar ?? 0),
+    remainingRefundable: Number((r as any).remainingRefundable ?? 0),
+  }));
+
+  return parsed;
+}
+
+
