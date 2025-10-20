@@ -156,7 +156,7 @@ export async function getRefundablesFE(
   year: number,
   signal?: AbortSignal
 ): Promise<RefundablesFE[]> {
-  const url = `/api/v1/clients/${encodeURIComponent(clientId)}/transactions/refundables?year=${encodeURIComponent(
+  const url = `/api/v1/clients/${clientId}/transaction/refundables?year=${encodeURIComponent(
     String(year)
   )}`;
 

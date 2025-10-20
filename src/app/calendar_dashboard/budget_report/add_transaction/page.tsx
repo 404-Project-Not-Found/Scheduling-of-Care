@@ -106,10 +106,10 @@ export default function AddTransactionPage() {
 function AddTransactionInner() {
   const router = useRouter();
   const [transType, setTransType] = useState<transKind>('Purchase');
-  const[date, setDate] = useState(new Date());
+  const [date, setDate] = useState<string>(() => toISODateOnly(new Date()));
 
 
-  const [year, setYear] = useState<number>(2025);
+  const year = useMemo(() => new Date(date).getFullYear(), [date]);
 
   /* ---------- Top bar client dropdown ---------- */
   const [clients, setClients] = useState<ClientLite[]>([]);
@@ -294,6 +294,21 @@ function AddTransactionInner() {
     return m;
   }, [categories]);
 
+  const purchasedCatIds = useMemo(
+    () => Array.from(new Set(refundables.map((r) => r.categoryId))),
+    [refundables]
+  );
+
+  const purchasedItemSlugsByCategory = useMemo(() => {
+    const m = new Map<string, string[]>();
+    for (const r of refundables) {
+      const arr = m.get(r.categoryId) ?? [];
+      if(!arr.includes(r.careItemSlug)) arr.push(r.careItemSlug);
+      m.set(r.categoryId, arr);
+    }
+    return m;
+  }, [refundables]);
+
   const refundableByCategory= useMemo(() => {
     const m = new Map<string, RefundableLine[]>();
     refundables.forEach((r) => {
@@ -305,7 +320,7 @@ function AddTransactionInner() {
   }, [refundables]);
 
   const catIdsWithRefundables = useMemo(
-    () => Array.from(refundableByCategory).map(String),
+    () => Array.from(refundableByCategory.keys()),
     [refundableByCategory]
   );
 
@@ -686,7 +701,7 @@ function AddTransactionInner() {
                   </div>
 
                   {refundLines.map((l) => {
-                    const itemOptions = l.categoryId ? (itemSlugsByCategory.get(l.categoryId) ?? []) : [];
+                    const itemOptions = l.categoryId ? (purchasedItemSlugsByCategory.get(l.categoryId) ?? []) : [];
                     const occurrences =
                       l.categoryId && l.careItemSlug
                         ? occurrencesByCatAndItem.get(`${l.categoryId}:${l.careItemSlug}`) ?? []
@@ -703,13 +718,13 @@ function AddTransactionInner() {
                           <select
                             value={l.categoryId}
                             onChange={(e) =>
-                              updateRefundLine(l.id, { categoryId: e.target.value.toLowerCase(), careItemSlug: '', occurrenceKey: '' })
+                              updateRefundLine(l.id, { categoryId: e.target.value, careItemSlug: '', occurrenceKey: '' })
                             }
                             className={`${inputCls} w-[360px]`}
                             style={inputStyle}
                           >
                             <option value="">Select a category</option>
-                            {catIdsWithRefundables.map((id) => (
+                            {purchasedCatIds.map((id) => (
                               <option key={id} value={id}>
                                 {catNameById.get(id) ?? id}
                               </option>
