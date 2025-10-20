@@ -9,6 +9,7 @@
  * - Fetches rows via getBudgetRowsFE(activeClientId).
  *
  * Updated by Zahra Rizqita (18/10/2025): Backend implemented -- mockApi no longer functional
+ * - Remove dropdown for clients
  */
 
 'use client';
@@ -81,6 +82,7 @@ export default function CategoryCostPage() {
     </Suspense>
   );
 }
+
 
 function CategoryCostInner() {
   const router = useRouter();
@@ -298,6 +300,7 @@ function CategoryCostInner() {
       onClientChange={() => {}}
       colors={colors}
       onLogoClick={onLogoClick}
+      showClientPicker={false}
     >
       <div className="flex-1 h-[680px] bg-white/50 overflow-auto">
         {/* Top bar */}

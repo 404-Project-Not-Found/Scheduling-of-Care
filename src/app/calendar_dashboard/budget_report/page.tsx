@@ -630,6 +630,7 @@ function BudgetReportInner() {
                       className="border-b last:border-b border-[#3A0000]/20"
                     >
                       <td className="px-4 py-5">
+                        {r.allocated > 0 ? (
                         <Link
                           href={`/calendar_dashboard/budget_report/category-cost/${encodeURIComponent(
                             r.categoryId)}`}
@@ -637,6 +638,14 @@ function BudgetReportInner() {
                         >
                           {r.category}
                         </Link>
+                        ):( 
+                          <span 
+                            className="font-bold text-gray-400 cursor-not-allowed"
+                            title="Set a budget before viewing details"
+                          >
+                            {r.category}
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-5">
                         {editingRowId === r.categoryId ? (
