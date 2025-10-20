@@ -22,7 +22,6 @@ import Badge from '@/components/ui/Badge';
 
 import {
   getViewerRole,
-  getClients,
   getActiveClient,
   setActiveClient,
   type Client as ApiClient,
@@ -44,14 +43,14 @@ import {
 const LOW_BUDGET_THRESHOLD = 0.15;
 type Tone = 'green' | 'yellow' | 'red';
 const getStatus = (remaining: number, allocated: number): { tone: Tone; label: string } => {
-  if(allocated === 0) return {tone: 'green', label: 'Used up'};
+  if(allocated === 0) return {tone: 'green', label: 'Not allocated'};
   if (remaining <= 0) return { tone: 'red', label: 'Used up' };
   const ratio = remaining/(allocated || 1);
   if (ratio <= LOW_BUDGET_THRESHOLD) return { tone: 'yellow', label: 'Nearly used up' };
   return { tone: 'green', label: 'Within Limit' };
 };
 
-const capitalise = (s: string) => (s ? s[0].toUpperCase() + s.slice(1): 1);
+const capitalise = (s: string) => (s ? s[0].toUpperCase() + s.slice(1): '');
 /* ------------------------------- Chrome colors ------------------------------- */
 const colors = {
   header: '#3A0000',
@@ -62,6 +61,16 @@ const colors = {
 /* ---------------------------------- Types ---------------------------------- */
 type Client = { id: string; name: string };
 type Role = 'carer' | 'family' | 'management';
+
+type ClientLite = {
+  id: string;
+  name: string;
+  orgAccess?: 'approved' | 'pending' | 'revoked';
+};
+
+type ApiClientWithAccess = ApiClient & {
+  orgAccess?: 'approved' | 'pending' | 'revoked';
+};
 
 export default function CategoryCostPage() {
   return (
@@ -94,43 +103,17 @@ function CategoryCostInner() {
 
   /** Load clients */
   useEffect(() => {
-    (async () => {
-      try {
-        const list = await getClients();
-        const mapped: Client[] = list.map((c: ApiClient) => ({
-          id: c._id,
-          name: c.name,
-        }));
-        setClients(mapped);
-
+      (async () => {
         const active = await getActiveClient();
-        if (active.id) {
-          setActiveClientId(active.id);
-          setDisplayName(
-            active.name || mapped.find((m) => m.id === active.id)?.name || ''
-          );
+        if(!active?.id) {
+          router.push('/calendar_dashboard/budget_report');
+          return;
         }
-      } catch {
-        setClients([]);
-      }
-    })();
-  }, []);
-
-  /** Handle client change in banner */
-  const onClientChange = async (id: string) => {
-    if (!id) {
-      setActiveClientId(null);
-      setDisplayName('');
-      await setActiveClient(null);
-      return;
-    }
-    const c = clients.find((x) => x.id === id);
-    const name = c?.name || '';
-    setActiveClientId(id);
-    setDisplayName(name);
-    await setActiveClient(id, name);
-  };
-
+        setActiveClientId(active.id);
+        setDisplayName(active.name || '')
+      })();
+    }, [router]);
+    
   const onLogoClick = () => {
     router.push('/icon_dashboard');
   };
@@ -263,7 +246,7 @@ function CategoryCostInner() {
 
   const saveItem = async (slug: string) => {
     if (!activeClientId) return;
-    const amount = Number(itemEdits[slug] ?? '0');
+    const amount = Number(itemAllocInput[slug] ?? '0');
     if (!Number.isFinite(amount) || amount < 0) return;
     try {
       await setItemAllocation(activeClientId, year, categoryId, slug, amount);
@@ -311,8 +294,8 @@ function CategoryCostInner() {
   return (
     <DashboardChrome
       page="budget"
-      clients={clients}
-      onClientChange={onClientChange}
+      clients={[]}
+      onClientChange={() => {}}
       colors={colors}
       onLogoClick={onLogoClick}
     >

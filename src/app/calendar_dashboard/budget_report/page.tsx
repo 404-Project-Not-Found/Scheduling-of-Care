@@ -246,7 +246,7 @@ function BudgetReportInner() {
         setRows(r);
         setSummary(s);
       } catch(e) {
-        console.error('Failed to load budget data: 0');
+        console.error('Failed to load budget data:', e);
         setRows([]);
         setSummary({annualAllocated: 0, spent: 0, remaining: 0, surplus: 0});
       }
@@ -702,7 +702,7 @@ function BudgetReportInner() {
               {filtered.length > 0 && (
                 <tfoot>
                   <tr className="bg-black/5 font-semibold">
-                    <td className="px-4 py-4">Subtotal (filtered)</td>
+                    <td className="px-4 py-4">Subtotal</td>
                     <td className="px-4 py-4">${totals.allocated}</td>
                     <td className="px-4 py-4">${totals.spent}</td>
                     <td className="px-4 py-4">
