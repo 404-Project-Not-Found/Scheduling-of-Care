@@ -19,9 +19,10 @@ type SummaryResponse = {
 
 export async function GET(
   req: Request,
-  {params}: {params: {clientId: string}}
+  {params}: {params: Promise<{id: string}>}
 ){
-    await connectDB();
+  const {id} = await params;
+  await connectDB();
 
   const url = new URL(req.url);
   const yearParam = url.searchParams.get('year');
@@ -29,7 +30,7 @@ export async function GET(
 
   let clientId: Types.ObjectId;
   try{
-    clientId = new Types.ObjectId(params.clientId);
+    clientId = new Types.ObjectId(id);
   } catch{
     return NextResponse.json({error: 'Invalid ClientId'}, {status: 422});
   }

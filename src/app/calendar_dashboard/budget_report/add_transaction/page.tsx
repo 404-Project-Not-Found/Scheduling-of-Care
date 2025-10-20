@@ -527,6 +527,7 @@ function AddTransactionInner() {
                   ))}
                 </select>
               ) : (
+                // fallback if access endpoint empty / failed
                 <input
                   type="text"
                   value={madeByFallback}

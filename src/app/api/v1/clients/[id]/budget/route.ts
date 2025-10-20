@@ -25,11 +25,12 @@ interface SpentAggRow {
 }
 
 export async function GET(
-  req: Request, {params}:
-  {params: {clientId: string}}
+  req: Request, 
+  ctx: {params: Promise<{id: string}>}
 ) {
   await connectDB();
 
+  const {id} = await ctx.params;
   const url = new URL(req.url);
   const yearParam = url.searchParams.get('year');
   const year = Number.isFinite(Number(yearParam)) 
@@ -38,7 +39,7 @@ export async function GET(
 
   let clientId: Types.ObjectId;
   try {
-    clientId = new Types.ObjectId(params.clientId);
+    clientId = new Types.ObjectId(id);
   } catch {
     return NextResponse.json(
         { error: 'Invalid clientId' },

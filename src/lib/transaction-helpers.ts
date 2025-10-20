@@ -99,7 +99,7 @@ export async function getTransactionsFE(
 ): Promise<FETransaction[]> {
   const url = `/api/v1/clients/${encodeURIComponent(
     clientId
-  )}/transactions?year=${encodeURIComponent(String(year))}`;
+  )}/transaction?year=${encodeURIComponent(String(year))}`;
 
   const res = await fetch(url, { cache: 'no-store', signal });
   if (!res.ok) throw new Error(`getTransactionsFE failed (${res.status})`);
@@ -127,7 +127,7 @@ export async function addTransactionFE(
   payload: CreateTransactionBody,
   signal?: AbortSignal
 ): Promise<{ ok: true; id: string }> {
-  const url = `/api/v1/clients/${encodeURIComponent(clientId)}/transactions`;
+  const url = `/api/v1/clients/${encodeURIComponent(clientId)}/transaction`;
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

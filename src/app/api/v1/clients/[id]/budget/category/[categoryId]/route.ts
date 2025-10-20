@@ -32,15 +32,17 @@ type ItemSpentRow = {
 
 export async function GET(
   req: Request,
-  {params}: {params: {clientId: string; categoryId: string}}
+  {params}: {params: Promise<{id: string; categoryId: string}>}
 ){
   await connectDB();
 
+  const {id} = await params;
+  const {categoryId}= await params;
   let clientId: Types.ObjectId;
-  let categoryId: Types.ObjectId;
+  let catId: Types.ObjectId;
   try {
-    clientId = new Types.ObjectId(params.clientId);
-    categoryId = new Types.ObjectId(params.categoryId);
+    clientId = new Types.ObjectId(id);
+    catId = new Types.ObjectId(categoryId);
   } catch {
     return NextResponse.json({error: 'Invalid id'}, {status: 422});
   }
@@ -50,7 +52,7 @@ export async function GET(
   const year = Number.isFinite(Number(yearParam)) ? Number(yearParam) : new Date().getFullYear();
 
   const budget = await BudgetYear.findOne({clientId, year}).lean();
-  const budgetCat = budget?.categories.find((c) => String(c.categoryId) === String(categoryId));
+  const budgetCat = budget?.categories.find((c) => String(c.categoryId) === String(catId));
 
   const nameCat = (budgetCat?.categoryName ?? 'Category').trim() || 'Category';
   const allocatedCat = Math.round(budgetCat?.allocated ?? 0);
@@ -58,7 +60,7 @@ export async function GET(
   const itemAgg = await Transaction.aggregate<ItemSpentRow>([
     {$match: {clientId, year, voicedAt: {$exists: false}}},
     {$unwind: '$lines'},
-    {$match: {'lines.categoryid': categoryId}},
+    {$match: {'lines.categoryid': catId}},
     {
       $group: {
         _id: 'lines.careItemSlug',

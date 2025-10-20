@@ -13,13 +13,14 @@ import { Transaction } from "@/models/Transaction";
 
 export async function GET(
   _req: Request,
-  {params}: {params: {clientId: string}}
+  { params }: { params: Promise<{ id: string }> }
 ){
+  const { id } = await params;
   await connectDB();
 
   let clientId: Types.ObjectId;
   try{
-    clientId = new Types.ObjectId(params.clientId);
+    clientId = new Types.ObjectId(id);
   } catch{
     return NextResponse.json({error: 'Invalid ClientId'}, {status: 422});
   }

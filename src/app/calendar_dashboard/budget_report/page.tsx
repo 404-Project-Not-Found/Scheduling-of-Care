@@ -31,9 +31,16 @@ import {
   type Client as ApiClient,
 } from '@/lib/data';
 
-// import { getBudgetRowsFE, BudgetRow } from '@/lib/mock/mockApi';
-
-import { getBudgetRows, getBudgetSummary, openBudgetSSE, getAvailableYears, type BudgetRow, type BudgetSummary } from '@/lib/budget-helpers';
+import { 
+  getBudgetRows, 
+  getBudgetSummary, 
+  openBudgetSSE, 
+  getAvailableYears,
+  getCategoriesForClient,
+  type BudgetRow, 
+  type BudgetSummary,
+  type CategoryLite 
+} from '@/lib/budget-helpers';
 
 /* ---------------------------------- Types ---------------------------------- */
 type Client = { id: string; name: string };
@@ -60,6 +67,7 @@ const colors = {
 const LOW_BUDGET_THRESHOLD = 0.15;
 type Tone = 'green' | 'yellow' | 'red';
 const getStatus = (remaining: number, allocated: number): { tone: Tone; label: string } => {
+  if(allocated === 0) return { tone: 'green', label: 'Not allocated'}
   if (remaining <= 0) return { tone: 'red', label: 'Used up' }
   const ratio = remaining/(allocated || 1);
   if (ratio <= LOW_BUDGET_THRESHOLD) return { tone: 'yellow', label: 'Nearly used up' };
@@ -147,10 +155,33 @@ function BudgetReportInner() {
     await setActiveClient(id, name);
   };
 
+  // ===== Categories =====
+  const [categories, setCategories] = useState<CategoryLite[]>([]);
+
+  useEffect(() => {
+    let abort = new AbortController();
+    (async () => {
+      if (!activeClientId) {
+        setCategories([]);
+        return;
+      }
+      try {
+        const cats = await getCategoriesForClient(activeClientId, abort.signal);
+        setCategories(cats);
+      } catch (e) {
+        console.error('Failed to load categories:', e);
+        setCategories([]);
+      }
+    })();
+    return () => abort.abort();
+  }, [activeClientId]);
+
+  
+
   // ===== Query and year =====
   const [q, setQ] = useState('');
   const [years, setYears] = useState<number[]>([])
-  const [todayDate, setTodaysDate] = useState<String>();
+  const [todayDate, setTodaysDate] = useState<string>();
   const [year, setYear] = useState<number>(new Date().getFullYear());
 
   // get current date
@@ -241,6 +272,21 @@ function BudgetReportInner() {
     });
     return () => stop();
   }, [activeClientId, year]);
+  const isPastYear = year < new Date().getFullYear();
+
+  const rowsAll = useMemo(() => {
+    const byId = new Map(rows.map(r => [r.categoryId, r]));
+    return categories.map(c => {
+      const r = byId.get(String(c.id));
+      return r ?? {
+        categoryId: c.id,
+        category: c.name,
+        item: c.name,  
+        allocated: 0,
+        spent: 0,
+      };
+    });
+  }, [categories, rows]);
 
   // ===== Editing state =====
   const [isEditing, setIsEditing] = useState(false);
@@ -255,18 +301,95 @@ function BudgetReportInner() {
   };
 
   const saveAnnual = async () => {
-    if(!activeClientId) return;
+    if (!activeClientId) return;
     const val = parseFloat(annualBudgetInput);
-    if(!Number.isFinite(val) || val < 0) return;
+    if (!Number.isFinite(val) || val < 0) return;
 
-    try{
-      const res = await fetch(`/api/v1/clients/${encodeURIComponent(activeClientId)}/budget/manage`, {
-        method: 'PATCH',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({action: 'setAnnual', year, amount: val}),
-      });
-      if(!res.ok){
-        console.error('Failed to save annuyal budget', await res.text());
+    try {
+      const res = await fetch(
+        `/api/v1/clients/${encodeURIComponent(activeClientId)}/budget/manage`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          // IMPORTANT: avoid cache surprises
+          cache: 'no-store',
+          body: JSON.stringify({ action: 'setAnnual', year, amount: val }),
+        }
+      );
+
+      if (!res.ok) {
+        const msg = await res.text();
+        setWarningText(msg || 'Failed to save annual budget');
+        setShowWarning(true);
+        return;
+      }
+
+      const json = await res.json();
+      if (json?.summary) {
+        setSummary(json.summary);
+      }
+
+      const [r, s] = await Promise.all([
+        getBudgetRows(activeClientId, year, undefined),
+        getBudgetSummary(activeClientId, year, undefined),
+      ]);
+      setRows(r);
+      setSummary(s);
+      setShowWarning(false);
+    } catch (e) {
+      setWarningText('Network or server error while saving annual budget.');
+      setShowWarning(true);
+    } finally {
+      setIsEditing(false);
+    }
+  };
+
+  const [editingRowId, setEditingRowId] = useState<string | null>(null);
+  const [allocInput, setAllocInput] = useState<Record<string, string>>({});
+
+  const startEditRow = (row: BudgetRow) => { 
+    setEditingRowId(row.categoryId); 
+    setAllocInput(prev => ({ ...prev, [row.categoryId]: String(row.allocated) }));
+  };
+
+  const cancelEditRow = () => setEditingRowId(null);
+
+  const saveRow = async (row: BudgetRow) => {
+    if (!activeClientId) return;
+    const raw = allocInput[row.categoryId];
+    const amount = Number((raw ?? '').toString().replace(/,/g, ''));
+    if (!Number.isFinite(amount) || amount < 0) {
+      setWarningText('Allocated must be a non-negative number.');
+      setShowWarning(true);
+      return;
+    }
+    if (amount < row.spent) {
+      setWarningText(`Allocated ($${amount}) cannot be less than Spent ($${row.spent}).`);
+      setShowWarning(true);
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `/api/v1/clients/${encodeURIComponent(activeClientId)}/budget/manage`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          cache: 'no-store',
+          body: JSON.stringify({
+            action: 'setCategory',
+            year,
+            categoryId: row.categoryId,
+            categoryName: row.category,
+            amount,
+          }),
+        }
+      );
+      if (!res.ok) {
+        const msg = await res.text();
+        setWarningText(msg || 'Failed to save category budget.');
+        setShowWarning(true);
+        return;
       }
       const [r, s] = await Promise.all([
         getBudgetRows(activeClientId, year),
@@ -274,22 +397,24 @@ function BudgetReportInner() {
       ]);
       setRows(r);
       setSummary(s);
-    } catch(e) {
-      console.error(e);
-    } finally {
-      setIsEditing(false);
+      setShowWarning(false);
+      setEditingRowId(null);
+    } catch (e) {
+      setWarningText('Network or server error while saving category budget.');
+      setShowWarning(true);
     }
-  }
+  };
 
   /** Filter by search */
   const filtered = useMemo(() => {
     const t = q.trim().toLowerCase();
-    if (!t) return rows;
-    return rows.filter(
+    if (!t) return rowsAll;
+    return rowsAll.filter(
       (r) =>
-        r.item.toLowerCase().includes(t) || r.category.toLowerCase().includes(t)
+        r.item.toLowerCase().includes(t) ||
+        r.category.toLowerCase().includes(t)
     );
-  }, [q, rows]);
+  }, [q, rowsAll]);
 
 
   /** Totals */
@@ -349,7 +474,7 @@ function BudgetReportInner() {
               placeholder="Search"
               className="h-9 rounded-full bg-white text-black px-4 border"
             />
-            {role === 'management' &&
+            {role === 'management'&& !isPastYear &&
               (!isEditing ? (
                 <button
                   onClick={startEdit}
@@ -391,6 +516,12 @@ function BudgetReportInner() {
               >
                 Dismiss
               </button>
+            </div>
+          )}
+          {/* Read only for previous years */}
+          {isPastYear && (
+            <div className="mb-6 rounded-xl border border-yellow-400 bg-yellow-100 text-yellow-900 px-6 py-4">
+              The selected year ({year}) is read-only. Switch to {new Date().getFullYear()} to edit the annual budget.
             </div>
           )}
           {/* Tiles */}
@@ -445,7 +576,7 @@ function BudgetReportInner() {
           </div>
           {/* Warning Banner */}
           {(() => {
-            const lowCategories = rows
+            const lowCategories = rowsAll
               .filter((r) => {
                 if (r.allocated <= 0) return false;
                 const remaining = r.allocated - r.spent;
@@ -486,15 +617,16 @@ function BudgetReportInner() {
                   <th className="px-4 py-4">Spent</th>
                   <th className="px-5 py-5">Remaining</th>
                   <th className="px-4 py-4">Status</th>
+                  <th className="px-4 py-4">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((r, i) => {
+                {filtered.map((r) => {
                   const remaining = r.allocated - r.spent;
                   const status = getStatus(remaining, r.allocated);
                   return (
                     <tr
-                      key={i}
+                      key={r.categoryId}
                       className="border-b last:border-b border-[#3A0000]/20"
                     >
                       <td className="px-4 py-5">
@@ -506,22 +638,67 @@ function BudgetReportInner() {
                           {r.category}
                         </Link>
                       </td>
-                      <td className="px-4 py-5">${r.allocated}</td>
-                      <td className="px-4 py-5">${r.spent}</td>
+                      <td className="px-4 py-5">
+                        {editingRowId === r.categoryId ? (
+                          <input
+                            type="number"
+                            min={0}
+                            step={1}
+                            value={allocInput[r.categoryId] ?? String(r.allocated)}
+                            onChange={(e) =>
+                              setAllocInput(prev => ({ ...prev, [r.categoryId]: e.target.value }))
+                            }
+                            className="w-28 text-right rounded-md bg-white text-black px-2 py-1 border"
+                          />
+                        ) : (
+                          `$${r.allocated}`
+                        )}
+                      </td>
+                      <td className="px-4 py-5">${r.spent.toLocaleString()}</td>
                       <td
                         className={`px-4 py-5 ${remaining < 0 ? 'text-red-600' : ''}`}
                       >
                         {remaining < 0
-                          ? `-$${Math.abs(remaining)}`
-                          : `$${remaining}`}
+                          ? `-$${Math.abs(remaining).toLocaleString()}`
+                          : `$${remaining.toLocaleString()}`}
                       </td>
                       <td className="px-4 py-5">
                         <Badge tone={status.tone}>{status.label}</Badge>
+                      </td>
+                      <td className="px-4 py-5">
+                        {role === 'management' && !isPastYear ? (
+                          editingRowId === r.categoryId ? (
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => saveRow(r)}
+                                className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10"
+                              >
+                                Save
+                              </button>
+                              <button
+                                onClick={cancelEditRow}
+                                className="px-3 py-1 rounded-md bg-white/80 text-black font-semibold hover:bg-white"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => startEditRow(r)}
+                              className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10"
+                            >
+                              Edit
+                            </button>
+                          )
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
                       </td>
                     </tr>
                   );
                 })}
               </tbody>
+
               {filtered.length > 0 && (
                 <tfoot>
                   <tr className="bg-black/5 font-semibold">
@@ -531,6 +708,7 @@ function BudgetReportInner() {
                     <td className="px-4 py-4">
                       {totals.remaining < 0 ? `-$${Math.abs(totals.remaining)}` : `$${totals.remaining}`}
                     </td>
+                    <td />
                     <td />
                   </tr>
                 </tfoot>

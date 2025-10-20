@@ -10,6 +10,7 @@ import { connectDB } from "@/lib/mongodb";
 import { BudgetYear, type BudgetYearHydrated, type CategoryBudget } from "@/models/Budget";
 import { Types } from 'mongoose';
 import { getViewerRole } from "@/lib/data";
+import { publishBudgetChange } from "@/lib/sse-bus";
 
 type Action = 
   | 'setAnnual'
@@ -63,19 +64,19 @@ type ManageBody =
 
 function recomputeTotals(doc: BudgetYearHydrated) {
   const categories: CategoryBudget[] = doc.categories;
-  doc.totals.allocated - categories.reduce((sum: number, c:CategoryBudget) => sum + c.allocated, 0);
-  doc.surplus = Math.max(0, doc.annualAllocated - doc.totals.allocated) //surplus would be annual allocated - total of what is already allocated into categories
+  doc.totals.allocated = categories.reduce((sum: number, c: CategoryBudget) => sum + (c.allocated ?? 0), 0);
+  const annual = doc.annualAllocated ?? 0;
+  const allocated = doc.totals.allocated ?? 0;
+  doc.surplus = Math.max(0, annual - allocated);
 }
 
 export async function PATCH(
   req: Request,
-  {params} : {params: {clientId: string}}
+  {params} : {params: Promise<{id: string}>}
 ) {
+  const {id} = await params;
   await connectDB();
   const role = await getViewerRole();
-  if(role !== 'management') return NextResponse.json({error: 'Forbidden'}, {status: 403});
-  
-
   const body: ManageBody = await req.json();
   const currYear = new Date().getFullYear();
   if(body.year < currYear) {
@@ -87,7 +88,7 @@ export async function PATCH(
 
   let clientId: Types.ObjectId;
   try{
-    clientId = new Types.ObjectId(params.clientId);
+    clientId = new Types.ObjectId(id);
   } catch{
     return NextResponse.json({error: 'Invalid ClientId'}, {status: 422});
   }
@@ -189,16 +190,23 @@ export async function PATCH(
       item.allocated = 0;
       item.releasedAt = new Date();
       recomputeTotals(doc);
+      
       break;
     }
     default: return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
   }
 
+  doc.markModified('categories');
   await doc.save();
+  publishBudgetChange(id, body.year);
+  const totalAllocated = doc.totals.allocated ?? 0; 
+  const totalSpent = doc.totals.spent ?? 0;
   return NextResponse.json({
     ok: true,
-    annualAllocated: doc.annualAllocated,
-    surplus: doc.surplus,
+    annualAllocated: doc.annualAllocated ?? 0,
+    spent: totalSpent,
+    remaining: Math.max(0, (doc.annualAllocated ?? 0) - totalSpent),
+    surplus: Math.max(0, (doc.annualAllocated ?? 0) - totalAllocated),
   });
 }
 

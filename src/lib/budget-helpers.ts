@@ -42,6 +42,16 @@ export type CategoryDetail = {
   items: CategoryItem[];
 };
 
+type CategoryApi = {
+  _id: string;
+  name: string;
+  slug: string;
+  aliases: string[];
+  clientId: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
 export type CategoryLite = { id: string; name: string };
 
 /*--------------------------- functions ----------------------------------------- */
@@ -95,21 +105,25 @@ export function openBudgetSSE(
   year: number,
   onChange: () => void
 ): () => void {
-  const url = `/api/v1/clients/${encodeURIComponent(
-    clientId
-  )}/budget/stream?year=${encodeURIComponent(String(year))}`;
+  const url = `/api/v1/clients/${clientId}/budget/stream?year=${encodeURIComponent(String(year))}`;
 
   const es = new EventSource(url);
 
   const handleChange = () => onChange();
-  es.addEventListener('change', handleChange);
+  const handleError = (e: Event) => {
+    try {es.close();} catch {}
+  };
 
+  es.addEventListener('change', handleChange);
+  es.addEventListener('error', handleError);
   // es.addEventListener('ping', () => {});
 
   const cleanup = () => {
     es.removeEventListener('change', handleChange);
-    es.close();
+    es.removeEventListener('error', handleError);
+    try{es.close();} catch{}
   };
+
 
   return cleanup;
 }
@@ -249,4 +263,30 @@ export async function getBudgetCategories(
     }
   });
   return [...seen.values()];
+}
+
+export async function getCategoriesForClient(
+  clientId: string,
+  signal?: AbortSignal,
+  q?: string
+): Promise<CategoryLite[]> {
+  if (!clientId) return [];
+
+  const qs = q ? `?q=${encodeURIComponent(q)}` : '';
+  const url = `/api/v1/clients/${clientId}/category${qs}`;
+
+  const res = await fetch(url, {
+    method: 'GET',
+    cache: 'no-store',
+    signal,
+    headers: { 'Content-Type': 'application/json' },
+  });
+
+  if (!res.ok) {
+    const msg = await res.text().catch(() => '');
+    throw new Error(msg || `Failed to fetch categories for client ${clientId}`);
+  }
+
+  const data = (await res.json()) as CategoryApi[];
+  return (data ?? []).map((c) => ({ id: c._id, name: c.name }));
 }

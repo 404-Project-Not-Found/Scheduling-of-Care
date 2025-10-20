@@ -151,28 +151,7 @@ function TransactionHistoryInner() {
       setLoading(false);
     }
   })();
-}, [activeClientId, year]);
-
-  /** Load transactions when active client changes */
-  useEffect(() => {
-    if (!activeClientId) {
-      setRows([]);
-      return;
-    }
-    (async () => {
-      setLoading(true);
-      setErrorText('');
-      try {
-        const data = await getTransactionsFE(activeClientId, year);
-        setRows(Array.isArray(data) ? data : []);
-      } catch {
-        setErrorText('Failed to load transactions for this client.');
-        setRows([]);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [activeClientId]);
+}, [activeClientId, year])
 
   /** Filter */
   const filtered = useMemo(() => {

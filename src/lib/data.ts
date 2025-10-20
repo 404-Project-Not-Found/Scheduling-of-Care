@@ -33,7 +33,12 @@ export type ApiCareItem = {
   files?: string[];
 };
 
-
+export interface AccessUser {
+  _id: string;
+  fullName: string;
+  email: string;
+  role: 'carer' | 'family' | 'management';
+}
 
 export interface Task {
   id: string;
