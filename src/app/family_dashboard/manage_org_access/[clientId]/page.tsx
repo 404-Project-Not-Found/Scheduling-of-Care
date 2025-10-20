@@ -1,9 +1,9 @@
 /**
  * File path: /family_dashboard/manage_org_access/[clientId]/page.tsx
  * Authors: Qingyue Zhao & Denise Alexander
- * Last Update: 2025-10-07
+ * Last Update: 2025-10-20
  *
- * Last Updated by Denise Alexander - 7/10/2025: back-end integrated to implement
+ * Updated by Denise Alexander - 7/10/2025: back-end integrated to implement
  * organisation access workflow.
  *
  * NOTE:
@@ -19,7 +19,8 @@
  * - Organisation access workflow is still stubbed with mock data (MOCK_ORGS);
  *   backend fetch should be integrated once available.
  *
- * Old files move to: app/old_organisation_access
+ * Last Updated by Denise Alexander (20/10/2025): made design and layout changes
+ * for consistency and better navigation.
  *
  */
 
@@ -30,7 +31,7 @@ import DashboardChrome from '@/components/top_menu/client_schedule';
 import { useRouter } from 'next/navigation';
 import { useActiveClient } from '@/context/ActiveClientContext';
 import { getClients, type Client as ApiClient } from '@/lib/data';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, ArrowLeft } from 'lucide-react';
 
 const colors = {
   pageBg: '#ffd9b3',
@@ -171,9 +172,19 @@ export default function ManageOrganisationAccessPage() {
       <div className="flex-1 min-h-screen bg-[#FFF5EC] overflow-auto">
         <div className="w-full px-6 py-5">
           {/* Section header with back button */}
-          <h2 className="text-[#3A0000] text-3xl font-semibold mb-3">
-            Manage Organisation Access
-          </h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-[#3A0000] text-3xl font-semibold">
+              Manage Organisation Access
+            </h2>
+
+            <button
+              onClick={() => router.push('/family_dashboard/people_list')}
+              className="flex items-center gap-2 text-lg font-semibold text-[#3A0000] bg-[#EAD8C8] hover:bg-[#DFC8B4] border border-[#D4B8A0] rounded-md px-4 py-2 transition"
+            >
+              <ArrowLeft size={22} strokeWidth={2.5} />
+              Back
+            </button>
+          </div>
 
           {/* Divider */}
           <hr className="mt-4 mb-4 w-340 mx-auto border-t border-[#3A0000]/25 rounded-full" />

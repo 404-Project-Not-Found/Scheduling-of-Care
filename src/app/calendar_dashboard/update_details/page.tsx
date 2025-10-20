@@ -3,8 +3,9 @@
  * Authors: Devni Wijesinghe & Denise Alexander
  * Date Created: 22/09/2025
  *
- * Last Updated by Denise Alexander - 7/10/2025: back-end integration
- * added.
+ * Updated by Denise Alexander - 7/10/2025: back-end integration added.
+ *
+ * Last Updated by Denise Alexander (20/10/2025): made design and layout changes.
  */
 
 'use client';

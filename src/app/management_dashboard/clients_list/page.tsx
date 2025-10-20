@@ -14,8 +14,11 @@
  *      -> pending: "Request sent" button (disabled).
  * - Now fetches all mock/demo clients purely from mockApi (no hardcoding here).
  *
- * Last Updated by Denise Alexander - 7/10/2025: back-end integrated to fetch client lists
+ * Updated by Denise Alexander - 7/10/2025: back-end integrated to fetch client lists
  * from DB.
+ *
+ * Last Updated by Denise Alexander (20/10/2025): made design and layout changes
+ * for consistency and better navigation.
  */
 
 'use client';

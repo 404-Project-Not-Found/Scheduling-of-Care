@@ -13,8 +13,11 @@
  * - Tasks are stored in localStorage (mock mode) and persisted across reloads.
  * - Buttons at the bottom support Cancel (navigate back) and Add (save task).
  *
- * Last Updated by Denise Alexander (16/10/2025): Fixed active client usage, client dropdown
+ * Updated by Denise Alexander (16/10/2025): Fixed active client usage, client dropdown
  * now works correctly.
+ *
+ * Last Updated by Denise Alexander (20/10/2025): made design and layout changes
+ * for consistency and better navigation.
  */
 
 'use client';

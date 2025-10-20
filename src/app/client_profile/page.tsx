@@ -10,6 +10,9 @@
  * - Fixed-height viewport section (h-[680px]) to avoid bottom gutters.
  * - Family view: two-column editable; Management: same layout, read-only.
  * - "Create one here" triggers AddAccessCodePanel.
+ *
+ * Last Updated by Denise Alexander (20/10/2025): added additional form fields,
+ * made design and layout changes.
  */
 
 'use client';

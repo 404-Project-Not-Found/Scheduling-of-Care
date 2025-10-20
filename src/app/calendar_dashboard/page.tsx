@@ -11,12 +11,15 @@
  * Updated by Denise Alexander - 7/10/2025: back-end integrated for
  * fetching user role and clients.
  *
- * Last Updated by Qingyue Zhao - 8/10/2025:
+ * Updated by Qingyue Zhao - 8/10/2025:
  * - The calendar title (month/year) drives the right-pane title:
  *   * When a day is selected -> "Care items on YYYY-MM-DD"
  *   * Otherwise -> "All care items in <Month Year>"
  * - TasksPanel receives either `selectedDate` or `year`+`month` to filter items,
  *  add a dropdown of list of users with access to the selected client
+ *
+ * Last Updated by Denise Alexander (20/10/2025): made design and layout changes
+ * for consistency and better navigation.
  */
 
 'use client';

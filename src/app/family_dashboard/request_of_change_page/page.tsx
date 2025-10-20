@@ -8,8 +8,11 @@
  * - Full-bleed layout; section header → notice → form → footer buttons.
  * - Validates required fields (task name, details, reason) before submit.
  *
- * Latest Update by Denise Alexander (14/10/2025): integrated backend API for client specific
+ * Update by Denise Alexander (14/10/2025): integrated backend API for client specific
  * family requests.
+ *
+ * Last Updated by Denise Alexander (20/10/2025): made design and layout changes
+ * for consistency and better navigation.
  */
 
 'use client';
