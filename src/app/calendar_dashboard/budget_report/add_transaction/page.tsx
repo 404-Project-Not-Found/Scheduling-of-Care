@@ -55,7 +55,9 @@ const colors = {
 
 export default function TransactionHistoryPage() {
   return (
-    <Suspense fallback={<div className="p-6 text-gray-600">Loading transactions…</div>}>
+    <Suspense
+      fallback={<div className="p-6 text-gray-600">Loading transactions…</div>}
+    >
       <TransactionHistoryInner />
     </Suspense>
   );
@@ -89,7 +91,7 @@ function TransactionHistoryInner() {
         setRole(r);
       } catch (err) {
         console.error('Failed to get role.', err);
-        setRole('carer'); 
+        setRole('carer');
       }
     })();
   }, []);
@@ -105,11 +107,13 @@ function TransactionHistoryInner() {
       setLoad((s) => ({ ...s, clients: true }));
       try {
         const list: ApiClient[] = await getClients();
-        const mapped: ClientLite[] = (list as ApiClientWithAccess[]).map((c) => ({
-          id: c._id,
-          name: c.name,
-          orgAccess: c.orgAccess,
-        }));
+        const mapped: ClientLite[] = (list as ApiClientWithAccess[]).map(
+          (c) => ({
+            id: c._id,
+            name: c.name,
+            orgAccess: c.orgAccess,
+          })
+        );
         setClients(mapped);
 
         const active = await getActiveClient();
@@ -126,7 +130,7 @@ function TransactionHistoryInner() {
     })();
   }, []);
 
-  // Change active client 
+  // Change active client
   const onClientChange = async (id: string) => {
     if (!id) {
       setActiveClientId(null);
@@ -148,12 +152,15 @@ function TransactionHistoryInner() {
 
   useEffect(() => {
     const d = new Date();
-    const fmt = new Intl.DateTimeFormat('en-AU', { dateStyle: 'long', timeZone: 'Australia/Melbourne' });
+    const fmt = new Intl.DateTimeFormat('en-AU', {
+      dateStyle: 'long',
+      timeZone: 'Australia/Melbourne',
+    });
     setTodaysDate(fmt.format(d));
   }, []);
 
   useEffect(() => {
-    let abort = new AbortController();
+    const abort = new AbortController();
     const loadYears = async () => {
       if (!activeClientId) {
         setYears([]);
@@ -210,7 +217,10 @@ function TransactionHistoryInner() {
     const q = search.trim().toLowerCase();
     if (!q) return rows;
     return rows.filter((t) =>
-      [t.type, t.date, t.madeBy, t.receipt, ...t.items].join(' ').toLowerCase().includes(q)
+      [t.type, t.date, t.madeBy, t.receipt, ...t.items]
+        .join(' ')
+        .toLowerCase()
+        .includes(q)
     );
   }, [rows, search]);
 
@@ -222,12 +232,20 @@ function TransactionHistoryInner() {
       colors={colors}
     >
       {/* Main content */}
-      <div className="flex-1 h-[680px] bg-white/80 overflow-auto" aria-busy={loadingAny}>
+      <div
+        className="flex-1 h-[680px] bg-white/80 overflow-auto"
+        aria-busy={loadingAny}
+      >
         {/* Header bar */}
-        <div className="w-full flex items-center justify-between px-6 py-5" style={{ backgroundColor: colors.header }}>
+        <div
+          className="w-full flex items-center justify-between px-6 py-5"
+          style={{ backgroundColor: colors.header }}
+        >
           {/* Left side: Title */}
           <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold text-white">Transaction History</h1>
+            <h1 className="text-2xl font-bold text-white">
+              Transaction History
+            </h1>
             <span className="text-white/90 font-bold text-sm">View year:</span>
             <select
               value={String(year)}
@@ -251,7 +269,11 @@ function TransactionHistoryInner() {
               <button
                 className="px-4 py-2 rounded-md font-semibold text-black"
                 style={{ backgroundColor: '#FFA94D' }}
-                onClick={() => router.push('/calendar_dashboard/budget_report/add_transaction')}
+                onClick={() =>
+                  router.push(
+                    '/calendar_dashboard/budget_report/add_transaction'
+                  )
+                }
                 disabled={loadingAny}
               >
                 Add new transaction
@@ -273,7 +295,9 @@ function TransactionHistoryInner() {
         {/* Table full width */}
         <div className="w-full overflow-auto">
           {loadingAny ? (
-            <div className="p-6 text-gray-600 text-center text-base font-medium">Loading transactions…</div>
+            <div className="p-6 text-gray-600 text-center text-base font-medium">
+              Loading transactions…
+            </div>
           ) : errorText ? (
             <div className="p-6 text-red-600">{errorText}</div>
           ) : (
@@ -290,7 +314,10 @@ function TransactionHistoryInner() {
               <tbody>
                 {filtered.length > 0 ? (
                   filtered.map((t) => (
-                    <tr key={t.id} className="border-b hover:bg-[#fff6ea] transition">
+                    <tr
+                      key={t.id}
+                      className="border-b hover:bg-[#fff6ea] transition"
+                    >
                       <td className="p-5 font-semibold">{t.type}</td>
                       <td className="p-5">{t.date}</td>
                       <td className="p-5">{t.madeBy}</td>
@@ -298,12 +325,17 @@ function TransactionHistoryInner() {
                       <td className="p-5">
                         <div className="flex flex-col gap-1">
                           {t.items.map((i, idx) => (
-                            <div key={idx} className="flex items-center justify-between gap-2">
+                            <div
+                              key={idx}
+                              className="flex items-center justify-between gap-2"
+                            >
                               <span>{i}</span>
                               {role === 'carer' && (
                                 <button
                                   className="px-2 py-1 text-xs bg-[#3d0000] text-white rounded"
-                                  onClick={() => router.push('/calendar_dashboard')}
+                                  onClick={() =>
+                                    router.push('/calendar_dashboard')
+                                  }
                                 >
                                   View Care Item
                                 </button>

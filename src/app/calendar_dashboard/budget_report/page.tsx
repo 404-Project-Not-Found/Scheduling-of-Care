@@ -97,7 +97,11 @@ type LoadingState = {
 /* --------------------------------- Page ---------------------------------- */
 export default function BudgetReportPage() {
   return (
-    <Suspense fallback={<div className="p-6 text-gray-600">Loading budget report...</div>}>
+    <Suspense
+      fallback={
+        <div className="p-6 text-gray-600">Loading budget report...</div>
+      }
+    >
       <BudgetReportInner />
     </Suspense>
   );
@@ -134,7 +138,10 @@ function BudgetReportInner() {
     saveRowId: null,
   });
   const loadingAny =
-    loading.clientsLoad || loading.yearsLoad || loading.catLoad || loading.budgetLoad;
+    loading.clientsLoad ||
+    loading.yearsLoad ||
+    loading.catLoad ||
+    loading.budgetLoad;
 
   /* ---------------------------- Clients ----------------------------- */
   const [clients, setClients] = useState<ClientLite[]>([]);
@@ -147,11 +154,13 @@ function BudgetReportInner() {
       setLoading((s) => ({ ...s, clientsLoad: true }));
       try {
         const list: ApiClient[] = await getClients();
-        const mapped: ClientLite[] = (list as ApiClientWithAccess[]).map((c) => ({
-          id: c._id,
-          name: c.name,
-          orgAccess: c.orgAccess,
-        }));
+        const mapped: ClientLite[] = (list as ApiClientWithAccess[]).map(
+          (c) => ({
+            id: c._id,
+            name: c.name,
+            orgAccess: c.orgAccess,
+          })
+        );
         setClients(mapped);
 
         const active = await getActiveClient();
@@ -168,7 +177,7 @@ function BudgetReportInner() {
     })();
   }, []);
 
-  // Change active client 
+  // Change active client
   const onClientChange = async (id: string) => {
     if (!id) {
       setActiveClientId(null);
@@ -330,7 +339,9 @@ function BudgetReportInner() {
 
   // ===== Editing state =====
   const [isEditing, setIsEditing] = useState(false);
-  const [annualBudgetOverride, setAnnualBudgetOverride] = useState<number | null>(null);
+  const [annualBudgetOverride, setAnnualBudgetOverride] = useState<
+    number | null
+  >(null);
   const [annualBudgetInput, setAnnualBudgetInput] = useState<string>('');
 
   const startEdit = () => {
@@ -387,7 +398,10 @@ function BudgetReportInner() {
 
   const startEditRow = (row: BudgetRow) => {
     setEditingRowId(row.categoryId);
-    setAllocInput((prev) => ({ ...prev, [row.categoryId]: String(row.allocated) }));
+    setAllocInput((prev) => ({
+      ...prev,
+      [row.categoryId]: String(row.allocated),
+    }));
   };
 
   const cancelEditRow = () => setEditingRowId(null);
@@ -402,7 +416,9 @@ function BudgetReportInner() {
       return;
     }
     if (amount < row.spent) {
-      setWarningText(`Allocated ($${amount}) cannot be less than Spent ($${row.spent}).`);
+      setWarningText(
+        `Allocated ($${amount}) cannot be less than Spent ($${row.spent}).`
+      );
       setShowWarning(true);
       return;
     }
@@ -453,20 +469,23 @@ function BudgetReportInner() {
   ) => {
     if (!activeClientId) return;
     try {
-      await fetch(`/api/v1/clients/${encodeURIComponent(activeClientId)}/budget/manage`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        cache: 'no-store',
-        body: JSON.stringify({
-          action: 'rolloverFromPrev',
-          fromYear: year - 1,
-          toYear: year,
-          copyCategories: true,
-          bringSurplus: true,
-          resetItemAllocations: false,
-          overwriteIfExists: true,
-        }),
-      });
+      await fetch(
+        `/api/v1/clients/${encodeURIComponent(activeClientId)}/budget/manage`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          cache: 'no-store',
+          body: JSON.stringify({
+            action: 'rolloverFromPrev',
+            fromYear: year - 1,
+            toYear: year,
+            copyCategories: true,
+            bringSurplus: true,
+            resetItemAllocations: false,
+            overwriteIfExists: true,
+          }),
+        }
+      );
 
       const [r, s] = await Promise.all([
         getBudgetRows(activeClientId, year),
@@ -485,7 +504,8 @@ function BudgetReportInner() {
     const t = q.trim().toLowerCase();
     if (!t) return rowsAll;
     return rowsAll.filter(
-      (r) => r.item.toLowerCase().includes(t) || r.category.toLowerCase().includes(t)
+      (r) =>
+        r.item.toLowerCase().includes(t) || r.category.toLowerCase().includes(t)
     );
   }, [q, rowsAll]);
 
@@ -496,18 +516,29 @@ function BudgetReportInner() {
     return { allocated, spent, remaining: allocated - spent };
   }, [filtered]);
 
-  const effectiveAllocated = annualBudgetOverride ?? summary.annualAllocated ?? totals.allocated;
+  const effectiveAllocated =
+    annualBudgetOverride ?? summary.annualAllocated ?? totals.allocated;
   const effectiveRemaining = effectiveAllocated - totals.spent;
 
   /* ===== Render ===== */
   return (
-    <DashboardChrome page="budget" clients={clients} onClientChange={onClientChange} colors={colors}>
+    <DashboardChrome
+      page="budget"
+      clients={clients}
+      onClientChange={onClientChange}
+      colors={colors}
+    >
       {/* Main scroll area */}
-      <div className="flex-1 min-h-screen bg-[#FFF5EC] overflow-auto" aria-busy={loadingAny}>
+      <div
+        className="flex-1 min-h-screen bg-[#FFF5EC] overflow-auto"
+        aria-busy={loadingAny}
+      >
         {/* Top bar */}
         <div className="w-full px-6 py-5">
           {/* LINE 1: Title */}
-          <h2 className="text-[#3A0000] text-3xl font-semibold mb-3">Annual Budget</h2>
+          <h2 className="text-[#3A0000] text-3xl font-semibold mb-3">
+            Annual Budget
+          </h2>
 
           {/* Divider */}
           <hr className="mt-4 mb-4 w-340 mx-auto border-t border-[#3A0000]/25 rounded-full" />
@@ -516,7 +547,9 @@ function BudgetReportInner() {
           <div className="flex items-center justify-between flex-wrap gap-4 w-full">
             {/* LEFT: Year selector */}
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-[#3A0000] text-lg">Select year:</span>
+              <span className="font-semibold text-[#3A0000] text-lg">
+                Select year:
+              </span>
               <select
                 value={String(year)}
                 onChange={(e) => setYear(Number(e.target.value))}
@@ -530,7 +563,9 @@ function BudgetReportInner() {
                 ))}
               </select>
               {year === new Date().getFullYear() && (
-                <span className="font-semibold text-black/70 text-sm ml-2">As of {todayDate}</span>
+                <span className="font-semibold text-black/70 text-sm ml-2">
+                  As of {todayDate}
+                </span>
               )}
             </div>
 
@@ -550,21 +585,26 @@ function BudgetReportInner() {
                 />
               </div>
 
-              {role === 'management' && years.includes(year - 1) && year === new Date().getFullYear() && (
-                <button
-                  onClick={() => handleRollover(activeClientId!, year, setRows, setSummary)}
-                  disabled={loading.budgetLoad}
-                  className="px-3 py-1.5 rounded-md font-semibold text-[#3A0000] transition"
-                  style={{
-                    background: 'linear-gradient(90deg, #F9C9B1 0%, #FBE8D4 100%)',
-                    border: '1px solid #B47A64',
-                    boxShadow: '0 2px 5px rgba(180, 122, 100, 0.25)',
-                  }}
-                  title={`Copy categories and carry surplus from ${year - 1}`}
-                >
-                  Roll over from {year - 1}
-                </button>
-              )}
+              {role === 'management' &&
+                years.includes(year - 1) &&
+                year === new Date().getFullYear() && (
+                  <button
+                    onClick={() =>
+                      handleRollover(activeClientId!, year, setRows, setSummary)
+                    }
+                    disabled={loading.budgetLoad}
+                    className="px-3 py-1.5 rounded-md font-semibold text-[#3A0000] transition"
+                    style={{
+                      background:
+                        'linear-gradient(90deg, #F9C9B1 0%, #FBE8D4 100%)',
+                      border: '1px solid #B47A64',
+                      boxShadow: '0 2px 5px rgba(180, 122, 100, 0.25)',
+                    }}
+                    title={`Copy categories and carry surplus from ${year - 1}`}
+                  >
+                    Roll over from {year - 1}
+                  </button>
+                )}
 
               {role === 'management' &&
                 (!isEditing ? (
@@ -573,7 +613,8 @@ function BudgetReportInner() {
                     disabled={loading.budgetLoad}
                     className="px-4 py-1.5 rounded-md font-semibold text-[#3A0000] transition"
                     style={{
-                      background: 'linear-gradient(90deg, #F9C9B1 0%, #FBE8D4 100%)',
+                      background:
+                        'linear-gradient(90deg, #F9C9B1 0%, #FBE8D4 100%)',
                       border: '1px solid #B47A64',
                       boxShadow: '0 2px 5px rgba(180, 122, 100, 0.25)',
                     }}
@@ -587,7 +628,8 @@ function BudgetReportInner() {
                       disabled={loading.savingAnnualLoad}
                       className="px-4 py-1.5 rounded-md font-semibold text-[#3A0000] transition"
                       style={{
-                        background: 'linear-gradient(90deg, #F8CBA6 0%, #FBE8D4 100%)',
+                        background:
+                          'linear-gradient(90deg, #F8CBA6 0%, #FBE8D4 100%)',
                         border: '1px solid #B47A64',
                         boxShadow: '0 2px 5px rgba(180, 122, 100, 0.25)',
                       }}
@@ -601,7 +643,10 @@ function BudgetReportInner() {
                       }}
                       disabled={loading.savingAnnualLoad}
                       className="px-4 py-1.5 rounded-md font-semibold text-[#3A0000] transition hover:opacity-80"
-                      style={{ backgroundColor: '#EBD5C4', border: '1px solid #C9A794' }}
+                      style={{
+                        backgroundColor: '#EBD5C4',
+                        border: '1px solid #C9A794',
+                      }}
                     >
                       Cancel
                     </button>
@@ -635,7 +680,8 @@ function BudgetReportInner() {
               {/* Read only for previous years */}
               {isPastYear && (
                 <div className="mb-6 rounded-xl border border-yellow-400 bg-yellow-100 text-yellow-900 px-6 py-4">
-                  The selected year ({year}) is read-only. Switch to {new Date().getFullYear()} to edit the annual budget.
+                  The selected year ({year}) is read-only. Switch to{' '}
+                  {new Date().getFullYear()} to edit the annual budget.
                 </div>
               )}
 
@@ -667,13 +713,17 @@ function BudgetReportInner() {
 
                 {/* Spent to Date */}
                 <div className="rounded-2xl border px-6 py-8 bg-white">
-                  <div className="text-2xl font-bold">${summary.spent.toLocaleString()}</div>
+                  <div className="text-2xl font-bold">
+                    ${summary.spent.toLocaleString()}
+                  </div>
                   <div className="text-sm">Spent to Date</div>
                 </div>
 
                 {/* Remaining */}
                 <div className="rounded-2xl border px-6 py-8 bg-white">
-                  <div className={`text-2xl font-bold ${effectiveRemaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                  <div
+                    className={`text-2xl font-bold ${effectiveRemaining < 0 ? 'text-red-600' : 'text-green-600'}`}
+                  >
                     {effectiveRemaining < 0
                       ? `-$${Math.abs(effectiveRemaining).toLocaleString()}`
                       : `$${effectiveRemaining.toLocaleString()}`}
@@ -683,7 +733,9 @@ function BudgetReportInner() {
 
                 {/* Surplus */}
                 <div className="rounded-2xl border px-6 py-8 bg-white">
-                  <div className="text-2xl font-bold text-black">${summary.surplus.toLocaleString()}</div>
+                  <div className="text-2xl font-bold text-black">
+                    ${summary.surplus.toLocaleString()}
+                  </div>
                   <div className="text-sm">Budget Surplus</div>
                 </div>
               </div>
@@ -708,12 +760,14 @@ function BudgetReportInner() {
                 return (
                   <div className="mb-6 rounded-lg border border-yellow-400 bg-yellow-100 px-6 py-4 text-yellow-800">
                     <div className="font-semibold mb-2">
-                      ⚠️ The following categories are nearing their budget limit:
+                      ⚠️ The following categories are nearing their budget
+                      limit:
                     </div>
                     <ul className="list-disc list-inside space-y-1">
                       {lowCategories.map((c) => (
                         <li key={c.name}>
-                          <span className="font-medium">{c.name}</span> — remaining ${c.remaining.toFixed(2)} (
+                          <span className="font-medium">{c.name}</span> —
+                          remaining ${c.remaining.toFixed(2)} (
                           {c.percent.toFixed(1)}%)
                         </li>
                       ))}
@@ -727,7 +781,10 @@ function BudgetReportInner() {
                 <table className="w-full text-left text-sm bg-white">
                   <thead
                     className="text-[#3A0000] text-lg font-semibold"
-                    style={{ backgroundColor: '#FBE8D4', borderBottom: '2px solid rgba(58, 0, 0, 0.15)' }}
+                    style={{
+                      backgroundColor: '#FBE8D4',
+                      borderBottom: '2px solid rgba(58, 0, 0, 0.15)',
+                    }}
                   >
                     <tr>
                       <th className="px-4 py-4">Category</th>
@@ -743,7 +800,10 @@ function BudgetReportInner() {
                       const remaining = r.allocated - r.spent;
                       const status = getStatus(remaining, r.allocated);
                       return (
-                        <tr key={r.categoryId} className="border-b last:border-b border-[#3A0000]/20">
+                        <tr
+                          key={r.categoryId}
+                          className="border-b last:border-b border-[#3A0000]/20"
+                        >
                           <td className="px-4 py-5">
                             {r.allocated > 0 ? (
                               <Link
@@ -769,7 +829,10 @@ function BudgetReportInner() {
                                 type="number"
                                 min={0}
                                 step={1}
-                                value={allocInput[r.categoryId] ?? String(r.allocated)}
+                                value={
+                                  allocInput[r.categoryId] ??
+                                  String(r.allocated)
+                                }
                                 onChange={(e) =>
                                   setAllocInput((prev) => ({
                                     ...prev,
@@ -782,8 +845,12 @@ function BudgetReportInner() {
                               `$${r.allocated.toLocaleString()}`
                             )}
                           </td>
-                          <td className="px-4 py-5">${r.spent.toLocaleString()}</td>
-                          <td className={`px-4 py-5 ${remaining < 0 ? 'text-red-600' : ''}`}>
+                          <td className="px-4 py-5">
+                            ${r.spent.toLocaleString()}
+                          </td>
+                          <td
+                            className={`px-4 py-5 ${remaining < 0 ? 'text-red-600' : ''}`}
+                          >
                             {remaining < 0
                               ? `-$${Math.abs(remaining).toLocaleString()}`
                               : `$${remaining.toLocaleString()}`}
@@ -797,14 +864,20 @@ function BudgetReportInner() {
                                 <div className="flex gap-2">
                                   <button
                                     onClick={() => saveRow(r)}
-                                    disabled={loading.saveRowId === r.categoryId}
+                                    disabled={
+                                      loading.saveRowId === r.categoryId
+                                    }
                                     className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10 disabled:opacity-60"
                                   >
-                                    {loading.saveRowId === r.categoryId ? 'Saving…' : 'Save'}
+                                    {loading.saveRowId === r.categoryId
+                                      ? 'Saving…'
+                                      : 'Save'}
                                   </button>
                                   <button
                                     onClick={cancelEditRow}
-                                    disabled={loading.saveRowId === r.categoryId}
+                                    disabled={
+                                      loading.saveRowId === r.categoryId
+                                    }
                                     className="px-3 py-1 rounded-md bg-white/80 text-black font-semibold hover:bg-white disabled:opacity-60"
                                   >
                                     Cancel
@@ -831,8 +904,12 @@ function BudgetReportInner() {
                     <tfoot>
                       <tr className="bg-black/5 font-semibold">
                         <td className="px-4 py-4">Subtotal</td>
-                        <td className="px-4 py-4">${totals.allocated.toLocaleString()}</td>
-                        <td className="px-4 py-4">${totals.spent.toLocaleString()}</td>
+                        <td className="px-4 py-4">
+                          ${totals.allocated.toLocaleString()}
+                        </td>
+                        <td className="px-4 py-4">
+                          ${totals.spent.toLocaleString()}
+                        </td>
                         <td className="px-4 py-4">
                           {totals.remaining < 0
                             ? `-$${Math.abs(totals.remaining).toLocaleString()}`
