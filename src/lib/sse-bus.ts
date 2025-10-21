@@ -1,6 +1,5 @@
-
-type Key = string; // `${clientId}:${year}`
-type Sender = (event: string, data?: any) => void;
+type Key = string;
+type Sender = (event: string, data?: unknown) => void;
 
 const channels = new Map<Key, Set<Sender>>();
 
@@ -21,14 +20,13 @@ export function sseUnsubscribe(key: Key, send: Sender) {
   if (set.size === 0) channels.delete(key);
 }
 
-export function ssePublish(key: Key, event: string, data?: any) {
+export function ssePublish(key: Key, event: string, data?: unknown) {
   const set = channels.get(key);
   if (!set) return;
   for (const send of set) {
     try {
       send(event, data);
-    } catch {
-    }
+    } catch {}
   }
 }
 

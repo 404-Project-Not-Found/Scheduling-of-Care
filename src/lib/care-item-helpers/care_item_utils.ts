@@ -118,7 +118,9 @@ export function errorJson(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });
 }
 
-export async function getCareItemForClient(clientId: string): Promise<string[]> {
+export async function getCareItemForClient(
+  clientId: string
+): Promise<string[]> {
   await connectDB();
 
   if (!Types.ObjectId.isValid(clientId)) {

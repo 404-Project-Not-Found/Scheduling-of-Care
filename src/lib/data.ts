@@ -147,7 +147,9 @@ export const getClientById = async (id: string) => {
 };
 
 // Fetches all tasks visible to the current user
-export const getTasks = async (clientId: string | null | undefined): Promise<mockApi.Task[] & {slug?: string}> => {
+export const getTasks = async (
+  clientId: string | null | undefined
+): Promise<mockApi.Task[] & { slug?: string }> => {
   if (isMock) {
     return mockApi.getTasksFE();
   }
@@ -166,7 +168,9 @@ export const getTasks = async (clientId: string | null | undefined): Promise<moc
     return '';
   };
 
-  const res = await fetch(`/api/v1/clients/${clientId}/care_item?limit=200`, { cache: 'no-store' });
+  const res = await fetch(`/api/v1/clients/${clientId}/care_item?limit=200`, {
+    cache: 'no-store',
+  });
   if (!res.ok) {
     throw new Error(`Failed to fetch tasks (${res.status})`);
   }
@@ -225,7 +229,7 @@ export const getTasks = async (clientId: string | null | undefined): Promise<moc
       frequencyDays: row.frequencyDays ?? undefined,
     };
 
-    return task as mockApi.Task & {slug?: string};
+    return task as mockApi.Task & { slug?: string };
   });
 
   return tasks;
@@ -333,7 +337,6 @@ export const getCategoriesForClient = async (clientId: string) => {
 
   return Array.from(new Set([...catalogCats, ...clientCats]));
 };
-
 
 // Export Client type for convenience
 export type Client = mockApi.Client;

@@ -5,18 +5,18 @@
  *
  * Handle api for transaction, list transaction and create multi-line purchase or refund
  */
-import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
-import { BudgetYear } from "@/models/Budget";
+import { NextResponse } from 'next/server';
+import { connectDB } from '@/lib/mongodb';
+import { BudgetYear } from '@/models/Budget';
 import { Types } from 'mongoose';
-import { getViewerRole } from "@/lib/data";
-import { Transaction } from "@/models/Transaction";
-import { publishBudgetChange } from "@/lib/sse-bus";
+import { getViewerRole } from '@/lib/data';
+import { Transaction } from '@/models/Transaction';
+import { publishBudgetChange } from '@/lib/sse-bus';
 
-
-type FETransaction = { 
-  id: string; clientId:
-  string; type: 'Purchase' | 'Refund';
+type FETransaction = {
+  id: string;
+  clientId: string;
+  type: 'Purchase' | 'Refund';
   date: string;
   madeBy: string;
   items: string[];
@@ -28,14 +28,14 @@ type PurchaseLineInput = {
   careItemSlug: string;
   label?: string;
   amount: number;
-}
+};
 
 type RefundLineInput = {
   refundOfTransId: string;
   refundOfLineId: string;
   amount: number;
   label?: string;
-}
+};
 
 type CreatePurchaseBody = {
   type: 'Purchase';
@@ -57,31 +57,34 @@ type CreateRefundBody = {
 
 type CreateBody = CreatePurchaseBody | CreateRefundBody;
 
-type TypeSumRow = {_id: 'Purchase' | 'Refund'; sum: number};
-
-
+type TypeSumRow = { _id: 'Purchase' | 'Refund'; sum: number };
 
 export async function GET(
   req: Request,
-  ctx: {params: Promise<{id: string}>}
-){
-  const {id} = await ctx.params;
+  ctx: { params: Promise<{ id: string }> }
+) {
+  const { id } = await ctx.params;
   await connectDB();
 
   const url = new URL(req.url);
   const yearParam = url.searchParams.get('year');
-  const year = Number.isFinite(Number(yearParam)) ? Number(yearParam) : new Date().getFullYear();
+  const year = Number.isFinite(Number(yearParam))
+    ? Number(yearParam)
+    : new Date().getFullYear();
 
   let clientId: Types.ObjectId;
-  try{
+  try {
     clientId = new Types.ObjectId(id);
-  } catch{
-    return NextResponse.json({error: 'Invalid ClientId'}, {status: 422});
+  } catch {
+    return NextResponse.json({ error: 'Invalid ClientId' }, { status: 422 });
   }
 
-  const trans = await Transaction
-    .find({clientId, year, voidedAt: {$exists: false}})
-    .sort({date: -1, _id: -1})
+  const trans = await Transaction.find({
+    clientId,
+    year,
+    voidedAt: { $exists: false },
+  })
+    .sort({ date: -1, _id: -1 })
     .lean();
 
   const out: FETransaction[] = trans.map((t) => ({
@@ -90,7 +93,9 @@ export async function GET(
     type: t.type as 'Purchase' | 'Refund',
     date: new Date(t.date).toISOString().slice(0, 10),
     madeBy: String(t.madeByUserId),
-    items: (t.lines ?? []).map((l: { label?: string; careItemSlug: string }) => l.label ?? l.careItemSlug),
+    items: (t.lines ?? []).map(
+      (l: { label?: string; careItemSlug: string }) => l.label ?? l.careItemSlug
+    ),
     receipt: t.receiptUrl ?? '',
   }));
 
@@ -101,7 +106,7 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const {id} = await params;
+  const { id } = await params;
   await connectDB();
 
   const role = await getViewerRole();
@@ -118,7 +123,10 @@ export async function POST(
   const year = date.getFullYear();
   const currentYear = new Date().getUTCFullYear();
   if (year < currentYear) {
-    return NextResponse.json({ error: 'Past year is read-only' }, { status: 409 });
+    return NextResponse.json(
+      { error: 'Past year is read-only' },
+      { status: 409 }
+    );
   }
 
   let clientId: Types.ObjectId;
@@ -132,13 +140,19 @@ export async function POST(
   try {
     madeByUserId = new Types.ObjectId(body.madeByUserId);
   } catch {
-    return NextResponse.json({ error: 'Invalid madeByUserId' }, { status: 422 });
+    return NextResponse.json(
+      { error: 'Invalid madeByUserId' },
+      { status: 422 }
+    );
   }
 
   // purchase
   if (body.type === 'Purchase') {
     if (!Array.isArray(body.lines) || body.lines.length === 0) {
-      return NextResponse.json({ error: 'At least one line required' }, { status: 422 });
+      return NextResponse.json(
+        { error: 'At least one line required' },
+        { status: 422 }
+      );
     }
 
     const lines = body.lines.map((ln) => ({
@@ -170,7 +184,10 @@ export async function POST(
 
   // refund
   if (!Array.isArray(body.lines) || body.lines.length === 0) {
-    return NextResponse.json({ error: 'At least one refund line required' }, { status: 422 });
+    return NextResponse.json(
+      { error: 'At least one refund line required' },
+      { status: 422 }
+    );
   }
 
   const refundLines: {
@@ -189,19 +206,30 @@ export async function POST(
       origTransId = new Types.ObjectId(r.refundOfTransId);
       refundLineId = new Types.ObjectId(r.refundOfLineId);
     } catch {
-      return NextResponse.json({ error: 'Invalid refund reference ids' }, { status: 422 });
+      return NextResponse.json(
+        { error: 'Invalid refund reference ids' },
+        { status: 422 }
+      );
     }
 
     // verify transaction exists
     const original = await Transaction.findOne({
-        _id: origTransId,
-        clientId,
-        type: 'Purchase',
-        voidedAt: {$exists: false},
+      _id: origTransId,
+      clientId,
+      type: 'Purchase',
+      voidedAt: { $exists: false },
     }).lean();
 
-    if(!original) return NextResponse.json({error: 'Original purchase not found'}, {status: 404});
-    if(original.year !== year) return NextResponse.json({error: 'Refund must be in the same year as original purchase'}, {status: 409});
+    if (!original)
+      return NextResponse.json(
+        { error: 'Original purchase not found' },
+        { status: 404 }
+      );
+    if (original.year !== year)
+      return NextResponse.json(
+        { error: 'Refund must be in the same year as original purchase' },
+        { status: 409 }
+      );
 
     const lineRows = await Transaction.aggregate<{
       line: {
@@ -219,7 +247,10 @@ export async function POST(
     ]);
 
     if (lineRows.length === 0) {
-      return NextResponse.json({ error: 'Original line not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Original line not found' },
+        { status: 404 }
+      );
     }
 
     const origLine = lineRows[0].line;
@@ -250,10 +281,16 @@ export async function POST(
 
     const amt = Number(r.amount);
     if (!(amt >= 0)) {
-      return NextResponse.json({ error: 'Invalid refund amount' }, { status: 422 });
+      return NextResponse.json(
+        { error: 'Invalid refund amount' },
+        { status: 422 }
+      );
     }
     if (amt > remaining + 1e-6) {
-      return NextResponse.json({ error: 'Refund exceeds original line amount' }, { status: 422 });
+      return NextResponse.json(
+        { error: 'Refund exceeds original line amount' },
+        { status: 422 }
+      );
     }
 
     refundLines.push({
@@ -286,7 +323,10 @@ async function updateBudgetTotalsAndSurplus(
   clientId: Types.ObjectId,
   year: number
 ): Promise<void> {
-  const sumRows = await Transaction.aggregate<{ _id: 'Purchase' | 'Refund'; sum: number }>([
+  const sumRows = await Transaction.aggregate<{
+    _id: 'Purchase' | 'Refund';
+    sum: number;
+  }>([
     { $match: { clientId, year, voidedAt: { $exists: false } } },
     { $unwind: '$lines' },
     { $group: { _id: '$type', sum: { $sum: '$lines.amount' } } },

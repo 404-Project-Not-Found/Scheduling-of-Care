@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
+import { NextResponse } from 'next/server';
+import { connectDB } from '@/lib/mongodb';
 import { Types } from 'mongoose';
-import { Transaction } from "@/models/Transaction";
+import { Transaction } from '@/models/Transaction';
 
 type RefundGroupKey = {
   refundOfTransId: Types.ObjectId;
@@ -21,13 +21,18 @@ export async function GET(
 
   const { id } = await ctx.params;
   if (!id || !Types.ObjectId.isValid(id)) {
-    return NextResponse.json({ error: 'Invalid client id in path' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Invalid client id in path' },
+      { status: 400 }
+    );
   }
   const clientId = new Types.ObjectId(id);
 
   const url = new URL(req.url);
   const yearParam = url.searchParams.get('year');
-  const year = Number.isFinite(Number(yearParam)) ? Number(yearParam) : new Date().getFullYear();
+  const year = Number.isFinite(Number(yearParam))
+    ? Number(yearParam)
+    : new Date().getFullYear();
 
   const purchaseLines = await Transaction.aggregate<{
     purchaseTransId: Types.ObjectId;
@@ -38,7 +43,14 @@ export async function GET(
     label?: string;
     amount: number;
   }>([
-    { $match: { clientId, year, type: 'Purchase', voidedAt: { $exists: false } } },
+    {
+      $match: {
+        clientId,
+        year,
+        type: 'Purchase',
+        voidedAt: { $exists: false },
+      },
+    },
     { $unwind: '$lines' },
     {
       $project: {
@@ -59,7 +71,9 @@ export async function GET(
 
   // 2) Sum refunds grouped by (refundOfTransId, refundOfLineId)
   const refundSums = await Transaction.aggregate<RefundAggRow>([
-    { $match: { clientId, year, type: 'Refund', voidedAt: { $exists: false } } },
+    {
+      $match: { clientId, year, type: 'Refund', voidedAt: { $exists: false } },
+    },
     { $unwind: '$lines' },
     {
       $group: {

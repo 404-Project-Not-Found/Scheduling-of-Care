@@ -10,7 +10,7 @@
  *
  * Updated by Denise Alexander (16/10/2025): Fixed active client usage, client dropdown
  * now works correctly.
- * 
+ *
  * Updated by Zahra Rizqita (18/10/2025): Backend implemented -- mockApi no longer functional
  */
 
@@ -31,15 +31,15 @@ import {
   type Client as ApiClient,
 } from '@/lib/data';
 
-import { 
-  getBudgetRows, 
-  getBudgetSummary, 
-  openBudgetSSE, 
+import {
+  getBudgetRows,
+  getBudgetSummary,
+  openBudgetSSE,
   getAvailableYears,
   getCategoriesForClient,
-  type BudgetRow, 
+  type BudgetRow,
   type BudgetSummary,
-  type CategoryLite 
+  type CategoryLite,
 } from '@/lib/budget-helpers';
 
 /* ---------------------------------- Types ---------------------------------- */
@@ -66,11 +66,15 @@ const colors = {
 /* ---------------------------------- Status  ---------------------------------- */
 const LOW_BUDGET_THRESHOLD = 0.15;
 type Tone = 'green' | 'yellow' | 'red';
-const getStatus = (remaining: number, allocated: number): { tone: Tone; label: string } => {
-  if(allocated === 0) return { tone: 'green', label: 'Not allocated'}
-  if (remaining <= 0) return { tone: 'red', label: 'Used up' }
-  const ratio = remaining/(allocated || 1);
-  if (ratio <= LOW_BUDGET_THRESHOLD) return { tone: 'yellow', label: 'Nearly used up' };
+const getStatus = (
+  remaining: number,
+  allocated: number
+): { tone: Tone; label: string } => {
+  if (allocated === 0) return { tone: 'green', label: 'Not allocated' };
+  if (remaining <= 0) return { tone: 'red', label: 'Used up' };
+  const ratio = remaining / (allocated || 1);
+  if (ratio <= LOW_BUDGET_THRESHOLD)
+    return { tone: 'yellow', label: 'Nearly used up' };
   return { tone: 'green', label: 'Within Limit' };
 };
 
@@ -83,7 +87,7 @@ type LoadingState = {
   budgetLoad: boolean;
   savingAnnualLoad: boolean;
   saveRowId: string | null;
-}
+};
 
 /* --------------------------------- Page ---------------------------------- */
 export default function BudgetReportPage() {
@@ -102,7 +106,7 @@ function BudgetReportInner() {
   const router = useRouter();
 
   /* ------------------------------ Role ------------------------------ */
-  const [role, setRole] = useState<Role>('carer'); 
+  const [role, setRole] = useState<Role>('carer');
 
   useEffect(() => {
     (async () => {
@@ -111,26 +115,29 @@ function BudgetReportInner() {
         setRole(r);
       } catch (err) {
         console.error('Failed to get role.', err);
-        setRole('carer'); 
+        setRole('carer');
       }
     })();
   }, []);
 
   // -- Banner Warning State
   const [showWarning, setShowWarning] = useState(false);
-  const [warningText, setWarningText] = useState('')
+  const [warningText, setWarningText] = useState('');
 
   // -- Loading State
   const [loading, setLoading] = useState<LoadingState>({
-    clientsLoad:true,
+    clientsLoad: true,
     yearsLoad: true,
     catLoad: true,
     budgetLoad: true,
     savingAnnualLoad: false,
     saveRowId: null,
-
   });
-  const loadingAny = loading.clientsLoad || loading.yearsLoad || loading.catLoad || loading.budgetLoad;
+  const loadingAny =
+    loading.clientsLoad ||
+    loading.yearsLoad ||
+    loading.catLoad ||
+    loading.budgetLoad;
   /* ---------------------------- Clients ----------------------------- */
   const [clients, setClients] = useState<ClientLite[]>([]);
   const [activeClientId, setActiveClientId] = useState<string | null>(null);
@@ -139,7 +146,7 @@ function BudgetReportInner() {
   // Load clients + active client on mount
   useEffect(() => {
     (async () => {
-      setLoading((s) => ({...s, clientsLoad: true}));
+      setLoading((s) => ({ ...s, clientsLoad: true }));
       try {
         const list: ApiClient[] = await getClients();
         const mapped: ClientLite[] = (list as ApiClientWithAccess[]).map(
@@ -160,7 +167,7 @@ function BudgetReportInner() {
         setActiveClientId(null);
         setDisplayName('');
       } finally {
-        setLoading((s) => ({...s, clientsLoad: false}));
+        setLoading((s) => ({ ...s, clientsLoad: false }));
       }
     })();
   }, []);
@@ -184,13 +191,13 @@ function BudgetReportInner() {
   const [categories, setCategories] = useState<CategoryLite[]>([]);
 
   useEffect(() => {
-    let abort = new AbortController();
+    const abort = new AbortController();
     (async () => {
       if (!activeClientId) {
         setCategories([]);
         return;
       }
-      setLoading((s) => ({...s, catLoad: true}));
+      setLoading((s) => ({ ...s, catLoad: true }));
       try {
         const cats = await getCategoriesForClient(activeClientId, abort.signal);
         setCategories(cats);
@@ -198,54 +205,54 @@ function BudgetReportInner() {
         console.error('Failed to load categories:', e);
         setCategories([]);
       } finally {
-        setLoading((s) => ({...s, catLoad: false}));
+        setLoading((s) => ({ ...s, catLoad: false }));
       }
     })();
     return () => abort.abort();
   }, [activeClientId]);
 
-  
-
   // ===== Query and year =====
   const [q, setQ] = useState('');
-  const [years, setYears] = useState<number[]>([])
+  const [years, setYears] = useState<number[]>([]);
   const [todayDate, setTodaysDate] = useState<string>();
   const [year, setYear] = useState<number>(new Date().getFullYear());
 
   // get current date
   useEffect(() => {
     const d = new Date();
-    const fmt = new Intl.DateTimeFormat('en-AU', {dateStyle: 'long', timeZone:'Australia/Melbourne'});
+    const fmt = new Intl.DateTimeFormat('en-AU', {
+      dateStyle: 'long',
+      timeZone: 'Australia/Melbourne',
+    });
     setTodaysDate(fmt.format(d));
   }, [activeClientId]);
 
   // get years available in database
   useEffect(() => {
-    let abort = new AbortController();
+    const abort = new AbortController();
     const load = async () => {
-      if(!activeClientId) {
+      if (!activeClientId) {
         setYears([]);
         return;
       }
-      setLoading((s) => ({...s, yearsLoad: true}));
+      setLoading((s) => ({ ...s, yearsLoad: true }));
       try {
         const list = await getAvailableYears(activeClientId, abort.signal);
-        if(list.length > 0) {
+        if (list.length > 0) {
           setYears(list);
-          if(!list.includes(year)) setYear(list[0]);
-        }
-        else {
+          if (!list.includes(year)) setYear(list[0]);
+        } else {
           const curr = new Date().getFullYear();
           setYears([curr]);
           setYear(curr);
         }
-      } catch(e) {
+      } catch (e) {
         console.error('Failed to load years:', e);
         const curr = new Date().getFullYear();
         setYears([curr]);
         setYear(curr);
       } finally {
-        setLoading((s) => ({...s, yearsLoad: false}));
+        setLoading((s) => ({ ...s, yearsLoad: false }));
       }
     };
     load();
@@ -253,23 +260,23 @@ function BudgetReportInner() {
   }, [activeClientId]);
   // ===== Budget rows =====
   const [rows, setRows] = useState<BudgetRow[]>([]);
-  const [summary, setSummary] = useState <BudgetSummary>({
+  const [summary, setSummary] = useState<BudgetSummary>({
     annualAllocated: 0,
     spent: 0,
     remaining: 0,
-    surplus: 0
+    surplus: 0,
   });
 
   // fetch rows + summary when client/year changes
   useEffect(() => {
-    let abort = new AbortController();
+    const abort = new AbortController();
     const load = async () => {
-      if(!activeClientId) {
+      if (!activeClientId) {
         setRows([]);
-        setSummary({annualAllocated: 0, spent: 0, remaining: 0, surplus: 0});
+        setSummary({ annualAllocated: 0, spent: 0, remaining: 0, surplus: 0 });
         return;
       }
-      setLoading((s) => ({...s, budgetLoad: true}));
+      setLoading((s) => ({ ...s, budgetLoad: true }));
       try {
         const [r, s] = await Promise.all([
           getBudgetRows(activeClientId, year, abort.signal),
@@ -277,12 +284,12 @@ function BudgetReportInner() {
         ]);
         setRows(r);
         setSummary(s);
-      } catch(e) {
+      } catch (e) {
         console.error('Failed to load budget data:', e);
         setRows([]);
-        setSummary({annualAllocated: 0, spent: 0, remaining: 0, surplus: 0});
+        setSummary({ annualAllocated: 0, spent: 0, remaining: 0, surplus: 0 });
       } finally {
-        setLoading((s) => ({...s, budgetLoad: false}));
+        setLoading((s) => ({ ...s, budgetLoad: false }));
       }
     };
     load();
@@ -309,22 +316,26 @@ function BudgetReportInner() {
   const isPastYear = year < new Date().getFullYear();
 
   const rowsAll = useMemo(() => {
-    const byId = new Map(rows.map(r => [r.categoryId, r]));
-    return categories.map(c => {
+    const byId = new Map(rows.map((r) => [r.categoryId, r]));
+    return categories.map((c) => {
       const r = byId.get(String(c.id));
-      return r ?? {
-        categoryId: c.id,
-        category: c.name,
-        item: c.name,  
-        allocated: 0,
-        spent: 0,
-      };
+      return (
+        r ?? {
+          categoryId: c.id,
+          category: c.name,
+          item: c.name,
+          allocated: 0,
+          spent: 0,
+        }
+      );
     });
   }, [categories, rows]);
 
   // ===== Editing state =====
   const [isEditing, setIsEditing] = useState(false);
-  const [annualBudgetOverride, setAnnualBudgetOverride] = useState<number | null>(null);
+  const [annualBudgetOverride, setAnnualBudgetOverride] = useState<
+    number | null
+  >(null);
   const [annualBudgetInput, setAnnualBudgetInput] = useState<string>('');
 
   const startEdit = () => {
@@ -336,7 +347,7 @@ function BudgetReportInner() {
     if (!activeClientId) return;
     const val = parseFloat(annualBudgetInput);
     if (!Number.isFinite(val) || val < 0) return;
-    setLoading((s) => ({...s, savingAnnualLoad: true}));
+    setLoading((s) => ({ ...s, savingAnnualLoad: true }));
     try {
       const res = await fetch(
         `/api/v1/clients/${encodeURIComponent(activeClientId)}/budget/manage`,
@@ -371,7 +382,7 @@ function BudgetReportInner() {
       setWarningText('Network or server error while saving annual budget.');
       setShowWarning(true);
     } finally {
-      setLoading((s) => ({...s, savingAnnualLoad: false}));
+      setLoading((s) => ({ ...s, savingAnnualLoad: false }));
       setIsEditing(false);
     }
   };
@@ -379,9 +390,12 @@ function BudgetReportInner() {
   const [editingRowId, setEditingRowId] = useState<string | null>(null);
   const [allocInput, setAllocInput] = useState<Record<string, string>>({});
 
-  const startEditRow = (row: BudgetRow) => { 
-    setEditingRowId(row.categoryId); 
-    setAllocInput(prev => ({ ...prev, [row.categoryId]: String(row.allocated) }));
+  const startEditRow = (row: BudgetRow) => {
+    setEditingRowId(row.categoryId);
+    setAllocInput((prev) => ({
+      ...prev,
+      [row.categoryId]: String(row.allocated),
+    }));
   };
 
   const cancelEditRow = () => setEditingRowId(null);
@@ -396,11 +410,13 @@ function BudgetReportInner() {
       return;
     }
     if (amount < row.spent) {
-      setWarningText(`Allocated ($${amount}) cannot be less than Spent ($${row.spent}).`);
+      setWarningText(
+        `Allocated ($${amount}) cannot be less than Spent ($${row.spent}).`
+      );
       setShowWarning(true);
       return;
     }
-    setLoading((s) => ({...s, saveRowId: row.categoryId}));
+    setLoading((s) => ({ ...s, saveRowId: row.categoryId }));
     try {
       const res = await fetch(
         `/api/v1/clients/${encodeURIComponent(activeClientId)}/budget/manage`,
@@ -435,33 +451,36 @@ function BudgetReportInner() {
       setWarningText('Network or server error while saving category budget.');
       setShowWarning(true);
     } finally {
-      setLoading((s) => ({...s, saveRowId: null}));
+      setLoading((s) => ({ ...s, saveRowId: null }));
     }
   };
 
   const handleRollover = async (
     activeClientId: string,
     year: number,
-    setRows: (r: any) => void,
-    setSummary: (s: any) => void
+    setRows: (r: unknown) => void,
+    setSummary: (s: unknown) => void
   ) => {
     if (!activeClientId) return;
 
     try {
-      await fetch(`/api/v1/clients/${encodeURIComponent(activeClientId)}/budget/manage`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        cache: 'no-store',
-        body: JSON.stringify({
-          action: 'rolloverFromPrev',
-          fromYear: year - 1,
-          toYear: year,
-          copyCategories: true,
-          bringSurplus: true,
-          resetItemAllocations: false,
-          overwriteIfExists: true,
-        }),
-      });
+      await fetch(
+        `/api/v1/clients/${encodeURIComponent(activeClientId)}/budget/manage`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          cache: 'no-store',
+          body: JSON.stringify({
+            action: 'rolloverFromPrev',
+            fromYear: year - 1,
+            toYear: year,
+            copyCategories: true,
+            bringSurplus: true,
+            resetItemAllocations: false,
+            overwriteIfExists: true,
+          }),
+        }
+      );
 
       const [rows, summary] = await Promise.all([
         getBudgetRows(activeClientId, year),
@@ -481,11 +500,9 @@ function BudgetReportInner() {
     if (!t) return rowsAll;
     return rowsAll.filter(
       (r) =>
-        r.item.toLowerCase().includes(t) ||
-        r.category.toLowerCase().includes(t)
+        r.item.toLowerCase().includes(t) || r.category.toLowerCase().includes(t)
     );
   }, [q, rowsAll]);
-
 
   /** Totals */
   const totals = useMemo(() => {
@@ -505,7 +522,10 @@ function BudgetReportInner() {
       onClientChange={onClientChange}
       colors={colors}
     >
-      <div className="flex-1 h-[680px] bg-white/50 overflow-auto" aria-busy={loading.budgetLoad}>
+      <div
+        className="flex-1 h-[680px] bg-white/50 overflow-auto"
+        aria-busy={loading.budgetLoad}
+      >
         {/* Top bar */}
         <div className="w-full bg-[#3A0000] px-6 py-4 flex items-center justify-between">
           {/* LEFT: title + year */}
@@ -546,17 +566,22 @@ function BudgetReportInner() {
               disabled={loading.budgetLoad}
               className="h-9 rounded-full bg-white text-black px-4 border"
             />
-            {role === 'management' && years.includes(year - 1) && year === new Date().getFullYear() && (
-              <button
-                onClick={() => handleRollover(activeClientId!, year, setRows, setSummary)}
-                disabled={loading.budgetLoad}
-                className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10"
-                title={`Copy categories and carry surplus from ${year - 1}`}
-              >
-                Roll over from {year-1}
-              </button>
-            )}
-            {role === 'management'&& !isPastYear &&
+            {role === 'management' &&
+              years.includes(year - 1) &&
+              year === new Date().getFullYear() && (
+                <button
+                  onClick={() =>
+                    handleRollover(activeClientId!, year, setRows, setSummary)
+                  }
+                  disabled={loading.budgetLoad}
+                  className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10"
+                  title={`Copy categories and carry surplus from ${year - 1}`}
+                >
+                  Roll over from {year - 1}
+                </button>
+              )}
+            {role === 'management' &&
+              !isPastYear &&
               (!isEditing ? (
                 <button
                   onClick={startEdit}
@@ -612,7 +637,8 @@ function BudgetReportInner() {
               {/* Read only for previous years */}
               {isPastYear && (
                 <div className="mb-6 rounded-xl border border-yellow-400 bg-yellow-100 text-yellow-900 px-6 py-4">
-                  The selected year ({year}) is read-only. Switch to {new Date().getFullYear()} to edit the annual budget.
+                  The selected year ({year}) is read-only. Switch to{' '}
+                  {new Date().getFullYear()} to edit the annual budget.
                 </div>
               )}
 
@@ -649,7 +675,9 @@ function BudgetReportInner() {
                 </div>
 
                 <div className="rounded-2xl border px-6 py-8 bg-white">
-                  <div className={`text-2xl font-bold ${effectiveRemaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                  <div
+                    className={`text-2xl font-bold ${effectiveRemaining < 0 ? 'text-red-600' : 'text-green-600'}`}
+                  >
                     {effectiveRemaining < 0
                       ? `-$${Math.abs(effectiveRemaining).toLocaleString()}`
                       : `$${effectiveRemaining.toLocaleString()}`}
@@ -685,12 +713,15 @@ function BudgetReportInner() {
                 return (
                   <div className="mb-6 rounded-lg border border-yellow-400 bg-yellow-100 px-6 py-4 text-yellow-800">
                     <div className="font-semibold mb-2">
-                      ⚠️ The following categories are nearing their budget limit:
+                      ⚠️ The following categories are nearing their budget
+                      limit:
                     </div>
                     <ul className="list-disc list-inside space-y-1">
                       {lowCategories.map((c) => (
                         <li key={c.name}>
-                          <span className="font-medium">{c.name}</span> — remaining ${c.remaining.toFixed(2)} ({c.percent.toFixed(1)}%)
+                          <span className="font-medium">{c.name}</span> —
+                          remaining ${c.remaining.toFixed(2)} (
+                          {c.percent.toFixed(1)}%)
                         </li>
                       ))}
                     </ul>
@@ -716,7 +747,10 @@ function BudgetReportInner() {
                       const remaining = r.allocated - r.spent;
                       const status = getStatus(remaining, r.allocated);
                       return (
-                        <tr key={r.categoryId} className="border-b last:border-b border-[#3A0000]/20">
+                        <tr
+                          key={r.categoryId}
+                          className="border-b last:border-b border-[#3A0000]/20"
+                        >
                           <td className="px-4 py-5">
                             {r.allocated > 0 ? (
                               <Link
@@ -740,9 +774,15 @@ function BudgetReportInner() {
                                 type="number"
                                 min={0}
                                 step={1}
-                                value={allocInput[r.categoryId] ?? String(r.allocated)}
+                                value={
+                                  allocInput[r.categoryId] ??
+                                  String(r.allocated)
+                                }
                                 onChange={(e) =>
-                                  setAllocInput((prev) => ({ ...prev, [r.categoryId]: e.target.value }))
+                                  setAllocInput((prev) => ({
+                                    ...prev,
+                                    [r.categoryId]: e.target.value,
+                                  }))
                                 }
                                 className="w-28 text-right rounded-md bg-white text-black px-2 py-1 border"
                               />
@@ -750,8 +790,12 @@ function BudgetReportInner() {
                               `$${r.allocated}`
                             )}
                           </td>
-                          <td className="px-4 py-5">${r.spent.toLocaleString()}</td>
-                          <td className={`px-4 py-5 ${remaining < 0 ? 'text-red-600' : ''}`}>
+                          <td className="px-4 py-5">
+                            ${r.spent.toLocaleString()}
+                          </td>
+                          <td
+                            className={`px-4 py-5 ${remaining < 0 ? 'text-red-600' : ''}`}
+                          >
                             {remaining < 0
                               ? `-$${Math.abs(remaining).toLocaleString()}`
                               : `$${remaining.toLocaleString()}`}
@@ -765,14 +809,20 @@ function BudgetReportInner() {
                                 <div className="flex gap-2">
                                   <button
                                     onClick={() => saveRow(r)}
-                                    disabled={loading.saveRowId === r.categoryId}
+                                    disabled={
+                                      loading.saveRowId === r.categoryId
+                                    }
                                     className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10 disabled:opacity-60"
                                   >
-                                    {loading.saveRowId === r.categoryId ? 'Saving…' : 'Save'}
+                                    {loading.saveRowId === r.categoryId
+                                      ? 'Saving…'
+                                      : 'Save'}
                                   </button>
                                   <button
                                     onClick={cancelEditRow}
-                                    disabled={loading.saveRowId === r.categoryId}
+                                    disabled={
+                                      loading.saveRowId === r.categoryId
+                                    }
                                     className="px-3 py-1 rounded-md bg-white/80 text-black font-semibold hover:bg-white disabled:opacity-60"
                                   >
                                     Cancel
@@ -802,7 +852,9 @@ function BudgetReportInner() {
                         <td className="px-4 py-4">${totals.allocated}</td>
                         <td className="px-4 py-4">${totals.spent}</td>
                         <td className="px-4 py-4">
-                          {totals.remaining < 0 ? `-$${Math.abs(totals.remaining)}` : `$${totals.remaining}`}
+                          {totals.remaining < 0
+                            ? `-$${Math.abs(totals.remaining)}`
+                            : `$${totals.remaining}`}
                         </td>
                         <td />
                         <td />
@@ -814,7 +866,7 @@ function BudgetReportInner() {
             </>
           )}
         </div>
-        </div>
+      </div>
     </DashboardChrome>
   );
 }

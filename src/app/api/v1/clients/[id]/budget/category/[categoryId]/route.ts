@@ -4,12 +4,12 @@
  * Date Created: 10/10/2025
  */
 
-import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
-import { BudgetYear } from "@/models/Budget";
+import { NextResponse } from 'next/server';
+import { connectDB } from '@/lib/mongodb';
+import { BudgetYear } from '@/models/Budget';
 import { Types } from 'mongoose';
-import { Transaction } from "@/models/Transaction";
-import CareItem from '@/models/CareItem'; 
+import { Transaction } from '@/models/Transaction';
+import CareItem from '@/models/CareItem';
 import { slugify } from '@/lib/slug';
 
 type CategoryItem = {
@@ -17,28 +17,28 @@ type CategoryItem = {
   label: string;
   allocated: number;
   spent: number; // purchase - refund
-}
+};
 
 type CategoryDetail = {
   categoryName: string;
   allocated: number;
   spent: number; // sum of item
   items: CategoryItem[];
-}
+};
 
 type ItemSpentRow = {
   _id: string;
   label?: string;
   spent: number;
-}
+};
 
 export async function GET(
   req: Request,
-  {params}: {params: Promise<{id: string; categoryId: string}>}
-){
+  { params }: { params: Promise<{ id: string; categoryId: string }> }
+) {
   await connectDB();
 
-  const {id, categoryId} = await params
+  const { id, categoryId } = await params;
 
   let clientId: Types.ObjectId;
   let catId: Types.ObjectId;
@@ -46,45 +46,52 @@ export async function GET(
     clientId = new Types.ObjectId(id);
     catId = new Types.ObjectId(categoryId);
   } catch {
-    return NextResponse.json({error: 'Invalid id'}, {status: 422});
+    return NextResponse.json({ error: 'Invalid id' }, { status: 422 });
   }
 
   const url = new URL(req.url);
   const yearParam = url.searchParams.get('year');
-  const year = Number.isFinite(Number(yearParam)) ? Number(yearParam) : new Date().getFullYear();
+  const year = Number.isFinite(Number(yearParam))
+    ? Number(yearParam)
+    : new Date().getFullYear();
 
-  const budget = await BudgetYear.findOne({clientId, year}).lean();
-  const budgetCat = budget?.categories.find((c) => String(c.categoryId) === String(catId));
+  const budget = await BudgetYear.findOne({ clientId, year }).lean();
+  const budgetCat = budget?.categories.find(
+    (c) => String(c.categoryId) === String(catId)
+  );
 
   const nameCat = (budgetCat?.categoryName ?? 'Category').trim() || 'Category';
   const allocatedCat = Math.round(budgetCat?.allocated ?? 0);
 
   const spendAgg = await Transaction.aggregate<ItemSpentRow>([
-    {$match: {clientId, year, voidedAt: {$exists: false}}},
-    {$unwind: '$lines'},
-    {$match: {'lines.categoryId': catId}},
+    { $match: { clientId, year, voidedAt: { $exists: false } } },
+    { $unwind: '$lines' },
+    { $match: { 'lines.categoryId': catId } },
     {
       $group: {
-        _id: {$toLower: '$lines.careItemSlug'},
-        label: {$last: '$lines.label'},
+        _id: { $toLower: '$lines.careItemSlug' },
+        label: { $last: '$lines.label' },
         spent: {
           $sum: {
             $cond: [
-                {$eq: ['$type', 'Purchase']},
-                '$lines.amount',
-                {$multiply: [-1, '$lines.amount']},
+              { $eq: ['$type', 'Purchase'] },
+              '$lines.amount',
+              { $multiply: [-1, '$lines.amount'] },
             ],
-          }, 
-        }, 
+          },
+        },
       },
     },
   ]);
 
   const spentBySlug = new Map<string, { spent: number; label?: string }>();
   for (const r of spendAgg) {
-    const derivedSlug = r._id && r._id.trim()
-      ? r._id
-      : (r.label ? slugify(r.label).toLowerCase() : '');
+    const derivedSlug =
+      r._id && r._id.trim()
+        ? r._id
+        : r.label
+          ? slugify(r.label).toLowerCase()
+          : '';
     if (!derivedSlug) continue;
     spentBySlug.set(derivedSlug, {
       spent: Math.round(Number(r.spent ?? 0)),
@@ -92,24 +99,26 @@ export async function GET(
     });
   }
 
-  const catalogLabels = await CareItem.distinct('label', {
+  const catalogLabels = (await CareItem.distinct('label', {
     clientId,
     categoryId: catId,
     deleted: { $ne: true },
-  }) as string[];
+  })) as string[];
 
   const catalog = (catalogLabels ?? [])
-  .map((lbl) => {
-    const label = (lbl || '').trim();
-    if (!label) return null;
-    return { slug: slugify(label).toLowerCase(), label };
-  })
-  .filter(Boolean) as Array<{ slug: string; label: string }>;
+    .map((lbl) => {
+      const label = (lbl || '').trim();
+      if (!label) return null;
+      return { slug: slugify(label).toLowerCase(), label };
+    })
+    .filter(Boolean) as Array<{ slug: string; label: string }>;
 
   const unionSlugs = new Set<string>();
 
   for (const bi of budgetCat?.items ?? []) {
-    const s = String(bi.careItemSlug || '').toLowerCase().trim();
+    const s = String(bi.careItemSlug || '')
+      .toLowerCase()
+      .trim();
     if (s) unionSlugs.add(s);
   }
 
@@ -119,8 +128,9 @@ export async function GET(
 
   const items: CategoryItem[] = [];
   for (const slug of unionSlugs) {
-    const fromBudget = (budgetCat?.items ?? [])
-      .find((i) => String(i.careItemSlug).toLowerCase().trim() === slug);
+    const fromBudget = (budgetCat?.items ?? []).find(
+      (i) => String(i.careItemSlug).toLowerCase().trim() === slug
+    );
     const fromSpend = spentBySlug.get(slug);
     const fromCatalog = catalog.find((c) => c.slug === slug);
 

@@ -28,13 +28,13 @@ import {
   type Client as ApiClient,
 } from '@/lib/data';
 
-import { 
-  getCategoryDetail, 
-  setCategoryAllocation, 
-  setItemAllocation, 
-  openBudgetSSE, 
-  type CategoryDetail, 
-  getBudgetSummary, 
+import {
+  getCategoryDetail,
+  setCategoryAllocation,
+  setItemAllocation,
+  openBudgetSSE,
+  type CategoryDetail,
+  getBudgetSummary,
   type BudgetSummary,
   getAvailableYears,
 } from '@/lib/budget-helpers';
@@ -43,15 +43,19 @@ import {
 
 const LOW_BUDGET_THRESHOLD = 0.15;
 type Tone = 'green' | 'yellow' | 'red';
-const getStatus = (remaining: number, allocated: number): { tone: Tone; label: string } => {
-  if(allocated === 0) return {tone: 'green', label: 'Not allocated'};
+const getStatus = (
+  remaining: number,
+  allocated: number
+): { tone: Tone; label: string } => {
+  if (allocated === 0) return { tone: 'green', label: 'Not allocated' };
   if (remaining <= 0) return { tone: 'red', label: 'Used up' };
-  const ratio = remaining/(allocated || 1);
-  if (ratio <= LOW_BUDGET_THRESHOLD) return { tone: 'yellow', label: 'Nearly used up' };
+  const ratio = remaining / (allocated || 1);
+  if (ratio <= LOW_BUDGET_THRESHOLD)
+    return { tone: 'yellow', label: 'Nearly used up' };
   return { tone: 'green', label: 'Within Limit' };
 };
 
-const capitalise = (s: string) => (s ? s[0].toUpperCase() + s.slice(1): '');
+const capitalise = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : '');
 /* ------------------------------- Chrome colors ------------------------------- */
 const colors = {
   header: '#3A0000',
@@ -83,19 +87,21 @@ export default function CategoryCostPage() {
   );
 }
 
-
 function CategoryCostInner() {
   const router = useRouter();
   const { categoryId } = useParams<{ categoryId: string }>();
   /* ===== Loading ===== */
-  const [load, setLoad] = useState({years: true, detail: true});
-  const [saving, setSaving] = useState<{category: boolean; itemSlug: string | null}>({
+  const [load, setLoad] = useState({ years: true, detail: true });
+  const [saving, setSaving] = useState<{
+    category: boolean;
+    itemSlug: string | null;
+  }>({
     category: false,
-    itemSlug: null
+    itemSlug: null,
   });
 
   const loadingAny = load.years || load.detail;
-  /* ===== Role ===== */  
+  /* ===== Role ===== */
   const [role, setRole] = useState<Role>('family');
   useEffect(() => {
     (async () => {
@@ -112,17 +118,17 @@ function CategoryCostInner() {
 
   /** Load clients */
   useEffect(() => {
-      (async () => {
-        const active = await getActiveClient();
-        if(!active?.id) {
-          router.push('/calendar_dashboard/budget_report');
-          return;
-        }
-        setActiveClientId(active.id);
-        setDisplayName(active.name || '')
-      })();
-    }, [router]);
-    
+    (async () => {
+      const active = await getActiveClient();
+      if (!active?.id) {
+        router.push('/calendar_dashboard/budget_report');
+        return;
+      }
+      setActiveClientId(active.id);
+      setDisplayName(active.name || '');
+    })();
+  }, [router]);
+
   const onLogoClick = () => {
     router.push('/icon_dashboard');
   };
@@ -132,54 +138,64 @@ function CategoryCostInner() {
   const [years, setYears] = useState<number[]>([2025]);
   const [year, setYear] = useState<number>(new Date().getFullYear());
   const [todayDate, setTodaysDate] = useState<string>();
-  
+
   // get current date
   useEffect(() => {
     const d = new Date();
-    const fmt = new Intl.DateTimeFormat('en-AU', {dateStyle: 'long', timeZone:'Australia/Melbourne'});
+    const fmt = new Intl.DateTimeFormat('en-AU', {
+      dateStyle: 'long',
+      timeZone: 'Australia/Melbourne',
+    });
     setTodaysDate(fmt.format(d));
   }, [activeClientId]);
-  
+
   // get years available in database
   useEffect(() => {
-    let abort = new AbortController();
+    const abort = new AbortController();
     const loadYears = async () => {
-      if(!activeClientId) {
+      if (!activeClientId) {
         setYears([]);
         return;
       }
-      setLoad((s) => ({...s, years: true}));
+      setLoad((s) => ({ ...s, years: true }));
       try {
         const list = await getAvailableYears(activeClientId, abort.signal);
-        if(list.length > 0) {
+        if (list.length > 0) {
           setYears(list);
-          if(!list.includes(year)) setYear(list[0]);
-        }
-        else {
+          if (!list.includes(year)) setYear(list[0]);
+        } else {
           const curr = new Date().getFullYear();
           setYears([curr]);
-         setYear(curr);
+          setYear(curr);
         }
-      } catch(e) {
+      } catch (e) {
         console.error('Failed to load years:', e);
         const curr = new Date().getFullYear();
         setYears([curr]);
-      setYear(curr);
+        setYear(curr);
       } finally {
-        setLoad((s) => ({...s, years: false}));
+        setLoad((s) => ({ ...s, years: false }));
       }
     };
     loadYears();
     return () => abort.abort();
   }, [activeClientId]);
-  
+
   /* ===== Budget ===== */
   const [detail, setDetail] = useState<CategoryDetail | null>(null);
-  const [summary, setSummary] = useState<BudgetSummary>({annualAllocated: 0, spent: 0, remaining: 0, surplus: 0})
+  const [summary, setSummary] = useState<BudgetSummary>({
+    annualAllocated: 0,
+    spent: 0,
+    remaining: 0,
+    surplus: 0,
+  });
 
   const reload = async () => {
-    if (!activeClientId) { setDetail(null); return; }
-    setLoad((s) => ({...s, detail: true}));
+    if (!activeClientId) {
+      setDetail(null);
+      return;
+    }
+    setLoad((s) => ({ ...s, detail: true }));
     try {
       const [d, s] = await Promise.all([
         getCategoryDetail(activeClientId, categoryId, year),
@@ -189,23 +205,29 @@ function CategoryCostInner() {
       setSummary(s);
       setCategoryAmountInput(String(d.allocated ?? 0));
       const next: Record<string, string> = {};
-      d.items.forEach((it) => { next[it.careItemSlug] = String(it.allocated ?? 0); });
+      d.items.forEach((it) => {
+        next[it.careItemSlug] = String(it.allocated ?? 0);
+      });
       setItemEdits(next);
     } catch (e) {
       console.error(e);
       setDetail(null);
       setSummary({ annualAllocated: 0, spent: 0, remaining: 0, surplus: 0 });
     } finally {
-      setLoad((s) => ({...s, detail: false}));
+      setLoad((s) => ({ ...s, detail: false }));
     }
   };
 
-  useEffect(() => { void reload(); }, [activeClientId, year, categoryId]);
+  useEffect(() => {
+    void reload();
+  }, [activeClientId, year, categoryId]);
 
   /** Live update by SSE */
   useEffect(() => {
-    if(!activeClientId) return;
-    const stop = openBudgetSSE(activeClientId, year, () => {void reload()});
+    if (!activeClientId) return;
+    const stop = openBudgetSSE(activeClientId, year, () => {
+      void reload();
+    });
     return () => stop();
     //eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeClientId, year, categoryId]);
@@ -218,9 +240,8 @@ function CategoryCostInner() {
   /** Editing state for category */
   const [isEditingCategory, setIsEditingCategory] = useState(false);
 
-
   const startEditCategory = () => {
-    if(!detail) return;
+    if (!detail) return;
     setCategoryAmountInput(String(detail.allocated ?? 0));
     setIsEditingCategory(true);
   };
@@ -231,34 +252,43 @@ function CategoryCostInner() {
     setIsEditingCategory(false);
   };
 
-
   const saveCategory = async () => {
-    if(!activeClientId || !detail) return;
+    if (!activeClientId || !detail) return;
     const amount = Number(categoryAmountInput);
-    if(!Number.isFinite(amount) || amount < 0) return;
+    if (!Number.isFinite(amount) || amount < 0) return;
 
-    setSaving((s) => ({...s, category: true}))
+    setSaving((s) => ({ ...s, category: true }));
     try {
-      await setCategoryAllocation(activeClientId, year, categoryId, amount, detail.categoryName);
+      await setCategoryAllocation(
+        activeClientId,
+        year,
+        categoryId,
+        amount,
+        detail.categoryName
+      );
       await reload();
       setIsEditingCategory(false);
-    } catch(e) {
+    } catch (e) {
       console.error('setCategory failed', e);
     } finally {
-      setSaving((s) => ({...s, category: false}));
+      setSaving((s) => ({ ...s, category: false }));
     }
   };
   /** Editing state for care item */
   const [editingItemSlug, setEditingItemSlug] = useState<string | null>(null);
   const [itemEdits, setItemEdits] = useState<Record<string, string>>({});
-  const [itemAllocInput, setItemAllocInput] = useState<Record<string, string>>({});
+  const [itemAllocInput, setItemAllocInput] = useState<Record<string, string>>(
+    {}
+  );
 
-  const startEditItem = (slug: string, currentAllocated: number) => { 
-    setItemAllocInput((p) => ({ ...p, [slug]: String(currentAllocated) })); 
-    setEditingItemSlug(slug); 
-  }; 
-  
-  const cancelEditItem = () => { setEditingItemSlug(null); };
+  const startEditItem = (slug: string, currentAllocated: number) => {
+    setItemAllocInput((p) => ({ ...p, [slug]: String(currentAllocated) }));
+    setEditingItemSlug(slug);
+  };
+
+  const cancelEditItem = () => {
+    setEditingItemSlug(null);
+  };
 
   const saveItem = async (slug: string) => {
     if (!activeClientId) return;
@@ -314,257 +344,310 @@ function CategoryCostInner() {
     [detail?.categoryName]
   );
   return (
-  <DashboardChrome
-    page="budget"
-    clients={[]}
-    onClientChange={() => {}}
-    colors={colors}
-    onLogoClick={onLogoClick}
-    showClientPicker={false}
-  >
-    <div className="flex-1 h-[680px] bg-white/50 overflow-auto" aria-busy={loadingAny}>
-      {/* Top bar */}
-      <div className="w-full bg-[#3A0000] px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-8">
-          <Link href="/calendar_dashboard/budget_report" className="text-white/90 hover:text-white font-semibold">
-            &lt; Back
-          </Link>
-          <h2 className="text-white text-2xl font-semibold">{niceCategoryName} Budget</h2>
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-white text-lg">Select year:</span>
-            <select
-              value={String(year)}
-              onChange={(e) => setYear(Number(e.target.value))}
-              className="rounded-md bg-white text-sm px-3 py-1 border"
-              disabled={loadingAny}
+    <DashboardChrome
+      page="budget"
+      clients={[]}
+      onClientChange={() => {}}
+      colors={colors}
+      onLogoClick={onLogoClick}
+      showClientPicker={false}
+    >
+      <div
+        className="flex-1 h-[680px] bg-white/50 overflow-auto"
+        aria-busy={loadingAny}
+      >
+        {/* Top bar */}
+        <div className="w-full bg-[#3A0000] px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-8">
+            <Link
+              href="/calendar_dashboard/budget_report"
+              className="text-white/90 hover:text-white font-semibold"
             >
-              {years.map((y) => (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              ))}
-            </select>
-            {year === new Date().getFullYear() && todayDate && (
-              <span className="font-semibold text-white text-lg ml-2">As of: {todayDate}</span>
-            )}
+              &lt; Back
+            </Link>
+            <h2 className="text-white text-2xl font-semibold">
+              {niceCategoryName} Budget
+            </h2>
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-white text-lg">
+                Select year:
+              </span>
+              <select
+                value={String(year)}
+                onChange={(e) => setYear(Number(e.target.value))}
+                className="rounded-md bg-white text-sm px-3 py-1 border"
+                disabled={loadingAny}
+              >
+                {years.map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+              </select>
+              {year === new Date().getFullYear() && todayDate && (
+                <span className="font-semibold text-white text-lg ml-2">
+                  As of: {todayDate}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search items"
+              className="h-9 rounded-full bg-white text-black px-4 border"
+              disabled={loadingAny}
+            />
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search items"
-            className="h-9 rounded-full bg-white text-black px-4 border"
-            disabled={loadingAny}
-          />
-        </div>
-      </div>
+        {/* Loading screen OR content */}
+        {loadingAny ? (
+          <div className="w-full px-12 py-24 text-center text-gray-600 text-xl font-medium">
+            Loading category budget…
+          </div>
+        ) : (
+          <>
+            {/* Banners */}
+            {detail && remaining < 0 && (
+              <div className="w-full bg-[#fde7e4] border-y border-[#f5c2c2] px-6 py-3">
+                <p className="text-[#9b2c2c] font-semibold">
+                  WARNING: Category exceeded by{' '}
+                  <b>${Math.abs(remaining).toLocaleString()}</b>
+                </p>
+              </div>
+            )}
+            {lowItems.length > 0 && (
+              <div className="w-full bg-yellow-100 border-y border-yellow-300 px-6 py-3">
+                <p className="text-yellow-800 font-semibold mb-1">
+                  ⚠️ Items nearing their budget limit:
+                </p>
+                <ul className="list-disc list-inside text-yellow-800">
+                  {lowItems.map((it) => (
+                    <li key={it.careItemSlug}>
+                      <span className="font-medium">{it.label}</span> —
+                      remaining ${(it.allocated - it.spent).toFixed(2)} (
+                      {(
+                        ((it.allocated - it.spent) / it.allocated) *
+                        100
+                      ).toFixed(1)}
+                      %)
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {isPastYear && (
+              <div className="w-full bg-yellow-100 border-y border-yellow-300 px-6 py-3 text-yellow-900">
+                The selected year ({year}) is read-only. Switch to{' '}
+                {new Date().getFullYear()} to edit.
+              </div>
+            )}
 
-      {/* Loading screen OR content */}
-      {loadingAny ? (
-        <div className="w-full px-12 py-24 text-center text-gray-600 text-xl font-medium">
-          Loading category budget…
-        </div>
-      ) : (
-        <>
-          {/* Banners */}
-          {detail && remaining < 0 && (
-            <div className="w-full bg-[#fde7e4] border-y border-[#f5c2c2] px-6 py-3">
-              <p className="text-[#9b2c2c] font-semibold">
-                WARNING: Category exceeded by <b>${Math.abs(remaining).toLocaleString()}</b>
-              </p>
-            </div>
-          )}
-          {lowItems.length > 0 && (
-            <div className="w-full bg-yellow-100 border-y border-yellow-300 px-6 py-3">
-              <p className="text-yellow-800 font-semibold mb-1">⚠️ Items nearing their budget limit:</p>
-              <ul className="list-disc list-inside text-yellow-800">
-                {lowItems.map((it) => (
-                  <li key={it.careItemSlug}>
-                    <span className="font-medium">{it.label}</span> — remaining $
-                    {(it.allocated - it.spent).toFixed(2)} ({((it.allocated - it.spent) / it.allocated * 100).toFixed(1)}%)
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          {isPastYear && (
-            <div className="w-full bg-yellow-100 border-y border-yellow-300 px-6 py-3 text-yellow-900">
-              The selected year ({year}) is read-only. Switch to {new Date().getFullYear()} to edit.
-            </div>
-          )}
-
-          {/* Content */}
-          <div className="w-full px-12 py-10">
-            {/* Tiles */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-18 mb-10 text-center">
-              <div className="rounded-2xl border px-6 py-8 bg-[#F8CBA6]">
-                {isManagement && !isPastYear ? (
-                  !isEditingCategory ? (
+            {/* Content */}
+            <div className="w-full px-12 py-10">
+              {/* Tiles */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-18 mb-10 text-center">
+                <div className="rounded-2xl border px-6 py-8 bg-[#F8CBA6]">
+                  {isManagement && !isPastYear ? (
+                    !isEditingCategory ? (
+                      <>
+                        <div className="text-2xl font-bold">
+                          ${(detail?.allocated ?? 0).toLocaleString()}
+                        </div>
+                        <div className="text-sm">{niceCategoryName} Budget</div>
+                        <div className="mt-3">
+                          <button
+                            onClick={startEditCategory}
+                            className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10"
+                            disabled={loadingAny}
+                          >
+                            Edit
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <input
+                          type="number"
+                          min={0}
+                          step={1}
+                          value={categoryAmountInput}
+                          onChange={(e) =>
+                            setCategoryAmountInput(e.target.value)
+                          }
+                          className="w-full max-w-[220px] mx-auto text-center text-2xl font-bold rounded-md bg-white text-black px-3 py-2 border"
+                          disabled={saving.category}
+                        />
+                        <div className="text-sm mt-2">
+                          {niceCategoryName} Budget
+                        </div>
+                        <div className="mt-3 flex gap-2 justify-center">
+                          <button
+                            onClick={saveCategory}
+                            className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10 disabled:opacity-60"
+                            disabled={saving.category}
+                          >
+                            {saving.category ? 'Saving…' : 'Save'}
+                          </button>
+                          <button
+                            onClick={cancelEditCategory}
+                            className="px-3 py-1 rounded-md bg-white/80 text-black font-semibold hover:bg-white disabled:opacity-60"
+                            disabled={saving.category}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </>
+                    )
+                  ) : (
                     <>
                       <div className="text-2xl font-bold">
                         ${(detail?.allocated ?? 0).toLocaleString()}
                       </div>
                       <div className="text-sm">{niceCategoryName} Budget</div>
-                      <div className="mt-3">
-                        <button
-                          onClick={startEditCategory}
-                          className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10"
-                          disabled={loadingAny}
-                        >
-                          Edit
-                        </button>
-                      </div>
                     </>
-                  ) : (
-                    <>
-                      <input
-                        type="number"
-                        min={0}
-                        step={1}
-                        value={categoryAmountInput}
-                        onChange={(e) => setCategoryAmountInput(e.target.value)}
-                        className="w-full max-w-[220px] mx-auto text-center text-2xl font-bold rounded-md bg-white text-black px-3 py-2 border"
-                        disabled={saving.category}
-                      />
-                      <div className="text-sm mt-2">{niceCategoryName} Budget</div>
-                      <div className="mt-3 flex gap-2 justify-center">
-                        <button
-                          onClick={saveCategory}
-                          className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10 disabled:opacity-60"
-                          disabled={saving.category}
-                        >
-                          {saving.category ? 'Saving…' : 'Save'}
-                        </button>
-                        <button
-                          onClick={cancelEditCategory}
-                          className="px-3 py-1 rounded-md bg-white/80 text-black font-semibold hover:bg-white disabled:opacity-60"
-                          disabled={saving.category}
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </>
-                  )
-                ) : (
-                  <>
-                    <div className="text-2xl font-bold">
-                      ${(detail?.allocated ?? 0).toLocaleString()}
-                    </div>
-                    <div className="text-sm">{niceCategoryName} Budget</div>
-                  </>
-                )}
-              </div>
-
-              <div className="rounded-2xl border px-6 py-8 bg-white">
-                <div className="text-2xl font-bold">${(detail?.spent ?? 0).toLocaleString()}</div>
-                <div className="text-sm">Spent to Date</div>
-              </div>
-
-              <div className="rounded-2xl border px-6 py-8 bg-white">
-                <div className={`text-2xl font-bold ${remaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                  {remaining < 0
-                    ? `-$${Math.abs(remaining).toLocaleString()}`
-                    : `$${remaining.toLocaleString()}`}
+                  )}
                 </div>
-                <div className="text-sm">Remaining Balance</div>
+
+                <div className="rounded-2xl border px-6 py-8 bg-white">
+                  <div className="text-2xl font-bold">
+                    ${(detail?.spent ?? 0).toLocaleString()}
+                  </div>
+                  <div className="text-sm">Spent to Date</div>
+                </div>
+
+                <div className="rounded-2xl border px-6 py-8 bg-white">
+                  <div
+                    className={`text-2xl font-bold ${remaining < 0 ? 'text-red-600' : 'text-green-600'}`}
+                  >
+                    {remaining < 0
+                      ? `-$${Math.abs(remaining).toLocaleString()}`
+                      : `$${remaining.toLocaleString()}`}
+                  </div>
+                  <div className="text-sm">Remaining Balance</div>
+                </div>
+
+                <div className="rounded-2xl border px-6 py-8 bg-white">
+                  <div className="text-2xl font-bold">
+                    ${summary.surplus.toLocaleString()}
+                  </div>
+                  <div className="text-sm">Yearly Surplus</div>
+                </div>
               </div>
 
-              <div className="rounded-2xl border px-6 py-8 bg-white">
-                <div className="text-2xl font-bold">${summary.surplus.toLocaleString()}</div>
-                <div className="text-sm">Yearly Surplus</div>
-              </div>
-            </div>
+              {/* Table */}
+              <div className="rounded-2xl border border-[#3A0000] bg-white overflow-hidden">
+                <table className="w-full text-left text-sm bg-white">
+                  <thead className="bg-[#3A0000] text-lg text-white">
+                    <tr>
+                      <th className="px-4 py-4">Care Item</th>
+                      <th className="px-4 py-4">Allocated</th>
+                      <th className="px-4 py-4">Spent</th>
+                      <th className="px-4 py-4">Remaining</th>
+                      <th className="px-4 py-4">Status</th>
+                      <th className="px-4 py-4">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(detail?.items ?? []).map((it) => {
+                      const rem = it.allocated - it.spent;
+                      const status = getStatus(rem, it.allocated);
+                      const isRowEditing = editingItemSlug === it.careItemSlug;
+                      const isSavingThisRow =
+                        saving.itemSlug === it.careItemSlug;
 
-            {/* Table */}
-            <div className="rounded-2xl border border-[#3A0000] bg-white overflow-hidden">
-              <table className="w-full text-left text-sm bg-white">
-                <thead className="bg-[#3A0000] text-lg text-white">
-                  <tr>
-                    <th className="px-4 py-4">Care Item</th>
-                    <th className="px-4 py-4">Allocated</th>
-                    <th className="px-4 py-4">Spent</th>
-                    <th className="px-4 py-4">Remaining</th>
-                    <th className="px-4 py-4">Status</th>
-                    <th className="px-4 py-4">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(detail?.items ?? []).map((it) => {
-                    const rem = it.allocated - it.spent;
-                    const status = getStatus(rem, it.allocated);
-                    const isRowEditing = editingItemSlug === it.careItemSlug;
-                    const isSavingThisRow = saving.itemSlug === it.careItemSlug;
-
-                    return (
-                      <tr key={it.careItemSlug} className="border-b last:border-b border-[#3A0000]/20">
-                        <td className="px-4 py-5 font-semibold">{it.label}</td>
-                        <td className="px-4 py-5">
-                          {isRowEditing ? (
-                            <input
-                              type="number"
-                              min={0}
-                              step={1}
-                              value={itemAllocInput[it.careItemSlug] ?? String(it.allocated)}
-                              onChange={(e) =>
-                                setItemAllocInput((p) => ({ ...p, [it.careItemSlug]: e.target.value }))
-                              }
-                              className="w-28 text-right rounded-md bg-white text-black px-2 py-1 border"
-                              disabled={isSavingThisRow}
-                            />
-                          ) : (
-                            `$${it.allocated}`
-                          )}
-                        </td>
-                        <td className="px-4 py-5">${it.spent.toLocaleString()}</td>
-                        <td className={`px-4 py-5 ${rem < 0 ? 'text-red-600' : ''}`}>
-                          {rem < 0 ? `-$${Math.abs(rem).toLocaleString()}` : `$${rem.toLocaleString()}`}
-                        </td>
-                        <td className="px-4 py-5">
-                          <Badge tone={status.tone}>{status.label}</Badge>
-                        </td>
-                        <td className="px-4 py-5">
-                          {isManagement && !isPastYear ? (
-                            isRowEditing ? (
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() => void saveItem(it.careItemSlug)}
-                                  className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10 disabled:opacity-60"
-                                  disabled={isSavingThisRow}
-                                >
-                                  {isSavingThisRow ? 'Saving…' : 'Save'}
-                                </button>
-                                <button
-                                  onClick={cancelEditItem}
-                                  className="px-3 py-1 rounded-md bg-white/80 text-black font-semibold hover:bg-white disabled:opacity-60"
-                                  disabled={isSavingThisRow}
-                                >
-                                  Cancel
-                                </button>
-                              </div>
+                      return (
+                        <tr
+                          key={it.careItemSlug}
+                          className="border-b last:border-b border-[#3A0000]/20"
+                        >
+                          <td className="px-4 py-5 font-semibold">
+                            {it.label}
+                          </td>
+                          <td className="px-4 py-5">
+                            {isRowEditing ? (
+                              <input
+                                type="number"
+                                min={0}
+                                step={1}
+                                value={
+                                  itemAllocInput[it.careItemSlug] ??
+                                  String(it.allocated)
+                                }
+                                onChange={(e) =>
+                                  setItemAllocInput((p) => ({
+                                    ...p,
+                                    [it.careItemSlug]: e.target.value,
+                                  }))
+                                }
+                                className="w-28 text-right rounded-md bg-white text-black px-2 py-1 border"
+                                disabled={isSavingThisRow}
+                              />
                             ) : (
-                              <button
-                                onClick={() => startEditItem(it.careItemSlug, it.allocated)}
-                                className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10"
-                              >
-                                Edit
-                              </button>
-                            )
-                          ) : (
-                            <span className="text-gray-400">—</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                              `$${it.allocated}`
+                            )}
+                          </td>
+                          <td className="px-4 py-5">
+                            ${it.spent.toLocaleString()}
+                          </td>
+                          <td
+                            className={`px-4 py-5 ${rem < 0 ? 'text-red-600' : ''}`}
+                          >
+                            {rem < 0
+                              ? `-$${Math.abs(rem).toLocaleString()}`
+                              : `$${rem.toLocaleString()}`}
+                          </td>
+                          <td className="px-4 py-5">
+                            <Badge tone={status.tone}>{status.label}</Badge>
+                          </td>
+                          <td className="px-4 py-5">
+                            {isManagement && !isPastYear ? (
+                              isRowEditing ? (
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() =>
+                                      void saveItem(it.careItemSlug)
+                                    }
+                                    className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10 disabled:opacity-60"
+                                    disabled={isSavingThisRow}
+                                  >
+                                    {isSavingThisRow ? 'Saving…' : 'Save'}
+                                  </button>
+                                  <button
+                                    onClick={cancelEditItem}
+                                    className="px-3 py-1 rounded-md bg-white/80 text-black font-semibold hover:bg-white disabled:opacity-60"
+                                    disabled={isSavingThisRow}
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() =>
+                                    startEditItem(it.careItemSlug, it.allocated)
+                                  }
+                                  className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10"
+                                >
+                                  Edit
+                                </button>
+                              )
+                            ) : (
+                              <span className="text-gray-400">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
-        </>
-      )}
-    </div>
-  </DashboardChrome>
-)
+          </>
+        )}
+      </div>
+    </DashboardChrome>
+  );
 }

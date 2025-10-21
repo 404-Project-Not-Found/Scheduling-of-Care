@@ -3,7 +3,10 @@ import { Types } from 'mongoose';
 import { connectDB } from '@/lib/mongodb';
 import CareItem from '@/models/CareItem';
 
-export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string }> }): Promise<NextResponse> {
+export async function GET(
+  req: NextRequest,
+  ctx: { params: Promise<{ id: string }> }
+): Promise<NextResponse> {
   await connectDB();
   const { searchParams } = new URL(req.url);
 
@@ -11,13 +14,20 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
   const status = searchParams.get('status') || undefined;
   const categoryIdStr = (searchParams.get('categoryId') || '').trim();
   const categoryName = (searchParams.get('category') || '').trim();
-  const includeDeleted = (searchParams.get('includeDeleted') || 'false').toLowerCase() === 'true';
-  const limit = Math.min(parseInt(searchParams.get('limit') || '20', 10) || 20, 100);
+  const includeDeleted =
+    (searchParams.get('includeDeleted') || 'false').toLowerCase() === 'true';
+  const limit = Math.min(
+    parseInt(searchParams.get('limit') || '20', 10) || 20,
+    100
+  );
 
-  const {id: idFromPath} = await ctx.params;
+  const { id: idFromPath } = await ctx.params;
 
   if (!idFromPath || !Types.ObjectId.isValid(idFromPath)) {
-    return NextResponse.json({ error: 'Invalid client id in path' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Invalid client id in path' },
+      { status: 400 }
+    );
   }
   const clientId = new Types.ObjectId(idFromPath);
 
@@ -28,7 +38,10 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
 
   if (categoryIdStr) {
     if (!Types.ObjectId.isValid(categoryIdStr)) {
-      return NextResponse.json({ error: 'categoryId must be a valid ObjectId' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'categoryId must be a valid ObjectId' },
+        { status: 400 }
+      );
     }
     filter.categoryId = new Types.ObjectId(categoryIdStr);
   } else if (categoryName) {
@@ -36,7 +49,10 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
   }
 
   if (q.length > 0) {
-    filter.label = { $regex: q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' };
+    filter.label = {
+      $regex: q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+      $options: 'i',
+    };
   }
 
   const tasks = await CareItem.find(filter)

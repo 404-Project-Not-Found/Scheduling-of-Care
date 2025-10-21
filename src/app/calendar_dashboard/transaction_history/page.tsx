@@ -13,7 +13,6 @@ import { useRouter } from 'next/navigation';
 import DashboardChrome from '@/components/top_menu/client_schedule';
 import { getAvailableYears } from '@/lib/budget-helpers';
 
-
 import {
   getViewerRole,
   getClients,
@@ -69,9 +68,13 @@ function TransactionHistoryInner() {
 
   // Transactions
   const [rows, setRows] = useState<ApiTransaction[]>([]);
-  const [loading, setLoading] = useState({clients: true, years: true, rows: true});
+  const [loading, setLoading] = useState({
+    clients: true,
+    years: true,
+    rows: true,
+  });
   const [errorText, setErrorText] = useState('');
-  
+
   const loadingAny = loading.clients || loading.years || loading.rows;
   // Filters
   const [search, setSearch] = useState<string>('');
@@ -99,7 +102,7 @@ function TransactionHistoryInner() {
   // Load clients + active client on mount
   useEffect(() => {
     (async () => {
-      setLoading(s => ({...s, clients: true}));
+      setLoading((s) => ({ ...s, clients: true }));
       try {
         const list: ApiClient[] = await getClients();
         const mapped: ClientLite[] = (list as ApiClientWithAccess[]).map(
@@ -120,7 +123,7 @@ function TransactionHistoryInner() {
         setActiveClientId(null);
         setDisplayName('');
       } finally {
-        setLoading(s => ({...s, clients: false}));
+        setLoading((s) => ({ ...s, clients: false }));
       }
     })();
   }, []);
@@ -146,38 +149,40 @@ function TransactionHistoryInner() {
   const [todayDate, setTodaysDate] = useState<string>();
 
   useEffect(() => {
-      const d = new Date();
-      const fmt = new Intl.DateTimeFormat('en-AU', {dateStyle: 'long', timeZone:'Australia/Melbourne'});
-      setTodaysDate(fmt.format(d));
-    }, []);
-  
+    const d = new Date();
+    const fmt = new Intl.DateTimeFormat('en-AU', {
+      dateStyle: 'long',
+      timeZone: 'Australia/Melbourne',
+    });
+    setTodaysDate(fmt.format(d));
+  }, []);
+
   useEffect(() => {
-    let abort = new AbortController();
+    const abort = new AbortController();
     const load = async () => {
-      if(!activeClientId) {
+      if (!activeClientId) {
         setYears([]);
-        setLoading(s => ({...s, years: false}));
+        setLoading((s) => ({ ...s, years: false }));
         return;
       }
-      setLoading(s => ({...s, years: true}));
+      setLoading((s) => ({ ...s, years: true }));
       try {
         const list = await getAvailableYears(activeClientId, abort.signal);
-        if(list.length > 0) {
+        if (list.length > 0) {
           setYears(list);
-          if(!list.includes(year)) setYear(list[0]);
-        }
-        else {
+          if (!list.includes(year)) setYear(list[0]);
+        } else {
           const curr = new Date().getFullYear();
           setYears([curr]);
           setYear(curr);
         }
-      } catch(e) {
+      } catch (e) {
         console.error('Failed to load years:', e);
         const curr = new Date().getFullYear();
         setYears([curr]);
         setYear(curr);
       } finally {
-        setLoading(s => ({...s, years: false}));
+        setLoading((s) => ({ ...s, years: false }));
       }
     };
     load();
@@ -185,21 +190,24 @@ function TransactionHistoryInner() {
   }, [activeClientId]);
 
   useEffect(() => {
-  if (!activeClientId) { setRows([]); return; }
-  (async () => {
-    setLoading(s => ({...s, rows: true}));
-    setErrorText('');
-    try {
-      const data = await getTransactionsFE(activeClientId, year);
-      setRows(Array.isArray(data) ? data : []);
-    } catch {
-      setErrorText('Failed to load transactions for this client.');
+    if (!activeClientId) {
       setRows([]);
-    } finally {
-      setLoading(s => ({...s, rows: false}));
+      return;
     }
-  })();
-}, [activeClientId, year])
+    (async () => {
+      setLoading((s) => ({ ...s, rows: true }));
+      setErrorText('');
+      try {
+        const data = await getTransactionsFE(activeClientId, year);
+        setRows(Array.isArray(data) ? data : []);
+      } catch {
+        setErrorText('Failed to load transactions for this client.');
+        setRows([]);
+      } finally {
+        setLoading((s) => ({ ...s, rows: false }));
+      }
+    })();
+  }, [activeClientId, year]);
 
   /** Filter */
   const filtered = useMemo(() => {
@@ -229,7 +237,9 @@ function TransactionHistoryInner() {
         >
           {/* Left side: Title */}
           <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold text-white">Transaction History</h1>
+            <h1 className="text-2xl font-bold text-white">
+              Transaction History
+            </h1>
             <span className="text-white/90 font-bold text-sm">View year:</span>
             <select
               value={String(year)}
@@ -261,7 +271,6 @@ function TransactionHistoryInner() {
               >
                 Add new transaction
               </button>
-              
             )}
             <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2">
               <input

@@ -5,28 +5,27 @@
  *
  * Return years where budget and transaction exist for this client
  */
-import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
-import { BudgetYear } from "@/models/Budget";
+import { NextResponse } from 'next/server';
+import { connectDB } from '@/lib/mongodb';
+import { BudgetYear } from '@/models/Budget';
 import { Types } from 'mongoose';
-import { Transaction } from "@/models/Transaction";
+import { Transaction } from '@/models/Transaction';
 
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
-){
+) {
   const { id } = await params;
   await connectDB();
 
   let clientId: Types.ObjectId;
-  try{
+  try {
     clientId = new Types.ObjectId(id);
-  } catch{
-    return NextResponse.json({error: 'Invalid ClientId'}, {status: 422});
+  } catch {
+    return NextResponse.json({ error: 'Invalid ClientId' }, { status: 422 });
   }
 
-  const docs = await BudgetYear
-    .find({ clientId })
+  const docs = await BudgetYear.find({ clientId })
     .select({ year: 1, _id: 0 })
     .sort({ year: -1 })
     .lean();
@@ -37,4 +36,3 @@ export async function GET(
 
   return NextResponse.json(years);
 }
-

@@ -6,11 +6,11 @@
  */
 import mongoose, { Schema, Types } from 'mongoose';
 
-export type OccurrenceStatus = 
-    | 'Waiting Verification'
-    | 'Completed'
-    | 'Overdue'
-    | 'Due';
+export type OccurrenceStatus =
+  | 'Waiting Verification'
+  | 'Completed'
+  | 'Overdue'
+  | 'Due';
 
 export interface IOccurrence extends mongoose.Document {
   careItemSlug: string;
@@ -27,24 +27,32 @@ export interface IOccurrence extends mongoose.Document {
   updatedAt: Date;
 }
 
-const OccurrenceSchema = new Schema({
-  careItemSlug: { type: String,required: true, index: true },
-  clientId: { type: Schema.Types.ObjectId, ref: 'Client', required: true, index: true },
-  date:   { type: Date,   required: true, index: true },
-  status: {
-    type: String,
-    enum: ['Due', 'Overdue', 'Waiting Verification', 'Completed'],
-    default: 'DUE'
+const OccurrenceSchema = new Schema(
+  {
+    careItemSlug: { type: String, required: true, index: true },
+    clientId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Client',
+      required: true,
+      index: true,
+    },
+    date: { type: Date, required: true, index: true },
+    status: {
+      type: String,
+      enum: ['Due', 'Overdue', 'Waiting Verification', 'Completed'],
+      default: 'DUE',
+    },
+    files: { type: [String], default: [] },
+    comments: { type: [String], default: [] },
+    doneBy: String, // Id of user
+    verifiedBy: String, // Id of user
+    doneAt: Date,
+    verifiedAt: Date,
   },
-  files:      { type: [String], default: [] },
-  comments:   { type: [String], default: [] },
-  doneBy: String, // Id of user
-  verifiedBy: String, // Id of user
-  doneAt: Date,
-  verifiedAt: Date,
-}, { timestamps: true });
+  { timestamps: true }
+);
 
 OccurrenceSchema.index({ careItemSlug: 1, date: 1 }, { unique: true });
 
-export default mongoose.models.Occurrence || mongoose.model<IOccurrence>('Occurrence', OccurrenceSchema);
-
+export default mongoose.models.Occurrence ||
+  mongoose.model<IOccurrence>('Occurrence', OccurrenceSchema);

@@ -5,61 +5,69 @@
  *
  * Handle api for budget, get category-level rows for the report
  */
-import {NextResponse} from 'next/server';
+import { NextResponse } from 'next/server';
 import { Types } from 'mongoose';
 import { connectDB } from '@/lib/mongodb';
-import { BudgetYear, type BudgetYearLean, type CategoryBudget } from '@/models/Budget';
+import {
+  BudgetYear,
+  type BudgetYearLean,
+  type CategoryBudget,
+} from '@/models/Budget';
 import { Transaction } from '@/models/Transaction';
 
 type BudgetRow = {
-    categoryId: string;
-    item: string;
-    category: string;
-    allocated: number;
-    spent: number;
-}
+  categoryId: string;
+  item: string;
+  category: string;
+  allocated: number;
+  spent: number;
+};
 
 interface SpentAggRow {
-    _id: Types.ObjectId;
-    spent: number;
+  _id: Types.ObjectId;
+  spent: number;
 }
 
 export async function GET(
-  req: Request, 
-  ctx: {params: Promise<{id: string}>}
+  req: Request,
+  ctx: { params: Promise<{ id: string }> }
 ) {
   await connectDB();
 
-  const {id} = await ctx.params;
+  const { id } = await ctx.params;
   const url = new URL(req.url);
   const yearParam = url.searchParams.get('year');
-  const year = Number.isFinite(Number(yearParam)) 
-  ? Number(yearParam) 
-  : new Date().getFullYear();
+  const year = Number.isFinite(Number(yearParam))
+    ? Number(yearParam)
+    : new Date().getFullYear();
 
   let clientId: Types.ObjectId;
   try {
     clientId = new Types.ObjectId(id);
   } catch {
-    return NextResponse.json(
-        { error: 'Invalid clientId' },
-        { status: 422}
-    );
+    return NextResponse.json({ error: 'Invalid clientId' }, { status: 422 });
   }
 
-  const budget = await BudgetYear.findOne({clientId, year}).lean<BudgetYearLean>();
-  if(!budget) return NextResponse.json([] as BudgetRow[]);
+  const budget = await BudgetYear.findOne({
+    clientId,
+    year,
+  }).lean<BudgetYearLean>();
+  if (!budget) return NextResponse.json([] as BudgetRow[]);
 
   // Aggregate net spend per category for this client or year
   const spentAggr = await Transaction.aggregate<SpentAggRow>([
-    {$match: {clientId, year, voidedAt: {$exists: false}}},
-    {$unwind: '$lines'}, 
+    { $match: { clientId, year, voidedAt: { $exists: false } } },
+    { $unwind: '$lines' },
     {
       $group: {
         _id: '$lines.categoryId',
         spent: {
           $sum: {
-            $cond: [{ $eq: ['$type', 'Purchase'] }, '$lines.amount', { $multiply: [-1, '$lines.amount'] }],
+            $cond: [
+              { $eq: ['$type', 'Purchase'] },
+              '$lines.amount',
+              { $multiply: [-1, '$lines.amount'] },
+            ],
           },
         },
       },
@@ -67,10 +75,14 @@ export async function GET(
   ]);
 
   const spentByCat = new Map<string, number>(
-    spentAggr.map((r) => [String(r._id), Number.isFinite(r.spent) ? r.spent: 0])
+    spentAggr.map((r) => [
+      String(r._id),
+      Number.isFinite(r.spent) ? r.spent : 0,
+    ])
   );
 
-  const rows: BudgetRow[] = budget.categories.map((cat: CategoryBudget): BudgetRow => {
+  const rows: BudgetRow[] = budget.categories.map(
+    (cat: CategoryBudget): BudgetRow => {
       const key = String(cat.categoryId);
       const spent = spentByCat.get(key) ?? 0;
       const allocated = Math.round(cat.allocated);
@@ -82,9 +94,9 @@ export async function GET(
         category: categoryName,
         allocated,
         spent: Math.round(spent),
-      }
-  });
+      };
+    }
+  );
 
   return NextResponse.json(rows);
 }
-

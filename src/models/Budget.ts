@@ -4,7 +4,14 @@
  * Date Created: 02/10/2025
  */
 
-import { Schema, model, models, Types, Model, HydratedDocument } from 'mongoose';
+import {
+  Schema,
+  model,
+  models,
+  Types,
+  Model,
+  HydratedDocument,
+} from 'mongoose';
 
 export interface CareItemBudget {
   careItemSlug: string;
@@ -20,7 +27,7 @@ export interface CategoryBudget {
   allocated: number;
   items: CareItemBudget[];
   releasedAt?: Date;
-  spent: number
+  spent: number;
 }
 
 export interface BudgetTotals {
@@ -43,45 +50,56 @@ export interface BudgetYearDoc {
 
 const CareItemBudgetSchema = new Schema<CareItemBudget>(
   {
-    careItemSlug: {type: String, index: true, required: true},
+    careItemSlug: { type: String, index: true, required: true },
     label: String,
-    allocated: {type: Number, default: 0},
+    allocated: { type: Number, default: 0 },
     releasedAt: Date,
-    spent: {type: Number, default: 0, min: 0}
+    spent: { type: Number, default: 0, min: 0 },
   },
-  {_id: false}
+  { _id: false }
 );
 
 const CategoryBudgetSchema = new Schema<CategoryBudget>(
   {
-    categoryId: {type: Schema.Types.ObjectId, required: true, ref: 'Category', index: true},
+    categoryId: {
+      type: Schema.Types.ObjectId,
+      required: true,
+      ref: 'Category',
+      index: true,
+    },
     categoryName: String,
-    allocated: {type: Number, default: 0},
-    items: {type: [CareItemBudgetSchema], default: []},
-    spent: {type: Number, default: 0, min: 0},
+    allocated: { type: Number, default: 0 },
+    items: { type: [CareItemBudgetSchema], default: [] },
+    spent: { type: Number, default: 0, min: 0 },
   },
   { _id: false }
 );
 
 const BudgetYearSchema = new Schema<BudgetYearDoc>(
   {
-    clientId: {type: Schema.Types.ObjectId, required: true, ref: 'Client', index: true},
-    year: {type: Number, required: true, index: true},
-    annualAllocated: {type: Number, default: 0},
-    surplus: {type: Number, default: 0},
-    categories: {type: [CategoryBudgetSchema], default: []},
-    totals: {
-      spent: {type: Number, default: 0},
-      allocated: {type: Number, default: 0},
+    clientId: {
+      type: Schema.Types.ObjectId,
+      required: true,
+      ref: 'Client',
+      index: true,
     },
-    openingCarryover: {type: Number, default: 0},
-    rolledFromYear: {type: Number, default: undefined},
-  }, 
-  {timestamps: true}
+    year: { type: Number, required: true, index: true },
+    annualAllocated: { type: Number, default: 0 },
+    surplus: { type: Number, default: 0 },
+    categories: { type: [CategoryBudgetSchema], default: [] },
+    totals: {
+      spent: { type: Number, default: 0 },
+      allocated: { type: Number, default: 0 },
+    },
+    openingCarryover: { type: Number, default: 0 },
+    rolledFromYear: { type: Number, default: undefined },
+  },
+  { timestamps: true }
 );
 
-BudgetYearSchema.index({clientId: 1, year: 1}, {unique: true});
+BudgetYearSchema.index({ clientId: 1, year: 1 }, { unique: true });
 
 export type BudgetYearHydrated = HydratedDocument<BudgetYearDoc>;
 export type BudgetYearLean = BudgetYearDoc;
-export const BudgetYear: Model<BudgetYearDoc> = models.BudgetYear || model<BudgetYearDoc>('BudgetYear', BudgetYearSchema);
+export const BudgetYear: Model<BudgetYearDoc> =
+  models.BudgetYear || model<BudgetYearDoc>('BudgetYear', BudgetYearSchema);

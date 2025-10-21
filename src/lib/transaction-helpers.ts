@@ -14,7 +14,6 @@ export type FETransaction = {
   receipt: string;
 };
 
-
 export type PurchaseLineInput = {
   categoryId: string;
   careItemSlug: string;
@@ -59,7 +58,6 @@ export type RefundableLine = {
   remainingRefundable: number;
 };
 
-
 export type PurchaseLineDraft = {
   id: string;
   categoryId: string;
@@ -91,7 +89,6 @@ export type RefundablesFE = {
   remainingRefundable: number;
 };
 
-
 export async function getTransactionsFE(
   clientId: string,
   year: number,
@@ -113,7 +110,9 @@ export async function getTransactionsFE(
     return {
       id: String(obj.id ?? ''),
       clientId: String(obj.clientId ?? ''),
-      type: (obj.type === 'Refund' ? 'Refund' : 'Purchase') as 'Purchase' | 'Refund',
+      type: (obj.type === 'Refund' ? 'Refund' : 'Purchase') as
+        | 'Purchase'
+        | 'Refund',
       date: String(obj.date ?? ''),
       madeBy: String(obj.madeBy ?? ''),
       items: Array.isArray(obj.items) ? obj.items.map((s) => String(s)) : [],
@@ -165,19 +164,24 @@ export async function getRefundablesFE(
 
   const data = (await res.json()) as unknown[];
 
-  const parsed: RefundablesFE[] = (Array.isArray(data) ? data : []).map((r) => ({
-    purchaseTransId: String((r as any).purchaseTransId),
-    purchaseDate: String((r as any).purchaseDate),
-    lineId: String((r as any).lineId),
-    categoryId: String((r as any).categoryId),
-    careItemSlug: String((r as any).careItemSlug),
-    label: (r as any).label != null ? String((r as any).label) : undefined,
-    originalAmount: Number((r as any).originalAmount ?? 0),
-    refundedSoFar: Number((r as any).refundedSoFar ?? 0),
-    remainingRefundable: Number((r as any).remainingRefundable ?? 0),
-  }));
+  const parsed: RefundablesFE[] = (Array.isArray(data) ? data : []).map(
+    (r) => ({
+      purchaseTransId: String((r as RefundablesFE).purchaseTransId),
+      purchaseDate: String((r as RefundablesFE).purchaseDate),
+      lineId: String((r as RefundablesFE).lineId),
+      categoryId: String((r as RefundablesFE).categoryId),
+      careItemSlug: String((r as RefundablesFE).careItemSlug),
+      label:
+        (r as RefundablesFE).label != null
+          ? String((r as RefundablesFE).label)
+          : undefined,
+      originalAmount: Number((r as RefundablesFE).originalAmount ?? 0),
+      refundedSoFar: Number((r as RefundablesFE).refundedSoFar ?? 0),
+      remainingRefundable: Number(
+        (r as RefundablesFE).remainingRefundable ?? 0
+      ),
+    })
+  );
 
   return parsed;
 }
-
-

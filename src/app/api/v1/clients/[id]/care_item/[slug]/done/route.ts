@@ -56,14 +56,19 @@ export async function POST(
     return NextResponse.json({ error: 'File required' }, { status: 400 });
   }
 
-  const date = doneAt.slice(0, 10); 
+  const date = doneAt.slice(0, 10);
 
-  const careItem = await CareItem.findOne({ slug }, { clientId: 1 }).lean<Pick<CareItemDoc, 'clientId'>>();
+  const careItem = await CareItem.findOne({ slug }, { clientId: 1 }).lean<
+    Pick<CareItemDoc, 'clientId'>
+  >();
   if (!careItem) {
     return NextResponse.json({ error: 'Care item not found' }, { status: 404 });
   }
   if (String(careItem.clientId) !== String(clientId)) {
-    return NextResponse.json({ error: 'Care item does not belong to this client' }, { status: 409 });
+    return NextResponse.json(
+      { error: 'Care item does not belong to this client' },
+      { status: 409 }
+    );
   }
 
   const update: UpdateOperation = {
@@ -83,4 +88,3 @@ export async function POST(
 
   return NextResponse.json(doc);
 }
-

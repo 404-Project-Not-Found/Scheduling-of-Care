@@ -5,20 +5,15 @@
  *
  * Handle api for budget, allocate or release budget, set annual, set category, set item, release category/item - what management does in budget report
  */
-import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
-import { BudgetYear, type BudgetYearHydrated, type CategoryBudget } from "@/models/Budget";
+import { NextResponse } from 'next/server';
+import { connectDB } from '@/lib/mongodb';
+import {
+  BudgetYear,
+  type BudgetYearHydrated,
+  type CategoryBudget,
+} from '@/models/Budget';
 import { Types } from 'mongoose';
-import { getViewerRole } from "@/lib/data";
-import { publishBudgetChange } from "@/lib/sse-bus";
-
-type Action = 
-  | 'setAnnual'
-  | 'setCategory'
-  | 'setItem'
-  | 'releaseCategory'
-  | 'releaseItem'
-  | 'rolloverFromPrev';
+import { publishBudgetChange } from '@/lib/sse-bus';
 
 interface SetAnnualBody {
   action: 'setAnnual';
@@ -27,9 +22,9 @@ interface SetAnnualBody {
 }
 
 interface SetCategoryBody {
-  action: 'setCategory'
+  action: 'setCategory';
   year: number;
-  categoryId: Types.ObjectId,
+  categoryId: Types.ObjectId;
   categoryName?: string;
   amount: number;
 }
@@ -62,11 +57,11 @@ interface RolloverBody {
   year: number; //current year
   copyCategories: boolean;
   bringSurplus: boolean;
-  overwriteIfExists?: boolean
+  overwriteIfExists?: boolean;
   resetItemAllocations?: boolean;
 }
 
-type ManageBody = 
+type ManageBody =
   | SetAnnualBody
   | SetCategoryBody
   | SetItemBody
@@ -76,7 +71,10 @@ type ManageBody =
 
 function recomputeTotals(doc: BudgetYearHydrated) {
   const categories: CategoryBudget[] = doc.categories;
-  doc.totals.allocated = categories.reduce((sum: number, c: CategoryBudget) => sum + (c.allocated ?? 0), 0);
+  doc.totals.allocated = categories.reduce(
+    (sum: number, c: CategoryBudget) => sum + (c.allocated ?? 0),
+    0
+  );
   const annual = doc.annualAllocated ?? 0;
   const allocated = doc.totals.allocated ?? 0;
   doc.surplus = Math.max(0, annual - allocated);
@@ -84,41 +82,40 @@ function recomputeTotals(doc: BudgetYearHydrated) {
 
 export async function PATCH(
   req: Request,
-  {params} : {params: Promise<{id: string}>}
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const {id} = await params;
+  const { id } = await params;
   await connectDB();
-  const role = await getViewerRole();
   const body: ManageBody = await req.json();
   const currYear = new Date().getFullYear();
-  if(body.year < currYear) {
+  if (body.year < currYear) {
     return NextResponse.json(
-      {error: 'Past year is read-only'}, 
-      {status: 409}
+      { error: 'Past year is read-only' },
+      { status: 409 }
     );
   }
 
   let clientId: Types.ObjectId;
-  try{
+  try {
     clientId = new Types.ObjectId(id);
-  } catch{
-    return NextResponse.json({error: 'Invalid ClientId'}, {status: 422});
+  } catch {
+    return NextResponse.json({ error: 'Invalid ClientId' }, { status: 422 });
   }
 
-  let doc = await BudgetYear.findOne({clientId, year: body.year}); 
+  let doc = await BudgetYear.findOne({ clientId, year: body.year });
   // Create new if not found
-  if(!doc) { 
+  if (!doc) {
     doc = await BudgetYear.create({
       clientId,
       year: body.year,
       annualAllocated: 0,
       categories: [],
       surplus: 0,
-      totals: {spent: 0, allocated: 0}
+      totals: { spent: 0, allocated: 0 },
     });
   }
 
-  switch(body.action) {
+  switch (body.action) {
     case 'setAnnual': {
       doc.annualAllocated = Math.max(0, body.amount);
       recomputeTotals(doc);
@@ -127,8 +124,10 @@ export async function PATCH(
     case 'setCategory': {
       const catId = new Types.ObjectId(body.categoryId);
       const categories = doc.categories as CategoryBudget[];
-      const existing = categories.find((c) => String(c.categoryId) === String(catId));
-      if(!existing) {
+      const existing = categories.find(
+        (c) => String(c.categoryId) === String(catId)
+      );
+      if (!existing) {
         categories.push({
           categoryId: catId,
           categoryName: body.categoryName ?? 'Category',
@@ -136,15 +135,19 @@ export async function PATCH(
           items: [],
           spent: 0,
         });
-      }
-      else {
+      } else {
         existing.categoryName = body.categoryName ?? existing.categoryName;
         existing.allocated = Math.max(0, body.amount);
 
-        const itemsTotal = existing.items.reduce((sum: number, i) => sum + i.allocated, 0);
-        if(itemsTotal > existing.allocated && itemsTotal > 0) {
+        const itemsTotal = existing.items.reduce(
+          (sum: number, i) => sum + i.allocated,
+          0
+        );
+        if (itemsTotal > existing.allocated && itemsTotal > 0) {
           const factor = existing.allocated / itemsTotal;
-          existing.items.forEach((i) => (i.allocated = Math.floor(i.allocated*factor)));
+          existing.items.forEach(
+            (i) => (i.allocated = Math.floor(i.allocated * factor))
+          );
         }
       }
       recomputeTotals(doc);
@@ -153,27 +156,39 @@ export async function PATCH(
     case 'setItem': {
       const catId = new Types.ObjectId(body.categoryId);
       const categories = doc.categories as CategoryBudget[];
-      const cat = categories.find((c) => String(c.categoryId) === String(catId));
-      if (!cat) { return NextResponse.json({ error: 'Category not found' }, { status: 404 }); }
+      const cat = categories.find(
+        (c) => String(c.categoryId) === String(catId)
+      );
+      if (!cat) {
+        return NextResponse.json(
+          { error: 'Category not found' },
+          { status: 404 }
+        );
+      }
       const slug = body.careItemSlug.toLowerCase();
 
       const existing = cat.items.find((i) => i.careItemSlug === slug);
-      if(!existing) {
+      if (!existing) {
         cat.items.push({
           careItemSlug: slug,
           label: body.label ?? slug,
           allocated: Math.max(0, body.amount),
           spent: 0,
         });
-      } 
-      else {
+      } else {
         existing.label = body.label ?? existing.label;
         existing.allocated = Math.max(0, body.amount);
       }
 
-      const totalItems = cat.items.reduce((sum: number, i) => sum + i.allocated, 0);
-      if(totalItems > cat.allocated) {
-        return NextResponse.json({error: 'Care Items exceed category allocation'}, {status: 422});
+      const totalItems = cat.items.reduce(
+        (sum: number, i) => sum + i.allocated,
+        0
+      );
+      if (totalItems > cat.allocated) {
+        return NextResponse.json(
+          { error: 'Care Items exceed category allocation' },
+          { status: 422 }
+        );
       }
 
       recomputeTotals(doc);
@@ -182,8 +197,15 @@ export async function PATCH(
     case 'releaseCategory': {
       const catId = new Types.ObjectId(body.categoryId);
       const categories = doc.categories as CategoryBudget[];
-      const cat = categories.find((c) => String(c.categoryId) === String(catId));
-      if (!cat) { return NextResponse.json({ error: 'Category not found' }, { status: 404 }); }
+      const cat = categories.find(
+        (c) => String(c.categoryId) === String(catId)
+      );
+      if (!cat) {
+        return NextResponse.json(
+          { error: 'Category not found' },
+          { status: 404 }
+        );
+      }
       cat.allocated = 0;
       cat.items.forEach((i) => (i.allocated = 0));
       cat.releasedAt = new Date();
@@ -193,47 +215,82 @@ export async function PATCH(
     case 'releaseItem': {
       const catId = new Types.ObjectId(body.categoryId);
       const categories = doc.categories as CategoryBudget[];
-      const cat = categories.find((c) => String(c.categoryId) === String(catId));
-      if (!cat) { return NextResponse.json({ error: 'Category not found' }, { status: 404 }); }
+      const cat = categories.find(
+        (c) => String(c.categoryId) === String(catId)
+      );
+      if (!cat) {
+        return NextResponse.json(
+          { error: 'Category not found' },
+          { status: 404 }
+        );
+      }
 
       const slug = body.careItemSlug.toLowerCase();
       const item = cat.items.find((i) => i.careItemSlug === slug);
-      if(!item) {return NextResponse.json({ error: 'Care Item not found' }, { status: 404 });}
+      if (!item) {
+        return NextResponse.json(
+          { error: 'Care Item not found' },
+          { status: 404 }
+        );
+      }
       item.allocated = 0;
       item.releasedAt = new Date();
       recomputeTotals(doc);
       break;
     }
     case 'rolloverFromPrev': {
-      const { fromYear, year, copyCategories, bringSurplus, overwriteIfExists, resetItemAllocations } = body;
+      const {
+        fromYear,
+        year,
+        copyCategories,
+        bringSurplus,
+        overwriteIfExists,
+        resetItemAllocations,
+      } = body;
 
       if (!Number.isFinite(fromYear) || !Number.isFinite(year)) {
-       return NextResponse.json({ error: 'Invalid year' }, { status: 422 });
+        return NextResponse.json({ error: 'Invalid year' }, { status: 422 });
       }
 
       if (year < new Date().getFullYear()) {
-        return NextResponse.json({ error: 'Cannot roll into a past year' }, { status: 409 });
+        return NextResponse.json(
+          { error: 'Cannot roll into a past year' },
+          { status: 409 }
+        );
       }
 
-      const prev = await BudgetYear.findOne({ clientId, year: fromYear }).lean();
-      if(!prev) return NextResponse.json({ error: `Budget ${year} already exists` }, { status: 409 });
+      const prev = await BudgetYear.findOne({
+        clientId,
+        year: fromYear,
+      }).lean();
+      if (!prev)
+        return NextResponse.json(
+          { error: `Budget ${year} already exists` },
+          { status: 409 }
+        );
 
       let next = await BudgetYear.findOne({ clientId, year: year });
-      if(next && !overwriteIfExists) {
-        return NextResponse.json({ error: `Budget ${year} already exists` }, { status: 409 });
+      if (next && !overwriteIfExists) {
+        return NextResponse.json(
+          { error: `Budget ${year} already exists` },
+          { status: 409 }
+        );
       }
-      if(!next) {
+      if (!next) {
         next = await BudgetYear.create({
           clientId,
           year,
           annualAllocated: 0,
           categories: [],
           surplus: 0,
-          totals: {spent:0, allocated:0},
+          totals: { spent: 0, allocated: 0 },
         });
       }
 
-      const priorSurplus = Math.max(0, Math.round((prev.annualAllocated ?? 0) - (prev.totals?.allocated ?? 0)));
+      const priorSurplus = Math.max(
+        0,
+        Math.round((prev.annualAllocated ?? 0) - (prev.totals?.allocated ?? 0))
+      );
 
       if (copyCategories) {
         next.categories = (prev.categories ?? []).map((c) => ({
@@ -241,21 +298,27 @@ export async function PATCH(
           categoryName: c.categoryName,
           allocated: Math.max(0, c.allocated ?? 0),
           items: (c.items ?? []).map((i) => ({
-          careItemSlug: (i.careItemSlug ?? '').toLowerCase(),
-          label: i.label,
-          allocated: resetItemAllocations ? 0 : Math.max(0, i.allocated ?? 0),
-          spent: 0,
-        })),
+            careItemSlug: (i.careItemSlug ?? '').toLowerCase(),
+            label: i.label,
+            allocated: resetItemAllocations ? 0 : Math.max(0, i.allocated ?? 0),
+            spent: 0,
+          })),
           spent: 0,
         }));
       }
 
       if (bringSurplus && priorSurplus > 0) {
         next.openingCarryover = (next.openingCarryover ?? 0) + priorSurplus;
-        next.annualAllocated = Math.max(0, (next.annualAllocated ?? 0) + priorSurplus);
+        next.annualAllocated = Math.max(
+          0,
+          (next.annualAllocated ?? 0) + priorSurplus
+        );
       }
 
-      const totalAllocated = (next.categories ?? []).reduce((sum, c) => sum + (c.allocated ?? 0), 0);
+      const totalAllocated = (next.categories ?? []).reduce(
+        (sum, c) => sum + (c.allocated ?? 0),
+        0
+      );
       next.totals = { spent: 0, allocated: totalAllocated };
       next.surplus = Math.max(0, (next.annualAllocated ?? 0) - totalAllocated);
       next.rolledFromYear = fromYear;
@@ -273,13 +336,14 @@ export async function PATCH(
         surplus: next.surplus,
       });
     }
-    default: return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+    default:
+      return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
   }
 
   doc.markModified('categories');
   await doc.save();
   publishBudgetChange(id, body.year);
-  const totalAllocated = doc.totals.allocated ?? 0; 
+  const totalAllocated = doc.totals.allocated ?? 0;
   const totalSpent = doc.totals.spent ?? 0;
   return NextResponse.json({
     ok: true,
@@ -289,7 +353,3 @@ export async function PATCH(
     surplus: Math.max(0, (doc.annualAllocated ?? 0) - totalAllocated),
   });
 }
-
-
-
-

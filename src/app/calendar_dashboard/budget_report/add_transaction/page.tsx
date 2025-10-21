@@ -9,7 +9,7 @@
 import React, { useEffect, useMemo, useRef, useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardChrome from '@/components/top_menu/client_schedule';
-import { toISODateOnly } from "@/lib/care-item-helpers/date-helpers";
+import { toISODateOnly } from '@/lib/care-item-helpers/date-helpers';
 
 import { slugify } from '@/lib/slug';
 
@@ -30,7 +30,7 @@ type ApiClientWithAccess = ApiClient & {
   orgAccess?: 'approved' | 'pending' | 'revoked';
 };
 
-import { 
+import {
   addTransactionFE,
   getRefundablesFE,
   type CreatePurchaseBody,
@@ -43,7 +43,7 @@ import {
   getBudgetCategories,
   getBudgetRows,
   type CategoryLite,
-  type BudgetRow
+  type BudgetRow,
 } from '@/lib/budget-helpers';
 import { TypeQueryNode } from 'typescript';
 
@@ -61,8 +61,8 @@ const colors = {
 };
 
 type transKind = 'Purchase' | 'Refund';
-type CarerLite = {id: string, name: string};
-type CatLite = {id: string; name: string};
+type CarerLite = { id: string; name: string };
+type CatLite = { id: string; name: string };
 type CareItemLite = {
   id: string;
   label: string;
@@ -77,7 +77,10 @@ type AccessUser = {
   role: 'family' | 'management' | 'carer';
 };
 
-async function fetchCarersForClient(clientId: string, signal?: AbortSignal): Promise<CarerLite[]> {
+async function fetchCarersForClient(
+  clientId: string,
+  signal?: AbortSignal
+): Promise<CarerLite[]> {
   const res = await fetch(
     `/api/v1/clients/${encodeURIComponent(clientId)}/access`,
     { cache: 'no-store', signal }
@@ -91,8 +94,8 @@ async function fetchCarersForClient(clientId: string, signal?: AbortSignal): Pro
   }>;
   // filter only carers
   return data
-    .filter(u => u.role === 'carer')
-    .map(u => ({ id: u._id, name: u.fullName, email: u.email }));
+    .filter((u) => u.role === 'carer')
+    .map((u) => ({ id: u._id, name: u.fullName, email: u.email }));
 }
 
 export default function AddTransactionPage() {
@@ -113,7 +116,8 @@ function AddTransactionInner() {
     catalog: true,
     refundables: false,
   });
-  const loadAny = load.clients || load.carers || load.catalog || load.refundables;
+  const loadAny =
+    load.clients || load.carers || load.catalog || load.refundables;
 
   const year = useMemo(() => new Date(date).getFullYear(), [date]);
 
@@ -122,11 +126,10 @@ function AddTransactionInner() {
   const [activeClientId, setActiveClientId] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string>('');
 
-
   // Load clients + active client on mount
   useEffect(() => {
     (async () => {
-      setLoad((s) => ({...s, clients: true}));
+      setLoad((s) => ({ ...s, clients: true }));
       try {
         const list: ApiClient[] = await getClients();
         const mapped: ClientLite[] = (list as ApiClientWithAccess[]).map(
@@ -147,7 +150,7 @@ function AddTransactionInner() {
         setActiveClientId(null);
         setDisplayName('');
       } finally {
-        setLoad((s) => ({...s, clients: false}));
+        setLoad((s) => ({ ...s, clients: false }));
       }
     })();
   }, []);
@@ -172,53 +175,74 @@ function AddTransactionInner() {
   const [madeByFallback, setMadeByFallback] = useState<string>('');
 
   useEffect(() => {
-  let abort = new AbortController();
-  (async () => {
-    setLoad((s) => ({ ...s, carers: true }));
-    if (!activeClientId) { setCarers([]); setMadeByUserId(''); return; }
-    try {
-      const list = await fetchCarersForClient(activeClientId, abort.signal);
-      setCarers(list);
-      setMadeByUserId(list[0]?.id ?? '')
-    } catch {
-      setCarers([]);
-      setMadeByUserId('');
-    } finally {
-      setLoad((s) => ({ ...s, carers: false }));
-    }
-  })();
-  return () => abort.abort();
-}, [activeClientId]);
+    const abort = new AbortController();
+    (async () => {
+      setLoad((s) => ({ ...s, carers: true }));
+      if (!activeClientId) {
+        setCarers([]);
+        setMadeByUserId('');
+        return;
+      }
+      try {
+        const list = await fetchCarersForClient(activeClientId, abort.signal);
+        setCarers(list);
+        setMadeByUserId(list[0]?.id ?? '');
+      } catch {
+        setCarers([]);
+        setMadeByUserId('');
+      } finally {
+        setLoad((s) => ({ ...s, carers: false }));
+      }
+    })();
+    return () => abort.abort();
+  }, [activeClientId]);
   /* ---------- Care Item Catalog + Tasks ---------- */
   const [categories, setCategories] = useState<CategoryLite[]>([]);
   const [budgetRows, setBudgetRows] = useState<BudgetRow[]>([]);
   const [careItems, setCareItems] = useState<CareItemLite[]>([]);
   useEffect(() => {
-    let abort = new AbortController();
+    const abort = new AbortController();
     (async () => {
-      setLoad((s) => ({ ...s, catalog : true }));
-      if (!activeClientId) { setCategories([]); setCareItems([]); return; }
+      setLoad((s) => ({ ...s, catalog: true }));
+      if (!activeClientId) {
+        setCategories([]);
+        setCareItems([]);
+        return;
+      }
       try {
         const [cats, items] = await Promise.all([
-          fetch(`/api/v1/clients/${encodeURIComponent(activeClientId)}/category`, { cache: 'no-store', signal: abort.signal })
-            .then(async (r) => {
-              if (!r.ok) throw new Error('cat');
-              const data = (await r.json()) as Array<{ _id: string; name: string }>;
-              return data.map<CategoryLite>((c) => ({ id: String(c._id), name: String(c.name) }));
-            }),
-          fetch(`/api/v1/clients/${encodeURIComponent(activeClientId)}/care_item/transaction`, { cache: 'no-store', signal: abort.signal })
-            .then(async (r) => {
-              if (!r.ok) throw new Error('ci');
-              const data = (await r.json()) as Array<{
-                _id: string; label: string; slug: string; categoryId: string;
-              }>;
-              return data.map<CareItemLite>((ci) => ({
-                id: String(ci._id),
-                label: String(ci.label),
-                slug: String(ci.slug),
-                categoryId: String(ci.categoryId),
-              }));
-            }),
+          fetch(
+            `/api/v1/clients/${encodeURIComponent(activeClientId)}/category`,
+            { cache: 'no-store', signal: abort.signal }
+          ).then(async (r) => {
+            if (!r.ok) throw new Error('cat');
+            const data = (await r.json()) as Array<{
+              _id: string;
+              name: string;
+            }>;
+            return data.map<CategoryLite>((c) => ({
+              id: String(c._id),
+              name: String(c.name),
+            }));
+          }),
+          fetch(
+            `/api/v1/clients/${encodeURIComponent(activeClientId)}/care_item/transaction`,
+            { cache: 'no-store', signal: abort.signal }
+          ).then(async (r) => {
+            if (!r.ok) throw new Error('ci');
+            const data = (await r.json()) as Array<{
+              _id: string;
+              label: string;
+              slug: string;
+              categoryId: string;
+            }>;
+            return data.map<CareItemLite>((ci) => ({
+              id: String(ci._id),
+              label: String(ci.label),
+              slug: String(ci.slug),
+              categoryId: String(ci.categoryId),
+            }));
+          }),
         ]);
         setCategories(cats);
         setCareItems(items);
@@ -260,32 +284,66 @@ function AddTransactionInner() {
   };
   // Purchase lines
   const [purchaseLines, setPurchaseLines] = useState<PurchaseLine[]>([
-    { id: 'p1', categoryId: '', categoryName: '', careItemSlug: '', label: '', amount: '' },
+    {
+      id: 'p1',
+      categoryId: '',
+      categoryName: '',
+      careItemSlug: '',
+      label: '',
+      amount: '',
+    },
   ]);
 
   const addPurchaseLine = () =>
     setPurchaseLines((prev) => [
       ...prev,
-      { id: `l${Date.now()}`, categoryId: '', categoryName: '', careItemSlug: '', label: '', amount: '' },
+      {
+        id: `l${Date.now()}`,
+        categoryId: '',
+        categoryName: '',
+        careItemSlug: '',
+        label: '',
+        amount: '',
+      },
     ]);
 
   const removePurchaseLine = (id: string) =>
-    setPurchaseLines((prev) => (prev.length > 1 ? prev.filter((l) => l.id !== id) : prev));
+    setPurchaseLines((prev) =>
+      prev.length > 1 ? prev.filter((l) => l.id !== id) : prev
+    );
 
   const updatePurchaseLine = (id: string, patch: Partial<PurchaseLine>) =>
-    setPurchaseLines((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l)));
+    setPurchaseLines((prev) =>
+      prev.map((l) => (l.id === id ? { ...l, ...patch } : l))
+    );
 
   /* --------------------------- Refund -------------------------------*/
   const [refundables, setRefundables] = useState<RefundableLine[]>([]);
-  const [refundLines, setRefundLines] = useState< { id: string; categoryId: string; careItemSlug: string; occurrenceKey: string; amount: string }[] >([{ id: 'r1', categoryId: '', careItemSlug: '', occurrenceKey: '', amount: '' }]);
+  const [refundLines, setRefundLines] = useState<
+    {
+      id: string;
+      categoryId: string;
+      careItemSlug: string;
+      occurrenceKey: string;
+      amount: string;
+    }[]
+  >([
+    {
+      id: 'r1',
+      categoryId: '',
+      careItemSlug: '',
+      occurrenceKey: '',
+      amount: '',
+    },
+  ]);
 
   useEffect(() => {
-    let abort = new AbortController();
+    const abort = new AbortController();
     (async () => {
-      if (!activeClientId || transType !== 'Refund') { 
-        setRefundables([]); 
+      if (!activeClientId || transType !== 'Refund') {
+        setRefundables([]);
         setLoad((s) => ({ ...s, refundables: false }));
-        return; 
+        return;
       }
       setLoad((s) => ({ ...s, refundables: true }));
       try {
@@ -301,13 +359,29 @@ function AddTransactionInner() {
   }, [activeClientId, year, transType]);
 
   const addRefundLine = () =>
-    setRefundLines((prev) => [...prev, { id: `r${Date.now()}`, categoryId: '', careItemSlug: '', occurrenceKey: '', amount: '' }]);
+    setRefundLines((prev) => [
+      ...prev,
+      {
+        id: `r${Date.now()}`,
+        categoryId: '',
+        careItemSlug: '',
+        occurrenceKey: '',
+        amount: '',
+      },
+    ]);
 
   const removeRefundLine = (id: string) =>
-    setRefundLines((prev) => (prev.length > 1 ? prev.filter((l) => l.id !== id) : prev));
+    setRefundLines((prev) =>
+      prev.length > 1 ? prev.filter((l) => l.id !== id) : prev
+    );
 
-  const updateRefundLine = (id: string, patch: Partial<(typeof refundLines)[number]>) =>
-    setRefundLines((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l)));
+  const updateRefundLine = (
+    id: string,
+    patch: Partial<(typeof refundLines)[number]>
+  ) =>
+    setRefundLines((prev) =>
+      prev.map((l) => (l.id === id ? { ...l, ...patch } : l))
+    );
 
   // Lookup for refund dropdown
   const catNameById = useMemo(() => {
@@ -325,13 +399,13 @@ function AddTransactionInner() {
     const m = new Map<string, string[]>();
     for (const r of refundables) {
       const arr = m.get(r.categoryId) ?? [];
-      if(!arr.includes(r.careItemSlug)) arr.push(r.careItemSlug);
+      if (!arr.includes(r.careItemSlug)) arr.push(r.careItemSlug);
       m.set(r.categoryId, arr);
     }
     return m;
   }, [refundables]);
 
-  const refundableByCategory= useMemo(() => {
+  const refundableByCategory = useMemo(() => {
     const m = new Map<string, RefundableLine[]>();
     refundables.forEach((r) => {
       const arr = m.get(r.categoryId) ?? [];
@@ -386,21 +460,30 @@ function AddTransactionInner() {
     }
 
     if (transType === 'Purchase') {
-      if (purchaseLines.some((l) => !l.categoryId || !l.careItemSlug || !l.amount.trim())) {
+      if (
+        purchaseLines.some(
+          (l) => !l.categoryId || !l.careItemSlug || !l.amount.trim()
+        )
+      ) {
         alert('Each purchase line needs Category, Care Item and Amount.');
         return;
       }
       const lines: PurchaseLineInput[] = purchaseLines.map((l) => {
-        const normalizedSlug = (l.careItemSlug || slugify(l.label || '')).toLowerCase();
-        const fallbackLabel = l.label 
-          || careItems.find((ci) => ci.categoryId === l.categoryId && ci.slug === l.careItemSlug)?.label 
-          || normalizedSlug;
+        const normalizedSlug = (
+          l.careItemSlug || slugify(l.label || '')
+        ).toLowerCase();
+        const fallbackLabel =
+          l.label ||
+          careItems.find(
+            (ci) => ci.categoryId === l.categoryId && ci.slug === l.careItemSlug
+          )?.label ||
+          normalizedSlug;
         return {
           categoryId: l.categoryId,
           careItemSlug: normalizedSlug,
           label: fallbackLabel,
           amount: Number(l.amount),
-        }
+        };
       });
       if (lines.some((l) => !Number.isFinite(l.amount) || l.amount <= 0)) {
         alert('Amounts must be positive numbers.');
@@ -428,7 +511,8 @@ function AddTransactionInner() {
 
     // Refund branch
     const chosen = refundLines.filter(
-      (r) => r.categoryId && r.careItemSlug && r.occurrenceKey && r.amount.trim()
+      (r) =>
+        r.categoryId && r.careItemSlug && r.occurrenceKey && r.amount.trim()
     );
     if (chosen.length === 0) {
       alert('Select at least one refund line with a valid amount.');
@@ -438,7 +522,8 @@ function AddTransactionInner() {
     for (const r of chosen) {
       const [refundOfTransId, refundOfLineId] = r.occurrenceKey.split(':');
       const occ = refundables.find(
-        (o) => o.purchaseTransId === refundOfTransId && o.lineId === refundOfLineId
+        (o) =>
+          o.purchaseTransId === refundOfTransId && o.lineId === refundOfLineId
       );
       const amt = Number(r.amount);
       if (!occ || !Number.isFinite(amt) || amt <= 0) {
@@ -489,7 +574,11 @@ function AddTransactionInner() {
       onClientChange={onClientChange}
       colors={{ header: colors.header, banner: colors.banner, text: '#000' }}
     >
-      <div className="flex-1 h-[680px] overflow-auto" style={{ backgroundColor: colors.pageBg }} aria-busy={loadAny}>
+      <div
+        className="flex-1 h-[680px] overflow-auto"
+        style={{ backgroundColor: colors.pageBg }}
+        aria-busy={loadAny}
+      >
         {/* Section bar */}
         <div
           className="w-full flex items-center justify-between px-8 py-4 text-white text-3xl font-extrabold"
@@ -498,7 +587,9 @@ function AddTransactionInner() {
           <span>Add Transaction</span>
           <div className="flex items-center gap-4">
             <button
-              onClick={() => router.push('/calendar_dashboard/transaction_history')}
+              onClick={() =>
+                router.push('/calendar_dashboard/transaction_history')
+              }
               className="text-lg font-semibold text-white hover:underline"
             >
               &lt; Back
@@ -509,357 +600,435 @@ function AddTransactionInner() {
         {/* Form area */}
         <div className="w-full max-w-[900px] mx-auto px-6 py-8">
           {loadAny ? (
-            <div className="text-center py-24 text-gray-600 text-xl font-medium" aria-busy="true"> 
-              Loading transaction form… 
+            <div
+              className="text-center py-24 text-gray-600 text-xl font-medium"
+              aria-busy="true"
+            >
+              Loading transaction form…
             </div>
           ) : (
-          <div className="grid grid-cols-1 gap-6">
-            {/* Type */}
-            <div className="flex flex-col gap-2">
-              <label className="text-2xl font-extrabold" style={{ color: colors.label }}>
-                Transaction Type
-              </label>
-              <select
-                value={transType}
-                onChange={(e) => setTransType(e.target.value as transKind)}
-                className={`${inputCls} w-[280px]`}
-                style={inputStyle}
-              >
-                <option value="Purchase">Purchase</option>
-                <option value="Refund">Refund</option>
-              </select>
-            </div>
-
-            {/* Date */}
-            <div className="flex flex-col gap-2">
-              <label className="text-2xl font-extrabold" style={{ color: colors.label }}>
-                Date
-              </label>
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className={`${inputCls} w-[280px]`}
-                style={inputStyle}
-              />
-            </div>
-
-            {/* Carer/User */}
-            <div className="flex flex-col gap-2">
-              <label className="text-2xl font-extrabold" style={{ color: colors.label }}>
-                Made By (Carer / User)
-              </label>
-              {carers.length > 0 ? (
+            <div className="grid grid-cols-1 gap-6">
+              {/* Type */}
+              <div className="flex flex-col gap-2">
+                <label
+                  className="text-2xl font-extrabold"
+                  style={{ color: colors.label }}
+                >
+                  Transaction Type
+                </label>
                 <select
-                  value={madeByUserId}
-                  onChange={(e) => setMadeByUserId(e.target.value)}
-                  className={`${inputCls} w-[420px]`}
+                  value={transType}
+                  onChange={(e) => setTransType(e.target.value as transKind)}
+                  className={`${inputCls} w-[280px]`}
                   style={inputStyle}
                 >
-                  {carers.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.name}
-                    </option>
-                  ))}
+                  <option value="Purchase">Purchase</option>
+                  <option value="Refund">Refund</option>
                 </select>
-              ) : (
-                // fallback if access endpoint empty / failed
+              </div>
+
+              {/* Date */}
+              <div className="flex flex-col gap-2">
+                <label
+                  className="text-2xl font-extrabold"
+                  style={{ color: colors.label }}
+                >
+                  Date
+                </label>
+                <input
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className={`${inputCls} w-[280px]`}
+                  style={inputStyle}
+                />
+              </div>
+
+              {/* Carer/User */}
+              <div className="flex flex-col gap-2">
+                <label
+                  className="text-2xl font-extrabold"
+                  style={{ color: colors.label }}
+                >
+                  Made By (Carer / User)
+                </label>
+                {carers.length > 0 ? (
+                  <select
+                    value={madeByUserId}
+                    onChange={(e) => setMadeByUserId(e.target.value)}
+                    className={`${inputCls} w-[420px]`}
+                    style={inputStyle}
+                  >
+                    {carers.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  // fallback if access endpoint empty / failed
+                  <input
+                    type="text"
+                    value={madeByFallback}
+                    onChange={(e) => setMadeByFallback(e.target.value)}
+                    placeholder="Enter user id or name"
+                    className={`${inputCls} w-[420px]`}
+                    style={inputStyle}
+                  />
+                )}
+              </div>
+
+              {/* Note */}
+              <div className="flex flex-col gap-2">
+                <label
+                  className="text-2xl font-extrabold"
+                  style={{ color: colors.label }}
+                >
+                  Note (optional)
+                </label>
                 <input
                   type="text"
-                  value={madeByFallback}
-                  onChange={(e) => setMadeByFallback(e.target.value)}
-                  placeholder="Enter user id or name"
-                  className={`${inputCls} w-[420px]`}
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  className={`${inputCls} w-full`}
                   style={inputStyle}
+                  placeholder="Optional note"
                 />
-              )}
-            </div>
+              </div>
 
-            {/* Note */}
-            <div className="flex flex-col gap-2">
-              <label className="text-2xl font-extrabold" style={{ color: colors.label }}>
-                Note (optional)
-              </label>
-              <input
-                type="text"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                className={`${inputCls} w-full`}
-                style={inputStyle}
-                placeholder="Optional note"
-              />
-            </div>
-
-            {/* Receipt */}
-            <div className="flex flex-col gap-2">
-              <label className="text-2xl font-extrabold" style={{ color: colors.label }}>
-                Upload Receipt
-              </label>
-              <div className="flex items-center gap-4">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*,.pdf"
-                  className="hidden"
-                  onChange={(e) => {
-                    if (e.target.files?.length) setReceiptFile(e.target.files[0]);
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="px-4 py-2 rounded-md font-semibold"
-                  style={{
-                    backgroundColor: colors.fileBtn,
-                    border: `1px solid ${colors.inputBorder}`,
-                    color: '#1a1a1a',
-                  }}
+              {/* Receipt */}
+              <div className="flex flex-col gap-2">
+                <label
+                  className="text-2xl font-extrabold"
+                  style={{ color: colors.label }}
                 >
-                  Choose file
+                  Upload Receipt
+                </label>
+                <div className="flex items-center gap-4">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*,.pdf"
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files?.length)
+                        setReceiptFile(e.target.files[0]);
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="px-4 py-2 rounded-md font-semibold"
+                    style={{
+                      backgroundColor: colors.fileBtn,
+                      border: `1px solid ${colors.inputBorder}`,
+                      color: '#1a1a1a',
+                    }}
+                  >
+                    Choose file
+                  </button>
+                  <span className="text-black">
+                    {receiptFile ? receiptFile.name : 'No file chosen'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Lines (stacked vertically) */}
+              <div className="flex flex-col gap-6">
+                {transType === 'Purchase' ? (
+                  <>
+                    <div
+                      className="text-xl font-bold"
+                      style={{ color: colors.label }}
+                    >
+                      Purchase Lines
+                    </div>
+                    {purchaseLines.map((l) => {
+                      const itemsForCat = l.categoryId
+                        ? (careItemsByCategoryId.get(l.categoryId) ?? [])
+                        : [];
+                      return (
+                        <div
+                          key={l.id}
+                          className="rounded-xl border p-4 bg-white flex flex-col gap-4"
+                        >
+                          {/* Category */}
+                          <div className="flex flex-col gap-2">
+                            <label className="font-semibold">Category</label>
+                            <select
+                              value={l.categoryId}
+                              onChange={(e) =>
+                                updatePurchaseLine(l.id, {
+                                  categoryId: e.target.value,
+                                  careItemSlug: '',
+                                  label: '',
+                                })
+                              }
+                              className={`${inputCls} w-[360px]`}
+                              style={inputStyle}
+                            >
+                              <option value="">Select a category</option>
+                              {categories.map((c) => (
+                                <option key={c.id} value={c.id}>
+                                  {c.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          {/* Care Item */}
+                          <div className="flex flex-col gap-2">
+                            <label className="font-semibold">Care Item</label>
+                            <select
+                              value={l.careItemSlug}
+                              onChange={(e) => {
+                                const slug = e.target.value;
+                                const found = itemsForCat.find(
+                                  (ci) => ci.slug === slug
+                                );
+                                updatePurchaseLine(l.id, {
+                                  careItemSlug: slug,
+                                  label: found?.label ?? '',
+                                });
+                              }}
+                              disabled={!l.categoryId}
+                              className={`${inputCls} w-[360px]`}
+                              style={inputStyle}
+                            >
+                              <option value="">Select a care item</option>
+                              {itemsForCat.map((ci) => (
+                                <option key={ci.id} value={ci.slug}>
+                                  {ci.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          {/* Amount */}
+                          <div className="flex flex-col gap-2">
+                            <label className="font-semibold">Amount</label>
+                            <input
+                              type="number"
+                              min={0}
+                              step="0.01"
+                              value={l.amount}
+                              onChange={(e) =>
+                                updatePurchaseLine(l.id, {
+                                  amount: e.target.value,
+                                })
+                              }
+                              placeholder="0.00"
+                              className={`${inputCls} w-[200px] text-right`}
+                              style={inputStyle}
+                            />
+                          </div>
+
+                          {/* Remove line */}
+                          <div>
+                            <button
+                              type="button"
+                              onClick={() => removePurchaseLine(l.id)}
+                              className="px-3 py-2 rounded-md border hover:bg-black/5"
+                            >
+                              Remove line
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    <button
+                      type="button"
+                      onClick={addPurchaseLine}
+                      className="mt-2 px-4 py-2 rounded-md border font-semibold hover:bg-black/5 w-max"
+                    >
+                      + Add another line
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div
+                      className="text-xl font-bold"
+                      style={{ color: colors.label }}
+                    >
+                      Refund Lines
+                    </div>
+
+                    {refundLines.map((l) => {
+                      const itemOptions = l.categoryId
+                        ? (purchasedItemSlugsByCategory.get(l.categoryId) ?? [])
+                        : [];
+                      const occurrences =
+                        l.categoryId && l.careItemSlug
+                          ? (occurrencesByCatAndItem.get(
+                              `${l.categoryId}:${l.careItemSlug}`
+                            ) ?? [])
+                          : [];
+                      const selectedOcc = occurrences.find(
+                        (o) =>
+                          `${o.purchaseTransId}:${o.lineId}` === l.occurrenceKey
+                      );
+
+                      return (
+                        <div
+                          key={l.id}
+                          className="rounded-xl border p-4 bg-white flex flex-col gap-4"
+                        >
+                          {/* Category (only those with refundable lines) */}
+                          <div className="flex flex-col gap-2">
+                            <label className="font-semibold">
+                              Category (refundable)
+                            </label>
+                            <select
+                              value={l.categoryId}
+                              onChange={(e) =>
+                                updateRefundLine(l.id, {
+                                  categoryId: e.target.value,
+                                  careItemSlug: '',
+                                  occurrenceKey: '',
+                                })
+                              }
+                              className={`${inputCls} w-[360px]`}
+                              style={inputStyle}
+                            >
+                              <option value="">Select a category</option>
+                              {purchasedCatIds.map((id) => (
+                                <option key={id} value={id}>
+                                  {catNameById.get(id) ?? id}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          {/* Care Item */}
+                          <div className="flex flex-col gap-2">
+                            <label className="font-semibold">Care Item</label>
+                            <select
+                              value={l.careItemSlug}
+                              onChange={(e) =>
+                                updateRefundLine(l.id, {
+                                  careItemSlug: e.target.value,
+                                  occurrenceKey: '',
+                                })
+                              }
+                              disabled={!l.categoryId}
+                              className={`${inputCls} w-[360px]`}
+                              style={inputStyle}
+                            >
+                              <option value="">Select a care item</option>
+                              {itemOptions.map((slug) => (
+                                <option key={slug} value={slug}>
+                                  {slug}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          {/* Purchase occurrence */}
+                          <div className="flex flex-col gap-2">
+                            <label className="font-semibold">
+                              Purchase occurrence
+                            </label>
+                            <select
+                              value={l.occurrenceKey}
+                              onChange={(e) =>
+                                updateRefundLine(l.id, {
+                                  occurrenceKey: e.target.value,
+                                })
+                              }
+                              disabled={!l.categoryId || !l.careItemSlug}
+                              className={`${inputCls} w-[480px]`}
+                              style={inputStyle}
+                            >
+                              <option value="">
+                                Select purchase occurrence
+                              </option>
+                              {occurrences.map((o) => (
+                                <option
+                                  key={`${o.purchaseTransId}:${o.lineId}`}
+                                  value={`${o.purchaseTransId}:${o.lineId}`}
+                                >
+                                  {o.purchaseDate} • orig $
+                                  {o.originalAmount.toFixed(2)} • rem $
+                                  {o.remainingRefundable.toFixed(2)}
+                                </option>
+                              ))}
+                            </select>
+                            {selectedOcc &&
+                              l.amount &&
+                              Number(l.amount) > 0 && (
+                                <div className="text-sm text-gray-700">
+                                  Remaining available: $
+                                  {selectedOcc.remainingRefundable.toFixed(2)}
+                                </div>
+                              )}
+                          </div>
+
+                          {/* Amount */}
+                          <div className="flex flex-col gap-2">
+                            <label className="font-semibold">Amount</label>
+                            <input
+                              type="number"
+                              min={0}
+                              step="0.01"
+                              value={l.amount}
+                              onChange={(e) =>
+                                updateRefundLine(l.id, {
+                                  amount: e.target.value,
+                                })
+                              }
+                              placeholder="0.00"
+                              className={`${inputCls} w-[200px] text-right`}
+                              style={inputStyle}
+                            />
+                          </div>
+
+                          {/* Remove line */}
+                          <div>
+                            <button
+                              type="button"
+                              onClick={() => removeRefundLine(l.id)}
+                              className="px-3 py-2 rounded-md border hover:bg-black/5"
+                            >
+                              Remove line
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    <button
+                      type="button"
+                      onClick={addRefundLine}
+                      className="mt-2 px-4 py-2 rounded-md border font-semibold hover:bg-black/5 w-max"
+                    >
+                      + Add another refund line
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {/* Footer buttons */}
+              <div className="mt-6 flex items-center justify-center gap-10">
+                <button
+                  className="px-8 py-3 rounded-2xl text-2xl font-extrabold"
+                  style={{ backgroundColor: colors.btnPill, color: '#1a1a1a' }}
+                  onClick={() =>
+                    router.push('/calendar_dashboard/transaction_history')
+                  }
+                >
+                  Cancel
                 </button>
-                <span className="text-black">
-                  {receiptFile ? receiptFile.name : 'No file chosen'}
-                </span>
+                <button
+                  className="px-10 py-3 rounded-2xl text-2xl font-extrabold hover:opacity-95"
+                  style={{ backgroundColor: colors.btnPill, color: '#1a1a1a' }}
+                  onClick={handleSubmit}
+                >
+                  Add
+                </button>
               </div>
             </div>
-
-            {/* Lines (stacked vertically) */}
-            <div className="flex flex-col gap-6">
-              {transType === 'Purchase' ? (
-                <>
-                  <div className="text-xl font-bold" style={{ color: colors.label }}>
-                    Purchase Lines
-                  </div>
-                  {purchaseLines.map((l) => {
-                    const itemsForCat = l.categoryId ? (careItemsByCategoryId.get(l.categoryId) ?? []) : [];
-                    return (
-                      <div key={l.id} className="rounded-xl border p-4 bg-white flex flex-col gap-4">
-                        {/* Category */}
-                        <div className="flex flex-col gap-2">
-                          <label className="font-semibold">Category</label>
-                          <select
-                            value={l.categoryId}
-                            onChange={(e) =>
-                              updatePurchaseLine(l.id, {
-                                categoryId: e.target.value,
-                                careItemSlug: '',
-                                label: '',
-                              })
-                            }
-                            className={`${inputCls} w-[360px]`}
-                            style={inputStyle}
-                          >
-                            <option value="">Select a category</option>
-                            {categories.map((c) => (
-                              <option key={c.id} value={c.id}>
-                                {c.name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        {/* Care Item */}
-                        <div className="flex flex-col gap-2">
-                          <label className="font-semibold">Care Item</label>
-                          <select
-                            value={l.careItemSlug}
-                            onChange={(e) => {
-                              const slug = e.target.value;
-                              const found = itemsForCat.find((ci) => ci.slug === slug);
-                              updatePurchaseLine(l.id, {
-                                careItemSlug: slug,
-                                label: found?.label ?? '',
-                              });
-                            }}
-                            disabled={!l.categoryId}
-                            className={`${inputCls} w-[360px]`}
-                            style={inputStyle}
-                          >
-                            <option value="">Select a care item</option>
-                            {itemsForCat.map((ci) => (
-                              <option key={ci.id} value={ci.slug}>
-                                {ci.label}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        {/* Amount */}
-                        <div className="flex flex-col gap-2">
-                          <label className="font-semibold">Amount</label>
-                          <input
-                            type="number"
-                            min={0}
-                            step="0.01"
-                            value={l.amount}
-                            onChange={(e) => updatePurchaseLine(l.id, { amount: e.target.value })}
-                            placeholder="0.00"
-                            className={`${inputCls} w-[200px] text-right`}
-                            style={inputStyle}
-                          />
-                        </div>
-
-                        {/* Remove line */}
-                        <div>
-                          <button
-                            type="button"
-                            onClick={() => removePurchaseLine(l.id)}
-                            className="px-3 py-2 rounded-md border hover:bg-black/5"
-                          >
-                            Remove line
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-
-                  <button
-                    type="button"
-                    onClick={addPurchaseLine}
-                    className="mt-2 px-4 py-2 rounded-md border font-semibold hover:bg-black/5 w-max"
-                  >
-                    + Add another line
-                  </button>
-                </>
-              ) : (
-                <>
-                  <div className="text-xl font-bold" style={{ color: colors.label }}>
-                    Refund Lines 
-                  </div>
-
-                  {refundLines.map((l) => {
-                    const itemOptions = l.categoryId ? (purchasedItemSlugsByCategory.get(l.categoryId) ?? []) : [];
-                    const occurrences =
-                      l.categoryId && l.careItemSlug
-                        ? occurrencesByCatAndItem.get(`${l.categoryId}:${l.careItemSlug}`) ?? []
-                        : [];
-                    const selectedOcc = occurrences.find(
-                      (o) => `${o.purchaseTransId}:${o.lineId}` === l.occurrenceKey
-                    );
-
-                    return (
-                      <div key={l.id} className="rounded-xl border p-4 bg-white flex flex-col gap-4">
-                        {/* Category (only those with refundable lines) */}
-                        <div className="flex flex-col gap-2">
-                          <label className="font-semibold">Category (refundable)</label>
-                          <select
-                            value={l.categoryId}
-                            onChange={(e) =>
-                              updateRefundLine(l.id, { categoryId: e.target.value, careItemSlug: '', occurrenceKey: '' })
-                            }
-                            className={`${inputCls} w-[360px]`}
-                            style={inputStyle}
-                          >
-                            <option value="">Select a category</option>
-                            {purchasedCatIds.map((id) => (
-                              <option key={id} value={id}>
-                                {catNameById.get(id) ?? id}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        {/* Care Item */}
-                        <div className="flex flex-col gap-2">
-                          <label className="font-semibold">Care Item</label>
-                          <select
-                            value={l.careItemSlug}
-                            onChange={(e) => updateRefundLine(l.id, { careItemSlug: e.target.value, occurrenceKey: '' })}
-                            disabled={!l.categoryId}
-                            className={`${inputCls} w-[360px]`}
-                            style={inputStyle}
-                          >
-                            <option value="">Select a care item</option>
-                            {itemOptions.map((slug) => (
-                              <option key={slug} value={slug}>
-                                {slug}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        {/* Purchase occurrence */}
-                        <div className="flex flex-col gap-2">
-                          <label className="font-semibold">Purchase occurrence</label>
-                          <select
-                            value={l.occurrenceKey}
-                            onChange={(e) => updateRefundLine(l.id, { occurrenceKey: e.target.value })}
-                            disabled={!l.categoryId || !l.careItemSlug}
-                            className={`${inputCls} w-[480px]`}
-                            style={inputStyle}
-                          >
-                            <option value="">Select purchase occurrence</option>
-                            {occurrences.map((o) => (
-                              <option key={`${o.purchaseTransId}:${o.lineId}`} value={`${o.purchaseTransId}:${o.lineId}`}>
-                                {o.purchaseDate} • orig ${o.originalAmount.toFixed(2)} • rem ${o.remainingRefundable.toFixed(2)}
-                              </option>
-                            ))}
-                          </select>
-                          {selectedOcc && l.amount && Number(l.amount) > 0 && (
-                            <div className="text-sm text-gray-700">
-                              Remaining available: ${selectedOcc.remainingRefundable.toFixed(2)}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Amount */}
-                        <div className="flex flex-col gap-2">
-                          <label className="font-semibold">Amount</label>
-                          <input
-                            type="number"
-                            min={0}
-                            step="0.01"
-                            value={l.amount}
-                            onChange={(e) => updateRefundLine(l.id, { amount: e.target.value })}
-                            placeholder="0.00"
-                            className={`${inputCls} w-[200px] text-right`}
-                            style={inputStyle}
-                          />
-                        </div>
-
-                        {/* Remove line */}
-                        <div>
-                          <button
-                            type="button"
-                            onClick={() => removeRefundLine(l.id)}
-                            className="px-3 py-2 rounded-md border hover:bg-black/5"
-                          >
-                            Remove line
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-
-                  <button
-                    type="button"
-                    onClick={addRefundLine}
-                    className="mt-2 px-4 py-2 rounded-md border font-semibold hover:bg-black/5 w-max"
-                  >
-                    + Add another refund line
-                  </button>
-                </>
-              )}
-            </div>
-
-            {/* Footer buttons */}
-            <div className="mt-6 flex items-center justify-center gap-10">
-              <button
-                className="px-8 py-3 rounded-2xl text-2xl font-extrabold"
-                style={{ backgroundColor: colors.btnPill, color: '#1a1a1a' }}
-                onClick={() => router.push('/calendar_dashboard/transaction_history')}
-              >
-                Cancel
-              </button>
-              <button
-                className="px-10 py-3 rounded-2xl text-2xl font-extrabold hover:opacity-95"
-                style={{ backgroundColor: colors.btnPill, color: '#1a1a1a' }}
-                onClick={handleSubmit}
-              >
-                Add
-              </button>
-            </div>
-          </div>)}
+          )}
         </div>
       </div>
     </DashboardChrome>

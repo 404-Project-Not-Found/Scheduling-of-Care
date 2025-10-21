@@ -19,14 +19,16 @@ function isObjectIdString(s: unknown): s is string {
 
 // Search through categories if clientId is given, return only categories used by that client
 
-export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+export async function GET(
+  req: NextRequest,
+  ctx: { params: Promise<{ id: string }> }
+) {
   await connectDB();
 
   const { searchParams } = new URL(req.url);
   const q = (searchParams.get('q') || '').trim();
-  const {id} = await ctx.params; 
+  const { id } = await ctx.params;
 
-  
   const baseFilter: Record<string, unknown> = {};
 
   if (q) {
@@ -37,9 +39,11 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
     ];
   }
 
-  
   if (!id || !Types.ObjectId.isValid(id)) {
-    return NextResponse.json({ error: 'Invalid client id in path' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Invalid client id in path' },
+      { status: 400 }
+    );
   }
   const clientId = new Types.ObjectId(id);
 

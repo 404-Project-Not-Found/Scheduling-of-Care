@@ -4,7 +4,12 @@ import type { Task } from '@/lib/mock/mockApi';
 import { getNextDue } from '@/lib/care-item-helpers/date-helpers';
 import { ClientTask } from '@/app/calendar_dashboard/page';
 
-type StatusUI = 'Waiting Verification' | 'Completed' | 'Overdue' | 'Due' | 'Pending';
+type StatusUI =
+  | 'Waiting Verification'
+  | 'Completed'
+  | 'Overdue'
+  | 'Due'
+  | 'Pending';
 
 type MaybeSlugTask = Task & { slug?: string };
 
@@ -46,8 +51,8 @@ const pad2 = (n: number) => String(n).padStart(2, '0');
 const isoToday = () => new Date().toISOString().slice(0, 10);
 type WithOptionalSlug = { id: string; slug?: string };
 const getSlug = (t: ClientTask): string => t.slug ?? t.id;
-const occurKey = (slugOrId: string, due?: string) => `${slugOrId}__${(due ?? '').slice(0, 10)}`;
-
+const occurKey = (slugOrId: string, due?: string) =>
+  `${slugOrId}__${(due ?? '').slice(0, 10)}`;
 
 function derivedOccurrenceStatus(t: {
   status?: string;
@@ -91,15 +96,14 @@ export default function TasksPanel({
   year,
   month,
   clientLoaded,
-  statusOverride
+  statusOverride,
 }: TasksPanelProps) {
   const scoped = filterByScope(tasks, selectedDate, year, month);
-  const sorted = [...scoped].sort(
-    (a, b) => {
-      const ta = a.nextDue ? new Date(a.nextDue).getTime() : 0;
-      const tb = b.nextDue ? new Date(b.nextDue).getTime() : 0;
-      return ta - tb;
-    });
+  const sorted = [...scoped].sort((a, b) => {
+    const ta = a.nextDue ? new Date(a.nextDue).getTime() : 0;
+    const tb = b.nextDue ? new Date(b.nextDue).getTime() : 0;
+    return ta - tb;
+  });
 
   // ➜ derive "today" once
   const todayStr = new Date().toISOString().slice(0, 10);
@@ -115,7 +119,8 @@ export default function TasksPanel({
       <ul className="space-y-3">
         {sorted.map((t) => {
           const key = occurKey(getSlug(t), t.nextDue);
-          const displayStatus: StatusUI = statusOverride?.[key] ?? derivedOccurrenceStatus(t);
+          const displayStatus: StatusUI =
+            statusOverride?.[key] ?? derivedOccurrenceStatus(t);
 
           return (
             <li

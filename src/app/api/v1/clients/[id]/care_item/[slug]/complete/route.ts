@@ -12,35 +12,46 @@ import Occurrence from '@/models/Occurrence';
 
 export async function POST(
   req: Request,
-  {params}: {params: Promise<{slug: string}>}
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   await connectDB();
-  const {slug: rawSlug} = await params;
+  const { slug: rawSlug } = await params;
   const slug = rawSlug.toLowerCase();
 
-  const {date} = await req.json() as {date: string};
-  if(!date) return NextResponse.json({error: 'date required -- complete care item'}, {status: 400});
+  const { date } = (await req.json()) as { date: string };
+  if (!date)
+    return NextResponse.json(
+      { error: 'date required -- complete care item' },
+      { status: 400 }
+    );
 
   const dateISO = date.slice(0, 10);
-    
-  const occur = await Occurrence.findOne({careItemSlug: slug, date});
-  if(!occur) return NextResponse.json({error: 'Occurence not found'}, {status: 404});
-  if(occur.status !== 'Waiting Verification') {
-    return NextResponse.json({error: 'Status must be Occurence not found'}, {status: 409});
-  }
 
-  if(!occur) {
+  const occur = await Occurrence.findOne({ careItemSlug: slug, date });
+  if (!occur)
+    return NextResponse.json({ error: 'Occurence not found' }, { status: 404 });
+  if (occur.status !== 'Waiting Verification') {
     return NextResponse.json(
-        {error: 'This Care Item occurrence is not found or is not yet done by carer yet'},
-        {status: 409}
+      { error: 'Status must be Occurence not found' },
+      { status: 409 }
     );
   }
-  
+
+  if (!occur) {
+    return NextResponse.json(
+      {
+        error:
+          'This Care Item occurrence is not found or is not yet done by carer yet',
+      },
+      { status: 409 }
+    );
+  }
+
   occur.status = 'Completed';
   occur.verifiedAt = new Date();
   await occur.save();
-  
-  await CareItem.updateOne({slug}, {$set: {lastDone: dateISO}});
+
+  await CareItem.updateOne({ slug }, { $set: { lastDone: dateISO } });
 
   return NextResponse.json(occur.toObject());
 }

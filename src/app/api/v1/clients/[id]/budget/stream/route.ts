@@ -1,14 +1,16 @@
-
 import { NextRequest } from 'next/server';
 import { Types } from 'mongoose';
 import { sseSubscribe } from '@/lib/sse-bus';
 
 export const runtime = 'nodejs';
 
-export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+export async function GET(
+  req: NextRequest,
+  ctx: { params: Promise<{ id: string }> }
+) {
   const url = new URL(req.url);
   const yearStr = url.searchParams.get('year') || '';
-  const {id: clientIdStr } = await ctx.params;
+  const { id: clientIdStr } = await ctx.params;
 
   if (!clientIdStr || !Types.ObjectId.isValid(clientIdStr)) {
     return new Response('Invalid client id', { status: 400 });
@@ -31,14 +33,18 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
   const cleanup = () => {
     if (closed) return;
     closed = true;
-    try { heartbeat && clearInterval(heartbeat); } catch {}
+    try {
+      heartbeat && clearInterval(heartbeat);
+    } catch {}
     heartbeat = null;
-    try { unsubscribe && unsubscribe(); } catch {}
+    try {
+      unsubscribe && unsubscribe();
+    } catch {}
     unsubscribe = null;
     writer.close().catch(() => {});
   };
 
-  const write = async (event: string, data?: any) => {
+  const write = async (event: string, data?: unknown) => {
     if (closed) return;
     const chunk =
       `event: ${event}\n` +
@@ -50,13 +56,14 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
     }
   };
 
-
   unsubscribe = sseSubscribe(key, (event, data) => {
     void write(event, data);
   });
 
   void write('ping', { ts: Date.now() });
-  heartbeat = setInterval(() => { void write('ping', { ts: Date.now() }); }, 25_000);
+  heartbeat = setInterval(() => {
+    void write('ping', { ts: Date.now() });
+  }, 25_000);
 
   try {
     req.signal.addEventListener('abort', cleanup);
@@ -66,7 +73,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
     headers: {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache, no-transform',
-      'Connection': 'keep-alive',
+      Connection: 'keep-alive',
     },
   });
 }
