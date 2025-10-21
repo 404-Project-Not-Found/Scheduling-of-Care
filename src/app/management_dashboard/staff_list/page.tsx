@@ -1,12 +1,18 @@
 /**
- * File path: src/app/management_dashboard/staff_list/page.tsx
- * Frontend Author: Vanessa Teo
+ * File path: /management_dashboard/staff_list/page.tsx
+ * Front-end Author: Vanessa Teo
+ * Back-end Author: Denise Alexander
  
- * Last Updated by Denise Alexander - 14/10/2025: back-end integrated to fetch staff
+ * Updated by Denise Alexander (14/10/2025): back-end integrated to fetch staff
  * lists from DB.
+ * 
+ * Last Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
+ * consistency and better navigation.
  */
 
 'use client';
+
+import { Search, ArrowLeft } from 'lucide-react';
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -146,10 +152,20 @@ export default function StaffListPage() {
         <div className="max-w-[1380px] h-[680px] mx-auto px-6">
           {/* Section title */}
           <div
-            className="w-full mt-6 rounded-t-xl px-6 py-4 text-white text-2xl md:text-3xl font-extrabold"
+            className="w-full mt-6 rounded-t-xl px-6 py-4 text-white text-2xl md:text-3xl font-extrabold flex items-center justify-between"
             style={{ backgroundColor: colors.header }}
           >
-            Staff List
+            <span>Staff List</span>
+            <button
+              onClick={() =>
+                router.push('/management_dashboard/staff_schedule')
+              }
+              className="flex items-center gap-2 text-base md:text-lg font-semibold bg-white/10 px-4 py-1.5 rounded hover:bg-white/20 transition"
+              aria-label="Back"
+            >
+              <ArrowLeft size={22} strokeWidth={2.5} />
+              Back
+            </button>
           </div>
 
           {/* Controls + List */}
@@ -167,6 +183,10 @@ export default function StaffListPage() {
                   placeholder="Search for staff"
                   className="w-full h-12 rounded-full bg-white border text-black px-10 focus:outline-none"
                   style={{ borderColor: '#3A0000' }}
+                />
+                <Search
+                  size={20}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-black/60 pointer-events-none"
                 />
               </div>
               {/* CTA: Register new staff */}
@@ -222,7 +242,7 @@ export default function StaffListPage() {
                             style={{
                               width: 64,
                               height: 64,
-                              border: '4px solid #3A0000',
+                              border: '1px solid #3A0000',
                               backgroundColor: '#fff',
                               color: '#3A0000',
                               fontWeight: 900,
@@ -260,7 +280,12 @@ export default function StaffListPage() {
                             removeStaff(s._id);
                           }}
                           className="px-4 py-2 rounded-lg text-white text-sm font-semibold hover:opacity-90"
-                          style={{ backgroundColor: colors.header }}
+                          style={{
+                            background:
+                              'linear-gradient(90deg, #803030 0%, #B44C4C 100%)',
+                            color: '#FFFFFF',
+                            boxShadow: '0 2px 6px rgba(58, 0, 0, 0.25)',
+                          }}
                         >
                           Remove
                         </button>

@@ -1,7 +1,10 @@
 /**
- * File path: api/v1/user/active_client/route.ts
+ * File path: /api/v1/user/active_client/route.ts
  * Author: Denise Alexander
  * Date Created: 06/10/2025
+ *
+ * Purpose: Handles active client fetches to be used across pages to determine the client
+ * the user is currently viewing.
  */
 
 import { NextRequest, NextResponse } from 'next/server';

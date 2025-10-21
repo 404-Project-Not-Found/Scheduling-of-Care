@@ -19,6 +19,7 @@
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
+import { ArrowLeft } from 'lucide-react';
 import { getSession } from 'next-auth/react';
 import type { Session } from 'next-auth';
 import {
@@ -355,12 +356,11 @@ export default function FAQPage() {
 
         <button
           onClick={handleBack}
-          className="rounded-lg px-4 py-2 text-lg font-semibold shadow-sm hover:opacity-90 transition"
-          style={{ background: palette.deepBrown, color: '#fff' }}
+          className="flex items-center gap-2 text-base md:text-lg font-semibold bg-white/10 px-4 py-1.5 rounded hover:bg-white/20 transition"
           aria-label="Back"
-          title="Back"
         >
-          &lt; Back
+          <ArrowLeft size={22} strokeWidth={2.5} />
+          Back
         </button>
       </header>
 

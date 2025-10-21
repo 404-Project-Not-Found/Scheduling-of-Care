@@ -1,12 +1,12 @@
 /**
  * File path: /lib/data.ts
- * Author: Denise Alexander
+ * Authors: Denise Alexander & Zahra Rizqita
  * Date Created: 04/10/2025
  *
- * Updated by Denise Alexander - 7/10/2025: enables either mock mode or real back-end API.
- * Updated by Zahra Rizqita - 13/10/2025: implement fetching and saving task.
+ * Updated by Denise Alexander (7/10/2025): enables either mock mode or real back-end API.
+ * Updated by Zahra Rizqita (13/10/2025): implement fetching and saving task.
  *
- * Last Updated by Denise Alexander - 16/10/2025: added new helper functions for family
+ * Last Updated by Denise Alexander (16/10/2025): added new helper functions for family
  * requests handling.
  */
 
@@ -338,5 +338,26 @@ export const getCategoriesForClient = async (clientId: string) => {
   return Array.from(new Set([...catalogCats, ...clientCats]));
 };
 
+type MedicalNotes = {
+  diagnosedDisabilities?: string;
+  currentMedication?: string;
+  allergies?: string;
+  recentMedicalHistory?: string;
+  primaryHealthContact?: string;
+};
+
 // Export Client type for convenience
-export type Client = mockApi.Client;
+export type Client = {
+  _id: string;
+  name: string;
+  dob: string;
+  gender?: string;
+  accessCode?: string;
+  avatarUrl?: string;
+  phoneNumber?: string;
+  email?: string;
+  emergencyContact?: string;
+  primaryCaregiver?: string;
+  address?: string;
+  medicalNotes?: MedicalNotes;
+};

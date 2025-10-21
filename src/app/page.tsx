@@ -1,7 +1,11 @@
 /**
  * File path: /app/page.tsx
- * Authors: Qingyue Zhao & Denise Alexander
+ * Front-end Author: Qingyue Zhao
+ * Back-end Author: Denise Alexander
  * Date Created: 05/09/2025
+ *
+ * Purpose: Home page - the first page the user views when they enter our web app
+ * through its URL.
  */
 
 'use client';
@@ -130,24 +134,24 @@ export default function Home() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 h-full w-full">
         {/* Left section */}
-        <section className="bg-[#F3C8A5] relative flex flex-col h-full">
-          <div className="flex flex-col items-start h-full pl-0 lg:pl-18 pr-8 lg:pr-10 justify-start mt-33">
+        <section className="relative flex flex-col justify-center h-full bg-gradient-to-br from-[#F3C8A5] to-[#F9D2B1] px-10 lg:px-20 py-16 overflow-hidden">
+          {/* Content */}
+          <div className="relative z-10 flex flex-col justify-center h-full max-w-2xl mx-auto text-center lg:text-left">
             <Image
               src="/logo-name.png"
               alt="App Logo"
-              width={500}
-              height={100}
+              width={380}
+              height={90}
               priority
-              className="mb-10 -ml-16 lg:-ml-12"
+              className="mb-8 mx-auto lg:mx-0 drop-shadow-lg"
             />
-            <h1 className="text-6xl font-extrabold tracking-tight mb-5">
+            <h1 className="text-5xl lg:text-6xl font-extrabold tracking-tight mb-6 text-[#3A0000] drop-shadow-md">
               Welcome!
             </h1>
-            <p className="max-w-[42rem] text-[19px] leading-6">
-              Our platform helps streamline care management by connecting
-              parents/power of attorney, carers, clients, and management in one
-              place. Easily schedule, manage, and track care activities with
-              clarity and confidence.
+            <p className="text-lg lg:text-xl text-[#3A0000]/90 leading-relaxed mb-8">
+              Connect families, management, and carers seamlessly and manage
+              care schedules, budgets, and daily activities — all in one place
+              with clarity and compassion.
             </p>
           </div>
         </section>

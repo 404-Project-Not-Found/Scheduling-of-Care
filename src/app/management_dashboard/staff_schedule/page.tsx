@@ -1,13 +1,25 @@
 /**
- * File path: src/app/management_dashboard/staff_schedule/page.tsx
- * Frontend Author: Devni Wijesinghe
+ * File path: /management_dashboard/staff_schedule/page.tsx
+ * Front-end Author: Devni Wijesinghe
+ * Back-end Author: Denise Alexander
  
- * Last Updated by Denise Alexander - 16/10/2025: back-end integrated to fetch staff
+ * Updated by Denise Alexander (16/10/2025): back-end integrated to fetch staff
  * shift schedules from DB.
+ * 
+ * Last Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
+ * consistency and better navigation.
  */
 
 'use client';
 
+import {
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  Settings,
+  Printer,
+  UserRoundCog,
+} from 'lucide-react';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardChrome from '@/components/top_menu/client_schedule';
@@ -277,7 +289,10 @@ export default function StaffSchedulePage() {
         bannerTitle=""
         showClientPicker={false}
         navItems={[
-          { label: 'Staff List', href: '/management_dashboard/staff_list' },
+          {
+            label: 'Staff List',
+            href: '/management_dashboard/staff_list',
+          },
         ]}
         clients={[]}
         onClientChange={() => {}}
@@ -289,115 +304,107 @@ export default function StaffSchedulePage() {
         onLogoClick={onLogoClick}
       >
         {/* Top toolbar */}
-        <div
-          className="flex justify-between items-center px-6 py-4 shadow-md mt-4"
-          style={{ backgroundColor: palette.banner }}
-        >
-          {/* Search Bar */}
-          <div className="relative flex-1 max-w-[350px]">
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search for staff, role or organisation"
-              className="w-full h-12 rounded-full bg-white border text-black px-10 focus:outline-none"
-              style={{ borderColor: '#3A0000' }}
-            />
-          </div>
-          {/* Week navigation */}
-          <div
-            className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-4 px-6 py-2 rounded-2xl min-w-[450px]"
-            style={{ backgroundColor: palette.pageBg }}
-          >
-            <button
-              onClick={() => changeWeek(-1)}
-              className="px-4 py-2 rounded-2xl font-semibold transition-colors"
-              style={{
-                backgroundColor: palette.peachSoft,
-                color: palette.header,
-              }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.backgroundColor = palette.peachHover)
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.backgroundColor = palette.peachSoft)
-              }
-              aria-label="Previous week"
-              title="Previous week"
-            >
-              ◀
-            </button>
-            <div
-              className="flex-1 text-center font-bold text-xl"
-              style={{ color: palette.header }}
-            >
-              {weekLabel}
-            </div>
-            <button
-              onClick={() => changeWeek(1)}
-              className="px-4 py-2 rounded-2xl font-semibold transition-colors"
-              style={{
-                backgroundColor: palette.peachSoft,
-                color: palette.header,
-              }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.backgroundColor = palette.peachHover)
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.backgroundColor = palette.peachSoft)
-              }
-              aria-label="Next week"
-              title="Next week"
-            >
-              ▶
-            </button>
-          </div>
+        <div className="flex items-center justify-between px-6 py-4">
+          {/* Week nav + Management buttons */}
+          <div className="flex items-center justify-between w-full gap-4">
+            {/* Week navigation */}
+            <div className="flex items-center justify-center gap-3 mt-6 mb-2">
+              <button
+                onClick={() => changeWeek(-1)}
+                className="p-2 rounded-full border border-[#3A0000]/20 bg-white hover:bg-white transition shadow-sm"
+                style={{ color: palette.header }}
+              >
+                <ChevronLeft size={22} strokeWidth={2.5} />
+              </button>
 
-          {/* Right buttons — management only */}
-          <div className="flex items-center gap-6 justify-end w-1/3">
-            {isManagement && (
-              <>
-                <button
-                  onClick={() => setSettingsOpen(true)}
-                  className="px-5 py-2.5 rounded-2xl text-base font-semibold transition-colors"
-                  style={{
-                    backgroundColor: palette.pageBg,
-                    color: '#000000ff',
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.backgroundColor = '#e2987aff')
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.backgroundColor = palette.pageBg)
-                  }
-                >
-                  Shift Settings
-                </button>
-              </>
-            )}
-            {/* Print — visible to everyone */}
-            <button
-              onClick={() => typeof window !== 'undefined' && window.print()}
-              className="inline-flex items-center px-6 py-3 rounded-2xl border border-black/30 bg-white font-extrabold text-xl hover:bg-black/5 transition-colors"
-              title="Print"
-              aria-label="Print"
-            >
-              Print
-            </button>
+              <div
+                className="px-5 py-2 rounded-full bg-white font-semibold text-lg tracking-wide text-center shadow-sm"
+                style={{
+                  color: palette.header,
+                  border: '1px solid rgba(58,0,0,0.25)',
+                  minWidth: '180px',
+                }}
+              >
+                {weekLabel}
+              </div>
+
+              <button
+                onClick={() => changeWeek(1)}
+                className="p-2 rounded-full border border-[#3A0000]/20 bg-white hover:bg-white transition shadow-sm"
+                style={{ color: palette.header }}
+              >
+                <ChevronRight size={22} strokeWidth={2.5} />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {isManagement && (
+                <>
+                  <button
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white hover:bg-white transition border border-[#3A0000]/20 text-[#3A0000] font-semibold text-base shadow-sm"
+                    onClick={() =>
+                      router.push('/management_dashboard/staff_list')
+                    }
+                  >
+                    <UserRoundCog size={18} />
+                    Manage Staff
+                  </button>
+                  <button
+                    onClick={() => setSettingsOpen(true)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white hover:bg-white transition border border-[#3A0000]/20 text-[#3A0000] font-semibold text-base shadow-sm"
+                  >
+                    <Settings size={18} />
+                    Shift Settings
+                  </button>
+                </>
+              )}
+              <button
+                onClick={() => typeof window !== 'undefined' && window.print()}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white hover:bg-white transition border border-[#3A0000]/20 text-[#3A0000] font-semibold text-base shadow-sm"
+              >
+                <Printer size={18} />
+                Print
+              </button>
+            </div>
           </div>
         </div>
 
+        {/* Divider */}
+        <hr className="mt-2 mb-4 w-340 mx-auto border-t border-[#3A0000]/25 rounded-full" />
+
         {/* Table */}
-        <section className="w-full px-6 py-6">
+        <section className="w-full px-6 py-3">
           <div className="overflow-x-auto rounded-2xl">
             <table className="w-full table-auto border-collapse text-black">
               <thead>
                 <tr style={{ backgroundColor: palette.header }}>
                   <th
                     className="p-3 py-5 text-left border"
-                    style={{ color: 'white' }}
+                    style={{ color: 'white', verticalAlign: 'middle' }}
                   >
-                    Staff
+                    <div className="flex items-center gap-3">
+                      <span className="font-semibold text-lg whitespace-nowrap">
+                        Staff
+                      </span>
+
+                      <div className="relative w-full max-w-[200px]">
+                        <input
+                          value={search}
+                          onChange={(e) => setSearch(e.target.value)}
+                          placeholder="Search..."
+                          className="w-full h-8 rounded-full bg-white text-black text-sm border px-8"
+                          style={{
+                            borderColor: 'rgba(255,255,255,0.5)',
+                          }}
+                        />
+                        <Search
+                          size={16}
+                          className="absolute left-2 top-1/2 -translate-y-1/2 text-black/60 pointer-events-none"
+                        />
+                      </div>
+                    </div>
                   </th>
+
                   {days.map((d) => {
                     const label = d.toLocaleDateString(undefined, {
                       weekday: 'short',

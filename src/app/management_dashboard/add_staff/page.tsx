@@ -2,6 +2,9 @@
  * File path: /management_dashboard/add_staff/page.tsx
  * Author: Denise Alexander
  * Date Created: 26/09/2025
+ *
+ * Purpose: Page for management to generate invite codes for staff members
+ * wanting to join an organisation.
  */
 
 'use client';

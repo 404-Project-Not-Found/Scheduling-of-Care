@@ -97,6 +97,14 @@ export function clearViewerRoleFE(): void {
  * Clients & Organisations API
  * ============================ */
 
+type MedicalNotes = {
+  diagnosedDisabilities?: string;
+  currentMedication?: string;
+  allergies?: string;
+  recentMedicalHistory?: string;
+  primaryHealthContact?: string;
+};
+
 export type Client = {
   _id: string;
   name: string;
@@ -106,7 +114,7 @@ export type Client = {
   notes?: string[];
   avatarUrl?: string;
   orgAccess?: 'approved' | 'pending' | 'revoked';
-  medicalNotes?: string;
+  medicalNotes?: MedicalNotes;
   emergencyContact?: string;
   address?: string;
 };

@@ -1,6 +1,7 @@
 /**
- * File path: src/app/client_list/page.tsx
- * Frontend Author: Qingyue Zhao
+ * File path: /management_dashboard/clients_list/page.tsx
+ * Front-end Author: Qingyue Zhao
+ * Back-end Author: Denise Alexander
  *
  * Features (latest update):
  * - Displays client list with avatar, name, and organisation access status.
@@ -14,11 +15,16 @@
  *      -> pending: "Request sent" button (disabled).
  * - Now fetches all mock/demo clients purely from mockApi (no hardcoding here).
  *
- * Last Updated by Denise Alexander - 7/10/2025: back-end integrated to fetch client lists
+ * Updated by Denise Alexander (7/10/2025): back-end integrated to fetch client lists
  * from DB.
+ *
+ * Last Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
+ * consistency and better navigation.
  */
 
 'use client';
+
+import { Search, Plus } from 'lucide-react';
 
 import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -123,7 +129,6 @@ function ClientListInner() {
           return {
             id: c._id,
             name: c.name,
-            dashboardType: c.dashboardType,
             orgAccess: latestOrg?.status ?? 'pending',
           };
         })
@@ -239,14 +244,19 @@ function ClientListInner() {
                   className="w-full h-12 rounded-full bg-white border text-black px-10 focus:outline-none"
                   style={{ borderColor: '#3A0000' }}
                 />
+                <Search
+                  size={20}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-black/60 pointer-events-none"
+                />
               </div>
               {/* CTA: Register new client */}
               <button
                 onClick={addNewClient}
-                className="rounded-xl px-5 py-3 text-lg font-bold text-white hover:opacity-90"
+                className="flex items-center gap-2 rounded-xl px-5 py-3 text-lg font-bold text-white hover:opacity-90"
                 style={{ backgroundColor: colors.header }}
               >
-                + Register new client
+                <Plus size={20} strokeWidth={2.5} />
+                Register new client
               </button>
             </div>
 
@@ -281,7 +291,7 @@ function ClientListInner() {
                             style={{
                               width: 64,
                               height: 64,
-                              border: '4px solid #3A0000',
+                              border: '1px solid #3A0000',
                               backgroundColor: '#fff',
                               color: '#3A0000',
                               fontWeight: 900,
@@ -319,7 +329,12 @@ function ClientListInner() {
                                 tryOpenClient(c);
                               }}
                               className="px-4 py-2 rounded-lg text-white text-sm font-semibold hover:opacity-90"
-                              style={{ backgroundColor: colors.header }}
+                              style={{
+                                background:
+                                  'linear-gradient(90deg, #803030 0%, #B44C4C 100%)',
+                                color: '#FFFFFF',
+                                boxShadow: '0 2px 6px rgba(58, 0, 0, 0.25)',
+                              }}
                             >
                               View profile
                             </button>

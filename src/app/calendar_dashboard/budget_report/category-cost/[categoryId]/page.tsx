@@ -20,11 +20,11 @@ import { useParams, useRouter } from 'next/navigation';
 
 import DashboardChrome from '@/components/top_menu/client_schedule';
 import Badge from '@/components/ui/Badge';
+import { ArrowLeft, Search } from 'lucide-react';
 
 import {
   getViewerRole,
   getActiveClient,
-  setActiveClient,
   type Client as ApiClient,
 } from '@/lib/data';
 
@@ -90,6 +90,7 @@ export default function CategoryCostPage() {
 function CategoryCostInner() {
   const router = useRouter();
   const { categoryId } = useParams<{ categoryId: string }>();
+
   /* ===== Loading ===== */
   const [load, setLoad] = useState({ years: true, detail: true });
   const [saving, setSaving] = useState<{
@@ -99,8 +100,8 @@ function CategoryCostInner() {
     category: false,
     itemSlug: null,
   });
-
   const loadingAny = load.years || load.detail;
+
   /* ===== Role ===== */
   const [role, setRole] = useState<Role>('family');
   useEffect(() => {
@@ -274,6 +275,7 @@ function CategoryCostInner() {
       setSaving((s) => ({ ...s, category: false }));
     }
   };
+
   /** Editing state for care item */
   const [editingItemSlug, setEditingItemSlug] = useState<string | null>(null);
   const [itemEdits, setItemEdits] = useState<Record<string, string>>({});
@@ -343,6 +345,7 @@ function CategoryCostInner() {
     () => capitalise(detail?.categoryName ?? 'Category'),
     [detail?.categoryName]
   );
+
   return (
     <DashboardChrome
       page="budget"
@@ -361,9 +364,10 @@ function CategoryCostInner() {
           <div className="flex items-center gap-8">
             <Link
               href="/calendar_dashboard/budget_report"
-              className="text-white/90 hover:text-white font-semibold"
+              className="flex items-center gap-2 text-white/90 hover:text-white font-semibold"
             >
-              &lt; Back
+              <ArrowLeft size={22} strokeWidth={2.5} />
+              Back
             </Link>
             <h2 className="text-white text-2xl font-semibold">
               {niceCategoryName} Budget
@@ -392,12 +396,16 @@ function CategoryCostInner() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="relative flex items-center gap-3">
+            <Search
+              size={20}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-black/60 pointer-events-none"
+            />
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search items"
-              className="h-9 rounded-full bg-white text-black px-4 border"
+              className="h-9 rounded-full bg-white text-black pl-10 pr-4 border"
               disabled={loadingAny}
             />
           </div>

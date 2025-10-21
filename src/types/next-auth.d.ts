@@ -2,6 +2,10 @@
  * File path: /types/next-auth.d.ts
  * Author: Denise Alexander
  * Date Created: 22/09/2025
+ *
+ * Purpose: to extend default NextAuth Session and User interfaces to include our
+ * custom properties (e.g. id and role) which are used throughout our application
+ * for authentication and authorisation.
  */
 
 import 'next-auth';

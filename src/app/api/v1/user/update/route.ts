@@ -1,7 +1,9 @@
 /**
- * File path: /user/update/route.ts
+ * File path: /api/v1/user/update/route.ts
  * Author: Denise Alexander
  * Date Created: 22/09/2025
+ *
+ * Purpose: Updates users details when they change email or password.
  */
 
 import { NextRequest, NextResponse } from 'next/server';

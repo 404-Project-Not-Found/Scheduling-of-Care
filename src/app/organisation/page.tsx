@@ -2,6 +2,9 @@
  * File path: /organisation/page.tsx
  * Author: Denise Alexander
  * Date Created: 26/09/2025
+ *
+ * Purpose: for management staff to decide between adding/joining an organisation when they choose to
+ * sign up.
  */
 
 import Link from 'next/link';

@@ -1,7 +1,9 @@
 /**
- * File path: /clients/[id]/organisations/route.ts
+ * File path: /api/v1/clients/[id]/organisations/route.ts
  * Author: Denise Alexander
  * Date Created: 27/09/2025
+ *
+ * Purpose: Fetches the organisation history of a client.
  */
 
 export const dynamic = 'force-dynamic';

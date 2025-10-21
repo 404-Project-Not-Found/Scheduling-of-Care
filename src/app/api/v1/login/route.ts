@@ -1,7 +1,9 @@
 /**
- * File path: /login/route.ts
+ * File path: /api/v1/login/route.ts
  * Author: Denise Alexander
  * Date Created: 16/09/2025
+ *
+ * Purpose: Handles user log in.
  */
 
 import { NextRequest, NextResponse } from 'next/server';

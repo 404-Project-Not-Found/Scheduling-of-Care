@@ -1,6 +1,6 @@
 /**
  * File name: Request Log
- * File path: src/app/request-log-page/page.tsx
+ * File path: /request-log-page/page.tsx
  * Front-end Author: Devni Wijesinghe
  * Back-end Author: Denise Alexander
  *
@@ -11,10 +11,15 @@
  * - Management users can change the Status inline; the <select> is color-coded.
  * - The table section is flush to the white panel’s edges (no inner horizontal padding).
  *
- * Last Updated by Denise Alexander (16/10/2025): added back-end API endpoints.
+ * Updated by Denise Alexander (16/10/2025): added back-end API endpoints.
+ *
+ * Last Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
+ * consistency and better navigation.
  */
 
 'use client';
+
+import { Plus, Search } from 'lucide-react';
 
 import React, { useState, useEffect, Suspense, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
@@ -293,155 +298,173 @@ function RequestLogInner() {
       {/* Main content */}
       <div className="flex-1 h-[680px] bg-white/80 overflow-auto">
         {/* Header bar */}
-        <div
-          className="w-full flex items-center justify-between px-6 py-5"
-          style={{ backgroundColor: colors.header }}
-        >
-          <h1 className="text-2xl font-bold text-white">Request Log</h1>
+        <div className="w-full px-6 py-5">
+          <h1 className="text-[#3A0000] text-3xl font-semibold">Request Log</h1>
 
-          {/* Right-side: search + add button */}
-          <div className="flex items-center gap-2">
+          {/* Divider */}
+          <hr className="mt-4 mb-6 w-340 mx-auto border-t border-[#3A0000]/25 rounded-full" />
+
+          {/* Search + Add button */}
+          <div className="flex items-center justify-between flex-wrap gap-4 mt-2">
             {/* Search bar */}
-            <div className=" bg-white rounded-lg px-3 py-2">
+            <div className="relative">
+              <Search
+                size={20}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-black/60 pointer-events-none"
+              />
               <input
                 type="text"
                 placeholder="Search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="border-none focus:outline-none w-56 text-black text-sm"
+                className="h-9 rounded-full bg-white text-black border px-10 shadow-sm"
               />
             </div>
-            {/* Add request button (available only if client is selected) */}
-            {activeClientId && role === 'family' && (
+
+            {/* Add request button */}
+            {role === 'family' && (
               <button
-                className="px-4 py-2 rounded-md font-semibold text-black"
-                style={{ backgroundColor: '#FFA94D' }}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-black hover:opacity-90 transition"
+                style={{
+                  background:
+                    'linear-gradient(90deg, #FFC87C 0%, #FFDDA3 100%)',
+                  boxShadow: '0 2px 6px rgba(255, 168, 77, 0.4)',
+                }}
                 onClick={() =>
                   router.push('/family_dashboard/request_of_change_page')
                 }
               >
-                + Add new request
+                <Plus size={20} strokeWidth={2.5} />
+                Add new request
               </button>
             )}
           </div>
         </div>
 
-        {/* Table full width */}
-        <div className="w-full overflow-auto">
-          {loading ? (
-            <div className="p-6 text-gray-600">Loading requests…</div>
-          ) : errorText ? (
-            <div className="p-6 text-red-600">{errorText}</div>
-          ) : (
-            <table className="w-full border-collapse text-sm text-black">
-              <thead className="sticky top-0 bg-[#F9C9B1] shadow-sm">
-                <tr className="text-left">
-                  <th
-                    className="p-5 cursor-pointer"
-                    onClick={() => toggleSort('task')}
-                  >
-                    Care Item{' '}
-                    {sortKey === 'task'
-                      ? sortDir === 'asc'
-                        ? '⬆'
-                        : '⬇'
-                      : '⬍'}
-                  </th>
-                  <th className="p-5">Requested Change</th>
-                  <th
-                    className="p-5 cursor-pointer"
-                    onClick={() => toggleSort('requestedBy')}
-                  >
-                    Requested By{' '}
-                    {sortKey === 'requestedBy'
-                      ? sortDir === 'asc'
-                        ? '⬆'
-                        : '⬇'
-                      : '⬍'}
-                  </th>
-                  <th
-                    className="p-5 cursor-pointer"
-                    onClick={() => toggleSort('dateRequested')}
-                  >
-                    Date Requested{' '}
-                    {sortKey === 'dateRequested'
-                      ? sortDir === 'asc'
-                        ? '⬆'
-                        : '⬇'
-                      : '⬍'}
-                  </th>
-                  <th
-                    className="p-5 cursor-pointer"
-                    onClick={() => toggleSort('status')}
-                  >
-                    Status{' '}
-                    {sortKey === 'status'
-                      ? sortDir === 'asc'
-                        ? '⬆'
-                        : '⬇'
-                      : '⬍'}
-                  </th>
-                  <th className="p-5">Resolution Date</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {!activeClientId ? (
-                  <tr>
-                    <td colSpan={6} className="p-8 text-center text-gray-500">
-                      Select a client to view requests.
-                    </td>
-                  </tr>
-                ) : sorted.length > 0 ? (
-                  sorted.map((req) => (
-                    <tr
-                      key={req.id}
-                      className="border-b hover:bg-[#fff6ea] transition"
+        {/* Table container */}
+        <div className="w-full px-6 pt-3 pb-8">
+          <div className="rounded-2xl border border-[#3A0000]/30 bg-white overflow-hidden shadow-sm">
+            {loading ? (
+              <div className="p-6 text-gray-600">Loading requests…</div>
+            ) : errorText ? (
+              <div className="p-6 text-red-600">{errorText}</div>
+            ) : (
+              <table className="w-full text-left text-sm bg-white">
+                <thead
+                  className="text-[#3A0000] text-lg font-semibold"
+                  style={{
+                    backgroundColor: '#FBE8D4',
+                    borderBottom: '2px solid rgba(58, 0, 0, 0.15)',
+                  }}
+                >
+                  <tr className="text-left">
+                    <th
+                      className="p-5 cursor-pointer"
+                      onClick={() => toggleSort('task')}
                     >
-                      <td className="p-5 font-semibold">{req.task}</td>
-                      <td className="p-5">{req.change}</td>
-                      <td className="p-5">{req.requestedBy}</td>
-                      <td className="p-5">{req.dateRequested}</td>
-                      <td className="p-5">
-                        {role === 'management' ? (
-                          <select
-                            value={req.status}
-                            onChange={(e) =>
-                              handleStatusChange(
-                                req.id,
-                                e.target.value as 'Pending' | 'Implemented'
-                              )
-                            }
-                            className={`rounded-full border px-3 py-1.5 text-xs font-bold ${statusClasses(
-                              req.status
-                            )}`}
-                          >
-                            <option value="Pending">Pending</option>
-                            <option value="Implemented">Implemented</option>
-                          </select>
-                        ) : req.status === 'Pending' ? (
-                          <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-bold">
-                            Pending
-                          </span>
-                        ) : (
-                          <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold">
-                            Implemented
-                          </span>
-                        )}
-                      </td>
-                      <td className="p-5">{req.resolutionDate}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={6} className="p-8 text-center text-gray-500">
-                      No requests for this client.
-                    </td>
+                      Care Item{' '}
+                      {sortKey === 'task'
+                        ? sortDir === 'asc'
+                          ? '⬆'
+                          : '⬇'
+                        : '⬍'}
+                    </th>
+                    <th className="p-5">Requested Change</th>
+                    <th
+                      className="p-5 cursor-pointer"
+                      onClick={() => toggleSort('requestedBy')}
+                    >
+                      Requested By{' '}
+                      {sortKey === 'requestedBy'
+                        ? sortDir === 'asc'
+                          ? '⬆'
+                          : '⬇'
+                        : '⬍'}
+                    </th>
+                    <th
+                      className="p-5 cursor-pointer"
+                      onClick={() => toggleSort('dateRequested')}
+                    >
+                      Date Requested{' '}
+                      {sortKey === 'dateRequested'
+                        ? sortDir === 'asc'
+                          ? '⬆'
+                          : '⬇'
+                        : '⬍'}
+                    </th>
+                    <th
+                      className="p-5 cursor-pointer"
+                      onClick={() => toggleSort('status')}
+                    >
+                      Status{' '}
+                      {sortKey === 'status'
+                        ? sortDir === 'asc'
+                          ? '⬆'
+                          : '⬇'
+                        : '⬍'}
+                    </th>
+                    <th className="p-5">Resolution Date</th>
                   </tr>
-                )}
-              </tbody>
-            </table>
-          )}
+                </thead>
+
+                <tbody>
+                  {!activeClientId ? (
+                    <tr>
+                      <td colSpan={6} className="p-8 text-center text-gray-500">
+                        Select a client to view requests.
+                      </td>
+                    </tr>
+                  ) : sorted.length > 0 ? (
+                    sorted.map((req) => (
+                      <tr
+                        key={req.id}
+                        className="border-b hover:bg-[#fff6ea] transition"
+                      >
+                        <td className="p-5 font-semibold">{req.task}</td>
+                        <td className="p-5">{req.change}</td>
+                        <td className="p-5">{req.requestedBy}</td>
+                        <td className="p-5">{req.dateRequested}</td>
+                        <td className="p-5">
+                          {role === 'management' ? (
+                            <select
+                              value={req.status}
+                              onChange={(e) =>
+                                handleStatusChange(
+                                  req.id,
+                                  e.target.value as 'Pending' | 'Implemented'
+                                )
+                              }
+                              className={`rounded-full border px-3 py-1.5 text-xs font-bold ${statusClasses(
+                                req.status
+                              )}`}
+                            >
+                              <option value="Pending">Pending</option>
+                              <option value="Implemented">Implemented</option>
+                            </select>
+                          ) : req.status === 'Pending' ? (
+                            <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-bold">
+                              Pending
+                            </span>
+                          ) : (
+                            <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold">
+                              Implemented
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-5">{req.resolutionDate}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={6} className="p-8 text-center text-gray-500">
+                        No requests for this client.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
       </div>
     </DashboardChrome>

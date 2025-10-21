@@ -1,6 +1,7 @@
 /**
  * File path: /role/page.tsx
- * Last Updated by Denise Alexander - 7/10/2025: role hirerachy updated to client's preference (management, family/POA, carer)
+ * Last Updated by Denise Alexander (7/10/2025): role hirerachy updated to meet client's preference
+ * (Family/POA, Managemnet, Carer).
  */
 
 import Link from 'next/link';

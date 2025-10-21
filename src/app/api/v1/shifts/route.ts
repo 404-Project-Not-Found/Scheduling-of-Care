@@ -2,6 +2,11 @@
  * File path: /api/v1/shifts/route.ts
  * Author: Denise Alexander
  * Date Created: 15/10/2025
+ *
+ * Purpose: Handles shift management.
+ * - Management: can add/update/delete shifts.
+ * - Family: can view staff shifts for all organisations they have approved client access to.
+ * - Carer: can view their shifts + other staff members shifts from their organisation.
  */
 
 import { NextResponse, NextRequest } from 'next/server';

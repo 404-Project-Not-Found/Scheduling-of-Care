@@ -7,6 +7,9 @@
  * - Top navigation menu is rendered here; active page gets an underline style.
  * - Pink banner with the centered title changes depending on the page and selected client.
  * - Client select dropdown is shown for ALL roles (family / carer / management).
+ *
+ * Last Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
+ * consistency and better navigation.
  */
 
 'use client';
@@ -18,6 +21,22 @@ import { usePathname, useRouter } from 'next/navigation';
 import { getViewerRole, signOutUser } from '@/lib/data';
 import { useActiveClient } from '@/context/ActiveClientContext';
 import AccessDropdown from '@/components/top_menu/AccessDropdown';
+import {
+  ChevronDown,
+  User,
+  ArrowLeft,
+  Users,
+  FileText,
+  Receipt,
+  ClipboardList,
+  Contact,
+  HouseHeart,
+  LogOut,
+  SquareCheckBig,
+  SquarePlus,
+  Settings2,
+  Printer,
+} from 'lucide-react';
 
 const palette = {
   header: '#3A0000',
@@ -157,9 +176,17 @@ function activeUnderline(
 
   const isActiveDirect = page === key;
 
-  return isActiveCare || isActiveDirect || isProfileMapped
-    ? 'underline underline-offset-4'
-    : 'hover:underline text-white';
+  const base =
+    'text-white relative inline-block px-3 py-2 text-center transition-all duration-200';
+
+  const underlineClasses =
+    'after:content-[""] after:block after:w-[80%] after:h-[3px] after:rounded-full after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:mt-2';
+
+  if (isActiveCare || isActiveDirect || isProfileMapped) {
+    return `${base} ${underlineClasses} after:bg-white`;
+  } else {
+    return `${base} hover:after:content-[""] hover:after:block hover:after:w-[80%] hover:after:h-[3px] hover:after:rounded-full hover:after:bg-white/70 hover:after:absolute hover:after:bottom-0 hover:after:left-1/2 hover:after:-translate-x-1/2 hover:after:mt-2 hover:-translate-y-1`;
+  }
 }
 
 /** HEX → RGBA (banner background overlay). */
@@ -178,11 +205,8 @@ export default function DashboardChrome({
   topRight,
   colors,
   children,
-  headerHeight = 64,
-  bannerHeight = 64, // kept for API compatibility
   onPrint,
   showAvatar = true,
-  avatarSrc = '/default_profile.png',
   onProfile,
   onSignOut,
 
@@ -250,10 +274,10 @@ export default function DashboardChrome({
     headerTitle ??
     (page === 'staff-list'
       ? 'Staff List'
-      : isFamily
+      : isFamily || isCarer
         ? 'Client Schedule'
         : isCarer
-          ? 'Carer Dashboard'
+          ? 'Client Dashboard'
           : 'Client Schedule');
 
   // -------- Banner picker visibility --------
@@ -338,43 +362,42 @@ export default function DashboardChrome({
   return (
     <div className="min-h-screen flex flex-col" style={{ color: colors.text }}>
       {/* -------- Header -------- */}
-      <header
-        className="px-8 py-12 flex items-center justify-between text-white"
-        style={{ backgroundColor: colors.header, height: headerHeight }}
-      >
-        {/* Left: Logo + Title */}
-        <div className="flex items-center gap-8">
+      <header className="relative px-4 py-4 flex items-center justify-between text-white shadow-md shadow-black/30 rounded-md">
+        {/* Gradient + Golden Glow */}
+        <div
+          className="absolute inset-0 pointer-events-none rounded-md"
+          style={{
+            background:
+              'linear-gradient(90deg, #3A0000 0%, #803030 50%, #D4A77A 100%)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+          }}
+        />
+        {/* Left: Title */}
+        <div className="flex items-center gap-4">
           <button
             onClick={handleLogoClick}
-            className="flex items-center gap-3 hover:opacity-90"
+            className="relative z-10 flex items-center justify-center hover:opacity-70 transition"
             title="Go to dashboard"
           >
-            <Image
-              src="/logo.png"
-              alt="Logo"
-              width={80}
-              height={30}
-              className="object-contain"
-              priority
-            />
+            <ArrowLeft size={45} strokeWidth={1.8} color="white" />
           </button>
 
           <button
             onClick={goScheduleHome}
-            className={`font-extrabold leading-none text-xl md:text-3xl ${
+            className={`font-extrabold leading-none text-lg md:text-2xl ${
               page === 'client-schedule' || page === 'staff-schedule'
-                ? 'underline'
-                : 'text-white hover:underline'
+                ? 'text-white relative after:content-[""] after:block after:w-[85%] after:mx-auto after:h-[3px] after:rounded-full after:bg-white after:mt-2 after:transition-all after:duration-200 text-center px-3 py-2'
+                : 'text-white text-center relative hover:after:content-[""] hover:after:block hover:after:w-[85%] hover:after:mx-auto hover:after:h-[3px] hover:after:rounded-full hover:after:bg-white/70 hover:after:mt-2 hover:transition-all hover:duration-200 px-3 py-2 transition'
             }`}
           >
-            <span className="font-extrabold leading-none text-2xl md:text-3xl">
+            <span className="font-extrabold leading-none text-lg md:text-2xl inline-flex items-center gap-2 text-left">
               {computedHeaderTitle}
             </span>
           </button>
         </div>
 
         {/* Center: Nav */}
-        <nav className="hidden lg:flex items-center gap-14 font-extrabold text-white text-lg px-2">
+        <nav className="hidden lg:flex items-center gap-6 font-extrabold text-white text-lg px-2">
           {safeNavItems.length > 0 ? (
             // Custom nav (already role-filtered)
             <>
@@ -388,8 +411,8 @@ export default function DashboardChrome({
                     href={item.href}
                     className={
                       active
-                        ? 'px-2 py-1 underline underline-offset-4'
-                        : 'px-2 py-1 text-white hover:underline'
+                        ? 'bg-white/20 underline underline-offset-4'
+                        : 'hover:bg-white/10 hover:underline'
                     }
                   >
                     {item.label}
@@ -403,8 +426,9 @@ export default function DashboardChrome({
               {isManagement && (
                 <Link
                   href={ROUTES.clientList}
-                  className={activeUnderline(page, 'client-list', role!)}
+                  className={`${activeUnderline(page, 'client-list', role!)} inline-flex items-center gap-2 text-left`}
                 >
+                  <Contact className="w-15 h-15 text-white" strokeWidth={1.3} />
                   Client List
                 </Link>
               )}
@@ -413,8 +437,12 @@ export default function DashboardChrome({
                 <>
                   <Link
                     href={ROUTES.peopleList}
-                    className={activeUnderline(page, 'people-list', role!)}
+                    className={`${activeUnderline(page, 'people-list', role!)} inline-flex items-center gap-2 text-left`}
                   >
+                    <Contact
+                      className="w-15 h-15 text-white"
+                      strokeWidth={1.3}
+                    />
                     My Clients
                   </Link>
                   <Link
@@ -423,15 +451,19 @@ export default function DashboardChrome({
                         ? ROUTES.organisationAccess(activeClient.id)
                         : '#'
                     }
-                    className={
+                    className={`${
                       activeClient.id
                         ? activeUnderline(page, 'organisation-access', role!)
                         : 'cursor-not-allowed opacity-50'
-                    }
+                    } inline-flex items-center gap-2 text-left`}
                     onClick={(e) => {
                       if (!activeClient.id) e.preventDefault();
                     }}
                   >
+                    <HouseHeart
+                      className="w-15 h-15 text-white"
+                      strokeWidth={1.3}
+                    />
                     Client Organisations
                   </Link>
                 </>
@@ -439,14 +471,16 @@ export default function DashboardChrome({
 
               <Link
                 href={ROUTES.budget}
-                className={activeUnderline(page, 'budget', role!)}
+                className={`${activeUnderline(page, 'budget', role!)} inline-flex items-center gap-2 text-left`}
               >
+                <FileText className="w-15 h-15 text-white" strokeWidth={1.3} />
                 Budget Report
               </Link>
               <Link
                 href={ROUTES.transactions}
-                className={activeUnderline(page, 'transactions', role!)}
+                className={`${activeUnderline(page, 'transactions', role!)} inline-flex items-center gap-2 text-left`}
               >
+                <Receipt className="w-15 h-15 text-white" strokeWidth={1.3} />
                 View Transactions
               </Link>
 
@@ -455,22 +489,31 @@ export default function DashboardChrome({
                   <div className="relative">
                     <details className="group">
                       <summary
-                        className={`inline-flex items-center gap-2 list-none cursor-pointer ${activeUnderline(page, 'care', role!)}`}
+                        className={`inline-flex items-center gap-2 list-none cursor-pointer ${activeUnderline(page, 'care', role!)} text-left`}
                       >
-                        Care Items <span className="text-white/90">▼</span>
+                        <SquareCheckBig
+                          className="w-15 h-15 text-white"
+                          strokeWidth={1.3}
+                        />
+                        Care Items{' '}
+                        <span className="text-white/90">
+                          <ChevronDown className="w-5 h-5 text-white" />
+                        </span>
                       </summary>
                       <div className="absolute left-1/2 -translate-x-1/2 mt-3 w-80 rounded-md border border-white/30 bg-white text-black shadow-2xl z-50">
                         <Link
                           href={ROUTES.careAdd}
-                          className="block w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5"
+                          className="block w-full flex items-center gap-2 text-left px-5 py-4 text-xl font-semibold hover:bg-black/5"
                         >
-                          Add a new care item
+                          <SquarePlus className="w-9 h-9" strokeWidth={1.3} />
+                          Add Care Item
                         </Link>
                         <Link
                           href={ROUTES.careEdit}
-                          className="block w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5"
+                          className="block w-full flex items-center gap-2 text-left px-5 py-4 text-xl font-semibold hover:bg-black/5"
                         >
-                          Edit a care item
+                          <Settings2 className="w-9 h-9" strokeWidth={1.3} />
+                          Edit Care Item
                         </Link>
                       </div>
                     </details>
@@ -479,8 +522,12 @@ export default function DashboardChrome({
               )}
               <Link
                 href={ROUTES.requestLog}
-                className={activeUnderline(page, 'request-log', role!)}
+                className={`${activeUnderline(page, 'request-log', role!)} inline-flex items-center gap-2 text-left`}
               >
+                <ClipboardList
+                  className="w-15 h-15 text-white"
+                  strokeWidth={1.3}
+                />
                 Family Requests
               </Link>
             </>
@@ -493,35 +540,38 @@ export default function DashboardChrome({
             <div className="relative">
               <button
                 onClick={() => setUserMenuOpen((v) => !v)}
-                className="h-16 w-16 rounded-full overflow-hidden border-2 border-white/80 hover:border-white focus:outline-none focus:ring-2 focus:ring-white/70"
+                className="h-16 w-16 rounded-full flex items-center justify-center overflow-hidden border-2 border-white/80 hover:border-black/50 focus:outline-none focus:ring-2 focus:ring-white/70"
+                style={{ backgroundColor: 'white' }}
                 aria-haspopup="menu"
                 aria-expanded={userMenuOpen}
                 title="Account"
               >
-                <Image
-                  src={avatarSrc}
-                  alt="Profile"
-                  width={64}
-                  height={64}
-                  className="h-full w-full object-cover"
-                  priority
+                <User
+                  size={50}
+                  strokeWidth={0.3}
+                  fill={palette.header}
+                  color={palette.header}
                 />
               </button>
               {userMenuOpen && (
                 <div
-                  className="absolute right-0 mt-3 w-80 rounded-md border border-white/30 bg-white text-black shadow-2xl z-50"
+                  className="absolute right-0 mt-2 w-60 bg-white border border-gray-200 rounded-xl shadow-lg z-50"
                   role="menu"
                 >
                   <button
-                    className="w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5"
+                    className="w-full px-4 py-3 flex items-center gap-2 font-extrabold hover:bg-gray-50 rounded-lg"
+                    style={{ color: palette.header }}
                     onClick={goProfile}
                   >
+                    <User size={30} strokeWidth={2} color={palette.header} />
                     Update your details
                   </button>
                   <button
-                    className="w-full text-left px-5 py-4 text-xl font-semibold hover:bg-black/5"
+                    className="w-full px-4 py-3 flex items-center gap-2 font-extrabold hover:bg-gray-50 rounded-lg"
+                    style={{ color: palette.header }}
                     onClick={doSignOut}
                   >
+                    <LogOut size={30} strokeWidth={2} color={palette.header} />
                     Log out
                   </button>
                 </div>
@@ -534,7 +584,7 @@ export default function DashboardChrome({
 
       {/* -------- Pink banner (Client dropdown on the LEFT; now visible for ALL roles) -------- */}
       {shouldShowBanner && (
-        <div className="relative isolate px-4 md:px-8 py-2 md:py-4 grid grid-cols-[auto_1fr_auto] items-center">
+        <div className="relative isolate px-4 md:px-8 py-2 md:py-4 grid grid-cols-[auto_1fr_auto] items-center shadow-sm shadow-black/20">
           <div
             className="absolute inset-0 z-0 pointer-events-none"
             style={{ backgroundColor: hexToRgba(palette.banner, 0.8) }}
@@ -542,10 +592,10 @@ export default function DashboardChrome({
           />
           {/* Left: Client picker (ALWAYS visible unless explicitly hidden by prop) */}
           {pickerVisible ? (
-            <div className="relative justify-self-start z-10">
+            <div className="relative justify-self-start z-10 flex items-center gap-2">
               <label className="sr-only">Select Client</label>
               <select
-                className="appearance-none h-12 w-56 md:w-64 pl-8 pr-12 rounded-2xl border border-black/30 bg-white font-extrabold text-xl shadow-sm focus:outline-none"
+                className="appearance-none h-10 w-50 md:w-64 pl-8 pr-12 rounded-2xl border border-black/30 hover:border-black/50 bg-white font-extrabold text-xl shadow-sm focus:outline-none"
                 value={activeClient.id || ''}
                 onChange={(e) => onSelectClientChange(e.target.value)}
                 aria-label="Select client"
@@ -562,7 +612,7 @@ export default function DashboardChrome({
                   ))}
               </select>
               <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-black/60 text-xl">
-                ▾
+                <ChevronDown className="w-5 h-5 text-black/70" />
               </span>
             </div>
           ) : (
@@ -580,11 +630,12 @@ export default function DashboardChrome({
                       if (activeClient.id) router.push(ROUTES.profile);
                     }}
                     disabled={!activeClient.id}
-                    className={`rounded-full border border-black/20 focus:outline-none focus:ring-2 focus:ring-black/30 ${
+                    className={`rounded-full border border-black/20 focus:outline-none focus:ring-2 focus:ring-black/30 flex-shrink-0 ${
                       activeClient.id
-                        ? 'cursor-pointer hover:ring-2 hover:ring-black/20'
+                        ? 'cursor-pointer hover:ring-2 hover:ring-black/50'
                         : 'cursor-not-allowed opacity-60'
                     }`}
+                    style={{ width: 65, height: 65, backgroundColor: 'white' }}
                     aria-label="Open client profile"
                     title={
                       activeClient.id
@@ -592,21 +643,21 @@ export default function DashboardChrome({
                         : 'Select a client first'
                     }
                   >
-                    <Image
-                      src="/default_profile.png"
-                      alt="Client avatar"
-                      width={60}
-                      height={60}
-                      priority
-                      className="rounded-full object-cover"
-                    />
+                    <div className="flex items-center justify-center w-full h-full">
+                      <User
+                        size={50} // Icon size
+                        strokeWidth={0.3}
+                        fill={palette.header}
+                        color={palette.header}
+                      />
+                    </div>
                   </button>
 
-                  <h1 className="font-extrabold leading-none text-2xl md:text-3xl select-none">
+                  <h1 className="font-extrabold leading-none text-2xl md:text-3xl select-none whitespace-nowrap">
                     {computedBannerTitle}
                   </h1>
 
-                  {page === 'client-schedule' && activeClient.id && (
+                  {activeClient.id && (
                     <div className="ml-6 pl-6 border-l border-black/20 hidden md:block">
                       <AccessDropdown clientId={activeClient.id} />
                     </div>
@@ -623,9 +674,10 @@ export default function DashboardChrome({
             {page === 'client-schedule' && (
               <button
                 onClick={handlePrint}
-                className="relative z-20 inline-flex items-center px-6 py-3 rounded-2xl border border-black/30 bg-white font-extrabold text-xl hover:bg-black/5"
+                className="relative z-20 inline-flex items-center gap-2 px-4 py-2 rounded-2xl border border-black/30 hover:border-black/50 bg-white font-extrabold text-xl"
                 title="Print"
               >
+                <Printer size={24} />
                 Print
               </button>
             )}
@@ -634,7 +686,7 @@ export default function DashboardChrome({
       )}
 
       {/* -------- Content -------- */}
-      <main className="flex-1 min-h-0">{children}</main>
+      <main className="flex-1 min-h-0 overflow-visible">{children}</main>
     </div>
   );
 }

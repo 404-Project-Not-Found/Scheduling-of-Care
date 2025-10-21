@@ -1,13 +1,17 @@
 /**
  * View Transactions
- * Frontend Authors: Devni Wijesinghe & Qingyue Zhao
+ * Front-end Authors: Devni Wijesinghe & Qingyue Zhao
+ * Back-end Author: Zahra Rizqita
  *
- * Last Updated by Denise Alexander (16/10/2025): Fixed active client usage, client dropdown
+ * Updated by Denise Alexander (16/10/2025): Fixed active client usage, client dropdown
  * now works correctly.
+ *
+ * Last Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
+ * consistency and better navigation.
  */
-
 'use client';
 
+import { Search } from 'lucide-react';
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardChrome from '@/components/top_menu/client_schedule';
@@ -26,7 +30,6 @@ import { getTransactionsFE } from '@/lib/transaction-helpers';
 // --------- Type Definitions ---------
 type Role = 'carer' | 'family' | 'management';
 
-/** Data shape returned by getTransactionsFE() */
 type ApiTransaction = {
   id: string;
   clientId: string;
@@ -55,9 +58,7 @@ const colors = {
 
 export default function TransactionHistoryPage() {
   return (
-    <Suspense
-      fallback={<div className="p-6 text-gray-600">Loading transactions…</div>}
-    >
+    <Suspense fallback={<div className="p-6 text-gray-600">Loading transactions…</div>}>
       <TransactionHistoryInner />
     </Suspense>
   );
@@ -76,6 +77,7 @@ function TransactionHistoryInner() {
   const [errorText, setErrorText] = useState('');
 
   const loadingAny = loading.clients || loading.years || loading.rows;
+
   // Filters
   const [search, setSearch] = useState<string>('');
 
@@ -105,13 +107,11 @@ function TransactionHistoryInner() {
       setLoading((s) => ({ ...s, clients: true }));
       try {
         const list: ApiClient[] = await getClients();
-        const mapped: ClientLite[] = (list as ApiClientWithAccess[]).map(
-          (c) => ({
-            id: c._id,
-            name: c.name,
-            orgAccess: c.orgAccess,
-          })
-        );
+        const mapped: ClientLite[] = (list as ApiClientWithAccess[]).map((c) => ({
+          id: c._id,
+          name: c.name,
+          orgAccess: c.orgAccess,
+        }));
         setClients(mapped);
 
         const active = await getActiveClient();
@@ -187,7 +187,7 @@ function TransactionHistoryInner() {
     };
     load();
     return () => abort.abort();
-  }, [activeClientId]);
+  }, [activeClientId]); // MERGE: keep effect dependency minimal
 
   useEffect(() => {
     if (!activeClientId) {
@@ -214,139 +214,133 @@ function TransactionHistoryInner() {
     const q = search.trim().toLowerCase();
     if (!q) return rows;
     return rows.filter((t) =>
-      [t.type, t.date, t.madeBy, t.receipt, ...t.items]
-        .join(' ')
-        .toLowerCase()
-        .includes(q)
+      [t.type, t.date, t.madeBy, t.receipt, ...t.items].join(' ').toLowerCase().includes(q)
     );
   }, [rows, search]);
 
   return (
-    <DashboardChrome
-      page="transactions"
-      clients={clients}
-      onClientChange={onClientChange}
-      colors={colors}
-    >
+    <DashboardChrome page="transactions" clients={clients} onClientChange={onClientChange} colors={colors}>
       {/* Main content */}
-      <div className="flex-1 h-[680px] bg-white/80 overflow-auto" aria-busy>
-        {/* Header bar */}
-        <div
-          className="w-full flex items-center justify-between px-6 py-5"
-          style={{ backgroundColor: colors.header }}
-        >
-          {/* Left side: Title */}
-          <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold text-white">
-              Transaction History
-            </h1>
-            <span className="text-white/90 font-bold text-sm">View year:</span>
-            <select
-              value={String(year)}
-              onChange={(e) => setYear(Number(e.target.value))}
-              className="rounded bg-white text-black px-2 py-1 text-sm"
-              aria-label="Select year to view transactions"
-              title="View transaction history of year"
-              disabled={loadingAny}
-            >
-              {years.map((y) => (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Right side: Add button + Search bar */}
-          <div className="flex items-center gap-7">
-            {role === 'carer' && (
-              <button
-                className="px-4 py-2 rounded-md font-semibold text-black"
-                style={{ backgroundColor: '#FFA94D' }}
-                onClick={() =>
-                  router.push(
-                    '/calendar_dashboard/budget_report/add_transaction'
-                  )
-                }
-              >
-                Add new transaction
-              </button>
-            )}
-            <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2">
-              <input
-                type="text"
-                placeholder="Search"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="border-none focus:outline-none w-56 text-black text-sm"
+      <div className="flex-1 h-[680px] bg-white/80 overflow-auto" aria-busy={loadingAny}>
+        {/* Top bar: title + year + search + add */}
+        <div className="w-full px-6 py-5">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            {/* LEFT: Title + Year selector  (MERGE: restored year picker from HEAD) */}
+            <div className="flex items-center gap-4">
+              <h1 className="text-[#3A0000] text-3xl font-semibold">Transaction History</h1>
+              <span className="text-black/70 font-semibold text-sm">View year:</span>
+              <select
+                value={String(year)}
+                onChange={(e) => setYear(Number(e.target.value))}
+                className="rounded bg-white text-black px-2 py-1 text-sm border"
+                aria-label="Select year to view transactions"
+                title="View transaction history of year"
                 disabled={loadingAny}
-              />
+              >
+                {years.map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* RIGHT: Search + Add button (from main) */}
+            <div className="flex items-center gap-5">
+              <div className="relative">
+                <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-black/60 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Search"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="h-9 rounded-full bg-white text-black border px-10 w-60"
+                  disabled={loadingAny}
+                />
+              </div>
+
+              {role === 'carer' && (
+                <button
+                  className="px-4 py-2 rounded-md font-semibold text-[#3A0000] hover:opacity-90 transition"
+                  style={{
+                    background: 'linear-gradient(90deg, #F9C9B1 0%, #FBE8D4 100%)',
+                    border: '1px solid #B47A64',
+                    boxShadow: '0 2px 6px rgba(180, 122, 100, 0.25)',
+                  }}
+                  onClick={() => router.push('/calendar_dashboard/budget_report/add_transaction')}
+                >
+                  Add new transaction
+                </button>
+              )}
             </div>
           </div>
-        </div>
 
-        {/* Table full width */}
-        <div className="w-full overflow-auto">
-          {loadingAny ? (
-            <div className="p-6 text-gray-600">Loading transactions…</div>
-          ) : errorText ? (
-            <div className="p-6 text-red-600">{errorText}</div>
-          ) : (
-            <table className="w-full border-collapse text-sm text-black">
-              <thead className="sticky top-0 bg-[#F9C9B1] shadow-sm">
-                <tr className="text-left">
-                  <th className="p-5">Type</th>
-                  <th className="p-5">Date</th>
-                  <th className="p-5">Made By</th>
-                  <th className="p-5">Receipt</th>
-                  <th className="p-5">Associated Care Items</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.length > 0 ? (
-                  filtered.map((t) => (
-                    <tr
-                      key={t.id}
-                      className="border-b hover:bg-[#fff6ea] transition"
-                    >
-                      <td className="p-5 font-semibold">{t.type}</td>
-                      <td className="p-5">{t.date}</td>
-                      <td className="p-5">{t.madeBy}</td>
-                      <td className="p-5">{t.receipt}</td>
-                      <td className="p-5">
-                        <div className="flex flex-col gap-1">
-                          {t.items.map((i, idx) => (
-                            <div
-                              key={idx}
-                              className="flex items-center justify-between gap-2"
-                            >
-                              <span>{i}</span>
-                              {role === 'carer' && (
-                                <button
-                                  className="px-2 py-1 text-xs bg-[#3d0000] text-white rounded"
-                                  onClick={() =>
-                                    router.push('/calendar_dashboard')
-                                  }
-                                >
-                                  View Care Item
-                                </button>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </td>
+          {/* Divider (from main) */}
+          <hr className="mt-4 mb-6 w-340 mx-auto border-t border-[#3A0000]/25 rounded-full" />
+
+          {/* Table container */}
+          <div className="w-full pt-2 pb-6">
+            <div className="rounded-2xl border border-[#3A0000]/30 bg-white overflow-hidden shadow-sm">
+              {loadingAny ? (
+                <div className="p-6 text-gray-600">Loading transactions…</div>
+              ) : errorText ? (
+                <div className="p-6 text-red-600">{errorText}</div>
+              ) : (
+                <table className="w-full text-left text-sm bg-white">
+                  <thead
+                    className="text-[#3A0000] text-lg font-semibold"
+                    style={{
+                      backgroundColor: '#FBE8D4',
+                      borderBottom: '2px solid rgba(58, 0, 0, 0.15)',
+                    }}
+                  >
+                    <tr className="text-left">
+                      <th className="px-6 py-4">Type</th>
+                      <th className="px-6 py-4">Date</th>
+                      <th className="px-6 py-4">Made By</th>
+                      <th className="px-6 py-4">Receipt</th>
+                      <th className="px-6 py-4">Associated Care Items</th>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={5} className="p-8 text-center text-gray-500">
-                      No transactions for this client.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          )}
+                  </thead>
+                  <tbody>
+                    {filtered.length > 0 ? (
+                      filtered.map((t) => (
+                        <tr key={t.id} className="border-b last:border-b border-[#3A0000]/20 hover:bg-[#fff6ea] transition">
+                          <td className="px-6 py-5 font-semibold">{t.type}</td>
+                          <td className="px-6 py-5">{t.date}</td>
+                          <td className="px-6 py-5">{t.madeBy}</td>
+                          <td className="px-6 py-5">{t.receipt}</td>
+                          <td className="px-6 py-5">
+                            <div className="flex flex-col gap-1">
+                              {t.items.map((i, idx) => (
+                                <div key={idx} className="flex items-center justify-between gap-2">
+                                  <span>{i}</span>
+                                  {role === 'carer' && (
+                                    <button
+                                      className="px-2 py-1 text-xs bg-[#3d0000] text-white rounded"
+                                      onClick={() => router.push('/calendar_dashboard')}
+                                    >
+                                      View Care Item
+                                    </button>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={5} className="p-8 text-center text-gray-500">
+                          No transactions for this client.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </DashboardChrome>
