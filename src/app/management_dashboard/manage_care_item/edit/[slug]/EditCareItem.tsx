@@ -20,6 +20,8 @@
 
 'use client';
 
+import { AlertCircle } from 'lucide-react';
+
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useMemo } from 'react';
 import DashboardChrome from '@/components/top_menu/client_schedule';
@@ -364,22 +366,32 @@ export default function EditCareItem({ slug }: { slug: string }) {
       colors={chromeColors}
     >
       {/* Fill entire area below the topbar */}
-      <div className="w-full h-[720px] bg-[#FAEBDC] flex flex-col">
+      <div className="w-full bg-[#FFF5EC] px-6 py-5">
         {/* Section title bar */}
-        <div className="bg-[#3A0000] text-white px-6 py-3">
-          <h2 className="text-xl md:text-3xl font-extrabold px-5">
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <h2 className="text-[#3A0000] text-3xl font-semibold">
             Edit Care Item
           </h2>
         </div>
 
+        {/* Divider */}
+        <hr className="mt-4 mb-2 w-340 mx-auto border-t border-[#3A0000]/25 rounded-full" />
+
         {/* Notice bar */}
-        <div className="bg-[#F9C9B1] text-black px-6 py-4">
-          <h3 className="text-lg px-5">
-            <strong>IMPORTANT:</strong> Deleting the task or editing the
-            frequency and dates will change the schedule of this care item for
-            the rest of the year. Be aware of any budget implications before
-            making this change!!
-          </h3>
+        <div className="mt-6 mb-10 mx-auto flex items-start gap-4 bg-[#F9C9B1]/60 border border-[#3A0000]/30 rounded-xl px-6 py-3 shadow-sm">
+          <AlertCircle
+            size={28}
+            strokeWidth={2.5}
+            className="text-[#3A0000] flex-shrink-0 mt-1"
+          />
+          <div className="text-[#3A0000]">
+            <h3 className="text-lg font-semibold mb-1">Important Notice</h3>
+            <p className="text-base leading-relaxed">
+              Deleting the task or editing the frequency and dates will change
+              the schedule of this care item for the rest of the year. Please
+              consider any budget implications before making these changes.
+            </p>
+          </div>
         </div>
 
         {/* Form content */}
@@ -509,21 +521,20 @@ export default function EditCareItem({ slug }: { slug: string }) {
             {/* Footer buttons */}
             <div className="pt-2 flex items-center justify-center gap-30">
               <button
-                onClick={onDelete}
-                className="rounded-full text-white text-xl font-semibold px-6.5 py-2.5 shadow"
-                style={{ backgroundColor: palette.danger }}
+                //onClick={onDelete}
+                className="px-5 py-2.5 rounded-md text-lg font-medium text-white bg-[#B3261E] hover:bg-[#99201A] transition"
               >
                 Delete
               </button>
               <button
                 onClick={() => router.push('/calendar_dashboard')}
-                className="px-6 py-2.5 rounded-full border border-[#3A0000] text-gray-700 hover:bg-gray-200"
+                className="px-5 py-2.5 rounded-md text-lg font-medium text-[#3A0000] bg-[#F3E9DF] border border-[#D8C6B9] hover:bg-[#E9DED2] transition"
               >
                 Cancel
               </button>
               <button
-                onClick={onSave}
-                className="rounded-full bg-[#F39C6B] hover:bg-[#ef8a50] text-[#1c130f] text-xl font-bold px-7.5 py-2.5 shadow"
+                //onClick={onSave}
+                className="px-5 py-2.5 rounded-md text-lg font-medium text-white bg-[#3A0000] hover:bg-[#502121] transition"
               >
                 Save
               </button>
