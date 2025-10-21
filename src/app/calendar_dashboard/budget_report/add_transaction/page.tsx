@@ -1,6 +1,9 @@
 /*
  * File path: /calendar_dashboard/add_transaction/page.tsx
- * Frontend Author: Devni Wijesinghe (refactor to use DashboardChrome by QY)
+ * Front-end Author: Devni Wijesinghe (refactor to use DashboardChrome by QY)
+ *
+ * Last Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
+ * consistency and better navigation.
  */
 
 'use client';
@@ -9,6 +12,7 @@ import React, { useEffect, useMemo, useRef, useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardChrome from '@/components/top_menu/client_schedule';
 import { useTransactions } from '@/context/TransactionContext';
+import { ArrowLeft } from 'lucide-react';
 
 import {
   getClientsFE,
@@ -155,34 +159,32 @@ function AddTransactionInner() {
     <DashboardChrome
       page="transactions"
       clients={clients}
-      activeClientId={activeClientId}
       onClientChange={onClientChange}
-      activeClientName={activeClientName}
       colors={{ header: colors.header, banner: colors.banner, text: '#000' }}
-      onLogoClick={() => router.push('/empty_dashboard')}
     >
-      <div
-        className="flex-1 h-[680px] overflow-auto"
-        style={{ backgroundColor: colors.pageBg }}
-      >
-        {/* Section bar */}
-        <div
-          className="w-full flex items-center justify-between px-8 py-4 text-white text-3xl font-extrabold"
-          style={{ backgroundColor: colors.sectionBar }}
-        >
-          <span>Add Transaction</span>
-          <button
-            onClick={() =>
-              router.push('/calendar_dashboard/transaction_history')
-            }
-            className="text-lg font-semibold text-white hover:underline"
-          >
-            &lt; Back
-          </button>
+      <div className="flex-1 min-h-screen bg-[#FFF5EC] overflow-auto">
+        <div className="w-full px-6 py-3">
+          {/* Section bar */}
+          <div className="flex items-center justify-between text-[#3A0000] px-6 py-5 mb-3">
+            <h2 className="text-3xl font-semibold">Add Transaction</h2>
+
+            <button
+              onClick={() =>
+                router.push('/calendar_dashboard/transaction_history')
+              }
+              className="flex items-center gap-2 text-lg font-semibold text-[#3A0000] bg-[#EAD8C8] hover:bg-[#DFC8B4] border border-[#D4B8A0] rounded-md px-4 py-2 transition"
+            >
+              <ArrowLeft size={22} strokeWidth={2.5} />
+              Back
+            </button>
+          </div>
+
+          {/* Divider */}
+          <hr className="mt-4 mb-4 w-340 mx-auto border-t border-[#3A0000]/25 rounded-full" />
         </div>
 
         {/* Form area */}
-        <div className="w-full max-w-[1120px] mx-auto px-25 py-15">
+        <div className="w-full max-w-[1120px] mx-auto px-25 py-8">
           <div className="grid grid-cols-[280px_1fr] gap-y-8 gap-x-10">
             {/* Category */}
             <label
@@ -306,22 +308,23 @@ function AddTransactionInner() {
 
           {/* Footer buttons */}
           <div className="mt-14 flex items-center justify-center gap-40">
-            <button
-              className="px-8 py-3 rounded-2xl text-2xl font-extrabold"
-              style={{ backgroundColor: colors.btnPill, color: '#1a1a1a' }}
-              onClick={() =>
-                router.push('/calendar_dashboard/transaction_history')
-              }
-            >
-              Cancel
-            </button>
-            <button
-              className="px-10 py-3 rounded-2xl text-2xl font-extrabold hover:opacity-95"
-              style={{ backgroundColor: colors.btnPill, color: '#1a1a1a' }}
-              onClick={handleSubmit}
-            >
-              Add
-            </button>
+            <div className="pt-8 flex items-center justify-center gap-6">
+              {/* Cancel Button */}
+              <button
+                onClick={() => router.push('/calendar_dashboard')}
+                className="rounded-md px-5 py-2.5 text-lg font-medium text-[#3A0000] bg-[#F3E9DF] border border-[#D8C6B9] hover:bg-[#E9DED2] transition"
+              >
+                Cancel
+              </button>
+
+              {/* Add Button */}
+              <button
+                onClick={handleSubmit}
+                className="rounded-md px-5 py-2.5 text-lg font-medium text-white bg-[#3A0000] hover:bg-[#502121] transition"
+              >
+                Add
+              </button>
+            </div>
           </div>
         </div>
       </div>

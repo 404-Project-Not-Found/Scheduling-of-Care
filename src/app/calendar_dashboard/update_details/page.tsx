@@ -1,9 +1,10 @@
 /**
- * File path: calendar_dashboard/update_details/page.tsx
- * Authors: Devni Wijesinghe & Denise Alexander
+ * File path: /calendar_dashboard/update_details/page.tsx
+ * Front-end Author: Devni Wijesinghe
+ * Back-end Author: Denise Alexander
  * Date Created: 22/09/2025
  *
- * Last Updated by Denise Alexander - 7/10/2025: back-end integration
+ * Last Updated by Denise Alexander (7/10/2025): back-end integration
  * added.
  */
 
@@ -152,10 +153,10 @@ export default function UpdateDetailsPage() {
       {/* Top-left logo */}
       <div className="absolute top-6 left-6">
         <Image
-          src="/logo-name.png"
+          src="/logo.png"
           alt="Scheduling of Care"
-          width={220}
-          height={80}
+          width={100}
+          height={60}
           className="object-contain"
           priority
         />
@@ -249,21 +250,16 @@ export default function UpdateDetailsPage() {
           <div className="mt-10 flex items-center justify-end gap-6">
             <button
               type="button"
-              className="px-6 py-2.5 rounded-full border text-gray-700 hover:bg-gray-200"
               onClick={handleCancel}
+              className="px-5 py-2.5 rounded-md text-lg font-medium text-[#3A0000] bg-[#F3E9DF] border border-[#D8C6B9] hover:bg-[#E9DED2] transition"
             >
               Cancel
             </button>
 
             <button
               type="button"
-              className="px-7 py-2.5 rounded-full font-semibold border"
-              style={{
-                backgroundColor: colors.orange,
-                borderColor: '#f08a00',
-                color: colors.header,
-              }}
               onClick={handleSave}
+              className="px-5 py-2.5 rounded-md text-lg font-medium text-white bg-[#3A0000] hover:bg-[#502121] transition"
             >
               Save
             </button>

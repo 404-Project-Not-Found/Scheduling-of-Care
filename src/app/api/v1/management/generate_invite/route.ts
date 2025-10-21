@@ -1,7 +1,9 @@
 /**
- * File path: /management/generate_invite/route.ts
+ * File path: /api/v1/management/generate_invite/route.ts
  * Author: Denise Alexander
  * Date Created: 26/09/2025
+ *
+ * Purpose: Generates invite codes for staff members wanting to join an existing organsiation.
  */
 
 import { NextRequest, NextResponse } from 'next/server';

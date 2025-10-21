@@ -1,7 +1,10 @@
 /**
- * File path: /management/register_client/route.ts
+ * File path: /api/v1/management/register_client/route.ts
  * Author: Denise Alexander
  * Date Created: 26/09/2025
+ *
+ * Purpose: Links a client to the logged-in user's organisation when they register the client
+ * with the access code provided by family.
  */
 
 import { NextRequest, NextResponse } from 'next/server';

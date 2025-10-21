@@ -1,5 +1,5 @@
 /**
- * File path: /components/accesscode/AddAccessCodePanel.tsx
+ * File path: /components/accesscode/access-code.tsx
  * Author: Qingyue Zhao
  * Date Created: 28/09/2025
  *

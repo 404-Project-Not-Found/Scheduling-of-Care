@@ -2,7 +2,8 @@
  * File path: /models/User.ts
  * Author: Denise Alexander
  * Date Created: 16/09/2025
- * Last Updated by Denise Alexander - 7/10/2025: added activeClientId to identify the client the user is
+ *
+ * Last Updated by Denise Alexander (7/10/2025): added activeClientId to identify the client the user is
  * currently viewing across pages.
  */
 

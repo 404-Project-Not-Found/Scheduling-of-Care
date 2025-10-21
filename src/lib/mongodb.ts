@@ -2,6 +2,8 @@
  * File path: /lib/mongodb.ts
  * Author: Denise Alexander
  * Date Created: 16/09/2025
+ *
+ * Purpose: to connect to MongoDB, our chosen DB for this application.
  */
 
 import mongoose from 'mongoose';

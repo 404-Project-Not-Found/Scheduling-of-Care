@@ -1,9 +1,13 @@
 /**
  * File path: /lib/data.ts
- * Author: Denise Alexander
+ * Authors: Denise Alexander & Zahra Rizqita
  * Date Created: 04/10/2025
- * Updated by Denise Alexander - 7/10/2025: enables either mock mode or real back-end API.
- * Last Updated by Zahra Rizqita - 13/10/2025: implement fetching and saving task
+ *
+ * Updated by Denise Alexander (7/10/2025): enables either mock mode or real back-end API.
+ * Updated by Zahra Rizqita (13/10/2025): implement fetching and saving task.
+ *
+ * Last Updated by Denise Alexander (16/10/2025): added new helper functions for family
+ * requests handling.
  */
 
 import * as mockApi from './mock/mockApi';
@@ -16,10 +20,10 @@ import {
 } from '@/lib/care-item-helpers/date-helpers';
 
 // Fetching Task helper
-
 export type ApiCareItem = {
   slug: string;
   label: string;
+  category?: string;
   status: 'Pending' | 'Due' | 'Completed';
   frequency?: string;
   lastDone?: string;
@@ -29,10 +33,24 @@ export type ApiCareItem = {
   files?: string[];
 };
 
+export interface AccessUser {
+  _id: string;
+  fullName: string;
+  email: string;
+  role: 'carer' | 'family' | 'management';
+}
+
+export interface Task {
+  id: string;
+  title: string;
+  category: string;
+  description?: string;
+}
+
 type CareItemListRow = {
   label: string;
   slug: string;
-  status: 'Pending' | 'Due' | 'Completed';
+  status: 'Pending' | 'Overdue' | 'Completed';
   category: string;
   categoryId?: string;
   clientId?: string;
@@ -57,6 +75,23 @@ export const signOutUser = async () => {
     return;
   }
   await nextAuthSignOut({ redirect: false });
+};
+
+export const getUsersWithAccess = async (
+  clientId: string
+): Promise<AccessUser[]> => {
+  if (!clientId) return [];
+
+  const res = await fetch(`/api/v1/clients/${clientId}/access`, {
+    cache: 'no-store',
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch users with access (${res.status})`);
+  }
+
+  const data = await res.json();
+  return data;
 };
 
 // Gets the role of the currently authenticated user
@@ -87,7 +122,9 @@ export const getClients = async (): Promise<mockApi.Client[]> => {
 
   const role = session.user.role;
   const url =
-    role === 'management' ? '/api/v1/management/clients' : '/api/v1/clients';
+    role === 'management' || role === 'carer'
+      ? '/api/v1/management/clients'
+      : '/api/v1/clients';
 
   const res = await fetch(url, { cache: 'no-store' });
   if (!res.ok) {
@@ -249,5 +286,54 @@ export const setActiveClient = async (id: string | null, name: string = '') => {
   }
 };
 
+// Fetches tasks for a specific client
+export const getTasksByClient = async (clientId: string) => {
+  const allTasks = await getTasks();
+  return allTasks.filter((t) => t.clientId === clientId);
+};
+
+// Gets full task catalog
+export const getTaskCatalog = () => {
+  if (process.env.NEXT_PUBLIC_ENABLE_MOCK === '1') {
+    return mockApi.getTaskCatalogFE();
+  }
+
+  return mockApi.getTaskCatalogFE;
+};
+
+// Gets all unique categories for a client
+export const getCategoriesForClient = async (clientId: string) => {
+  const tasks = await getTasksByClient(clientId);
+
+  const clientCats = Array.from(
+    new Set(tasks.map((t) => t.category).filter(Boolean))
+  );
+
+  const catalogCats = mockApi.getTaskCatalogFE().map((c) => c.category);
+
+  return Array.from(new Set([...catalogCats, ...clientCats]));
+};
+
+type MedicalNotes = {
+  diagnosedDisabilities?: string;
+  currentMedication?: string;
+  allergies?: string;
+  recentMedicalHistory?: string;
+  primaryHealthContact?: string;
+};
+
 // Export Client type for convenience
-export type Client = mockApi.Client;
+export type Client = {
+  _id: string;
+  name: string;
+  dob: string;
+  gender?: string;
+  accessCode?: string;
+  avatarUrl?: string;
+  phoneNumber?: string;
+  email?: string;
+  emergencyContact?: string;
+  primaryCaregiver?: string;
+  address?: string;
+  medicalNotes?: MedicalNotes;
+};

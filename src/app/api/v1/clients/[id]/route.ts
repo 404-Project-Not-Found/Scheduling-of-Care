@@ -1,7 +1,9 @@
 /**
- * File path: /clients/[id]]/route.ts
+ * File path: /api/v1/clients/[id]/route.ts
  * Author: Denise Alexander
  * Date Created: 22/09/2025
+ *
+ * Purpose: Handles a client's profile - fetching, updating and deleting.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -63,6 +65,7 @@ export async function PUT(
 
   // Parse new client data
   const data = await req.json();
+
   //Update the client and return the updated document
   const updated = await Client.findByIdAndUpdate(id, data, {
     new: true,

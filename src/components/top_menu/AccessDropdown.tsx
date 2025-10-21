@@ -1,58 +1,126 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { getUsersWithAccessFE, type AccessUser } from '@/lib/mock/mockApi';
+import React, { useEffect, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { getUsersWithAccess, type AccessUser } from '@/lib/data';
+import { ChevronDown, Mail, User } from 'lucide-react';
+
+const palette = {
+  header: '#3A0000',
+  banner: '#F9C9B1',
+  text: '#2b2b2b',
+  white: '#FFFFFF',
+  pageBg: '#FAEBDC',
+};
 
 export default function AccessMenu({ clientId }: { clientId?: string | null }) {
   const [users, setUsers] = useState<AccessUser[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     let mounted = true;
-    async function load() {
-      if (!clientId) return setUsers([]);
+
+    async function loadUsers() {
+      if (!clientId) {
+        setUsers([]);
+        return;
+      }
+
       setLoading(true);
       try {
-        const data = await getUsersWithAccessFE(clientId);
+        const data = await getUsersWithAccess(clientId);
         if (mounted) setUsers(data);
+      } catch (err) {
+        console.error('Failed to load users with access', err);
+        if (mounted) setUsers([]);
       } finally {
         if (mounted) setLoading(false);
       }
     }
-    load();
+
+    loadUsers();
     return () => {
       mounted = false;
     };
   }, [clientId]);
 
-  return (
-    <div className="relative print:hidden">
-      <details className="group">
-        <summary className="inline-flex items-center gap-2 list-none cursor-pointer font-extrabold text-xl hover:underline">
-          Users with access<span className="text-black/70">▼</span>
-        </summary>
+  const formatRole = (role: string) =>
+    role.charAt(0).toUpperCase() + role.slice(1);
 
-        <div className="absolute left-1/2 -translate-x-1/2 mt-3 w-80 rounded-md border border-black/20 bg-white text-black shadow-2xl z-50">
-          {loading ? (
-            <div className="px-5 py-4 text-lg font-semibold">Loading…</div>
-          ) : users.length === 0 ? (
-            <div className="px-5 py-4 text-lg font-semibold text-black/70">
-              No users found
-            </div>
-          ) : (
-            <ul className="py-2">
-              {users.map((u) => (
-                <li
-                  key={u.id}
-                  className="px-5 py-3 text-lg font-semibold hover:bg-black/5"
-                >
-                  {u.name} <span className="text-black/60">({u.role})</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </details>
+  // Compute dropdown position relative to button
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number }>(
+    { top: 0, left: 0 }
+  );
+
+  const toggleDropdown = () => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownPos({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+      });
+    }
+    setIsOpen((prev) => !prev);
+  };
+
+  return (
+    <div className="print:hidden">
+      <button
+        ref={buttonRef}
+        onClick={toggleDropdown}
+        className="relative z-20 inline-flex items-center px-3 py-1 rounded-xl border border-transparent hover:border-black/50 bg-white font-bold text-lg whitespace-nowrap"
+      >
+        Users with Client Access
+        <ChevronDown className="w-5 h-5 ml-3 text-black" />
+      </button>
+
+      {isOpen &&
+        createPortal(
+          <div
+            className="absolute z-50 w-80 rounded-md border border-black/20 bg-white shadow-2xl max-h-80 overflow-y-auto"
+            style={{ top: dropdownPos.top, left: dropdownPos.left }}
+          >
+            {loading ? (
+              <div className="px-5 py-4 text-lg font-semibold">Loading…</div>
+            ) : users.length === 0 ? (
+              <div className="px-5 py-4 text-lg font-semibold text-black/70">
+                No users found
+              </div>
+            ) : (
+              <ul className="py-2">
+                {users.map((u, i) => (
+                  <li
+                    key={u._id ?? `${u.fullName}-${i}`}
+                    className="flex items-start gap-3 px-5 py-3 hover:bg-black/5 border-b border-black/10 last:border-none transition"
+                  >
+                    <User
+                      className="w-7 h-7 mt-1 text-black/80 shrink-0"
+                      size={45}
+                      strokeWidth={0.3}
+                      fill={palette.header}
+                      color={palette.header}
+                    />
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-base">
+                        {u.fullName}
+                      </span>
+                      <span className="text-sm text-black/60 flex items-center gap-1">
+                        <Mail className="w-4 h-4" />
+                        {u.email}
+                      </span>
+                      <span className="text-sm text-black/60 mt-0.5">
+                        {formatRole(u.role)}
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

@@ -2,8 +2,9 @@
  * File path: /context/ActiveClientContext.tsx
  * Author: Denise Alexander
  * Date Created: 06/10/2025
+ *
  * Purpose: to keep track of the client the user is currently viewing (active client)
- * across application.
+ * across the application.
  */
 
 'use client';

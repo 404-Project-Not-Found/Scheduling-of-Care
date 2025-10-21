@@ -1,7 +1,10 @@
 /**
- * File path: /management/clients/route.ts
+ * File path: /api/v1/management/clients/route.ts
  * Author: Denise Alexander
  * Date Created: 26/09/2025
+ *
+ * Purpose: Retrieves all clients under an organisation's care for staff members (management and carers) to view.
+ *
  * Last Updated by Denise Alexander - 7/10/2025: to fetch the most recent update to organisation-client link
  * status.
  */
@@ -33,13 +36,13 @@ interface ClientWithOrg {
 
 /**
  * Fetches all clients associated with the logged-in user's organisation.
- * Only accessible by users with the `management` role.
+ * Only accessible by users with the `management` and `carer` roles.
  * @returns list of clients
  */
 export async function GET() {
   const session = await getServerSession(authOptions);
-  // Check if the user is authenticated and has the 'management' role
-  if (!session?.user?.id || session.user.role !== 'management') {
+  // Check if the user is authenticated and has the 'management' or 'carer' role
+  if (!session?.user?.id || session.user.role === 'family') {
     return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
   }
 

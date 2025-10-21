@@ -1,7 +1,9 @@
 /**
- * File path: /reset_password/route.ts
+ * File path: /api/v1/reset_password/route.ts
  * Author: Denise Alexander
  * Date Created: 17/09/2025
+ *
+ * Purpose: Resets user's password when they update their account details.
  */
 
 import { NextResponse } from 'next/server';

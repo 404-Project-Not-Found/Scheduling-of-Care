@@ -1,5 +1,25 @@
+/**
+ * File path: /management_dashboard/staff_schedule/page.tsx
+ * Front-end Author: Devni Wijesinghe
+ * Back-end Author: Denise Alexander
+ 
+ * Updated by Denise Alexander (16/10/2025): back-end integrated to fetch staff
+ * shift schedules from DB.
+ * 
+ * Last Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
+ * consistency and better navigation.
+ */
+
 'use client';
 
+import {
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  Settings,
+  Printer,
+  UserRoundCog,
+} from 'lucide-react';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardChrome from '@/components/top_menu/client_schedule';
@@ -18,15 +38,42 @@ const palette = {
   peachHover: 'rgba(249,201,177,0.9)', // hover deeper
 };
 
-type Carer = { id: string; name: string; role?: 'Carer' | 'Management' };
-type ShiftEntry = { start: string; end: string; label?: string };
-type ScheduleByCarer = Record<string, Record<string, ShiftEntry | undefined>>;
+/* ---- Types ---- */
+type Staff = {
+  id: string;
+  name: string;
+  role?: 'Carer' | 'Management';
+  org?: string;
+  email?: string;
+};
 
+type ShiftEntry = { id?: string; start: string; end: string; label?: string };
+
+type ScheduleByStaff = Record<string, Record<string, ShiftEntry>>;
+
+interface StaffApiResponse {
+  _id: string;
+  name: string;
+  role: string;
+  org: string;
+  email: string;
+}
+
+interface ShiftApiResponse {
+  staffId: string;
+  date: string;
+  start: string;
+  end: string;
+  label?: string;
+}
+
+/* ---- Helper Functions ---- */
 function isoDate(d: Date) {
   const tzOff = d.getTimezoneOffset();
   const local = new Date(d.getTime() - tzOff * 60000);
   return local.toISOString().slice(0, 10);
 }
+
 function startOfWeek(date: Date) {
   const d = new Date(date);
   const day = d.getDay();
@@ -35,6 +82,7 @@ function startOfWeek(date: Date) {
   d.setHours(0, 0, 0, 0);
   return d;
 }
+
 function shiftDuration(start: string, end: string) {
   try {
     const [sh, sm] = start.split(':').map(Number);
@@ -48,181 +96,188 @@ function shiftDuration(start: string, end: string) {
   }
 }
 
-/* Demo data */
-const DEMO_CARERS: Carer[] = [
-  { id: 'c-hannah', name: 'Hannah Brown', role: 'Carer' },
-  { id: 'c-john', name: 'John Smith', role: 'Carer' },
-  { id: 'c-florence', name: 'Florence Edwards', role: 'Carer' },
-  { id: 'c-michael', name: 'Michael Chen', role: 'Carer' },
-];
-const DEMO_SCHEDULE: ScheduleByCarer = {
-  'c-hannah': {
-    '2025-10-06': { start: '07:00', end: '15:00', label: 'Morning' },
-  },
-  'c-john': {
-    '2025-10-07': { start: '15:00', end: '22:00', label: 'Afternoon' },
-  },
-  'c-florence': {
-    '2025-10-09': { start: '22:00', end: '07:00', label: 'Evening' },
-  },
-  'c-michael': {},
-};
-
 export default function StaffSchedulePage() {
   const router = useRouter();
   const onLogoClick = () => router.push('/management_dashboard');
 
-  // Role
+  /* ---- States ---- */
   const [role, setRole] = useState<'family' | 'carer' | 'management' | null>(
     null
   );
-  useEffect(() => {
-    (async () => {
-      try {
-        const r = await getViewerRole();
-        setRole(r);
-      } catch {
-        setRole(null);
-      }
-    })();
-  }, []);
-  const isManagement = role === 'management';
-  const isReadonly = !isManagement;
-
-  // State
+  const [staff, setStaff] = useState<Staff[]>([]);
+  const [schedule, setSchedule] = useState<ScheduleByStaff>({});
   const [weekStart, setWeekStart] = useState<Date>(() =>
     startOfWeek(new Date())
   );
-  const [carers, setCarers] = useState<Carer[]>(() => {
-    try {
-      const raw = localStorage.getItem('staff_carers');
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length) return parsed;
-      }
-    } catch {}
-    return DEMO_CARERS;
-  });
-  const [schedule, setSchedule] = useState<ScheduleByCarer>(() => {
-    try {
-      const raw = localStorage.getItem('staff_schedule_by_carer');
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        return parsed || DEMO_SCHEDULE;
-      }
-    } catch {}
-    return DEMO_SCHEDULE;
-  });
-  const [shiftPresets, setShiftPresets] = useState({
-    Morning: { start: '07:00', end: '15:00' },
-    Afternoon: { start: '15:00', end: '22:00' },
-    Evening: { start: '22:00', end: '07:00' },
-  });
-  const [search, setSearch] = useState<string>('');
+
   const [modal, setModal] = useState<{
     open: boolean;
-    carerId?: string;
+    staffId?: string;
     dateISO?: string;
     start?: string;
     end?: string;
     label?: string;
   }>({ open: false });
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [addCarerModal, setAddCarerModal] = useState<{
-    open: boolean;
-    name?: string;
-    role: 'Carer' | 'Management';
-  }>({
-    open: false,
-    role: 'Carer',
+
+  const [shiftPresets, setShiftPresets] = useState({
+    Morning: { start: '07:00', end: '15:00' },
+    Afternoon: { start: '15:00', end: '22:00' },
+    Evening: { start: '22:00', end: '07:00' },
   });
 
-  useEffect(() => {
-    localStorage.setItem('staff_carers', JSON.stringify(carers));
-    localStorage.setItem('staff_schedule_by_carer', JSON.stringify(schedule));
-  }, [carers, schedule]);
+  const [search, setSearch] = useState('');
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
+  const isManagement = role === 'management';
+  const isReadonly = !isManagement;
+
+  // Fetch staff & shifts
+  useEffect(() => {
+    (async () => {
+      const r = await getViewerRole();
+      setRole(r);
+
+      try {
+        /* ---- Staff ---- */
+        const resStaff = await fetch('/api/v1/management/staff');
+        const staffData = await resStaff.json();
+        const staffArray: StaffApiResponse[] = Array.isArray(staffData.staff)
+          ? staffData.staff
+          : [];
+
+        // Map API data to local Staff type
+        setStaff(
+          staffArray.map((s) => ({
+            id: s._id,
+            name: s.name,
+            role: s.role === 'management' ? 'Management' : 'Carer',
+            org: s.org,
+            email: s.email,
+          }))
+        );
+
+        /* ---- Shifts ---- */
+        const resShifts = await fetch('/api/v1/shifts');
+        const data = await resShifts.json();
+        const shifts: ShiftApiResponse[] = Array.isArray(data.shifts)
+          ? data.shifts
+          : [];
+        const scheduleMap: ScheduleByStaff = {};
+        shifts.forEach((shift) => {
+          if (!scheduleMap[shift.staffId]) scheduleMap[shift.staffId] = {};
+          scheduleMap[shift.staffId][shift.date] = {
+            start: shift.start,
+            end: shift.end,
+            label: shift.label,
+          };
+        });
+        setSchedule(scheduleMap);
+      } catch (err) {
+        console.error('Error fetching staff or shifts:', err);
+      }
+    })();
+  }, []);
+
+  /* ---- Computed values ---- */
   const days = useMemo(() => {
-    const arr: Date[] = [];
-    for (let i = 0; i < 7; i++) {
+    return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(weekStart);
       d.setDate(weekStart.getDate() + i);
-      arr.push(d);
-    }
-    return arr;
+      return d;
+    });
   }, [weekStart]);
 
+  const visibleStaff = useMemo<Staff[]>(() => {
+    const q = search.trim().toLocaleLowerCase();
+    if (!q) return staff;
+
+    return staff.filter((s) => {
+      return (
+        s.name.toLowerCase().includes(q) ||
+        (s.role?.toLowerCase().includes(q) ?? false) ||
+        (s.org?.toLowerCase().includes(q) ?? false)
+      );
+    });
+  }, [staff, search]);
+
+  const getShift = (staffId: string, dateISO: string) =>
+    schedule?.[staffId]?.[dateISO];
+
+  const weekLabel = useMemo(() => {
+    const a = days[0];
+    const b = days[6];
+    const opts: Intl.DateTimeFormatOptions = {
+      day: 'numeric',
+      month: 'short',
+    };
+    return `${a.toLocaleDateString(undefined, opts)} - ${b.toLocaleDateString(undefined, opts)}`;
+  }, [days]);
+
+  /* ---- Actions ---- */
   const changeWeek = (weeks: number) => {
     const newDate = new Date(weekStart);
     newDate.setDate(newDate.getDate() + weeks * 7);
     setWeekStart(startOfWeek(newDate));
   };
 
-  const openAssignModal = (carerId: string, dateISO: string) => {
+  const openAssignModal = (staffId: string, dateISO: string) => {
     if (isReadonly) return;
-    const existing = schedule?.[carerId]?.[dateISO];
+    const existing = schedule?.[staffId]?.[dateISO];
     setModal({
       open: true,
-      carerId,
+      staffId,
       dateISO,
       start: existing?.start || '',
       end: existing?.end || '',
       label: existing?.label || '',
     });
   };
-  const saveModal = () => {
-    if (isReadonly) return setModal({ open: false });
-    if (!modal.carerId || !modal.dateISO) return setModal({ open: false });
-    const { carerId, dateISO, start = '', end = '', label = '' } = modal;
-    setSchedule((prev) => {
-      const copy: ScheduleByCarer = structuredClone(prev || {});
-      if (!copy[carerId]) copy[carerId] = {};
-      copy[carerId][dateISO] = { start, end, label };
-      return copy;
-    });
+
+  const saveModal = async () => {
+    console.log(
+      'Saving shift',
+      modal.staffId,
+      modal.dateISO,
+      modal.start,
+      modal.end,
+      modal.label
+    );
+
+    if (!modal.staffId || !modal.dateISO) return setModal({ open: false });
+    const { staffId, dateISO, start = '', end = '', label = '' } = modal;
+    try {
+      await fetch('/api/v1/shifts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ staffId, date: dateISO, start, end, label }),
+      });
+      setSchedule((prev) => {
+        const newSchedule = { ...prev };
+        if (!newSchedule[staffId]) newSchedule[staffId] = {};
+        newSchedule[staffId][dateISO] = { start, end, label };
+        return newSchedule;
+      });
+    } catch (err) {
+      console.error('Error saving shift:', err);
+    }
+
     setModal({ open: false });
   };
-  const removeShift = (carerId: string, dateISO: string) => {
-    if (isReadonly) return;
-    setSchedule((prev) => {
-      const copy: ScheduleByCarer = structuredClone(prev || {});
-      delete copy[carerId]?.[dateISO];
-      return copy;
-    });
-  };
 
-  const visibleCarers = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return carers;
-    return carers.filter((c) => c.name.toLowerCase().includes(q));
-  }, [carers, search]);
+  const deleteShift = async (staffId: string, dateISO: string) => {
+    try {
+      await fetch(`/api/v1/shifts?staffId=${staffId}&date=${dateISO}`, {
+        method: 'DELETE',
+      });
 
-  const getShift = (carerId: string, dateISO: string) =>
-    schedule?.[carerId]?.[dateISO];
-
-  const weekLabel = useMemo(() => {
-    const a = days[0];
-    const b = days[6];
-    const opts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' };
-    return `${a.toLocaleDateString(undefined, opts)} — ${b.toLocaleDateString(undefined, opts)}`;
-  }, [days]);
-
-  const addCarer = () => {
-    if (isReadonly) return;
-    const name = addCarerModal.name?.trim();
-    if (!name) return;
-    const id =
-      'c-' +
-      name
-        .toLowerCase()
-        .replace(/\s+/g, '-')
-        .replace(/[^a-z0-9-_]/g, '');
-    if (carers.some((c) => c.id === id || c.name === name)) {
-      alert('Staff already exists');
-      return;
+      setSchedule((prev) => {
+        const sch = { ...prev };
+        if (sch[staffId]) delete sch[staffId][dateISO];
+        return sch;
+      });
+    } catch (err) {
+      console.error('Error deleting shift:', err);
     }
-    setCarers((prev) => [...prev, { id, name, role: addCarerModal.role }]);
-    setAddCarerModal({ open: false, role: 'Carer' });
   };
 
   return (
@@ -234,7 +289,10 @@ export default function StaffSchedulePage() {
         bannerTitle=""
         showClientPicker={false}
         navItems={[
-          { label: 'Staff List', href: '/management_dashboard/staff_list' },
+          {
+            label: 'Staff List',
+            href: '/management_dashboard/staff_list',
+          },
         ]}
         clients={[]}
         onClientChange={() => {}}
@@ -246,105 +304,107 @@ export default function StaffSchedulePage() {
         onLogoClick={onLogoClick}
       >
         {/* Top toolbar */}
-        <div
-          className="flex justify-between items-center px-6 py-4 shadow-md mt-4"
-          style={{ backgroundColor: palette.banner }}
-        >
-          {/* Week navigation */}
-          <div
-            className="flex items-center gap-4 w-1/3 px-4 py-2 rounded-2xl"
-            style={{ backgroundColor: palette.pageBg }}
-          >
-            <button
-              onClick={() => changeWeek(-1)}
-              className="px-4 py-2 rounded-2xl font-semibold transition-colors"
-              style={{
-                backgroundColor: palette.peachSoft,
-                color: palette.header,
-              }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.backgroundColor = palette.peachHover)
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.backgroundColor = palette.peachSoft)
-              }
-              aria-label="Previous week"
-              title="Previous week"
-            >
-              ◀
-            </button>
-            <div
-              className="flex-1 text-center font-bold text-xl"
-              style={{ color: palette.header }}
-            >
-              {weekLabel}
-            </div>
-            <button
-              onClick={() => changeWeek(1)}
-              className="px-4 py-2 rounded-2xl font-semibold transition-colors"
-              style={{
-                backgroundColor: palette.peachSoft,
-                color: palette.header,
-              }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.backgroundColor = palette.peachHover)
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.backgroundColor = palette.peachSoft)
-              }
-              aria-label="Next week"
-              title="Next week"
-            >
-              ▶
-            </button>
-          </div>
+        <div className="flex items-center justify-between px-6 py-4">
+          {/* Week nav + Management buttons */}
+          <div className="flex items-center justify-between w-full gap-4">
+            {/* Week navigation */}
+            <div className="flex items-center justify-center gap-3 mt-6 mb-2">
+              <button
+                onClick={() => changeWeek(-1)}
+                className="p-2 rounded-full border border-[#3A0000]/20 bg-white hover:bg-white transition shadow-sm"
+                style={{ color: palette.header }}
+              >
+                <ChevronLeft size={22} strokeWidth={2.5} />
+              </button>
 
-          {/* Right buttons — management only */}
-          <div className="flex items-center gap-6 justify-end w-1/3">
-            {/* Print — visible to everyone */}
-            <button
-              onClick={() => typeof window !== 'undefined' && window.print()}
-              className="inline-flex items-center px-6 py-3 rounded-2xl border border-black/30 bg-white font-extrabold text-xl hover:bg-black/5 transition-colors"
-              title="Print"
-              aria-label="Print"
-            >
-              Print
-            </button>
-            {isManagement && (
-              <>
-                <button
-                  onClick={() => setSettingsOpen(true)}
-                  className="px-5 py-2.5 rounded-2xl text-base font-semibold transition-colors"
-                  style={{
-                    backgroundColor: palette.pageBg,
-                    color: '#000000ff',
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.backgroundColor = '#e2987aff')
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.backgroundColor = palette.pageBg)
-                  }
-                >
-                  Shift Settings
-                </button>
-              </>
-            )}
+              <div
+                className="px-5 py-2 rounded-full bg-white font-semibold text-lg tracking-wide text-center shadow-sm"
+                style={{
+                  color: palette.header,
+                  border: '1px solid rgba(58,0,0,0.25)',
+                  minWidth: '180px',
+                }}
+              >
+                {weekLabel}
+              </div>
+
+              <button
+                onClick={() => changeWeek(1)}
+                className="p-2 rounded-full border border-[#3A0000]/20 bg-white hover:bg-white transition shadow-sm"
+                style={{ color: palette.header }}
+              >
+                <ChevronRight size={22} strokeWidth={2.5} />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {isManagement && (
+                <>
+                  <button
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white hover:bg-white transition border border-[#3A0000]/20 text-[#3A0000] font-semibold text-base shadow-sm"
+                    onClick={() =>
+                      router.push('/management_dashboard/staff_list')
+                    }
+                  >
+                    <UserRoundCog size={18} />
+                    Manage Staff
+                  </button>
+                  <button
+                    onClick={() => setSettingsOpen(true)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white hover:bg-white transition border border-[#3A0000]/20 text-[#3A0000] font-semibold text-base shadow-sm"
+                  >
+                    <Settings size={18} />
+                    Shift Settings
+                  </button>
+                </>
+              )}
+              <button
+                onClick={() => typeof window !== 'undefined' && window.print()}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white hover:bg-white transition border border-[#3A0000]/20 text-[#3A0000] font-semibold text-base shadow-sm"
+              >
+                <Printer size={18} />
+                Print
+              </button>
+            </div>
           </div>
         </div>
 
+        {/* Divider */}
+        <hr className="mt-2 mb-4 w-340 mx-auto border-t border-[#3A0000]/25 rounded-full" />
+
         {/* Table */}
-        <section className="w-full px-6 py-6">
+        <section className="w-full px-6 py-3">
           <div className="overflow-x-auto rounded-2xl">
             <table className="w-full table-auto border-collapse text-black">
               <thead>
                 <tr style={{ backgroundColor: palette.header }}>
                   <th
                     className="p-3 py-5 text-left border"
-                    style={{ color: 'white' }}
+                    style={{ color: 'white', verticalAlign: 'middle' }}
                   >
-                    Staff
+                    <div className="flex items-center gap-3">
+                      <span className="font-semibold text-lg whitespace-nowrap">
+                        Staff
+                      </span>
+
+                      <div className="relative w-full max-w-[200px]">
+                        <input
+                          value={search}
+                          onChange={(e) => setSearch(e.target.value)}
+                          placeholder="Search..."
+                          className="w-full h-8 rounded-full bg-white text-black text-sm border px-8"
+                          style={{
+                            borderColor: 'rgba(255,255,255,0.5)',
+                          }}
+                        />
+                        <Search
+                          size={16}
+                          className="absolute left-2 top-1/2 -translate-y-1/2 text-black/60 pointer-events-none"
+                        />
+                      </div>
+                    </div>
                   </th>
+
                   {days.map((d) => {
                     const label = d.toLocaleDateString(undefined, {
                       weekday: 'short',
@@ -371,8 +431,8 @@ export default function StaffSchedulePage() {
                 </tr>
               </thead>
               <tbody>
-                {visibleCarers.map((carer) => (
-                  <tr key={carer.id}>
+                {visibleStaff.map((s) => (
+                  <tr key={s.id}>
                     {/* Carer cell */}
                     <td
                       className="p-3 py-5 align-top border"
@@ -386,7 +446,7 @@ export default function StaffSchedulePage() {
                               boxShadow: '0 0 0 2px rgba(61,0,0,0.25) inset',
                             }}
                           >
-                            {carer.name
+                            {s.name
                               .split(' ')
                               .map((n) => n[0])
                               .slice(0, 2)
@@ -394,52 +454,34 @@ export default function StaffSchedulePage() {
                           </div>
                           <div>
                             <div className="font-medium text-black">
-                              {carer.name}
+                              {s.name}
                             </div>
                             <div className="text-sm text-black/70">
-                              {carer.role || 'Carer'}
+                              {s.email ? s.email : ''}
+                            </div>
+                            <div className="text-sm text-black/70">
+                              {s.org ? s.org : ''}
+                              {` · ${s.role || 'Carer'}`}
                             </div>
                           </div>
                         </div>
-
-                        {isManagement && (
-                          <button
-                            onClick={() => {
-                              if (!confirm(`Delete ${carer.name}?`)) return;
-                              setCarers((prev) =>
-                                prev.filter((c) => c.id !== carer.id)
-                              );
-                              setSchedule((prev) => {
-                                const copy = { ...prev };
-                                delete copy[carer.id];
-                                return copy;
-                              });
-                            }}
-                            className="px-3 py-1 rounded-2xl text-sm font-semibold transition-colors"
-                            style={{
-                              color: palette.header,
-                              backgroundColor: palette.peachSoft,
-                            }}
-                            onMouseEnter={(e) =>
-                              (e.currentTarget.style.backgroundColor =
-                                palette.peachHover)
-                            }
-                            onMouseLeave={(e) =>
-                              (e.currentTarget.style.backgroundColor =
-                                palette.peachSoft)
-                            }
-                          >
-                            Remove
-                          </button>
-                        )}
                       </div>
                     </td>
 
                     {/* Day cells */}
                     {days.map((d) => {
                       const iso = isoDate(d);
-                      const s = getShift(carer.id, iso);
+                      const shift = getShift(s.id, iso);
                       const isToday = iso === isoDate(new Date());
+
+                      // Extract shift details safely
+                      const shiftLabel = shift?.label || 'Custom';
+                      const shiftStart = shift?.start || '';
+                      const shiftEnd = shift?.end || '';
+                      const dur =
+                        shiftStart && shiftEnd
+                          ? shiftDuration(shiftStart, shiftEnd)
+                          : '';
                       return (
                         <td
                           key={iso}
@@ -448,7 +490,7 @@ export default function StaffSchedulePage() {
                             backgroundColor: isToday ? '#d7c1bbff' : 'white',
                           }}
                         >
-                          {s ? (
+                          {shift ? (
                             <div
                               className="inline-flex flex-col items-center justify-center gap-3 rounded-2xl px-4 py-3"
                               style={{
@@ -458,22 +500,20 @@ export default function StaffSchedulePage() {
                               }}
                             >
                               <div className="text-sm text-black font-semibold">
-                                {(s.label === 'Morning' && 'Morning') ||
-                                  (s.label === 'Afternoon' && 'Afternoon') ||
-                                  (s.label === 'Evening' && 'Evening') ||
+                                {(shiftLabel === 'Morning' && 'Morning') ||
+                                  (shiftLabel === 'Afternoon' && 'Afternoon') ||
+                                  (shiftLabel === 'Evening' && 'Evening') ||
                                   'Custom'}{' '}
-                                ({s.start} — {s.end})
+                                ({shiftStart} — {shiftEnd})
                               </div>
                               <div className="text-xs text-black/70">
-                                ({shiftDuration(s.start, s.end)})
+                                ({dur})
                               </div>
 
                               {isManagement && (
                                 <div className="flex gap-2">
                                   <button
-                                    onClick={() =>
-                                      openAssignModal(carer.id, iso)
-                                    }
+                                    onClick={() => openAssignModal(s.id, iso)}
                                     className="text-xs px-3 py-1 rounded-2xl font-semibold transition-colors"
                                     style={{
                                       backgroundColor: palette.peachSoft,
@@ -491,7 +531,7 @@ export default function StaffSchedulePage() {
                                     Edit
                                   </button>
                                   <button
-                                    onClick={() => removeShift(carer.id, iso)}
+                                    onClick={() => deleteShift(s.id, iso)}
                                     className="text-xs px-3 py-1 rounded-2xl font-semibold transition-colors"
                                     style={{
                                       backgroundColor: palette.peachSoft,
@@ -511,27 +551,15 @@ export default function StaffSchedulePage() {
                                 </div>
                               )}
                             </div>
-                          ) : isManagement ? (
-                            <button
-                              onClick={() => openAssignModal(carer.id, iso)}
-                              className="text-sm px-3 py-2 rounded-2xl font-semibold transition-colors"
-                              style={{
-                                backgroundColor: palette.peachSoft,
-                                color: palette.header,
-                              }}
-                              onMouseEnter={(e) =>
-                                (e.currentTarget.style.backgroundColor =
-                                  palette.peachHover)
-                              }
-                              onMouseLeave={(e) =>
-                                (e.currentTarget.style.backgroundColor =
-                                  palette.peachSoft)
-                              }
-                            >
-                              Add Shift
-                            </button>
                           ) : (
-                            <span className="text-sm text-black/40">—</span>
+                            isManagement && (
+                              <button
+                                onClick={() => openAssignModal(s.id, iso)}
+                                className="text-sm text-[#3d0000] underline"
+                              >
+                                Add Shift
+                              </button>
+                            )
                           )}
                         </td>
                       );
@@ -542,79 +570,6 @@ export default function StaffSchedulePage() {
             </table>
           </div>
         </section>
-
-        {/* Modals — management only, borderless shells */}
-        {isManagement && addCarerModal.open && (
-          <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-lg w-full max-w-md p-6 text-black">
-              <h3 className="text-lg font-semibold mb-3">Add Staff</h3>
-              <label className="block mb-2 text-sm">Name</label>
-              <input
-                type="text"
-                value={addCarerModal.name || ''}
-                onChange={(e) =>
-                  setAddCarerModal((prev) => ({
-                    ...prev,
-                    name: e.target.value,
-                  }))
-                }
-                className="w-full px-3 py-2 rounded-2xl mb-3"
-                style={{ backgroundColor: '#f7f7f7' }}
-              />
-              <label className="block mb-2 text-sm">Role</label>
-              <select
-                value={addCarerModal.role}
-                onChange={(e) =>
-                  setAddCarerModal((prev) => ({
-                    ...prev,
-                    role: e.target.value as 'Carer' | 'Management',
-                  }))
-                }
-                className="w-full px-3 py-2 rounded-2xl mb-4"
-                style={{ backgroundColor: '#f7f7f7' }}
-              >
-                <option>Carer</option>
-                <option>Management</option>
-              </select>
-              <div className="flex justify-end gap-3">
-                <button
-                  onClick={() =>
-                    setAddCarerModal({ open: false, role: 'Carer' })
-                  }
-                  className="px-4 py-2 rounded-2xl font-semibold transition-colors"
-                  style={{
-                    backgroundColor: palette.peachSoft,
-                    color: palette.header,
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.backgroundColor = palette.peachHover)
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.backgroundColor = palette.peachSoft)
-                  }
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={addCarer}
-                  className="px-4 py-2 rounded-2xl font-semibold transition-colors"
-                  style={{
-                    backgroundColor: palette.peachSoft,
-                    color: palette.header,
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.backgroundColor = palette.peachHover)
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.backgroundColor = palette.peachSoft)
-                  }
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
 
         {isManagement && settingsOpen && (
           <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center p-4">
@@ -675,13 +630,13 @@ export default function StaffSchedulePage() {
           </div>
         )}
 
-        {isManagement && modal.open && modal.carerId && modal.dateISO && (
+        {isManagement && modal.open && modal.staffId && modal.dateISO && (
           <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-lg w-full max-w-md p-6 text-black">
               <h3 className="text-lg font-semibold mb-3">Assign Shift</h3>
               <p className="text-sm mb-3">
                 <strong>Staff:</strong>{' '}
-                {carers.find((c) => c.id === modal.carerId)?.name} ·{' '}
+                {staff.find((c) => c.id === modal.staffId)?.name} ·{' '}
                 <strong>Date:</strong> {modal.dateISO}
               </p>
               <label className="block mb-2 text-sm">Presets</label>

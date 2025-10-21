@@ -1,7 +1,12 @@
 /**
- * File path: /signup/route.ts
+ * File path: /api/v1/signup/route.ts
  * Author: Denise Alexander
  * Date Created: 16/09/2025
+ *
+ * Purpose: Handles sign up when a user first signs up to our web app.
+ * - Management: can add/join an organisation.
+ * - Carer: must sign up using invite code from management.
+ * - Family: no requirements, can sign up normally with full name, email and password.
  */
 
 import { NextRequest, NextResponse } from 'next/server';

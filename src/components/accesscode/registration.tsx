@@ -1,6 +1,7 @@
 /**
  * File path: /components/accesscode/Registration.tsx
- * Author: Qingyue Zhao
+ * Front-end Author: Qingyue Zhao
+ * Back-end Author: Denise Alexander
  * Date Created: 02/10/2025
  *
  * Description:
@@ -9,7 +10,7 @@
  * - Notice bar text replaced with client registration instruction.
  * - Blocks background scrolling when open, closes on ESC key or overlay click.
  *
- * Last Updated by Denise Alexander - 7/10/2025: added back-end integration to register new client.
+ * Last Updated by Denise Alexander (7/10/2025): added back-end integration to register new client.
  */
 
 'use client';

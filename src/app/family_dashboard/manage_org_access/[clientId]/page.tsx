@@ -1,10 +1,13 @@
 /**
  * File path: /family_dashboard/manage_org_access/[clientId]/page.tsx
- * Authors: Qingyue Zhao & Denise Alexander
- * Last Update: 2025-10-07
+ * Front-end Author: Qingyue Zhao
+ * Back-end Author: Denise Alexander
  *
- * Last Updated by Denise Alexander - 7/10/2025: back-end integrated to implement
+ * Updated by Denise Alexander (7/10/2025): back-end integrated to implement
  * organisation access workflow.
+ *
+ * Last Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
+ * consistency and better navigation.
  *
  * NOTE:
  * This page has been refactored to allow families to select the active client
@@ -18,9 +21,6 @@
  * - On client change, updates activeClient in storage and reloads orgs.
  * - Organisation access workflow is still stubbed with mock data (MOCK_ORGS);
  *   backend fetch should be integrated once available.
- *
- * Old files move to: app/old_organisation_access
- *
  */
 
 'use client';
@@ -30,6 +30,7 @@ import DashboardChrome from '@/components/top_menu/client_schedule';
 import { useRouter } from 'next/navigation';
 import { useActiveClient } from '@/context/ActiveClientContext';
 import { getClients, type Client as ApiClient } from '@/lib/data';
+import { AlertCircle, ArrowLeft } from 'lucide-react';
 
 const colors = {
   pageBg: '#ffd9b3',
@@ -167,67 +168,73 @@ export default function ManageOrganisationAccessPage() {
       }}
     >
       {/* Page body */}
-      <div className="w-full h-full" style={{ backgroundColor: colors.pageBg }}>
-        <div className="w-full h-full">
+      <div className="flex-1 min-h-screen bg-[#FFF5EC] overflow-auto">
+        <div className="w-full px-6 py-5">
           {/* Section header with back button */}
-          <div
-            className="w-full px-6 py-4 flex items-center justify-between text-white text-2xl md:text-3xl font-extrabold"
-            style={{ backgroundColor: colors.header }}
-          >
-            <span>Manage Organisation Access</span>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-[#3A0000] text-3xl font-semibold">
+              Manage Organisation Access
+            </h2>
             <button
               onClick={() => router.push('/family_dashboard/people_list')}
-              className="text-base md:text-lg font-semibold bg-white/10 px-4 py-1.5 rounded hover:bg-white/20 transition"
-              aria-label="Back"
+              className="flex items-center gap-2 text-lg font-semibold text-[#3A0000] bg-[#EAD8C8] hover:bg-[#DFC8B4] border border-[#D4B8A0] rounded-md px-4 py-2 transition"
             >
-              &lt; Back
+              <ArrowLeft size={22} strokeWidth={2.5} />
+              Back
             </button>
           </div>
 
-          {/* Content area */}
-          <div
-            className="w-full h-[630px] rounded-b-xl bg-[#f6efe2] border-x border-b flex flex-col"
-            style={{ borderColor: 'transparent' }}
-          >
-            {/* Notice bar */}
-            <div
-              className="w-full px-5 py-3 text-black"
-              style={{ backgroundColor: colors.notice }}
-            >
-              <p className="text-center font-semibold">
-                Privacy Notice: This information is visible only to you (family
-                / POA) and will not be shared with anyone.
+          {/* Divider */}
+          <hr className="mt-4 mb-4 w-340 mx-auto border-t border-[#3A0000]/25 rounded-full" />
+
+          {/* Privacy Notice Banner */}
+          <div className="mt-6 mb-4 mx-auto flex items-start gap-4 bg-[#F9C9B1]/60 border border-[#3A0000]/30 rounded-xl px-6 py-4 shadow-sm">
+            <AlertCircle
+              size={28}
+              strokeWidth={2.5}
+              className="text-[#3A0000] flex-shrink-0 mt-1"
+            />
+            <div className="text-[#3A0000]">
+              <h3 className="text-lg font-semibold mb-1">Privacy Notice</h3>
+              <p className="text-base leading-relaxed">
+                This information is only visible to you (Family / POA) and will
+                not be shared with anyone else.
               </p>
             </div>
+          </div>
 
-            {/* Lists */}
-            <div className="flex-1 px-6 py-6 pb-6 overflow-auto text-black">
-              {loading ? (
-                <div className="text-black/70">Loading…</div>
-              ) : errorText ? (
-                <div className="text-red-600">{errorText}</div>
-              ) : (
-                <>
-                  <Group
-                    title="Organisations with Access"
-                    items={orgs.filter((o) => o.status === 'approved')}
-                    onRevoke={(id) => updateOrgStatus(id, 'revoke')}
-                  />
-                  <hr className="my-5 border-black" />
-                  <Group
-                    title="Organisations who have Requested Access"
-                    items={orgs.filter((o) => o.status === 'pending')}
-                    onApprove={(id) => updateOrgStatus(id, 'approve')}
-                    onRemove={(id) => updateOrgStatus(id, 'reject')}
-                  />
-                  <hr className="my-5 border-black" />
-                  <Group
-                    title="Revoked Organisations"
-                    items={orgs.filter((o) => o.status === 'revoked')}
-                  />
-                </>
-              )}
-            </div>
+          {/* Legend Section */}
+          <div className="mb-3 mx-auto">
+            <Legend className="pl-1" />
+          </div>
+
+          {/* Content area */}
+          <div className="w-full rounded-xl border border-[#3A0000]/25 bg-white p-4">
+            {loading ? (
+              <div className="text-black/70">Loading…</div>
+            ) : errorText ? (
+              <div className="text-red-600">{errorText}</div>
+            ) : (
+              <>
+                <Group
+                  title="Organisations with Access"
+                  items={orgs.filter((o) => o.status === 'approved')}
+                  onRevoke={(id) => updateOrgStatus(id, 'revoke')}
+                />
+                <hr className="my-5 border-black" />
+                <Group
+                  title="Organisations who have Requested Access"
+                  items={orgs.filter((o) => o.status === 'pending')}
+                  onApprove={(id) => updateOrgStatus(id, 'approve')}
+                  onRemove={(id) => updateOrgStatus(id, 'reject')}
+                />
+                <hr className="my-5 border-black" />
+                <Group
+                  title="Revoked Organisations"
+                  items={orgs.filter((o) => o.status === 'revoked')}
+                />
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -265,11 +272,15 @@ function Group({
               className="flex text-lg items-center justify-between"
             >
               <div>{item.name}</div>
-              <div className="flex items-center gap-3 ">
+              <div className="flex items-center gap-3">
                 {item.status === 'approved' && onRevoke && (
                   <button
                     onClick={() => onRevoke(item.id)}
-                    className="px-4 py-1.5 rounded-xl text-lg font-medium text-white bg-orange-500 hover:bg-orange-600 transition-colors"
+                    className="px-4 py-1.5 rounded-md text-lg font-semibold text-white transition hover:opacity-90"
+                    style={{
+                      backgroundColor: '#D57A2E',
+                      border: '1px solid #B86A1F',
+                    }}
                   >
                     Revoke
                   </button>
@@ -279,7 +290,11 @@ function Group({
                     {onApprove && (
                       <button
                         onClick={() => onApprove(item.id)}
-                        className="px-4 py-1.5 rounded-xl text-lg font-medium text-white bg-green-600 hover:bg-green-700 transition-colors"
+                        className="px-4 py-1.5 rounded-md text-lg font-semibold text-white transition hover:opacity-90"
+                        style={{
+                          backgroundColor: '#4CAF50',
+                          border: '1px solid #3D8B41',
+                        }}
                       >
                         Approve
                       </button>
@@ -287,7 +302,11 @@ function Group({
                     {onRemove && (
                       <button
                         onClick={() => onRemove(item.id)}
-                        className="px-4 py-1.5 rounded-xl text-lg font-medium text-white bg-red-600 hover:bg-red-700 transition-colors"
+                        className="px-4 py-1.5 rounded-md text-lg font-semibold text-white transition hover:opacity-90"
+                        style={{
+                          backgroundColor: '#E53935',
+                          border: '1px solid #C62828',
+                        }}
                       >
                         Reject
                       </button>
@@ -300,5 +319,55 @@ function Group({
         </ul>
       )}
     </section>
+  );
+}
+
+function Legend({ className = '' }: { className?: string }) {
+  const legendItems = [
+    {
+      action: 'Approve',
+      description: 'Gives organisation access to client',
+      style: {
+        backgroundColor: '#4CAF50',
+        color: 'white',
+        border: '1px solid #3D8B41',
+      },
+    },
+    {
+      action: 'Reject',
+      description: 'Rejects organisation request to client access',
+      style: {
+        backgroundColor: '#E53935',
+        color: 'white',
+        border: '1px solid #C62828',
+      },
+    },
+    {
+      action: 'Revoke',
+      description: 'Removes organisation access to client',
+      style: {
+        backgroundColor: '#D57A2E',
+        color: 'white',
+        border: '1px solid #B86A1F',
+      },
+    },
+  ];
+
+  return (
+    <div
+      className={`mb-4 flex justify-start gap-6 text-sm flex-wrap px-6 ${className}`}
+    >
+      {legendItems.map((item, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <button
+            className="px-3 py-1 rounded-md text-sm font-semibold cursor-default transition"
+            style={item.style}
+          >
+            {item.action}
+          </button>
+          <span className="text-[#3A0000]/90">{item.description}</span>
+        </div>
+      ))}
+    </div>
   );
 }
