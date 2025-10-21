@@ -74,6 +74,17 @@ const getStatus = (remaining: number, allocated: number): { tone: Tone; label: s
   return { tone: 'green', label: 'Within Limit' };
 };
 
+/* --------------------------------- Loading ---------------------------------- */
+
+type LoadingState = {
+  clientsLoad: boolean;
+  yearsLoad: boolean;
+  catLoad: boolean;
+  budgetLoad: boolean;
+  savingAnnualLoad: boolean;
+  saveRowId: string | null;
+}
+
 /* --------------------------------- Page ---------------------------------- */
 export default function BudgetReportPage() {
   return (
@@ -91,7 +102,7 @@ function BudgetReportInner() {
   const router = useRouter();
 
   /* ------------------------------ Role ------------------------------ */
-  const [role, setRole] = useState<Role>('carer'); // default
+  const [role, setRole] = useState<Role>('carer'); 
 
   useEffect(() => {
     (async () => {
@@ -100,7 +111,7 @@ function BudgetReportInner() {
         setRole(r);
       } catch (err) {
         console.error('Failed to get role.', err);
-        setRole('carer'); // fallback
+        setRole('carer'); 
       }
     })();
   }, []);
@@ -109,6 +120,17 @@ function BudgetReportInner() {
   const [showWarning, setShowWarning] = useState(false);
   const [warningText, setWarningText] = useState('')
 
+  // -- Loading State
+  const [loading, setLoading] = useState<LoadingState>({
+    clientsLoad:true,
+    yearsLoad: true,
+    catLoad: true,
+    budgetLoad: true,
+    savingAnnualLoad: false,
+    saveRowId: null,
+
+  });
+  const loadingAny = loading.clientsLoad || loading.yearsLoad || loading.catLoad || loading.budgetLoad;
   /* ---------------------------- Clients ----------------------------- */
   const [clients, setClients] = useState<ClientLite[]>([]);
   const [activeClientId, setActiveClientId] = useState<string | null>(null);
@@ -117,6 +139,7 @@ function BudgetReportInner() {
   // Load clients + active client on mount
   useEffect(() => {
     (async () => {
+      setLoading((s) => ({...s, clientsLoad: true}));
       try {
         const list: ApiClient[] = await getClients();
         const mapped: ClientLite[] = (list as ApiClientWithAccess[]).map(
@@ -136,6 +159,8 @@ function BudgetReportInner() {
         setClients([]);
         setActiveClientId(null);
         setDisplayName('');
+      } finally {
+        setLoading((s) => ({...s, clientsLoad: false}));
       }
     })();
   }, []);
@@ -165,12 +190,15 @@ function BudgetReportInner() {
         setCategories([]);
         return;
       }
+      setLoading((s) => ({...s, catLoad: true}));
       try {
         const cats = await getCategoriesForClient(activeClientId, abort.signal);
         setCategories(cats);
       } catch (e) {
         console.error('Failed to load categories:', e);
         setCategories([]);
+      } finally {
+        setLoading((s) => ({...s, catLoad: false}));
       }
     })();
     return () => abort.abort();
@@ -199,6 +227,7 @@ function BudgetReportInner() {
         setYears([]);
         return;
       }
+      setLoading((s) => ({...s, yearsLoad: true}));
       try {
         const list = await getAvailableYears(activeClientId, abort.signal);
         if(list.length > 0) {
@@ -215,6 +244,8 @@ function BudgetReportInner() {
         const curr = new Date().getFullYear();
         setYears([curr]);
         setYear(curr);
+      } finally {
+        setLoading((s) => ({...s, yearsLoad: false}));
       }
     };
     load();
@@ -238,6 +269,7 @@ function BudgetReportInner() {
         setSummary({annualAllocated: 0, spent: 0, remaining: 0, surplus: 0});
         return;
       }
+      setLoading((s) => ({...s, budgetLoad: true}));
       try {
         const [r, s] = await Promise.all([
           getBudgetRows(activeClientId, year, abort.signal),
@@ -249,6 +281,8 @@ function BudgetReportInner() {
         console.error('Failed to load budget data:', e);
         setRows([]);
         setSummary({annualAllocated: 0, spent: 0, remaining: 0, surplus: 0});
+      } finally {
+        setLoading((s) => ({...s, budgetLoad: false}));
       }
     };
     load();
@@ -290,9 +324,7 @@ function BudgetReportInner() {
 
   // ===== Editing state =====
   const [isEditing, setIsEditing] = useState(false);
-  const [annualBudgetOverride, setAnnualBudgetOverride] = useState<
-    number | null
-  >(null);
+  const [annualBudgetOverride, setAnnualBudgetOverride] = useState<number | null>(null);
   const [annualBudgetInput, setAnnualBudgetInput] = useState<string>('');
 
   const startEdit = () => {
@@ -304,14 +336,13 @@ function BudgetReportInner() {
     if (!activeClientId) return;
     const val = parseFloat(annualBudgetInput);
     if (!Number.isFinite(val) || val < 0) return;
-
+    setLoading((s) => ({...s, savingAnnualLoad: true}));
     try {
       const res = await fetch(
         `/api/v1/clients/${encodeURIComponent(activeClientId)}/budget/manage`,
         {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          // IMPORTANT: avoid cache surprises
           cache: 'no-store',
           body: JSON.stringify({ action: 'setAnnual', year, amount: val }),
         }
@@ -340,6 +371,7 @@ function BudgetReportInner() {
       setWarningText('Network or server error while saving annual budget.');
       setShowWarning(true);
     } finally {
+      setLoading((s) => ({...s, savingAnnualLoad: false}));
       setIsEditing(false);
     }
   };
@@ -368,7 +400,7 @@ function BudgetReportInner() {
       setShowWarning(true);
       return;
     }
-
+    setLoading((s) => ({...s, saveRowId: row.categoryId}));
     try {
       const res = await fetch(
         `/api/v1/clients/${encodeURIComponent(activeClientId)}/budget/manage`,
@@ -402,6 +434,8 @@ function BudgetReportInner() {
     } catch (e) {
       setWarningText('Network or server error while saving category budget.');
       setShowWarning(true);
+    } finally {
+      setLoading((s) => ({...s, saveRowId: null}));
     }
   };
 
@@ -471,7 +505,7 @@ function BudgetReportInner() {
       onClientChange={onClientChange}
       colors={colors}
     >
-      <div className="flex-1 h-[680px] bg-white/50 overflow-auto">
+      <div className="flex-1 h-[680px] bg-white/50 overflow-auto" aria-busy={loading.budgetLoad}>
         {/* Top bar */}
         <div className="w-full bg-[#3A0000] px-6 py-4 flex items-center justify-between">
           {/* LEFT: title + year */}
@@ -486,6 +520,7 @@ function BudgetReportInner() {
               <select
                 value={String(year)}
                 onChange={(e) => setYear(Number(e.target.value))}
+                disabled={loading.yearsLoad || loading.budgetLoad}
                 className="rounded-md bg-white text-sm px-3 py-1 border"
               >
                 {years.map((y) => (
@@ -508,11 +543,13 @@ function BudgetReportInner() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search"
+              disabled={loading.budgetLoad}
               className="h-9 rounded-full bg-white text-black px-4 border"
             />
             {role === 'management' && years.includes(year - 1) && year === new Date().getFullYear() && (
               <button
                 onClick={() => handleRollover(activeClientId!, year, setRows, setSummary)}
+                disabled={loading.budgetLoad}
                 className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10"
                 title={`Copy categories and carry surplus from ${year - 1}`}
               >
@@ -523,6 +560,7 @@ function BudgetReportInner() {
               (!isEditing ? (
                 <button
                   onClick={startEdit}
+                  disabled={loading.budgetLoad}
                   className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10"
                 >
                   Edit
@@ -533,13 +571,14 @@ function BudgetReportInner() {
                     onClick={saveAnnual}
                     className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10"
                   >
-                    Save
+                    {loading.savingAnnualLoad ? 'Saving...' : 'Save'}
                   </button>
                   <button
                     onClick={() => {
                       setIsEditing(false);
                       setAnnualBudgetInput('');
                     }}
+                    disabled={loading.savingAnnualLoad}
                     className="px-3 py-1 rounded-md bg-white/80 text-black font-semibold hover:bg-white"
                   >
                     Cancel
@@ -551,226 +590,231 @@ function BudgetReportInner() {
 
         {/* Main content */}
         <div className="w-full px-12 py-10">
-          {/* Warning banner */}
-          {showWarning && (
-            <div className="mb-6 rounded-xl border border-yellow-400 bg-yellow-100 text-yellow-900 px-6 py-4 flex justify-between items-center">
-              <div className="font-semibold">{warningText}</div>
-              <button
-                onClick={() => setShowWarning(false)}
-                className="ml-4 px-3 py-1 text-sm font-bold rounded-md bg-yellow-200 hover:bg-yellow-300"
-              >
-                Dismiss
-              </button>
+          {loadingAny ? (
+            <div className="text-center py-32 text-gray-600 text-xl font-medium">
+              Loading budget report…
             </div>
-          )}
-          {/* Read only for previous years */}
-          {isPastYear && (
-            <div className="mb-6 rounded-xl border border-yellow-400 bg-yellow-100 text-yellow-900 px-6 py-4">
-              The selected year ({year}) is read-only. Switch to {new Date().getFullYear()} to edit the annual budget.
-            </div>
-          )}
-          {/* Tiles */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10 text-center">
-            <div className="rounded-2xl border px-6 py-8 bg-[#F8CBA6]">
-              {role === 'management' && isEditing ? (
-                <>
-                  <input
-                    type="number"
-                    min={0}
-                    step={1}
-                    value={annualBudgetInput}
-                    onChange={(e) => setAnnualBudgetInput(e.target.value)}
-                    className="w-full max-w-[220px] mx-auto text-center text-2xl font-bold rounded-md bg-white text-black px-3 py-2 border"
-                  />
-                  <div className="text-sm mt-2">Annual Budget</div>
-                </>
-              ) : (
-                <>
-                  <div className="text-2xl font-bold">
-                    ${summary.annualAllocated.toLocaleString()}
-                  </div>
-                  <div className="text-sm">Annual Budget</div>
-                </>
-              )}
-            </div>
-
-            <div className="rounded-2xl border px-6 py-8 bg-white">
-              <div className="text-2xl font-bold">
-                ${summary.spent.toLocaleString()}
-              </div>
-              <div className="text-sm">Spent to Date</div>
-            </div>
-
-            <div className="rounded-2xl border px-6 py-8 bg-white">
-              <div
-                className={`text-2xl font-bold ${effectiveRemaining < 0 ? 'text-red-600' : 'text-green-600'}`}
-              >
-                {effectiveRemaining < 0
-                  ? `-$${Math.abs(effectiveRemaining).toLocaleString()}`
-                  : `$${effectiveRemaining.toLocaleString()}`}
-              </div>
-              <div className="text-sm">Remaining Balance</div>
-            </div>
-            {/* Need to change - budget surplus is unallocated funds */}  
-            <div className="rounded-2xl border px-6 py-8 bg-white">
-              <div className="text-2xl font-bold text-black">
-                ${summary.surplus.toLocaleString()} 
-              </div>
-              <div className="text-sm">Budget Surplus</div>
-            </div>
-          </div>
-          {/* Warning Banner */}
-          {(() => {
-            const lowCategories = rowsAll
-              .filter((r) => {
-                if (r.allocated <= 0) return false;
-                const remaining = r.allocated - r.spent;
-                const ratio = remaining / r.allocated;
-                return ratio > 0 && ratio <= LOW_BUDGET_THRESHOLD;
-              })
-              .map((r) => ({
-                name: r.category,
-                remaining: r.allocated - r.spent,
-                percent: ((r.allocated - r.spent) / r.allocated) * 100,
-              }));
-
-            if (lowCategories.length === 0) return null;
-
-            return (
-              <div className="mb-6 rounded-lg border border-yellow-400 bg-yellow-100 px-6 py-4 text-yellow-800">
-                <div className="font-semibold mb-2">
-                  ⚠️ The following categories are nearing their budget limit:
+          ) : (
+            <>
+              {/* Warning banner */}
+              {showWarning && (
+                <div className="mb-6 rounded-xl border border-yellow-400 bg-yellow-100 text-yellow-900 px-6 py-4 flex justify-between items-center">
+                  <div className="font-semibold">{warningText}</div>
+                  <button
+                    onClick={() => setShowWarning(false)}
+                    className="ml-4 px-3 py-1 text-sm font-bold rounded-md bg-yellow-200 hover:bg-yellow-300"
+                  >
+                    Dismiss
+                  </button>
                 </div>
-                <ul className="list-disc list-inside space-y-1">
-                  {lowCategories.map((c) => (
-                    <li key={c.name}>
-                      <span className="font-medium">{c.name}</span> — remaining $
-                      {c.remaining.toFixed(2)} ({c.percent.toFixed(1)}%)
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            );
-          })()}
-          {/* Table */}
-          <div className="rounded-2xl border border-[#3A0000] bg-white overflow-hidden">
-            <table className="w-full text-left text-sm bg-white">
-              <thead className="bg-[#3A0000] text-lg text-white">
-                <tr>
-                  <th className="px-4 py-4">Category</th>
-                  <th className="px-4 py-4">Allocated</th>
-                  <th className="px-4 py-4">Spent</th>
-                  <th className="px-5 py-5">Remaining</th>
-                  <th className="px-4 py-4">Status</th>
-                  <th className="px-4 py-4">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((r) => {
-                  const remaining = r.allocated - r.spent;
-                  const status = getStatus(remaining, r.allocated);
-                  return (
-                    <tr
-                      key={r.categoryId}
-                      className="border-b last:border-b border-[#3A0000]/20"
-                    >
-                      <td className="px-4 py-5">
-                        {r.allocated > 0 ? (
-                        <Link
-                          href={`/calendar_dashboard/budget_report/category-cost/${encodeURIComponent(
-                            r.categoryId)}`}
-                          className="font-bold text-black underline"
-                        >
-                          {r.category}
-                        </Link>
-                        ):( 
-                          <span 
-                            className="font-bold text-gray-400 cursor-not-allowed"
-                            title="Set a budget before viewing details"
-                          >
-                            {r.category}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-5">
-                        {editingRowId === r.categoryId ? (
-                          <input
-                            type="number"
-                            min={0}
-                            step={1}
-                            value={allocInput[r.categoryId] ?? String(r.allocated)}
-                            onChange={(e) =>
-                              setAllocInput(prev => ({ ...prev, [r.categoryId]: e.target.value }))
-                            }
-                            className="w-28 text-right rounded-md bg-white text-black px-2 py-1 border"
-                          />
-                        ) : (
-                          `$${r.allocated}`
-                        )}
-                      </td>
-                      <td className="px-4 py-5">${r.spent.toLocaleString()}</td>
-                      <td
-                        className={`px-4 py-5 ${remaining < 0 ? 'text-red-600' : ''}`}
-                      >
-                        {remaining < 0
-                          ? `-$${Math.abs(remaining).toLocaleString()}`
-                          : `$${remaining.toLocaleString()}`}
-                      </td>
-                      <td className="px-4 py-5">
-                        <Badge tone={status.tone}>{status.label}</Badge>
-                      </td>
-                      <td className="px-4 py-5">
-                        {role === 'management' && !isPastYear ? (
-                          editingRowId === r.categoryId ? (
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => saveRow(r)}
-                                className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10"
-                              >
-                                Save
-                              </button>
-                              <button
-                                onClick={cancelEditRow}
-                                className="px-3 py-1 rounded-md bg-white/80 text-black font-semibold hover:bg-white"
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => startEditRow(r)}
-                              className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10"
-                            >
-                              Edit
-                            </button>
-                          )
-                        ) : (
-                          <span className="text-gray-400">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-
-              {filtered.length > 0 && (
-                <tfoot>
-                  <tr className="bg-black/5 font-semibold">
-                    <td className="px-4 py-4">Subtotal</td>
-                    <td className="px-4 py-4">${totals.allocated}</td>
-                    <td className="px-4 py-4">${totals.spent}</td>
-                    <td className="px-4 py-4">
-                      {totals.remaining < 0 ? `-$${Math.abs(totals.remaining)}` : `$${totals.remaining}`}
-                    </td>
-                    <td />
-                    <td />
-                  </tr>
-                </tfoot>
               )}
-            </table>
-          </div>
+
+              {/* Read only for previous years */}
+              {isPastYear && (
+                <div className="mb-6 rounded-xl border border-yellow-400 bg-yellow-100 text-yellow-900 px-6 py-4">
+                  The selected year ({year}) is read-only. Switch to {new Date().getFullYear()} to edit the annual budget.
+                </div>
+              )}
+
+              {/* Tiles */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10 text-center">
+                <div className="rounded-2xl border px-6 py-8 bg-[#F8CBA6]">
+                  {role === 'management' && isEditing ? (
+                    <>
+                      <input
+                        type="number"
+                        min={0}
+                        step={1}
+                        value={annualBudgetInput}
+                        onChange={(e) => setAnnualBudgetInput(e.target.value)}
+                        className="w-full max-w-[220px] mx-auto text-center text-2xl font-bold rounded-md bg-white text-black px-3 py-2 border"
+                      />
+                      <div className="text-sm mt-2">Annual Budget</div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-2xl font-bold">
+                        ${summary.annualAllocated.toLocaleString()}
+                      </div>
+                      <div className="text-sm">Annual Budget</div>
+                    </>
+                  )}
+                </div>
+
+                <div className="rounded-2xl border px-6 py-8 bg-white">
+                  <div className="text-2xl font-bold">
+                    ${summary.spent.toLocaleString()}
+                  </div>
+                  <div className="text-sm">Spent to Date</div>
+                </div>
+
+                <div className="rounded-2xl border px-6 py-8 bg-white">
+                  <div className={`text-2xl font-bold ${effectiveRemaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    {effectiveRemaining < 0
+                      ? `-$${Math.abs(effectiveRemaining).toLocaleString()}`
+                      : `$${effectiveRemaining.toLocaleString()}`}
+                  </div>
+                  <div className="text-sm">Remaining Balance</div>
+                </div>
+
+                <div className="rounded-2xl border px-6 py-8 bg-white">
+                  <div className="text-2xl font-bold text-black">
+                    ${summary.surplus.toLocaleString()}
+                  </div>
+                  <div className="text-sm">Budget Surplus</div>
+                </div>
+              </div>
+
+              {/* Low budget warning list */}
+              {(() => {
+                const lowCategories = rowsAll
+                  .filter((r) => {
+                    if (r.allocated <= 0) return false;
+                    const remaining = r.allocated - r.spent;
+                    const ratio = remaining / r.allocated;
+                    return ratio > 0 && ratio <= LOW_BUDGET_THRESHOLD;
+                  })
+                  .map((r) => ({
+                    name: r.category,
+                    remaining: r.allocated - r.spent,
+                    percent: ((r.allocated - r.spent) / r.allocated) * 100,
+                  }));
+
+                if (lowCategories.length === 0) return null;
+
+                return (
+                  <div className="mb-6 rounded-lg border border-yellow-400 bg-yellow-100 px-6 py-4 text-yellow-800">
+                    <div className="font-semibold mb-2">
+                      ⚠️ The following categories are nearing their budget limit:
+                    </div>
+                    <ul className="list-disc list-inside space-y-1">
+                      {lowCategories.map((c) => (
+                        <li key={c.name}>
+                          <span className="font-medium">{c.name}</span> — remaining ${c.remaining.toFixed(2)} ({c.percent.toFixed(1)}%)
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })()}
+
+              {/* Table */}
+              <div className="rounded-2xl border border-[#3A0000] bg-white overflow-hidden">
+                <table className="w-full text-left text-sm bg-white">
+                  <thead className="bg-[#3A0000] text-lg text-white">
+                    <tr>
+                      <th className="px-4 py-4">Category</th>
+                      <th className="px-4 py-4">Allocated</th>
+                      <th className="px-4 py-4">Spent</th>
+                      <th className="px-5 py-5">Remaining</th>
+                      <th className="px-4 py-4">Status</th>
+                      <th className="px-4 py-4">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((r) => {
+                      const remaining = r.allocated - r.spent;
+                      const status = getStatus(remaining, r.allocated);
+                      return (
+                        <tr key={r.categoryId} className="border-b last:border-b border-[#3A0000]/20">
+                          <td className="px-4 py-5">
+                            {r.allocated > 0 ? (
+                              <Link
+                                href={`/calendar_dashboard/budget_report/category-cost/${encodeURIComponent(r.categoryId)}`}
+                                className="font-bold text-black underline"
+                              >
+                                {r.category}
+                              </Link>
+                            ) : (
+                              <span
+                                className="font-bold text-gray-400 cursor-not-allowed"
+                                title="Set a budget before viewing details"
+                              >
+                                {r.category}
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-5">
+                            {editingRowId === r.categoryId ? (
+                              <input
+                                type="number"
+                                min={0}
+                                step={1}
+                                value={allocInput[r.categoryId] ?? String(r.allocated)}
+                                onChange={(e) =>
+                                  setAllocInput((prev) => ({ ...prev, [r.categoryId]: e.target.value }))
+                                }
+                                className="w-28 text-right rounded-md bg-white text-black px-2 py-1 border"
+                              />
+                            ) : (
+                              `$${r.allocated}`
+                            )}
+                          </td>
+                          <td className="px-4 py-5">${r.spent.toLocaleString()}</td>
+                          <td className={`px-4 py-5 ${remaining < 0 ? 'text-red-600' : ''}`}>
+                            {remaining < 0
+                              ? `-$${Math.abs(remaining).toLocaleString()}`
+                              : `$${remaining.toLocaleString()}`}
+                          </td>
+                          <td className="px-4 py-5">
+                            <Badge tone={status.tone}>{status.label}</Badge>
+                          </td>
+                          <td className="px-4 py-5">
+                            {role === 'management' && !isPastYear ? (
+                              editingRowId === r.categoryId ? (
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => saveRow(r)}
+                                    disabled={loading.saveRowId === r.categoryId}
+                                    className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10 disabled:opacity-60"
+                                  >
+                                    {loading.saveRowId === r.categoryId ? 'Saving…' : 'Save'}
+                                  </button>
+                                  <button
+                                    onClick={cancelEditRow}
+                                    disabled={loading.saveRowId === r.categoryId}
+                                    className="px-3 py-1 rounded-md bg-white/80 text-black font-semibold hover:bg-white disabled:opacity-60"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => startEditRow(r)}
+                                  className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10"
+                                >
+                                  Edit
+                                </button>
+                              )
+                            ) : (
+                              <span className="text-gray-400">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+
+                  {filtered.length > 0 && (
+                    <tfoot>
+                      <tr className="bg-black/5 font-semibold">
+                        <td className="px-4 py-4">Subtotal</td>
+                        <td className="px-4 py-4">${totals.allocated}</td>
+                        <td className="px-4 py-4">${totals.spent}</td>
+                        <td className="px-4 py-4">
+                          {totals.remaining < 0 ? `-$${Math.abs(totals.remaining)}` : `$${totals.remaining}`}
+                        </td>
+                        <td />
+                        <td />
+                      </tr>
+                    </tfoot>
+                  )}
+                </table>
+              </div>
+            </>
+          )}
         </div>
-      </div>
+        </div>
     </DashboardChrome>
   );
 }
