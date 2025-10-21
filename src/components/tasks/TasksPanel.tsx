@@ -1,11 +1,21 @@
 'use client';
 
 import type { Task } from '@/lib/mock/mockApi';
+import { getNextDue } from '@/lib/care-item-helpers/date-helpers';
+import { ClientTask } from '@/app/calendar_dashboard/page';
+
+type StatusUI =
+  | 'Waiting Verification'
+  | 'Completed'
+  | 'Overdue'
+  | 'Due'
+  | 'Pending';
+
+type MaybeSlugTask = Task & { slug?: string };
 
 type TasksPanelProps = {
-  tasks: Task[];
-  onTaskClick: (task: Task) => void;
-
+  tasks: ClientTask[];
+  onTaskClick: (task: ClientTask) => void;
   /** Optional: exact day scope. If provided, it wins over year/month. */
   selectedDate?: string; // 'YYYY-MM-DD'
   /** Optional: month scope. Use together with `year`. 1..12 */
@@ -14,14 +24,20 @@ type TasksPanelProps = {
   year?: number;
   /** Only show "no care items" message after the client is loaded */
   clientLoaded?: boolean;
+  // Check if a task is marked as done
+  onMarkDone?: (task: ClientTask, fileName: string, comment?: string) => void;
+  // UI override, map task to date with status
+  statusOverride?: Record<string, StatusUI>;
 };
 
 // Map status → pill colors (kept exactly like your original visuals)
 const getStatusColor = (status: string) => {
   switch ((status || '').toLowerCase()) {
-    case 'due':
+    case 'waiting verification':
+      return 'bg-yellow-400 text-white';
+    case 'overdue':
       return 'bg-red-500 text-white';
-    case 'pending':
+    case 'due':
       return 'bg-orange-400 text-white';
     case 'completed':
       return 'bg-green-500 text-white';
@@ -32,6 +48,24 @@ const getStatusColor = (status: string) => {
 
 // Helpers
 const pad2 = (n: number) => String(n).padStart(2, '0');
+const isoToday = () => new Date().toISOString().slice(0, 10);
+type WithOptionalSlug = { id: string; slug?: string };
+const getSlug = (t: ClientTask): string => t.slug ?? t.id;
+const occurKey = (slugOrId: string, due?: string) =>
+  `${slugOrId}__${(due ?? '').slice(0, 10)}`;
+
+function derivedOccurrenceStatus(t: {
+  status?: string;
+  nextDue?: string;
+}): StatusUI {
+  const due = t.nextDue?.slice(0, 10) ?? '';
+  if (!due) return 'Due';
+
+  const today = isoToday();
+  if (due < today) return 'Overdue';
+  if (due === today) return 'Due';
+  return 'Due';
+}
 
 /**
  * Filters tasks by scope:
@@ -40,11 +74,11 @@ const pad2 = (n: number) => String(n).padStart(2, '0');
  * - Else -> no extra filtering (use the `tasks` as-is).
  */
 function filterByScope(
-  tasks: Task[],
+  tasks: ClientTask[],
   selectedDate?: string,
   year?: number,
   month?: number
-): Task[] {
+): ClientTask[] {
   if (selectedDate) {
     return tasks.filter((t) => (t.nextDue || '') === selectedDate);
   }
@@ -62,44 +96,54 @@ export default function TasksPanel({
   year,
   month,
   clientLoaded,
+  statusOverride,
 }: TasksPanelProps) {
-  // Apply the new (optional) scope filtering, then sort by date ascending.
   const scoped = filterByScope(tasks, selectedDate, year, month);
-  const sorted = [...scoped].sort(
-    (a, b) => new Date(a.nextDue).getTime() - new Date(b.nextDue).getTime()
-  );
+  const sorted = [...scoped].sort((a, b) => {
+    const ta = a.nextDue ? new Date(a.nextDue).getTime() : 0;
+    const tb = b.nextDue ? new Date(b.nextDue).getTime() : 0;
+    return ta - tb;
+  });
+
+  // ➜ derive "today" once
+  const todayStr = new Date().toISOString().slice(0, 10);
 
   return (
     <div className="h-full flex flex-col">
-      {/* Optional empty state – keeps layout intact */}
-      {sorted.length === 0 && clientLoaded && (
+      {sorted.length === 0 && clientLoaded && clientLoaded && (
         <div className="text-sm text-gray-600 italic pb-2">
           No care items for the selected month and year.
         </div>
       )}
 
       <ul className="space-y-3">
-        {sorted.map((t) => (
-          <li
-            key={t.id}
-            className="w-full bg-white text-black border rounded px-3 py-2 cursor-pointer hover:bg-gray-100 flex justify-between items-center"
-            onClick={() => onTaskClick(t)}
-          >
-            <div>
-              <div className="font-bold">{t.title}</div>
-              <p className="text-sm text-gray-700">
-                Scheduled due: {t.nextDue}
-              </p>
-            </div>
-            <span
-              className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(
-                t.status || 'Pending'
-              )}`}
+        {sorted.map((t) => {
+          const key = occurKey(getSlug(t), t.nextDue);
+          const displayStatus: StatusUI =
+            statusOverride?.[key] ?? derivedOccurrenceStatus(t);
+
+          return (
+            <li
+              key={`${getSlug(t)}-${t.nextDue ?? ''}`}
+              className="w-full bg-white text-black border rounded px-3 py-2 cursor-pointer hover:bg-gray-100 flex justify-between items-center"
+              onClick={() => onTaskClick(t)}
             >
-              {t.status || 'Pending'}
-            </span>
-          </li>
-        ))}
+              <div>
+                <div className="font-bold">{t.label}</div>
+                <p className="text-sm text-gray-700">
+                  Scheduled due: {t.nextDue}
+                </p>
+              </div>
+              <span
+                className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(
+                  displayStatus
+                )}`}
+              >
+                {displayStatus}
+              </span>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

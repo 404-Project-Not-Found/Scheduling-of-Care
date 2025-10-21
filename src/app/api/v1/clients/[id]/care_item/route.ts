@@ -8,14 +8,7 @@
 import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import CareItem, { CareItemDoc, isUnit } from '@/models/CareItem';
-import {
-  toISO,
-  parseISODateOnly,
-  formatISODateOnly,
-  nextDueISO,
-  type Unit,
-  toISODateOnly,
-} from '@/lib/care-item-helpers/date-helpers';
+import { toISO } from '@/lib/care-item-helpers/date-helpers';
 import { findOrCreateNewCategory } from '@/lib/category-helpers';
 import { slugify } from '@/lib/slug';
 import { Types } from 'mongoose';
@@ -209,9 +202,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     ...(hasUnit
       ? { frequency: `${count} ${unit}${count! > 1 ? 's' : ''}` }
       : {}),
-    ...(dateFromStr && dateToStr
-      ? { lastDone: `${dateFromStr} to ${dateToStr}` }
-      : {}),
+    ...(dateFromStr ? { lastDone: dateFromStr } : {}),
     ...(typeof notes === 'string' ? { notes } : {}),
   };
 

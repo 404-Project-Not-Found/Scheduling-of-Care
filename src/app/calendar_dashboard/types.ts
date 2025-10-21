@@ -1,11 +1,11 @@
 // src/app/dashboard/types.ts
 export type Task = {
   id: string;
-  title: string;
+  label: string;
   frequency: string;
   lastDone: string;
   nextDue: string;
-  status: 'Due' | 'Pending' | 'Completed';
+  status: 'Overdue' | 'Pending' | 'Completed';
   comments: string[];
   files: string[];
 };

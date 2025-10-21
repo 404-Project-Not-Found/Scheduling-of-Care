@@ -75,7 +75,7 @@ export default function AddTaskPage() {
 
   // Form states
   const [label, setLabel] = useState('');
-  const [status, setStatus] = useState('in progress');
+  const [status, setStatus] = useState('Due');
   const [category, setCategory] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -154,7 +154,10 @@ export default function AddTaskPage() {
           return;
         }
 
-        const url = new URL('/api/v1/category', window.location.origin);
+        const url = new URL(
+          `/api/v1/clients/${activeClientId}/category`,
+          window.location.origin
+        );
         url.searchParams.set('clientId', activeClientId);
 
         const res = await fetch(url.toString(), { cache: 'no-store' });
@@ -212,10 +215,7 @@ export default function AddTaskPage() {
     };
   }, [category]);
 
-  const statusOptions = useMemo(
-    () => ['in progress', 'Completed', 'Not started', 'Paused', 'Cancelled'],
-    []
-  );
+  // const statusOptions = useMemo(() => ['Pending', 'Due', 'Completed'], []);
 
   const onCreate = async () => {
     if (!activeClientId) {
@@ -240,7 +240,7 @@ export default function AddTaskPage() {
       clientId: activeClientId ?? undefined,
       clientName: displayName,
       label: name,
-      status: status.trim().toLowerCase(),
+      status: (status || 'due').toLowerCase(),
       category: category.trim(),
       frequencyCount: hasFrequency ? countNum : undefined,
       frequencyUnit: hasFrequency ? frequencyUnit : undefined,
@@ -250,7 +250,7 @@ export default function AddTaskPage() {
     };
 
     try {
-      const res = await fetch('/api/v1/care_item', {
+      const res = await fetch(`/api/v1/clients/${activeClientId}/care_item`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -353,21 +353,6 @@ export default function AddTaskPage() {
                 </select>
               </div>
             </Field>
-
-            <Field label="Status">
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                className="w-full rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black"
-              >
-                {statusOptions.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </select>
-            </Field>
-
             <Field label="Notes">
               <input
                 value={notes}

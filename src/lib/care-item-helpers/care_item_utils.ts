@@ -6,6 +6,10 @@
 
 import { NextResponse } from 'next/server';
 import { Unit, isUnit } from '@/models/CareItem';
+import { isISODateOnly } from './date-helpers';
+import { Types } from 'mongoose';
+import { connectDB } from '../mongodb';
+import CareItem from '@/models/CareItem';
 
 // Days in a day and a week always same unlike a month and a year
 const unitDayWeekSame: Record<Extract<Unit, 'day' | 'week'>, number> = {
@@ -31,6 +35,19 @@ type NormalisedFields = {
   dateFrom?: string;
   dateTo?: string;
   lastDone?: string;
+};
+
+export type NewTask = {
+  id: string;
+  clientId: string; // which client this task belongs to
+  title: string;
+  category?: string; // optional: auto derived from catalog
+  frequency: string;
+  lastDone: string;
+  nextDue: string; // YYYY-MM-DD
+  status: 'Pending' | 'Overdue' | 'Completed';
+  comments: string[];
+  files: string[];
 };
 
 export function parseLegacyFrequency(
@@ -86,11 +103,6 @@ export function normaliseCareItemPayLoad(
     frequency = `${count} day${count > 1 ? 's' : ''}`;
   }
 
-  const lastDone =
-    dateFrom && dateTo
-      ? `${String(dateFrom).trim()} to ${String(dateTo).trim()}`
-      : body.lastDone || '';
-
   return {
     ...body,
     frequencyCount: frequencyCount ?? undefined,
@@ -99,10 +111,28 @@ export function normaliseCareItemPayLoad(
       : undefined,
     frequencyDays: frequencyDays ?? undefined,
     frequency: frequency ?? undefined,
-    lastDone: lastDone ?? undefined,
   };
 }
 
 export function errorJson(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });
+}
+
+export async function getCareItemForClient(
+  clientId: string
+): Promise<string[]> {
+  await connectDB();
+
+  if (!Types.ObjectId.isValid(clientId)) {
+    throw new Error('Invalid clientId');
+  }
+
+  const items = await CareItem.find({
+    clientId: new Types.ObjectId(clientId),
+    deleted: { $ne: true },
+  })
+    .select({ _id: 1 })
+    .lean();
+
+  return items.map((i) => i.slug.toString());
 }

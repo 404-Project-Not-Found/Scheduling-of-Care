@@ -21,7 +21,7 @@ interface CareItemLean {
   status: string;
   category: string;
   frequency?: string;
-  lastDone?: Date | string | null;
+
   categoryId?: Types.ObjectId | string | null;
   deleted?: boolean;
   clientId?: Types.ObjectId | string | null;
@@ -62,8 +62,17 @@ export function parseISODateOnly(yyyyMmDd: string): Date {
   return dt;
 }
 
-export function formatISODateOnly(date: Date): string {
-  return date.toISOString().slice(0, 10);
+export function formatISODateOnly(date: Date | string | null): string {
+  if (!date) return '';
+
+  if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return date;
+  }
+
+  const d = new Date(date instanceof Date ? date : String(date));
+  if (isNaN(d.getTime())) return '';
+
+  return d.toISOString().slice(0, 10);
 }
 
 function toISODate(d: Date) {
@@ -139,6 +148,66 @@ export function toISO(input: unknown): string | undefined {
   return d && !Number.isNaN(d.getTime()) ? d.toISOString() : undefined;
 }
 
+export function latestISO(dates?: string[]): string | undefined {
+  if (!Array.isArray(dates) || dates.length === 0) return undefined;
+  const sorted = dates.slice().sort();
+  return sorted[sorted.length - 1] ?? '';
+}
+
+export function futureOccurencesAfterLastDone(
+  dateFrom: string | undefined,
+  lastDone: string | undefined,
+  count: number | undefined,
+  unit: Unit | undefined,
+  winStartISO: string,
+  winEndISO: string,
+  dateTo: string | null
+) {
+  if (!count || !unit) return [];
+  const hasValid = (d?: string) =>
+    !!d && /^\d{4}-\d{2}-\d{2}$/.test(d) && isISODateOnly(d);
+  const startISO = hasValid(dateFrom) ? (dateFrom as string) : undefined;
+  const lastISO = hasValid(lastDone) ? (lastDone as string) : undefined;
+  const limitISO = hasValid(dateTo || undefined)
+    ? (dateTo as string)
+    : undefined;
+
+  if (!startISO && !lastISO) return [];
+
+  let firstOccur =
+    lastISO && (!startISO || lastISO >= startISO)
+      ? formatISODateOnly(addCount(lastISO, count, unit))
+      : (startISO as string);
+
+  if (!firstOccur || !isISODateOnly(firstOccur)) return [];
+
+  const step = (iso: string) => formatISODateOnly(addCount(iso, count, unit));
+
+  while (firstOccur < winStartISO) {
+    const next = step(firstOccur);
+    if (!next || next === firstOccur) return [];
+    firstOccur = next;
+    if (limitISO && firstOccur > limitISO) return [];
+  }
+  const out: string[] = [];
+  let occur = firstOccur;
+  let guard = 0;
+
+  while (
+    occur <= winEndISO &&
+    (!limitISO || occur <= limitISO) &&
+    guard < 2048
+  ) {
+    out.push(occur);
+    const next = step(occur);
+    if (!next || next === occur) break;
+    occur = next;
+    guard++;
+  }
+
+  return out;
+}
+
 export function toISODateOnly(
   input: Date | string | number | null | undefined
 ): string {
@@ -161,61 +230,23 @@ export function toISODateOnly(
   return '';
 }
 
-export function nextOccurrenceAfterToday(
+export function getNextDue(
   start: string,
   count?: number | null,
   unit?: Unit | null,
   frequencyDays?: number | null
 ): string {
-  const today = toISODateOnly(new Date());
   const startISO = toISODateOnly(start);
   if (!startISO) return '';
 
-  if (startISO > today) return startISO;
-
   const step =
-    count && unit
+    count && count > 0 && unit
       ? (iso: string) => nextDueISO(iso, count, unit)
       : frequencyDays && frequencyDays > 0
         ? (iso: string) => toISODateOnly(addCount(iso, frequencyDays, 'day'))
         : null;
 
-  if (!step) {
-    return '';
-  }
+  if (!step) return '';
 
-  let due = step(startISO);
-  let guard = 0;
-  while (due <= today && guard < 512) {
-    due = step(due);
-    guard++;
-  }
-  return guard >= 512 ? '' : due;
-}
-
-export function upcomingOccurrencesAfterToday(
-  start: string,
-  count?: number | null,
-  unit?: Unit | null,
-  frequencyDays?: number | null,
-  n = 6
-): string[] {
-  const next = nextOccurrenceAfterToday(start, count, unit, frequencyDays);
-  if (!next) return [];
-
-  const out: string[] = [next];
-  const step =
-    count && unit
-      ? (iso: string) => nextDueISO(iso, count, unit)
-      : frequencyDays && frequencyDays > 0
-        ? (iso: string) => toISODateOnly(addCount(iso, frequencyDays, 'day'))
-        : null;
-  if (!step) return out;
-
-  for (let i = 1; i < n; i++) {
-    const nextISO = step(out[i - 1]);
-    if (!nextISO) break;
-    out.push(nextISO);
-  }
-  return out;
+  return step(startISO);
 }

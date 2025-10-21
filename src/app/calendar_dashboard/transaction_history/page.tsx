@@ -9,14 +9,13 @@
  * Last Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
  * consistency and better navigation.
  */
-
 'use client';
 
 import { Search } from 'lucide-react';
-
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardChrome from '@/components/top_menu/client_schedule';
+import { getAvailableYears } from '@/lib/budget-helpers';
 
 import {
   getViewerRole,
@@ -26,12 +25,11 @@ import {
   type Client as ApiClient,
 } from '@/lib/data';
 
-import { getTransactionsFE } from '@/lib/mock/mockApi';
+import { getTransactionsFE } from '@/lib/transaction-helpers';
 
 // --------- Type Definitions ---------
 type Role = 'carer' | 'family' | 'management';
 
-/** Data shape returned by getTransactionsFE() */
 type ApiTransaction = {
   id: string;
   clientId: string;
@@ -73,8 +71,14 @@ function TransactionHistoryInner() {
 
   // Transactions
   const [rows, setRows] = useState<ApiTransaction[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState({
+    clients: true,
+    years: true,
+    rows: true,
+  });
   const [errorText, setErrorText] = useState('');
+
+  const loadingAny = loading.clients || loading.years || loading.rows;
 
   // Filters
   const [search, setSearch] = useState<string>('');
@@ -102,6 +106,7 @@ function TransactionHistoryInner() {
   // Load clients + active client on mount
   useEffect(() => {
     (async () => {
+      setLoading((s) => ({ ...s, clients: true }));
       try {
         const list: ApiClient[] = await getClients();
         const mapped: ClientLite[] = (list as ApiClientWithAccess[]).map(
@@ -121,6 +126,8 @@ function TransactionHistoryInner() {
         setClients([]);
         setActiveClientId(null);
         setDisplayName('');
+      } finally {
+        setLoading((s) => ({ ...s, clients: false }));
       }
     })();
   }, []);
@@ -140,26 +147,71 @@ function TransactionHistoryInner() {
     await setActiveClient(id, name);
   };
 
-  /** Load transactions when active client changes */
+  /** Year selection */
+  const [years, setYears] = useState<number[]>([2025]);
+  const [year, setYear] = useState<number>(new Date().getFullYear());
+  const [todayDate, setTodaysDate] = useState<string>();
+
+  useEffect(() => {
+    const d = new Date();
+    const fmt = new Intl.DateTimeFormat('en-AU', {
+      dateStyle: 'long',
+      timeZone: 'Australia/Melbourne',
+    });
+    setTodaysDate(fmt.format(d));
+  }, []);
+
+  useEffect(() => {
+    const abort = new AbortController();
+    const load = async () => {
+      if (!activeClientId) {
+        setYears([]);
+        setLoading((s) => ({ ...s, years: false }));
+        return;
+      }
+      setLoading((s) => ({ ...s, years: true }));
+      try {
+        const list = await getAvailableYears(activeClientId, abort.signal);
+        if (list.length > 0) {
+          setYears(list);
+          if (!list.includes(year)) setYear(list[0]);
+        } else {
+          const curr = new Date().getFullYear();
+          setYears([curr]);
+          setYear(curr);
+        }
+      } catch (e) {
+        console.error('Failed to load years:', e);
+        const curr = new Date().getFullYear();
+        setYears([curr]);
+        setYear(curr);
+      } finally {
+        setLoading((s) => ({ ...s, years: false }));
+      }
+    };
+    load();
+    return () => abort.abort();
+  }, [activeClientId]); // MERGE: keep effect dependency minimal
+
   useEffect(() => {
     if (!activeClientId) {
       setRows([]);
       return;
     }
     (async () => {
-      setLoading(true);
+      setLoading((s) => ({ ...s, rows: true }));
       setErrorText('');
       try {
-        const data = await getTransactionsFE(activeClientId);
+        const data = await getTransactionsFE(activeClientId, year);
         setRows(Array.isArray(data) ? data : []);
       } catch {
         setErrorText('Failed to load transactions for this client.');
         setRows([]);
       } finally {
-        setLoading(false);
+        setLoading((s) => ({ ...s, rows: false }));
       }
     })();
-  }, [activeClientId]);
+  }, [activeClientId, year]);
 
   /** Filter */
   const filtered = useMemo(() => {
@@ -181,16 +233,38 @@ function TransactionHistoryInner() {
       colors={colors}
     >
       {/* Main content */}
-      <div className="flex-1 h-[680px] bg-white/80 overflow-auto">
+      <div
+        className="flex-1 h-[680px] bg-white/80 overflow-auto"
+        aria-busy={loadingAny}
+      >
+        {/* Top bar: title + year + search + add */}
         <div className="w-full px-6 py-5">
-          {/* Top bar: title + search + add */}
           <div className="flex items-center justify-between flex-wrap gap-4">
-            {/* LEFT: Title */}
-            <h1 className="text-[#3A0000] text-3xl font-semibold">
-              Transaction History
-            </h1>
+            {/* LEFT: Title + Year selector  (MERGE: restored year picker from HEAD) */}
+            <div className="flex items-center gap-4">
+              <h1 className="text-[#3A0000] text-3xl font-semibold">
+                Transaction History
+              </h1>
+              <span className="text-black/70 font-semibold text-sm">
+                View year:
+              </span>
+              <select
+                value={String(year)}
+                onChange={(e) => setYear(Number(e.target.value))}
+                className="rounded bg-white text-black px-2 py-1 text-sm border"
+                aria-label="Select year to view transactions"
+                title="View transaction history of year"
+                disabled={loadingAny}
+              >
+                {years.map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-            {/* RIGHT: Search + Add button */}
+            {/* RIGHT: Search + Add button (from main) */}
             <div className="flex items-center gap-5">
               <div className="relative">
                 <Search
@@ -202,7 +276,8 @@ function TransactionHistoryInner() {
                   placeholder="Search"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="h-9 rounded-full bg-white text-black border px-10"
+                  className="h-9 rounded-full bg-white text-black border px-10 w-60"
+                  disabled={loadingAny}
                 />
               </div>
 
@@ -227,13 +302,13 @@ function TransactionHistoryInner() {
             </div>
           </div>
 
-          {/* Divider */}
+          {/* Divider (from main) */}
           <hr className="mt-4 mb-6 w-340 mx-auto border-t border-[#3A0000]/25 rounded-full" />
 
           {/* Table container */}
           <div className="w-full pt-2 pb-6">
             <div className="rounded-2xl border border-[#3A0000]/30 bg-white overflow-hidden shadow-sm">
-              {loading ? (
+              {loadingAny ? (
                 <div className="p-6 text-gray-600">Loading transactions…</div>
               ) : errorText ? (
                 <div className="p-6 text-red-600">{errorText}</div>

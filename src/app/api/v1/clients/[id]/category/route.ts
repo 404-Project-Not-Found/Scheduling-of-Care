@@ -5,10 +5,9 @@
  * Last updated by Zahra Rizqita to connect client to category on 11/10/2025
  */
 
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import Category from '@/models/Category';
-import CareItem from '@/models/CareItem';
 import { findOrCreateNewCategory } from '@/lib/category-helpers';
 import { Types } from 'mongoose';
 
@@ -19,14 +18,17 @@ function isObjectIdString(s: unknown): s is string {
 }
 
 // Search through categories if clientId is given, return only categories used by that client
-export async function GET(req: Request) {
+
+export async function GET(
+  req: NextRequest,
+  ctx: { params: Promise<{ id: string }> }
+) {
   await connectDB();
+
   const { searchParams } = new URL(req.url);
-
   const q = (searchParams.get('q') || '').trim();
-  const clientIdStr = (searchParams.get('clientId') || '').trim();
+  const { id } = await ctx.params;
 
-  // Filter through allowing flexible searches
   const baseFilter: Record<string, unknown> = {};
 
   if (q) {
@@ -37,53 +39,31 @@ export async function GET(req: Request) {
     ];
   }
 
-  // If clientId is present, scope to that client's categories
-  if (clientIdStr) {
-    if (!Types.ObjectId.isValid(clientIdStr)) {
-      return NextResponse.json(
-        { error: 'clientId must be a valid ObjectId' },
-        { status: 400 }
-      );
-    }
-
-    const clientId = new Types.ObjectId(clientIdStr);
-
-    // Final all categories belonging to this client
-    const list = await Category.find({ ...baseFilter, clientId })
-      .sort({ name: 1 })
-      .limit(200)
-      .lean();
+  if (!id || !Types.ObjectId.isValid(id)) {
     return NextResponse.json(
-      list.map((c) => ({
-        _id: c._id,
-        name: c.name,
-        slug: c.slug,
-        aliases: c.aliases ?? [],
-        clientId: c.clientId,
-        createdAt: c.createdAt,
-        updatedAt: c.updatedAt,
-      }))
+      { error: 'Invalid client id in path' },
+      { status: 400 }
     );
   }
+  const clientId = new Types.ObjectId(id);
 
-  // return nothing if no clientID provided
-  const list = await Category.find({ baseFilter })
+  const list = await Category.find({ ...baseFilter, clientId })
     .sort({ name: 1 })
     .limit(200)
     .lean();
+
   return NextResponse.json(
     list.map((c) => ({
-      _id: c._id,
+      _id: String(c._id),
       name: c.name,
       slug: c.slug,
       aliases: c.aliases ?? [],
-      clientId: c.clientId,
+      clientId: String(c.clientId),
       createdAt: c.createdAt,
       updatedAt: c.updatedAt,
     }))
   );
 }
-
 interface CategoryCreateBody {
   input: string;
   clientId: string;

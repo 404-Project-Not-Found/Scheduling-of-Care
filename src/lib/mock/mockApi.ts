@@ -252,12 +252,12 @@ export const MOCK_ORGS: Organisation[] = [
 export type Task = {
   id: string;
   clientId: string; // which client this task belongs to
-  title: string;
+  label: string;
   category?: string; // optional: auto derived from catalog
   frequency: string;
   lastDone: string; // YYYY-MM-DD
   nextDue: string; // YYYY-MM-DD
-  status: 'Pending' | 'Overdue' | 'Completed';
+  status: 'Waiting Verification' | 'Overdue' | 'Completed' | 'Due';
   comments: string[];
   files: string[];
 };
@@ -270,24 +270,24 @@ const DEMO_TASKS: Task[] = [
   {
     id: '1',
     clientId: FULL_DASH_ID,
-    title: 'Dental Appointment',
+    label: 'Dental Appointment',
     category: 'Appointments',
     frequency: 'Monthly',
     lastDone: '2025-09-15',
     nextDue: '2025-10-01',
-    status: 'Pending',
+    status: 'Due',
     comments: ['Carer note: Arrived on time, patient was calm.'],
     files: ['dental_referral.pdf'],
   },
   {
     id: '2',
     clientId: FULL_DASH_ID,
-    title: 'Replace Toothbrush Head',
+    label: 'Replace Toothbrush Head',
     category: 'Hygiene',
     frequency: 'Every 3 months',
     lastDone: '2025-07-13',
     nextDue: '2025-10-13',
-    status: 'Pending',
+    status: 'Waiting Verification',
     comments: ['Carer note: Current head slightly worn.'],
     files: ['toothbrush_receipt.png'],
   },
@@ -296,12 +296,12 @@ const DEMO_TASKS: Task[] = [
   {
     id: '3',
     clientId: PARTIAL_DASH_ID,
-    title: 'Submit Report',
+    label: 'Submit Report',
     category: 'Administration',
     frequency: 'Weekly',
     lastDone: '2025-09-18',
     nextDue: '2025-09-25',
-    status: 'Overdue',
+    status: 'Due',
     comments: [],
     files: [],
   },
@@ -321,15 +321,15 @@ export async function getTasksFE(): Promise<Task[]> {
             return {
               id: partial.id ?? `${idx + 1}`,
               clientId: partial.clientId ?? FULL_DASH_ID,
-              title:
-                typeof partial.title === 'string'
-                  ? partial.title
+              label:
+                typeof partial.label === 'string'
+                  ? partial.label
                   : `Task ${idx + 1}`,
               category: partial.category ?? '',
               frequency: partial.frequency ?? '',
               lastDone: partial.lastDone ?? partial.nextDue ?? '',
               nextDue: partial.nextDue ?? '',
-              status: partial.status ?? 'Pending',
+              status: partial.status ?? 'Due',
               comments: partial.comments ?? [],
               files: partial.files ?? [],
             };
@@ -696,6 +696,7 @@ export async function addTransactionFE(tx: Transaction): Promise<void> {
 
 export type RequestLog = {
   id: string;
+  slug: string;
   clientId: string;
   task: string;
   change: string;
@@ -710,6 +711,7 @@ const REQUESTS_LS_KEY = 'requests';
 const DEMO_REQUESTS: RequestLog[] = [
   {
     id: 'r1',
+    slug: 'toothbrush-heads',
     clientId: FULL_DASH_ID, // 'mock1'
     task: 'Toothbrush Heads',
     change: 'Change supplier to Colgate',
@@ -720,6 +722,7 @@ const DEMO_REQUESTS: RequestLog[] = [
   },
   {
     id: 'r2',
+    slug: 'dental-appointments',
     clientId: FULL_DASH_ID,
     task: 'Dental Appointments',
     change: 'Reschedule to 25th Sep',
@@ -730,6 +733,7 @@ const DEMO_REQUESTS: RequestLog[] = [
   },
   {
     id: 'r3',
+    slug: 'socks',
     clientId: FULL_DASH_ID,
     task: 'Socks',
     change: 'Request larger size',

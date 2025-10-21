@@ -16,7 +16,7 @@ import { mockSignOut } from './mock/mockSignout';
 import { signOut as nextAuthSignOut } from 'next-auth/react';
 import {
   toISODateOnly,
-  nextOccurrenceAfterToday,
+  getNextDue,
 } from '@/lib/care-item-helpers/date-helpers';
 
 // Fetching Task helper
@@ -24,7 +24,7 @@ export type ApiCareItem = {
   slug: string;
   label: string;
   category?: string;
-  status: 'Pending' | 'Due' | 'Completed';
+  status: 'Waiting Verification' | 'Overdue' | 'Completed' | 'Due';
   frequency?: string;
   lastDone?: string;
   nextDue?: string;
@@ -50,7 +50,7 @@ export interface Task {
 type CareItemListRow = {
   label: string;
   slug: string;
-  status: 'Pending' | 'Overdue' | 'Completed';
+  status: 'Waiting Verification' | 'Overdue' | 'Completed' | 'Due';
   category: string;
   categoryId?: string;
   clientId?: string;
@@ -147,7 +147,9 @@ export const getClientById = async (id: string) => {
 };
 
 // Fetches all tasks visible to the current user
-export const getTasks = async (): Promise<mockApi.Task[]> => {
+export const getTasks = async (
+  clientId: string | null | undefined
+): Promise<mockApi.Task[] & { slug?: string }> => {
   if (isMock) {
     return mockApi.getTasksFE();
   }
@@ -166,35 +168,68 @@ export const getTasks = async (): Promise<mockApi.Task[]> => {
     return '';
   };
 
-  const res = await fetch('/api/v1/care_item?limit=200', { cache: 'no-store' });
+  const res = await fetch(`/api/v1/clients/${clientId}/care_item?limit=200`, {
+    cache: 'no-store',
+  });
   if (!res.ok) {
     throw new Error(`Failed to fetch tasks (${res.status})`);
   }
 
   const rows: CareItemListRow[] = await res.json();
 
+  const parseLastDone = (val?: string) => {
+    if (!val) return '';
+    // Some old records used "start to end" text; keep first part
+    const first = val.split('to')[0]?.trim();
+    return toISODateOnly(first);
+  };
+
+  const normalizeStatus = (s: string) => {
+    const v = (s || '').toLowerCase();
+    if (v === 'waiting verification') return 'Waiting Verification';
+    if (v === 'due') return 'Due';
+    if (v === 'overdue') return 'Overdue';
+    if (v === 'completed') return 'Completed';
+    return 'due';
+  };
+
   const tasks: mockApi.Task[] = rows.map((row, idx) => {
     const id = row.slug || `task-${idx}`;
 
-    const task: mockApi.Task = {
+    const baseISO =
+      parseLastDone(row.lastDone) || toISODateOnly(row.dateFrom ?? null) || '';
+
+    const nextDue = getNextDue(
+      baseISO,
+      row.frequencyCount ?? null,
+      row.frequencyUnit ?? null,
+      row.frequencyDays ?? null
+    );
+
+    const task: unknown = {
       id,
-      title: row.label,
-      status: row.status,
+      slug: row.slug ?? undefined,
+      label: row.label,
+      status: normalizeStatus(row.status) as
+        | 'Due'
+        | 'Overdue'
+        | 'Completed'
+        | 'Waiting Verification',
       category: row.category,
       clientId: row.clientId ?? '',
       frequency: buildFrequency(row),
-      lastDone: toISODateOnly(row.lastDone ?? null) || '',
-      nextDue: nextOccurrenceAfterToday(
-        toISODateOnly(row.dateFrom),
-        row.frequencyCount,
-        row.frequencyUnit,
-        row.frequencyDays
-      ),
+      lastDone: parseLastDone(row.lastDone),
+      nextDue,
       comments: [],
       files: [],
+      dateFrom: toISODateOnly(row.dateFrom ?? null) || undefined,
+      dateTo: toISODateOnly(row.dateTo ?? null) || undefined,
+      frequencyCount: row.frequencyCount ?? undefined,
+      frequencyUnit: row.frequencyUnit ?? undefined,
+      frequencyDays: row.frequencyDays ?? undefined,
     };
 
-    return task;
+    return task as mockApi.Task & { slug?: string };
   });
 
   return tasks;
@@ -204,17 +239,6 @@ export const getTasks = async (): Promise<mockApi.Task[]> => {
 export const saveTasks = async (tasks: mockApi.Task[]) => {
   if (isMock) {
     return mockApi.saveTasksFE(tasks);
-  }
-
-  const deriveNextDue = (row: CareItemListRow): string => {
-    if (row.dateTo && row.dateTo.trim()) return row.dateTo;
-    if (row.dateFrom && row.dateFrom.trim()) return row.dateFrom;
-    return '';
-  };
-
-  const res = await fetch('/api/v1/care_item?limit=200', { cache: 'no-store' });
-  if (!res.ok) {
-    throw new Error(`Failed to fetch tasks (${res.status})`);
   }
 };
 
@@ -288,7 +312,7 @@ export const setActiveClient = async (id: string | null, name: string = '') => {
 
 // Fetches tasks for a specific client
 export const getTasksByClient = async (clientId: string) => {
-  const allTasks = await getTasks();
+  const allTasks = await getTasks(clientId);
   return allTasks.filter((t) => t.clientId === clientId);
 };
 
