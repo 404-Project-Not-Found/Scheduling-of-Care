@@ -171,9 +171,8 @@ export async function POST(
       return NextResponse.json({ error: 'Invalid action.' }, { status: 400 });
   }
 
-  // Persist client updates
-  client.markModified('organisationHistory');
-  await client.save();
+  // Save updated organisation history (without revalidating full doc)
+  await Client.findByIdAndUpdate(id, { organisationHistory: orgHistory });
   // Return confirmation message
   return NextResponse.json({
     message: `Organisation ${action} action successful.`,
