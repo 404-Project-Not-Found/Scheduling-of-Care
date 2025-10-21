@@ -107,7 +107,13 @@ function AddTransactionInner() {
   const router = useRouter();
   const [transType, setTransType] = useState<transKind>('Purchase');
   const [date, setDate] = useState<string>(() => toISODateOnly(new Date()));
-
+  const [load, setLoad] = useState({
+    clients: true,
+    carers: true,
+    catalog: true,
+    refundables: false,
+  });
+  const loadAny = load.clients || load.carers || load.catalog || load.refundables;
 
   const year = useMemo(() => new Date(date).getFullYear(), [date]);
 
@@ -120,6 +126,7 @@ function AddTransactionInner() {
   // Load clients + active client on mount
   useEffect(() => {
     (async () => {
+      setLoad((s) => ({...s, clients: true}));
       try {
         const list: ApiClient[] = await getClients();
         const mapped: ClientLite[] = (list as ApiClientWithAccess[]).map(
@@ -139,6 +146,8 @@ function AddTransactionInner() {
         setClients([]);
         setActiveClientId(null);
         setDisplayName('');
+      } finally {
+        setLoad((s) => ({...s, clients: false}));
       }
     })();
   }, []);
@@ -165,6 +174,7 @@ function AddTransactionInner() {
   useEffect(() => {
   let abort = new AbortController();
   (async () => {
+    setLoad((s) => ({ ...s, carers: true }));
     if (!activeClientId) { setCarers([]); setMadeByUserId(''); return; }
     try {
       const list = await fetchCarersForClient(activeClientId, abort.signal);
@@ -173,6 +183,8 @@ function AddTransactionInner() {
     } catch {
       setCarers([]);
       setMadeByUserId('');
+    } finally {
+      setLoad((s) => ({ ...s, carers: false }));
     }
   })();
   return () => abort.abort();
@@ -184,6 +196,7 @@ function AddTransactionInner() {
   useEffect(() => {
     let abort = new AbortController();
     (async () => {
+      setLoad((s) => ({ ...s, catalog : true }));
       if (!activeClientId) { setCategories([]); setCareItems([]); return; }
       try {
         const [cats, items] = await Promise.all([
@@ -212,6 +225,8 @@ function AddTransactionInner() {
       } catch {
         setCategories([]);
         setCareItems([]);
+      } finally {
+        setLoad((s) => ({ ...s, catalog: false }));
       }
     })();
     return () => abort.abort();
@@ -267,12 +282,19 @@ function AddTransactionInner() {
   useEffect(() => {
     let abort = new AbortController();
     (async () => {
-      if (!activeClientId || transType !== 'Refund') { setRefundables([]); return; }
+      if (!activeClientId || transType !== 'Refund') { 
+        setRefundables([]); 
+        setLoad((s) => ({ ...s, refundables: false }));
+        return; 
+      }
+      setLoad((s) => ({ ...s, refundables: true }));
       try {
         const rows = await getRefundablesFE(activeClientId, year, abort.signal);
         setRefundables(rows);
       } catch {
         setRefundables([]);
+      } finally {
+        setLoad((s) => ({ ...s, refundables: false }));
       }
     })();
     return () => abort.abort();
@@ -467,7 +489,7 @@ function AddTransactionInner() {
       onClientChange={onClientChange}
       colors={{ header: colors.header, banner: colors.banner, text: '#000' }}
     >
-      <div className="flex-1 h-[680px] overflow-auto" style={{ backgroundColor: colors.pageBg }}>
+      <div className="flex-1 h-[680px] overflow-auto" style={{ backgroundColor: colors.pageBg }} aria-busy={loadAny}>
         {/* Section bar */}
         <div
           className="w-full flex items-center justify-between px-8 py-4 text-white text-3xl font-extrabold"
@@ -486,6 +508,11 @@ function AddTransactionInner() {
 
         {/* Form area */}
         <div className="w-full max-w-[900px] mx-auto px-6 py-8">
+          {loadAny ? (
+            <div className="text-center py-24 text-gray-600 text-xl font-medium" aria-busy="true"> 
+              Loading transaction form… 
+            </div>
+          ) : (
           <div className="grid grid-cols-1 gap-6">
             {/* Type */}
             <div className="flex flex-col gap-2">
@@ -832,7 +859,7 @@ function AddTransactionInner() {
                 Add
               </button>
             </div>
-          </div>
+          </div>)}
         </div>
       </div>
     </DashboardChrome>
