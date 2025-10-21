@@ -521,7 +521,7 @@ export default function EditCareItem({ slug }: { slug: string }) {
             {/* Footer buttons */}
             <div className="pt-2 flex items-center justify-center gap-30">
               <button
-                //onClick={onDelete}
+                onClick={onDelete}
                 className="px-5 py-2.5 rounded-md text-lg font-medium text-white bg-[#B3261E] hover:bg-[#99201A] transition"
               >
                 Delete
@@ -533,7 +533,7 @@ export default function EditCareItem({ slug }: { slug: string }) {
                 Cancel
               </button>
               <button
-                //onClick={onSave}
+                onClick={onSave}
                 className="px-5 py-2.5 rounded-md text-lg font-medium text-white bg-[#3A0000] hover:bg-[#502121] transition"
               >
                 Save
