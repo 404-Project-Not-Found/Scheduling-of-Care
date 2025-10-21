@@ -1,6 +1,7 @@
 /**
  * File path: /components/accesscode/generate-code.tsx
- * Author: Qingyue Zhao
+ * Front-end Author: Qingyue Zhao
+ * Back-end Author: Denise Alexander
  * Date Created: 28/09/2025
  *
  * Description:
@@ -9,7 +10,7 @@
  * - Blocks background scrolling when open, closes on ESC key or overlay click.
  * - Designed to be embedded in Staff List page and other related pages.
  *
- * Last Updated by Denise Alexander - 14/10/2025: back-end integrated to fetch and store invite codes
+ * Last Updated by Denise Alexander (14/10/2025): back-end integrated to fetch and store invite codes
  * from DB.
  */
 

@@ -1,6 +1,7 @@
 /**
  * File path: /reset_password/page.client.tsx
- * Authors: Devni Wijesinghe & Denise Alexander
+ * Front-end Author: Devni Wijesinghe
+ * Back-end Author: Denise Alexander
  * Date Created: 17/09/2025
  */
 

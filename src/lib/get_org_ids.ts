@@ -2,6 +2,10 @@
  * File path: /lib/get_org_ids.ts
  * Author: Denise Alexander
  * Date Created: 16/10/2025
+ *
+ * Purpose: to retrieve a list of organisations the logged-in user has access to.
+ * - Management/Carer: their registered organisation.
+ * - Family: all organisations their have approved client access to.
  */
 
 import mongoose from 'mongoose';

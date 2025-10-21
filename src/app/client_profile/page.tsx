@@ -2,9 +2,13 @@
  * File path: /client_profile/page.tsx
  * Authors:
  * - Frontend UI Build: Devni Wijesinghe
- * - Backend logic: Denise Alexander
+ * - Backend Logic: Denise Alexander
+ *
  * Updated by Qingyue Zhao: 03-10-2025
- * Last Updated by Denise Alexander: 07-10-2025 (back-end integration)
+ * Updated by Denise Alexander (07-10-2025): back-end integration
+ *
+ * Last Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
+ * consistency and better navigation.
  *
  * Notes:
  * - Fixed-height viewport section (h-[680px]) to avoid bottom gutters.

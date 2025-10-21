@@ -1,6 +1,7 @@
 /**
- * File path: src/app/client_list/page.tsx
- * Frontend Author: Qingyue Zhao
+ * File path: /management_dashboard/clients_list/page.tsx
+ * Front-end Author: Qingyue Zhao
+ * Back-end Author: Denise Alexander
  *
  * Features (latest update):
  * - Displays client list with avatar, name, and organisation access status.
@@ -14,8 +15,11 @@
  *      -> pending: "Request sent" button (disabled).
  * - Now fetches all mock/demo clients purely from mockApi (no hardcoding here).
  *
- * Last Updated by Denise Alexander - 7/10/2025: back-end integrated to fetch client lists
+ * Updated by Denise Alexander (7/10/2025): back-end integrated to fetch client lists
  * from DB.
+ *
+ * Last Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
+ * consistency and better navigation.
  */
 
 'use client';

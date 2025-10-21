@@ -1,6 +1,6 @@
 /**
  * File name: Request Log
- * File path: src/app/request-log-page/page.tsx
+ * File path: /request-log-page/page.tsx
  * Front-end Author: Devni Wijesinghe
  * Back-end Author: Denise Alexander
  *
@@ -11,7 +11,10 @@
  * - Management users can change the Status inline; the <select> is color-coded.
  * - The table section is flush to the white panel’s edges (no inner horizontal padding).
  *
- * Last Updated by Denise Alexander (16/10/2025): added back-end API endpoints.
+ * Updated by Denise Alexander (16/10/2025): added back-end API endpoints.
+ *
+ * Last Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
+ * consistency and better navigation.
  */
 
 'use client';

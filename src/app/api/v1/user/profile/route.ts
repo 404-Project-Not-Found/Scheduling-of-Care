@@ -1,7 +1,9 @@
 /**
- * File path: /user/profile/route.ts
+ * File path: /api/v1/user/profile/route.ts
  * Author: Denise Alexander
  * Date Created: 22/09/2025
+ *
+ * Purpose: Retrieves logged-in users information including email and password.
  */
 
 import { NextResponse } from 'next/server';

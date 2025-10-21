@@ -1,9 +1,13 @@
 /**
  * View Transactions
- * Frontend Authors: Devni Wijesinghe & Qingyue Zhao
+ * Front-end Authors: Devni Wijesinghe & Qingyue Zhao
+ * Back-end Author: Zahra Rizqita
  *
- * Last Updated by Denise Alexander (16/10/2025): Fixed active client usage, client dropdown
+ * Updated by Denise Alexander (16/10/2025): Fixed active client usage, client dropdown
  * now works correctly.
+ *
+ * Last Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
+ * consistency and better navigation.
  */
 
 'use client';

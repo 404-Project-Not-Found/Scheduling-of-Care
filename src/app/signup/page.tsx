@@ -1,6 +1,7 @@
 /**
  * File path: /signup/page.tsx
- * Authors: Qingyue Zhao & Denise Alexander
+ * Front-end Author: Qingyue Zhao
+ * Back-end Author: Denise Alexander
  * Date Created: 05/09/2025
  */
 

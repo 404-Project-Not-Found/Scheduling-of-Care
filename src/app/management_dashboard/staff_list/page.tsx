@@ -1,14 +1,18 @@
 /**
- * File path: src/app/management_dashboard/staff_list/page.tsx
- * Frontend Author: Vanessa Teo
+ * File path: /management_dashboard/staff_list/page.tsx
+ * Front-end Author: Vanessa Teo
+ * Back-end Author: Denise Alexander
  
- * Last Updated by Denise Alexander - 14/10/2025: back-end integrated to fetch staff
+ * Updated by Denise Alexander (14/10/2025): back-end integrated to fetch staff
  * lists from DB.
+ * 
+ * Last Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
+ * consistency and better navigation.
  */
 
 'use client';
 
-import { Search } from 'lucide-react';
+import { Search, ArrowLeft } from 'lucide-react';
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -148,10 +152,20 @@ export default function StaffListPage() {
         <div className="max-w-[1380px] h-[680px] mx-auto px-6">
           {/* Section title */}
           <div
-            className="w-full mt-6 rounded-t-xl px-6 py-4 text-white text-2xl md:text-3xl font-extrabold"
+            className="w-full mt-6 rounded-t-xl px-6 py-4 text-white text-2xl md:text-3xl font-extrabold flex items-center justify-between"
             style={{ backgroundColor: colors.header }}
           >
-            Staff List
+            <span>Staff List</span>
+            <button
+              onClick={() =>
+                router.push('/management_dashboard/staff_schedule')
+              }
+              className="flex items-center gap-2 text-base md:text-lg font-semibold bg-white/10 px-4 py-1.5 rounded hover:bg-white/20 transition"
+              aria-label="Back"
+            >
+              <ArrowLeft size={22} strokeWidth={2.5} />
+              Back
+            </button>
           </div>
 
           {/* Controls + List */}

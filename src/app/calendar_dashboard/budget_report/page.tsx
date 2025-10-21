@@ -1,6 +1,7 @@
 /**
  * Budget Report
- * Frontend Authors: Vanessa Teo & Qingyue Zhao
+ * Front-end Authors: Vanessa Teo & Qingyue Zhao
+ * Back-end Author: Zahra Rizqita
  *
  * - Underlines "Budget Report" in the top menu via page="budget".
  * - Pink banner title becomes "<Client>'s Budget" automatically.
@@ -8,8 +9,11 @@
  * - Layout: full-bleed (no inner white panel), header + content fill viewport.
  * - Fetches rows via getBudgetRowsFE(activeClientId).
  *
- * Last Updated by Denise Alexander (16/10/2025): Fixed active client usage, client dropdown
+ * Updated (16/10/2025): Fixed active client usage, client dropdown
  * now works correctly.
+ *
+ * Last Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
+ * consistency and better navigation.
  */
 
 'use client';

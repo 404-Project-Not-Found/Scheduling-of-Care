@@ -1,7 +1,9 @@
 /**
- * File path: /auth/[...nextauth]/route.ts
+ * File path: /api/auth/[...nextauth]/route.ts
  * Author: Denise Alexander
  * Date Created: 22/09/2025
+ *
+ * Purpose: Authenticates logged-in users credentials.
  */
 
 import NextAuth, { NextAuthOptions } from 'next-auth';

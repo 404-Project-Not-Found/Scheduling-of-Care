@@ -3,7 +3,7 @@
  * Author: Denise Alexander
  * Date Created: 23/09/2025
  *
- * Last Updated by Denise Alexander - 7/10/2025: added OrgHistSchema to keep track of the client's
+ * Last Updated by Denise Alexander (7/10/2025): added OrgHistSchema to keep track of the client's
  * organisation status histories.
  */
 

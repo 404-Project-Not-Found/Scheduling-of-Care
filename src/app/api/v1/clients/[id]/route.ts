@@ -1,7 +1,9 @@
 /**
- * File path: /clients/[id]/route.ts
+ * File path: /api/v1/clients/[id]/route.ts
  * Author: Denise Alexander
  * Date Created: 22/09/2025
+ *
+ * Purpose: Handles a client's profile - fetching, updating and deleting.
  */
 
 import { NextRequest, NextResponse } from 'next/server';

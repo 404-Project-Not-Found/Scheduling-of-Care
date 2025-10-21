@@ -1,7 +1,10 @@
 /**
- * File path: /clients/check/route.ts
+ * File path: /api/v1/clients/check/route.ts
  * Author: Denise Alexander
  * Date Created: 22/09/2025
+ *
+ * Purpose: Handles client access codes - checks whether a client exists under
+ * the given access code.
  */
 
 import { NextRequest, NextResponse } from 'next/server';

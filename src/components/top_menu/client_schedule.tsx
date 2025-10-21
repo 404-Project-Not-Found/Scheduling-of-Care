@@ -7,6 +7,9 @@
  * - Top navigation menu is rendered here; active page gets an underline style.
  * - Pink banner with the centered title changes depending on the page and selected client.
  * - Client select dropdown is shown for ALL roles (family / carer / management).
+ *
+ * Last Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
+ * consistency and better navigation.
  */
 
 'use client';

@@ -1,7 +1,9 @@
 /**
- * File path: /clients/[id]/organisations/[orgId]/route.ts
+ * File path: /api/v1/clients/[id]/organisations/[orgId]/route.ts
  * Author: Denise Alexander
  * Date Created: 27/09/2025
+ *
+ * Purpose: Used to handle an organisatinon's client access status.
  *
  * Last Updated by Denise Alexander - 7/10/2025: included new action cases.
  */

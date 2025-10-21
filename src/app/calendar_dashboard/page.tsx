@@ -1,6 +1,6 @@
 /**
  * Calendar Dashboard (Schedule)
- * Frontend Authors: Vanessa Teo & Devni Wijesinghe & Qingyue Zhao
+ * Front-end Authors: Vanessa Teo & Devni Wijesinghe & Qingyue Zhao
  * ------------------------------------------------------------
  * - Uses the shared <DashboardChrome /> for the top chrome.
  * - Client selection persists via localStorage helpers.
@@ -8,15 +8,18 @@
  *   as the "Care Items" title, aligned to the RIGHT.
  * - The search filters tasks by title only (case-insensitive).
  *
- * Updated by Denise Alexander - 7/10/2025: back-end integrated for
+ * Updated by Denise Alexander (7/10/2025): back-end integrated for
  * fetching user role and clients.
  *
- * Last Updated by Qingyue Zhao - 8/10/2025:
+ * Updated by Qingyue Zhao (8/10/2025):
  * - The calendar title (month/year) drives the right-pane title:
  *   * When a day is selected -> "Care items on YYYY-MM-DD"
  *   * Otherwise -> "All care items in <Month Year>"
  * - TasksPanel receives either `selectedDate` or `year`+`month` to filter items,
  *  add a dropdown of list of users with access to the selected client
+ *
+ * Last Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
+ * consistency and better navigation.
  */
 
 'use client';

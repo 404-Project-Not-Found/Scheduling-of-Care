@@ -1,6 +1,7 @@
 /**
  * File path: app/calendar_dashboard/category-cost/[category]/page.tsx
- * Frontend Author: Qingyue Zhao
+ * Front-end Author: Qingyue Zhao
+ * Back-end Author: Zahra Rizqita
  *
  * Purpose:
  * - Category Budget Report page for a specific category (e.g., Appointments).
@@ -9,6 +10,9 @@
  * - Fetches rows via getBudgetRowsFE(activeClientId).
  *
  * TO DO: requires back-end integration
+ *
+ * Last Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
+ * consistency and better navigation.
  */
 
 'use client';

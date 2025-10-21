@@ -1,12 +1,12 @@
 /**
  * File path: /lib/data.ts
- * Author: Denise Alexander
+ * Authors: Denise Alexander & Zahra Rizqita
  * Date Created: 04/10/2025
  *
- * Updated by Denise Alexander - 7/10/2025: enables either mock mode or real back-end API.
- * Updated by Zahra Rizqita - 13/10/2025: implement fetching and saving task.
+ * Updated by Denise Alexander (7/10/2025): enables either mock mode or real back-end API.
+ * Updated by Zahra Rizqita (13/10/2025): implement fetching and saving task.
  *
- * Last Updated by Denise Alexander - 16/10/2025: added new helper functions for family
+ * Last Updated by Denise Alexander (16/10/2025): added new helper functions for family
  * requests handling.
  */
 

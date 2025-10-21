@@ -1,7 +1,12 @@
 /**
- * File path: /management/staff/route.ts
+ * File path: /api/v1/management/staff/route.ts
  * Author: Denise Alexander
  * Date Created: 26/09/2025
+ *
+ * Purpose: Handles staff list for all users.
+ * - Management: can add new staff and delete staff members from their organisation staff lists.
+ * - Family: view staff list of every organisation they have a client in.
+ * - Carer: view staff list for their organisation.
  *
  * Last Updated by Denise Alexander - 16/10/2025: added logic for family users
  * to view staff list from all organisations they have clients in.

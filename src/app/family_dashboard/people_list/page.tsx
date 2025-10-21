@@ -12,8 +12,11 @@
  *         - Manage organisation access
  * - No organisation access status shown (unlike management view).
  *
- * Last Updated by Denise Alexander - 7/10/2025: back-end integrated to fetch family
+ * Updated by Denise Alexander - 7/10/2025: back-end integrated to fetch family
  * client lists from DB.
+ *
+ * Last Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
+ * consistency and better navigation.
  */
 
 'use client';

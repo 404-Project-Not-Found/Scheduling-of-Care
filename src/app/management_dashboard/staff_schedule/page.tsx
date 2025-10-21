@@ -1,9 +1,13 @@
 /**
- * File path: src/app/management_dashboard/staff_schedule/page.tsx
- * Frontend Author: Devni Wijesinghe
+ * File path: /management_dashboard/staff_schedule/page.tsx
+ * Front-end Author: Devni Wijesinghe
+ * Back-end Author: Denise Alexander
  
- * Last Updated by Denise Alexander - 16/10/2025: back-end integrated to fetch staff
+ * Updated by Denise Alexander (16/10/2025): back-end integrated to fetch staff
  * shift schedules from DB.
+ * 
+ * Last Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
+ * consistency and better navigation.
  */
 
 'use client';

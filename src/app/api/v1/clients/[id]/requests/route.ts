@@ -1,7 +1,10 @@
 /**
- * File path: /clients/[id]/requests
+ * File path: /api/v1/clients/[id]/requests/route.ts
  * Author: Denise Alexander
  * Date Created: 16/10/2025
+ *
+ * Purpose: Handles family requests for a client - get request list, add new request
+ * and update request status.
  */
 
 import { NextRequest, NextResponse } from 'next/server';

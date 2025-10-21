@@ -1,9 +1,10 @@
 /**
- * File path: calendar_dashboard/update_details/page.tsx
- * Authors: Devni Wijesinghe & Denise Alexander
+ * File path: /calendar_dashboard/update_details/page.tsx
+ * Front-end Author: Devni Wijesinghe
+ * Back-end Author: Denise Alexander
  * Date Created: 22/09/2025
  *
- * Last Updated by Denise Alexander - 7/10/2025: back-end integration
+ * Last Updated by Denise Alexander (7/10/2025): back-end integration
  * added.
  */
 

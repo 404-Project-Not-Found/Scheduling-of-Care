@@ -1,7 +1,9 @@
 /**
- * File path: /clients/route.ts
+ * File path: /api/v1/clients/route.ts
  * Author: Denise Alexander
  * Date Created: 22/09/2025
+ *
+ * Purpose: Handles client lists belonging to the logged-in user.
  */
 
 import { NextRequest, NextResponse } from 'next/server';

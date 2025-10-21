@@ -1,7 +1,9 @@
 /**
- * File path: /request_reset/route.ts
+ * File path: /api/v1/request_reset/route.ts
  * Author: Denise Alexander
  * Date Created: 17/09/2025
+ *
+ * Purpose: Handle requets to reset user passwords.
  */
 
 import { NextResponse } from 'next/server';

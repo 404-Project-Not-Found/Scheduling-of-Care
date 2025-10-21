@@ -1,7 +1,13 @@
 /**
  * File path: /icon_dashboard/page.tsx
- * Authors: Denise Alexander & Devni Wijesinghe
- * Function: Role-aware schedule dashboard that shows different actions per role.
+ * Front-end Authors: Denise Alexander & Devni Wijesinghe
+ * Back-end Author: Denise Alexander
+ *
+ * Purpose: Role-aware schedule dashboard that shows different client and staff schedule
+ * options.
+ *
+ * Last Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
+ * consistency and better navigation.
  */
 
 'use client';

@@ -1,7 +1,11 @@
 /**
  * File path: /app/page.tsx
- * Authors: Qingyue Zhao & Denise Alexander
+ * Front-end Author: Qingyue Zhao
+ * Back-end Author: Denise Alexander
  * Date Created: 05/09/2025
+ *
+ * Purpose: Home page - the first page the user views when they enter our web app
+ * through its URL.
  */
 
 'use client';
