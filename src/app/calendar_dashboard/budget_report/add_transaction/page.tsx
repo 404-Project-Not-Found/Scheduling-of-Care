@@ -43,9 +43,7 @@ import {
   type RefundableLine,
 } from '@/lib/transaction-helpers';
 
-import {
-  type CategoryLite,
-} from '@/lib/budget-helpers';
+import { type CategoryLite } from '@/lib/budget-helpers';
 
 const colors = {
   pageBg: '#FAEBDC',
@@ -108,7 +106,8 @@ function AddTransactionInner() {
     catalog: true,
     refundables: false,
   });
-  const loadAny = load.clients || load.carers || load.catalog || load.refundables;
+  const loadAny =
+    load.clients || load.carers || load.catalog || load.refundables;
 
   const year = useMemo(() => new Date(date).getFullYear(), [date]);
 
@@ -122,11 +121,13 @@ function AddTransactionInner() {
       setLoad((s) => ({ ...s, clients: true }));
       try {
         const list: ApiClient[] = await getClients();
-        const mapped: ClientLite[] = (list as ApiClientWithAccess[]).map((c) => ({
-          id: c._id,
-          name: c.name,
-          orgAccess: c.orgAccess,
-        }));
+        const mapped: ClientLite[] = (list as ApiClientWithAccess[]).map(
+          (c) => ({
+            id: c._id,
+            name: c.name,
+            orgAccess: c.orgAccess,
+          })
+        );
         setClients(mapped);
 
         const active = await getActiveClient();
@@ -199,18 +200,30 @@ function AddTransactionInner() {
       }
       try {
         const [cats, items] = await Promise.all([
-          fetch(`/api/v1/clients/${encodeURIComponent(activeClientId)}/category`, {
-            cache: 'no-store',
-            signal: abort.signal,
-          }).then(async (r) => {
+          fetch(
+            `/api/v1/clients/${encodeURIComponent(activeClientId)}/category`,
+            {
+              cache: 'no-store',
+              signal: abort.signal,
+            }
+          ).then(async (r) => {
             if (!r.ok) throw new Error('cat');
-            const data = (await r.json()) as Array<{ _id: string; name: string }>;
-            return data.map<CategoryLite>((c) => ({ id: String(c._id), name: String(c.name) }));
+            const data = (await r.json()) as Array<{
+              _id: string;
+              name: string;
+            }>;
+            return data.map<CategoryLite>((c) => ({
+              id: String(c._id),
+              name: String(c.name),
+            }));
           }),
-          fetch(`/api/v1/clients/${encodeURIComponent(activeClientId)}/care_item/transaction`, {
-            cache: 'no-store',
-            signal: abort.signal,
-          }).then(async (r) => {
+          fetch(
+            `/api/v1/clients/${encodeURIComponent(activeClientId)}/care_item/transaction`,
+            {
+              cache: 'no-store',
+              signal: abort.signal,
+            }
+          ).then(async (r) => {
             if (!r.ok) throw new Error('ci');
             const data = (await r.json()) as Array<{
               _id: string;
@@ -264,26 +277,58 @@ function AddTransactionInner() {
   };
 
   const [purchaseLines, setPurchaseLines] = useState<PurchaseLine[]>([
-    { id: 'p1', categoryId: '', categoryName: '', careItemSlug: '', label: '', amount: '' },
+    {
+      id: 'p1',
+      categoryId: '',
+      categoryName: '',
+      careItemSlug: '',
+      label: '',
+      amount: '',
+    },
   ]);
 
   const addPurchaseLine = () =>
     setPurchaseLines((prev) => [
       ...prev,
-      { id: `l${Date.now()}`, categoryId: '', categoryName: '', careItemSlug: '', label: '', amount: '' },
+      {
+        id: `l${Date.now()}`,
+        categoryId: '',
+        categoryName: '',
+        careItemSlug: '',
+        label: '',
+        amount: '',
+      },
     ]);
 
   const removePurchaseLine = (id: string) =>
-    setPurchaseLines((prev) => (prev.length > 1 ? prev.filter((l) => l.id !== id) : prev));
+    setPurchaseLines((prev) =>
+      prev.length > 1 ? prev.filter((l) => l.id !== id) : prev
+    );
 
   const updatePurchaseLine = (id: string, patch: Partial<PurchaseLine>) =>
-    setPurchaseLines((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l)));
+    setPurchaseLines((prev) =>
+      prev.map((l) => (l.id === id ? { ...l, ...patch } : l))
+    );
 
   /* --------------------------- Refund -------------------------------*/
   const [refundables, setRefundables] = useState<RefundableLine[]>([]);
   const [refundLines, setRefundLines] = useState<
-    { id: string; categoryId: string; careItemSlug: string; occurrenceKey: string; amount: string }[]
-  >([{ id: 'r1', categoryId: '', careItemSlug: '', occurrenceKey: '', amount: '' }]);
+    {
+      id: string;
+      categoryId: string;
+      careItemSlug: string;
+      occurrenceKey: string;
+      amount: string;
+    }[]
+  >([
+    {
+      id: 'r1',
+      categoryId: '',
+      careItemSlug: '',
+      occurrenceKey: '',
+      amount: '',
+    },
+  ]);
 
   useEffect(() => {
     const abort = new AbortController();
@@ -309,14 +354,27 @@ function AddTransactionInner() {
   const addRefundLine = () =>
     setRefundLines((prev) => [
       ...prev,
-      { id: `r${Date.now()}`, categoryId: '', careItemSlug: '', occurrenceKey: '', amount: '' },
+      {
+        id: `r${Date.now()}`,
+        categoryId: '',
+        careItemSlug: '',
+        occurrenceKey: '',
+        amount: '',
+      },
     ]);
 
   const removeRefundLine = (id: string) =>
-    setRefundLines((prev) => (prev.length > 1 ? prev.filter((l) => l.id !== id) : prev));
+    setRefundLines((prev) =>
+      prev.length > 1 ? prev.filter((l) => l.id !== id) : prev
+    );
 
-  const updateRefundLine = (id: string, patch: Partial<(typeof refundLines)[number]>) =>
-    setRefundLines((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l)));
+  const updateRefundLine = (
+    id: string,
+    patch: Partial<(typeof refundLines)[number]>
+  ) =>
+    setRefundLines((prev) =>
+      prev.map((l) => (l.id === id ? { ...l, ...patch } : l))
+    );
 
   // Lookups for refund dropdowns
   const catNameById = useMemo(() => {
@@ -370,22 +428,31 @@ function AddTransactionInner() {
 
     const receiptUrl = receiptFile ? `/uploads/${receiptFile.name}` : undefined;
 
-    const madeByIdToSend = carers.length > 0 && madeByUserId ? madeByUserId : madeByFallback.trim();
+    const madeByIdToSend =
+      carers.length > 0 && madeByUserId ? madeByUserId : madeByFallback.trim();
     if (!madeByIdToSend) {
       alert('Please select or enter the carer/user who made this transaction.');
       return;
     }
 
     if (transType === 'Purchase') {
-      if (purchaseLines.some((l) => !l.categoryId || !l.careItemSlug || !l.amount.trim())) {
+      if (
+        purchaseLines.some(
+          (l) => !l.categoryId || !l.careItemSlug || !l.amount.trim()
+        )
+      ) {
         alert('Each purchase line needs Category, Care Item and Amount.');
         return;
       }
       const lines: PurchaseLineInput[] = purchaseLines.map((l) => {
-        const normalizedSlug = (l.careItemSlug || slugify(l.label || '')).toLowerCase();
+        const normalizedSlug = (
+          l.careItemSlug || slugify(l.label || '')
+        ).toLowerCase();
         const fallbackLabel =
           l.label ||
-          careItems.find((ci) => ci.categoryId === l.categoryId && ci.slug === l.careItemSlug)?.label ||
+          careItems.find(
+            (ci) => ci.categoryId === l.categoryId && ci.slug === l.careItemSlug
+          )?.label ||
           normalizedSlug;
         return {
           categoryId: l.categoryId,
@@ -419,7 +486,10 @@ function AddTransactionInner() {
     }
 
     // Refund branch
-    const chosen = refundLines.filter((r) => r.categoryId && r.careItemSlug && r.occurrenceKey && r.amount.trim());
+    const chosen = refundLines.filter(
+      (r) =>
+        r.categoryId && r.careItemSlug && r.occurrenceKey && r.amount.trim()
+    );
     if (chosen.length === 0) {
       alert('Select at least one refund line with a valid amount.');
       return;
@@ -427,7 +497,10 @@ function AddTransactionInner() {
 
     for (const r of chosen) {
       const [refundOfTransId, refundOfLineId] = r.occurrenceKey.split(':');
-      const occ = refundables.find((o) => o.purchaseTransId === refundOfTransId && o.lineId === refundOfLineId);
+      const occ = refundables.find(
+        (o) =>
+          o.purchaseTransId === refundOfTransId && o.lineId === refundOfLineId
+      );
       const amt = Number(r.amount);
       if (!occ || !Number.isFinite(amt) || amt <= 0) {
         alert('Invalid refund amount.');
@@ -462,7 +535,8 @@ function AddTransactionInner() {
     }
   };
 
-  const inputCls = 'h-12 rounded-sm px-3 bg-white text-black outline-none border';
+  const inputCls =
+    'h-12 rounded-sm px-3 bg-white text-black outline-none border';
   const inputStyle = { borderColor: colors.inputBorder };
 
   return (
@@ -473,13 +547,18 @@ function AddTransactionInner() {
       colors={{ header: colors.header, banner: colors.banner, text: '#000' }}
     >
       {/* Main scroll area */}
-      <div className="flex-1 min-h-screen bg-[#FFF5EC] overflow-auto" aria-busy={loadAny}>
+      <div
+        className="flex-1 min-h-screen bg-[#FFF5EC] overflow-auto"
+        aria-busy={loadAny}
+      >
         {/* Section header */}
         <div className="w-full px-6 py-3">
           <div className="flex items-center justify-between text-[#3A0000] px-6 py-5 mb-3">
             <h2 className="text-3xl font-semibold">Add Transaction</h2>
             <button
-              onClick={() => router.push('/calendar_dashboard/transaction_history')}
+              onClick={() =>
+                router.push('/calendar_dashboard/transaction_history')
+              }
               className="flex items-center gap-2 text-lg font-semibold text-[#3A0000] bg-[#EAD8C8] hover:bg-[#DFC8B4] border border-[#D4B8A0] rounded-md px-4 py-2 transition"
             >
               <ArrowLeft size={22} strokeWidth={2.5} />
@@ -494,14 +573,20 @@ function AddTransactionInner() {
         {/* Form area */}
         <div className="w-full max-w-[900px] mx-auto px-6 py-8">
           {loadAny ? (
-            <div className="text-center py-24 text-gray-600 text-xl font-medium" aria-busy="true">
+            <div
+              className="text-center py-24 text-gray-600 text-xl font-medium"
+              aria-busy="true"
+            >
               Loading transaction form…
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-6">
               {/* Type */}
               <div className="flex flex-col gap-2">
-                <label className="text-2xl font-extrabold" style={{ color: colors.label }}>
+                <label
+                  className="text-2xl font-extrabold"
+                  style={{ color: colors.label }}
+                >
                   Transaction Type
                 </label>
                 <select
@@ -517,7 +602,10 @@ function AddTransactionInner() {
 
               {/* Date */}
               <div className="flex flex-col gap-2">
-                <label className="text-2xl font-extrabold" style={{ color: colors.label }}>
+                <label
+                  className="text-2xl font-extrabold"
+                  style={{ color: colors.label }}
+                >
                   Date
                 </label>
                 <input
@@ -531,7 +619,10 @@ function AddTransactionInner() {
 
               {/* Carer/User */}
               <div className="flex flex-col gap-2">
-                <label className="text-2xl font-extrabold" style={{ color: colors.label }}>
+                <label
+                  className="text-2xl font-extrabold"
+                  style={{ color: colors.label }}
+                >
                   Made By (Carer / User)
                 </label>
                 {carers.length > 0 ? (
@@ -561,7 +652,10 @@ function AddTransactionInner() {
 
               {/* Note */}
               <div className="flex flex-col gap-2">
-                <label className="text-2xl font-extrabold" style={{ color: colors.label }}>
+                <label
+                  className="text-2xl font-extrabold"
+                  style={{ color: colors.label }}
+                >
                   Note (optional)
                 </label>
                 <input
@@ -576,7 +670,10 @@ function AddTransactionInner() {
 
               {/* Receipt */}
               <div className="flex flex-col gap-2">
-                <label className="text-2xl font-extrabold" style={{ color: colors.label }}>
+                <label
+                  className="text-2xl font-extrabold"
+                  style={{ color: colors.label }}
+                >
                   Upload Receipt
                 </label>
                 <div className="flex items-center gap-4">
@@ -586,7 +683,8 @@ function AddTransactionInner() {
                     accept="image/*,.pdf"
                     className="hidden"
                     onChange={(e) => {
-                      if (e.target.files?.length) setReceiptFile(e.target.files[0]);
+                      if (e.target.files?.length)
+                        setReceiptFile(e.target.files[0]);
                     }}
                   />
                   <button
@@ -601,7 +699,9 @@ function AddTransactionInner() {
                   >
                     Choose file
                   </button>
-                  <span className="text-black">{receiptFile ? receiptFile.name : 'No file chosen'}</span>
+                  <span className="text-black">
+                    {receiptFile ? receiptFile.name : 'No file chosen'}
+                  </span>
                 </div>
               </div>
 
@@ -609,13 +709,21 @@ function AddTransactionInner() {
               <div className="flex flex-col gap-6">
                 {transType === 'Purchase' ? (
                   <>
-                    <div className="text-xl font-bold" style={{ color: colors.label }}>
+                    <div
+                      className="text-xl font-bold"
+                      style={{ color: colors.label }}
+                    >
                       Purchase Lines
                     </div>
                     {purchaseLines.map((l) => {
-                      const itemsForCat = l.categoryId ? careItemsByCategoryId.get(l.categoryId) ?? [] : [];
+                      const itemsForCat = l.categoryId
+                        ? (careItemsByCategoryId.get(l.categoryId) ?? [])
+                        : [];
                       return (
-                        <div key={l.id} className="rounded-xl border p-4 bg-white flex flex-col gap-4">
+                        <div
+                          key={l.id}
+                          className="rounded-xl border p-4 bg-white flex flex-col gap-4"
+                        >
                           {/* Category */}
                           <div className="flex flex-col gap-2">
                             <label className="font-semibold">Category</label>
@@ -647,8 +755,13 @@ function AddTransactionInner() {
                               value={l.careItemSlug}
                               onChange={(e) => {
                                 const slug = e.target.value;
-                                const found = itemsForCat.find((ci) => ci.slug === slug);
-                                updatePurchaseLine(l.id, { careItemSlug: slug, label: found?.label ?? '' });
+                                const found = itemsForCat.find(
+                                  (ci) => ci.slug === slug
+                                );
+                                updatePurchaseLine(l.id, {
+                                  careItemSlug: slug,
+                                  label: found?.label ?? '',
+                                });
                               }}
                               disabled={!l.categoryId}
                               className={`${inputCls} w-[360px]`}
@@ -671,7 +784,11 @@ function AddTransactionInner() {
                               min={0}
                               step="0.01"
                               value={l.amount}
-                              onChange={(e) => updatePurchaseLine(l.id, { amount: e.target.value })}
+                              onChange={(e) =>
+                                updatePurchaseLine(l.id, {
+                                  amount: e.target.value,
+                                })
+                              }
                               placeholder="0.00"
                               className={`${inputCls} w-[200px] text-right`}
                               style={inputStyle}
@@ -702,25 +819,38 @@ function AddTransactionInner() {
                   </>
                 ) : (
                   <>
-                    <div className="text-xl font-bold" style={{ color: colors.label }}>
+                    <div
+                      className="text-xl font-bold"
+                      style={{ color: colors.label }}
+                    >
                       Refund Lines
                     </div>
 
                     {refundLines.map((l) => {
-                      const itemOptions = l.categoryId ? purchasedItemSlugsByCategory.get(l.categoryId) ?? [] : [];
+                      const itemOptions = l.categoryId
+                        ? (purchasedItemSlugsByCategory.get(l.categoryId) ?? [])
+                        : [];
                       const occurrences =
                         l.categoryId && l.careItemSlug
-                          ? occurrencesByCatAndItem.get(`${l.categoryId}:${l.careItemSlug}`) ?? []
+                          ? (occurrencesByCatAndItem.get(
+                              `${l.categoryId}:${l.careItemSlug}`
+                            ) ?? [])
                           : [];
                       const selectedOcc = occurrences.find(
-                        (o) => `${o.purchaseTransId}:${o.lineId}` === l.occurrenceKey
+                        (o) =>
+                          `${o.purchaseTransId}:${o.lineId}` === l.occurrenceKey
                       );
 
                       return (
-                        <div key={l.id} className="rounded-xl border p-4 bg-white flex flex-col gap-4">
+                        <div
+                          key={l.id}
+                          className="rounded-xl border p-4 bg-white flex flex-col gap-4"
+                        >
                           {/* Category (only those with refundable lines) */}
                           <div className="flex flex-col gap-2">
-                            <label className="font-semibold">Category (refundable)</label>
+                            <label className="font-semibold">
+                              Category (refundable)
+                            </label>
                             <select
                               value={l.categoryId}
                               onChange={(e) =>
@@ -747,7 +877,12 @@ function AddTransactionInner() {
                             <label className="font-semibold">Care Item</label>
                             <select
                               value={l.careItemSlug}
-                              onChange={(e) => updateRefundLine(l.id, { careItemSlug: e.target.value, occurrenceKey: '' })}
+                              onChange={(e) =>
+                                updateRefundLine(l.id, {
+                                  careItemSlug: e.target.value,
+                                  occurrenceKey: '',
+                                })
+                              }
                               disabled={!l.categoryId}
                               className={`${inputCls} w-[360px]`}
                               style={inputStyle}
@@ -763,26 +898,42 @@ function AddTransactionInner() {
 
                           {/* Purchase occurrence */}
                           <div className="flex flex-col gap-2">
-                            <label className="font-semibold">Purchase occurrence</label>
+                            <label className="font-semibold">
+                              Purchase occurrence
+                            </label>
                             <select
                               value={l.occurrenceKey}
-                              onChange={(e) => updateRefundLine(l.id, { occurrenceKey: e.target.value })}
+                              onChange={(e) =>
+                                updateRefundLine(l.id, {
+                                  occurrenceKey: e.target.value,
+                                })
+                              }
                               disabled={!l.categoryId || !l.careItemSlug}
                               className={`${inputCls} w-[480px]`}
                               style={inputStyle}
                             >
-                              <option value="">Select purchase occurrence</option>
+                              <option value="">
+                                Select purchase occurrence
+                              </option>
                               {occurrences.map((o) => (
-                                <option key={`${o.purchaseTransId}:${o.lineId}`} value={`${o.purchaseTransId}:${o.lineId}`}>
-                                  {o.purchaseDate} • orig ${o.originalAmount.toFixed(2)} • rem ${o.remainingRefundable.toFixed(2)}
+                                <option
+                                  key={`${o.purchaseTransId}:${o.lineId}`}
+                                  value={`${o.purchaseTransId}:${o.lineId}`}
+                                >
+                                  {o.purchaseDate} • orig $
+                                  {o.originalAmount.toFixed(2)} • rem $
+                                  {o.remainingRefundable.toFixed(2)}
                                 </option>
                               ))}
                             </select>
-                            {selectedOcc && l.amount && Number(l.amount) > 0 && (
-                              <div className="text-sm text-gray-700">
-                                Remaining available: ${selectedOcc.remainingRefundable.toFixed(2)}
-                              </div>
-                            )}
+                            {selectedOcc &&
+                              l.amount &&
+                              Number(l.amount) > 0 && (
+                                <div className="text-sm text-gray-700">
+                                  Remaining available: $
+                                  {selectedOcc.remainingRefundable.toFixed(2)}
+                                </div>
+                              )}
                           </div>
 
                           {/* Amount */}
@@ -793,7 +944,11 @@ function AddTransactionInner() {
                               min={0}
                               step="0.01"
                               value={l.amount}
-                              onChange={(e) => updateRefundLine(l.id, { amount: e.target.value })}
+                              onChange={(e) =>
+                                updateRefundLine(l.id, {
+                                  amount: e.target.value,
+                                })
+                              }
                               placeholder="0.00"
                               className={`${inputCls} w-[200px] text-right`}
                               style={inputStyle}
@@ -830,7 +985,9 @@ function AddTransactionInner() {
                 <button
                   className="px-8 py-3 rounded-2xl text-2xl font-extrabold"
                   style={{ backgroundColor: colors.btnPill, color: '#1a1a1a' }}
-                  onClick={() => router.push('/calendar_dashboard/transaction_history')}
+                  onClick={() =>
+                    router.push('/calendar_dashboard/transaction_history')
+                  }
                 >
                   Cancel
                 </button>

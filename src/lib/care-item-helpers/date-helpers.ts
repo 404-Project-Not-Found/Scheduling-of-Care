@@ -164,17 +164,20 @@ export function futureOccurencesAfterLastDone(
   dateTo: string | null
 ) {
   if (!count || !unit) return [];
-  const hasValid = (d?: string) => !!d && /^\d{4}-\d{2}-\d{2}$/.test(d) && isISODateOnly(d); 
-  const startISO = hasValid(dateFrom) ? (dateFrom as string) : undefined; 
-  const lastISO  = hasValid(lastDone) ? (lastDone as string) : undefined; 
-  const limitISO = hasValid(dateTo || undefined) ? (dateTo as string) : undefined;
+  const hasValid = (d?: string) =>
+    !!d && /^\d{4}-\d{2}-\d{2}$/.test(d) && isISODateOnly(d);
+  const startISO = hasValid(dateFrom) ? (dateFrom as string) : undefined;
+  const lastISO = hasValid(lastDone) ? (lastDone as string) : undefined;
+  const limitISO = hasValid(dateTo || undefined)
+    ? (dateTo as string)
+    : undefined;
 
   if (!startISO && !lastISO) return [];
 
   let firstOccur =
     lastISO && (!startISO || lastISO >= startISO)
       ? formatISODateOnly(addCount(lastISO, count, unit))
-      : (startISO as string); 
+      : (startISO as string);
 
   if (!firstOccur || !isISODateOnly(firstOccur)) return [];
 
@@ -190,7 +193,11 @@ export function futureOccurencesAfterLastDone(
   let occur = firstOccur;
   let guard = 0;
 
-  while (occur <= winEndISO && (!limitISO || occur <= limitISO) && guard < 2048) {
+  while (
+    occur <= winEndISO &&
+    (!limitISO || occur <= limitISO) &&
+    guard < 2048
+  ) {
     out.push(occur);
     const next = step(occur);
     if (!next || next === occur) break;

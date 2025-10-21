@@ -22,26 +22,28 @@ export async function GET(
   if (!id || !Types.ObjectId.isValid(id)) {
     return NextResponse.json({ error: 'Invalid client id' }, { status: 400 });
   }
-  const clientId = new Types.ObjectId(id); 
+  const clientId = new Types.ObjectId(id);
 
   const { searchParams } = new URL(req.url);
   const startStr = searchParams.get('start')?.slice(0, 10);
   const endStr = searchParams.get('end')?.slice(0, 10);
   const slugsCSV = searchParams.get('slugs');
 
-  if (!startStr) return NextResponse.json({ error: 'Missing start' }, { status: 400 });
-  if (!endStr)   return NextResponse.json({ error: 'Missing end' }, { status: 400 });
-  if (!slugsCSV) return NextResponse.json({ error: 'Missing slugs' }, { status: 400 });
+  if (!startStr)
+    return NextResponse.json({ error: 'Missing start' }, { status: 400 });
+  if (!endStr)
+    return NextResponse.json({ error: 'Missing end' }, { status: 400 });
+  if (!slugsCSV)
+    return NextResponse.json({ error: 'Missing slugs' }, { status: 400 });
 
   const start = new Date(`${startStr}T00:00:00.000Z`);
-  const end   = new Date(`${endStr}T23:59:59.999Z`);
+  const end = new Date(`${endStr}T23:59:59.999Z`);
 
   const slugs = slugsCSV
     .split(',')
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean);
 
-  
   const rows = await Occurrence.find(
     {
       clientId,
@@ -61,11 +63,10 @@ export async function GET(
 
   const payload: Row[] = rows.map((r) => ({
     careItemSlug: String(r.careItemSlug).toLowerCase(),
-    date: typeof r.date === 'string' ? r.date.slice(0, 10) : ymd(r.date as Date),
+    date:
+      typeof r.date === 'string' ? r.date.slice(0, 10) : ymd(r.date as Date),
     status: normalize(r.status as string | undefined),
   }));
 
   return NextResponse.json(payload);
 }
-
-
