@@ -458,8 +458,8 @@ function BudgetReportInner() {
   const handleRollover = async (
     activeClientId: string,
     year: number,
-    setRows: (r: unknown) => void,
-    setSummary: (s: unknown) => void
+    setRows: (r: BudgetRow[]) => void,
+    setSummary: (s: BudgetSummary) => void
   ) => {
     if (!activeClientId) return;
 
