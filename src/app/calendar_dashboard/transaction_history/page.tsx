@@ -69,9 +69,10 @@ function TransactionHistoryInner() {
 
   // Transactions
   const [rows, setRows] = useState<ApiTransaction[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState({clients: true, years: true, rows: true});
   const [errorText, setErrorText] = useState('');
-
+  
+  const loadingAny = loading.clients || loading.years || loading.rows;
   // Filters
   const [search, setSearch] = useState<string>('');
 
@@ -98,6 +99,7 @@ function TransactionHistoryInner() {
   // Load clients + active client on mount
   useEffect(() => {
     (async () => {
+      setLoading(s => ({...s, clients: true}));
       try {
         const list: ApiClient[] = await getClients();
         const mapped: ClientLite[] = (list as ApiClientWithAccess[]).map(
@@ -117,6 +119,8 @@ function TransactionHistoryInner() {
         setClients([]);
         setActiveClientId(null);
         setDisplayName('');
+      } finally {
+        setLoading(s => ({...s, clients: false}));
       }
     })();
   }, []);
@@ -152,8 +156,10 @@ function TransactionHistoryInner() {
     const load = async () => {
       if(!activeClientId) {
         setYears([]);
+        setLoading(s => ({...s, years: false}));
         return;
       }
+      setLoading(s => ({...s, years: true}));
       try {
         const list = await getAvailableYears(activeClientId, abort.signal);
         if(list.length > 0) {
@@ -170,6 +176,8 @@ function TransactionHistoryInner() {
         const curr = new Date().getFullYear();
         setYears([curr]);
         setYear(curr);
+      } finally {
+        setLoading(s => ({...s, years: false}));
       }
     };
     load();
@@ -179,7 +187,8 @@ function TransactionHistoryInner() {
   useEffect(() => {
   if (!activeClientId) { setRows([]); return; }
   (async () => {
-    setLoading(true); setErrorText('');
+    setLoading(s => ({...s, rows: true}));
+    setErrorText('');
     try {
       const data = await getTransactionsFE(activeClientId, year);
       setRows(Array.isArray(data) ? data : []);
@@ -187,7 +196,7 @@ function TransactionHistoryInner() {
       setErrorText('Failed to load transactions for this client.');
       setRows([]);
     } finally {
-      setLoading(false);
+      setLoading(s => ({...s, rows: false}));
     }
   })();
 }, [activeClientId, year])
@@ -212,7 +221,7 @@ function TransactionHistoryInner() {
       colors={colors}
     >
       {/* Main content */}
-      <div className="flex-1 h-[680px] bg-white/80 overflow-auto">
+      <div className="flex-1 h-[680px] bg-white/80 overflow-auto" aria-busy>
         {/* Header bar */}
         <div
           className="w-full flex items-center justify-between px-6 py-5"
@@ -228,6 +237,7 @@ function TransactionHistoryInner() {
               className="rounded bg-white text-black px-2 py-1 text-sm"
               aria-label="Select year to view transactions"
               title="View transaction history of year"
+              disabled={loadingAny}
             >
               {years.map((y) => (
                 <option key={y} value={y}>
@@ -260,6 +270,7 @@ function TransactionHistoryInner() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="border-none focus:outline-none w-56 text-black text-sm"
+                disabled={loadingAny}
               />
             </div>
           </div>
@@ -267,7 +278,7 @@ function TransactionHistoryInner() {
 
         {/* Table full width */}
         <div className="w-full overflow-auto">
-          {loading ? (
+          {loadingAny ? (
             <div className="p-6 text-gray-600">Loading transactions…</div>
           ) : errorText ? (
             <div className="p-6 text-red-600">{errorText}</div>
