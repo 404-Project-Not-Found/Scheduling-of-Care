@@ -164,36 +164,47 @@ export function futureOccurencesAfterLastDone(
   dateTo: string | null
 ) {
   if (!count || !unit) return [];
-  const base =
-    lastDone && /^\d{4}-\d{2}-\d{2}$/.test(lastDone)
-      ? lastDone
-      : dateFrom && /^\d{4}-\d{2}-\d{2}$/.test(dateFrom)
-        ? dateFrom
-        : undefined;
-  if (!base) return [];
-  if (!isISODateOnly(base)) return [];
+  const hasValid = (d?: string) =>
+    !!d && /^\d{4}-\d{2}-\d{2}$/.test(d) && isISODateOnly(d);
+  const startISO = hasValid(dateFrom) ? (dateFrom as string) : undefined;
+  const lastISO = hasValid(lastDone) ? (lastDone as string) : undefined;
+  const limitISO = hasValid(dateTo || undefined)
+    ? (dateTo as string)
+    : undefined;
 
-  let occur = formatISODateOnly(addCount(base, count, unit));
+  if (!startISO && !lastISO) return [];
 
-  const limit = dateTo && isISODateOnly(dateTo) ? dateTo : undefined;
+  let firstOccur =
+    lastISO && (!startISO || lastISO >= startISO)
+      ? formatISODateOnly(addCount(lastISO, count, unit))
+      : (startISO as string);
+
+  if (!firstOccur || !isISODateOnly(firstOccur)) return [];
+
   const step = (iso: string) => formatISODateOnly(addCount(iso, count, unit));
 
-  while (occur < winStartISO) {
-    const next = step(occur);
-    if (!next || next == occur) return [];
-    occur = next;
-    if (limit && occur > limit) return [];
+  while (firstOccur < winStartISO) {
+    const next = step(firstOccur);
+    if (!next || next === firstOccur) return [];
+    firstOccur = next;
+    if (limitISO && firstOccur > limitISO) return [];
   }
-
   const out: string[] = [];
+  let occur = firstOccur;
   let guard = 0;
-  while (occur <= winEndISO && (!limit || occur <= limit) && guard < 2048) {
+
+  while (
+    occur <= winEndISO &&
+    (!limitISO || occur <= limitISO) &&
+    guard < 2048
+  ) {
     out.push(occur);
     const next = step(occur);
-    if (!next || next == occur) break;
+    if (!next || next === occur) break;
     occur = next;
     guard++;
   }
+
   return out;
 }
 

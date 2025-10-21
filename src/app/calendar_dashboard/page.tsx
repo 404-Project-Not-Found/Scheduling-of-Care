@@ -38,10 +38,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import DashboardChrome from '@/components/top_menu/client_schedule';
 import CalendarPanel from '@/components/dashboard/CalendarPanel';
 import TasksPanel from '@/components/tasks/TasksPanel';
-import {
-  futureOccurencesAfterLastDone,
-  getNextDue,
-} from '@/lib/care-item-helpers/date-helpers';
+import { futureOccurencesAfterLastDone } from '@/lib/care-item-helpers/date-helpers';
 
 import type { Task } from '@/lib/mock/mockApi';
 
@@ -342,6 +339,10 @@ function ClientSchedule() {
     });
   }
 
+  const ymd = (s?: string) => (s ? s.slice(0, 10) : '');
+  const onOrAfter = (d: string, start: string) => d >= start;
+  const onOrBefore = (d: string, end: string) => d <= end;
+
   // Completion-driven using lastDone
   const tasksForCalendar: ClientTask[] = tasksByClient.flatMap((t) => {
     const count = t.frequencyCount ?? 0;
@@ -353,21 +354,46 @@ function ClientSchedule() {
       | undefined;
     if (!count || !unit) return [];
 
+    const start0 = ymd(t.dateFrom);
+    const end0 = ymd(t.dateTo) || null;
+    const last0 = ymd(t.lastDone);
+
     const occs = futureOccurencesAfterLastDone(
-      t.dateFrom,
-      t.lastDone,
+      start0,
+      last0,
       count,
       unit,
       windowStart,
       windowEnd,
-      t.dateTo ?? null
+      end0
     );
+
+    if (
+      start0 &&
+      (!last0 || last0 < start0) &&
+      onOrAfter(start0, ymd(windowStart)) &&
+      onOrBefore(start0, ymd(windowEnd))
+    ) {
+      if (!occs.includes(start0)) occs.unshift(start0);
+    }
 
     const dbOccs = Object.entries(occurStatus)
       .filter(([key]) => key.startsWith(`${t.slug}__`))
-      .map(([key, status]) => key.split('__')[1]);
+      .map(([key]) => key.split('__')[1]);
 
-    const allOccDates = Array.from(new Set([...occs, ...dbOccs]));
+    const dbOccSet = new Set(dbOccs);
+    if (
+      start0 &&
+      onOrAfter(start0, ymd(windowStart)) &&
+      onOrBefore(start0, ymd(windowEnd)) &&
+      !dbOccSet.has(start0) &&
+      !occs.includes(start0) &&
+      (!last0 || last0 <= start0)
+    ) {
+      occs.unshift(start0);
+    }
+
+    const allOccDates = Array.from(new Set([...occs, ...dbOccs])).sort();
 
     return allOccDates.map((d) => {
       const key = occKey(t.slug, d);
