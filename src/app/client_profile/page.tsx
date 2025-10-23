@@ -5,10 +5,11 @@
  * - Backend Logic: Denise Alexander
  *
  * Updated by Qingyue Zhao: 03-10-2025
- * Updated by Denise Alexander (07-10-2025): back-end integration
- *
- * Last Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
+ * Updated by Denise Alexander (07-10-2025): back-end integration.
+ * Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
  * consistency and better navigation.
+ *
+ * Last Updated by Denise Alexander (23/10/2025): wording change Client -> PWSN.
  *
  * Notes:
  * - Fixed-height viewport section (h-[680px]) to avoid bottom gutters.
@@ -330,8 +331,8 @@ function ClientProfilePageInner() {
   }
 
   const pageTitle = isNew
-    ? 'Add New Client'
-    : `${activeClient?.name || 'Client'}’s Profile`;
+    ? 'Add New PWSN'
+    : `${activeClient?.name || 'PWSN'}’s Profile`;
 
   return (
     <DashboardChrome

@@ -3,8 +3,11 @@
  * Frontend Author: Devni Wijesinghe (refactor to use DashboardChrome by QY)
  * Backend Author: Zahra Rizqita
  *
- * Last Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
+ * Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
  * consistency and better navigation.
+ *
+ * Last Updated by Denise Alexander (23/10/2025): Changed design of cancel and save buttons for
+ * consistent UI.
  */
 
 'use client';
@@ -983,8 +986,7 @@ function AddTransactionInner() {
               {/* Footer buttons */}
               <div className="mt-6 flex items-center justify-center gap-10">
                 <button
-                  className="px-8 py-3 rounded-2xl text-2xl font-extrabold"
-                  style={{ backgroundColor: colors.btnPill, color: '#1a1a1a' }}
+                  className="px-5 py-2.5 rounded-md text-lg font-medium text-[#3A0000] bg-[#F3E9DF] border border-[#D8C6B9] hover:bg-[#E9DED2] transition"
                   onClick={() =>
                     router.push('/calendar_dashboard/transaction_history')
                   }
@@ -992,8 +994,7 @@ function AddTransactionInner() {
                   Cancel
                 </button>
                 <button
-                  className="px-10 py-3 rounded-2xl text-2xl font-extrabold hover:opacity-95"
-                  style={{ backgroundColor: colors.btnPill, color: '#1a1a1a' }}
+                  className="px-5 py-2.5 rounded-md text-lg font-medium text-white bg-[#3A0000] hover:bg-[#502121] transition"
                   onClick={handleSubmit}
                 >
                   Add

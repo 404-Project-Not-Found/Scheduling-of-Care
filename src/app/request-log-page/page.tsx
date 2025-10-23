@@ -299,7 +299,9 @@ function RequestLogInner() {
       <div className="flex-1 h-[680px] bg-white/80 overflow-auto">
         {/* Header bar */}
         <div className="w-full px-6 py-5">
-          <h1 className="text-[#3A0000] text-3xl font-semibold">Request Log</h1>
+          <h1 className="text-[#3A0000] text-3xl font-semibold">
+            Family Request Log
+          </h1>
 
           {/* Divider */}
           <hr className="mt-4 mb-6 w-340 mx-auto border-t border-[#3A0000]/25 rounded-full" />

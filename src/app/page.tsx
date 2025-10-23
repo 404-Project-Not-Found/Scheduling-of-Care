@@ -123,7 +123,7 @@ export default function Home() {
   }
 
   return (
-    <div className="h-screen w-full bg-[#F3E9D9] text-zinc-900">
+    <div className="h-screen w-full bg-[#FAEBDC] text-zinc-900">
       {/* Prefill email and password */}
       <Suspense fallback={null}>
         <PrefillFromSearchParams
@@ -134,16 +134,16 @@ export default function Home() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 h-full w-full">
         {/* Left section */}
-        <section className="relative flex flex-col justify-center h-full bg-gradient-to-br from-[#F3C8A5] to-[#F9D2B1] px-10 lg:px-20 py-16 overflow-hidden">
+        <section className="relative flex flex-col justify-center h-full bg-[#F3C8A5] px-10 lg:px-20 py-16 overflow-hidden">
           {/* Content */}
-          <div className="relative z-10 flex flex-col justify-center h-full max-w-2xl mx-auto text-center lg:text-left">
+          <div className="relative z-10 flex flex-col justify-center items-start h-full max-w-2xl mx-auto text-left">
             <Image
               src="/logo-name.png"
               alt="App Logo"
               width={380}
-              height={90}
+              height={380}
               priority
-              className="mb-8 mx-auto lg:mx-0 drop-shadow-lg"
+              className="mb-8"
             />
             <h1 className="text-5xl lg:text-6xl font-extrabold tracking-tight mb-6 text-[#3A0000] drop-shadow-md">
               Welcome!
@@ -151,7 +151,7 @@ export default function Home() {
             <p className="text-lg lg:text-xl text-[#3A0000]/90 leading-relaxed mb-8">
               Connect families, management, and carers seamlessly and manage
               care schedules, budgets, and daily activities — all in one place
-              with clarity and compassion.
+              with clarity and confidence.
             </p>
           </div>
         </section>

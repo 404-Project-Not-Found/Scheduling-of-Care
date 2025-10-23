@@ -9,10 +9,14 @@
  * - Provides a Copy button to copy code to clipboard with success/failure feedback.
  * - Blocks background scrolling when open, closes on ESC key or overlay click.
  * - Designed to be embedded in Client Profile and other related pages.
+ *
+ * Last Updated by Denise Alexander (23/10/2025): Updated info bar with new design and wording change
+ * organisation -> service provider.
  */
 
 'use client';
 
+import { Info } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
 const palette = {
@@ -113,20 +117,18 @@ export default function AddAccessCodePanel({
           </button>
         </div>
 
-        <div
-          className="w-full px-6 md:px-8 py-5 md:py-6"
-          style={{ backgroundColor: palette.notice }}
-        >
-          <p
-            className="text-sm sm:text-base md:text-lg leading-relaxed"
-            style={{ color: '#000' }}
-          >
+        <div className="flex items-start gap-4 bg-[#F9C9B1]/60 border-y border-[#3A0000]/30 shadow-sm py-4 px-6 mb-10">
+          <Info
+            size={28}
+            strokeWidth={2.5}
+            className="text-[#3A0000] flex-shrink-0 mt-1"
+          />
+          <h3 className="text-lg mb-0.5">
             <span className="font-bold">IMPORTANT:</span> Generate an access
             code, copy it and use it when you fill out{' '}
-            <span className="font-bold underline">Add New Client</span>. Then,
-            email the access code to the care organisation management team to
-            register the client.
-          </p>
+            <span className="font-bold">Add New PWSN</span>. Then, email the
+            access code to your PWSN service provider to provide client access.
+          </h3>
         </div>
 
         <section className="flex-1 flex flex-col items-center justify-start">
