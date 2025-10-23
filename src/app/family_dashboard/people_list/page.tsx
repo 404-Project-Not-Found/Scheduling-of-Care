@@ -12,16 +12,18 @@
  *         - Manage organisation access
  * - No organisation access status shown (unlike management view).
  *
- * Updated by Denise Alexander - 7/10/2025: back-end integrated to fetch family
+ * Updated by Denise Alexander (7/10/2025): back-end integrated to fetch family
  * client lists from DB.
- *
- * Last Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
+ * Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
  * consistency and better navigation.
+ *
+ * Last Updated by Denise Alexander (23/10/2025): Wording change - organisation -> service provider
+ * and added information bar.
  */
 
 'use client';
 
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Info } from 'lucide-react';
 
 import React, { Suspense, useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
@@ -108,13 +110,13 @@ function FamilyClientListInner() {
       }}
     >
       <div className="w-full h-full" style={{ backgroundColor: colors.pageBg }}>
-        <div className="max-w-[1380px] h-[680px] mx-auto px-6">
+        <div className="max-w-[1380px] mx-auto px-6">
           {/* Section header */}
           <div
             className="w-full mt-6 rounded-t-xl px-6 py-4 text-white text-2xl md:text-3xl font-extrabold"
             style={{ backgroundColor: colors.header }}
           >
-            My Client List
+            My PWSN List
           </div>
 
           {/* Content */}
@@ -143,8 +145,25 @@ function FamilyClientListInner() {
                 style={{ backgroundColor: colors.header }}
               >
                 <Plus size={20} strokeWidth={2.5} />
-                Add new Client
+                Add new PWSN
               </button>
+            </div>
+
+            {/* Info section */}
+            <div className="flex items-start gap-4 bg-[#F9C9B1]/60 border-y border-[#3A0000]/30 shadow-sm py-4 px-6 mb-10">
+              <Info
+                size={28}
+                strokeWidth={2.5}
+                className="text-[#3A0000] flex-shrink-0 mt-1"
+              />
+              <div className="text-[#3A0000] leading-relaxed">
+                <h3 className="text-lg mb-0.5">
+                  As a <span className="font-extrabold">Family/POA</span>, you
+                  can add new PWSN into your list, update their profile details
+                  and manage which service providers receive access to your PWSN
+                  profile and care schedule.
+                </h3>
+              </div>
             </div>
 
             {/* List */}
@@ -222,7 +241,7 @@ function FamilyClientListInner() {
                           >
                             {loadingClientId === c.id
                               ? `Loading ${c.name}'s profile...`
-                              : 'Edit profile'}
+                              : 'Update PWSN profile'}
                           </button>
 
                           {/* Manage org access */}
@@ -236,7 +255,7 @@ function FamilyClientListInner() {
                               boxShadow: '0 2px 6px rgba(58, 0, 0, 0.25)',
                             }}
                           >
-                            Manage organisation access
+                            Manage service provider access
                           </button>
                         </div>
                       </li>

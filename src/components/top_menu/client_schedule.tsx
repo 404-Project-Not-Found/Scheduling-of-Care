@@ -8,8 +8,16 @@
  * - Pink banner with the centered title changes depending on the page and selected client.
  * - Client select dropdown is shown for ALL roles (family / carer / management).
  *
- * Last Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
+ * Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
  * consistency and better navigation.
+ *
+ * Last Updated by Denise Alexander (23/10/2025):
+ * - Reordered heading + sub headings based on role:
+ *    - family/POA: switched care schedule and My PWSN
+ *    - management: switched care schedule and Client List
+ * - Wording changes:
+ *    - Client -> PWSN (for family/POA users)
+ *    - Oragnisation -> Service Provider
  */
 
 'use client';
@@ -25,7 +33,6 @@ import {
   ChevronDown,
   User,
   ArrowLeft,
-  Users,
   FileText,
   Receipt,
   ClipboardList,
@@ -126,9 +133,9 @@ function nounForPage(page: PageKey): string {
     case 'transactions':
       return 'Transactions';
     case 'request-form':
-      return 'Request Form';
+      return 'Family Request Form';
     case 'request-log':
-      return 'Requests';
+      return 'Family Requests';
     case 'care-edit':
     case 'care-add':
       return 'Care Items';
@@ -141,17 +148,17 @@ function nounForPage(page: PageKey): string {
     case 'profile':
       return 'Profile';
     case 'client-schedule':
-      return 'Schedule';
+      return 'Care Schedule';
     case 'staff-schedule':
       return 'Staff Schedule';
     case 'staff-list':
       return 'Staff List';
     case 'organisation-access':
-      return 'Organisation';
+      return 'Service Provider';
     case 'new-transaction':
       return 'New Transaction';
     default:
-      return 'Schedule';
+      return 'Care Schedule';
   }
 }
 
@@ -164,12 +171,7 @@ function activeUnderline(
   const isActiveCare =
     (page === 'care-edit' || page === 'care-add') && key === 'care';
 
-  const profileMappedTarget =
-    role === 'family'
-      ? 'people-list'
-      : role === 'management'
-        ? 'client-list'
-        : null;
+  const profileMappedTarget = role === 'family' ? 'people-list' : null;
 
   const isProfileMapped =
     page === 'profile' && key === (profileMappedTarget as PageKey);
@@ -250,15 +252,20 @@ export default function DashboardChrome({
   const isFamily = role === 'family';
   const isManagement = role === 'management';
 
-  // Header title click → schedule home
+  // Header title click → client/PWSN list
   const goScheduleHome = () => {
-    // If currently on staff-schedule OR staff-list, clicking the title returns to Staff Schedule.
     if (page === 'staff-schedule' || page === 'staff-list') {
       router.push(ROUTES.staffSchedule);
       return;
     }
-    // Default: go to Client Schedule
-    router.push(ROUTES.schedule);
+
+    if (isManagement) {
+      router.push(ROUTES.clientList);
+    } else if (isFamily) {
+      router.push(ROUTES.peopleList);
+    } else {
+      router.push(ROUTES.schedule);
+    }
   };
 
   // -------- Derived UI text --------
@@ -272,13 +279,7 @@ export default function DashboardChrome({
 
   const computedHeaderTitle =
     headerTitle ??
-    (page === 'staff-list'
-      ? 'Staff List'
-      : isFamily || isCarer
-        ? 'Client Schedule'
-        : isCarer
-          ? 'Client Dashboard'
-          : 'Client Schedule');
+    (isFamily ? 'My PWSN' : isManagement ? 'Client List' : 'Care Schedule');
 
   // -------- Banner picker visibility --------
   // Now: ALWAYS visible for all roles (carer/family/management), unless explicitly hidden via prop.
@@ -359,13 +360,19 @@ export default function DashboardChrome({
     page !== 'staff-list' &&
     !(page === 'people-list' && isFamily);
 
+  // Determines whether the header title should be underlined or not
+  const isHeaderActive =
+    (isManagement && page === 'client-list') ||
+    (isFamily && page === 'people-list') ||
+    (!isManagement && !isFamily && page === 'client-schedule');
+
   return (
     <div className="min-h-screen flex flex-col" style={{ color: colors.text }}>
       {/* -------- Header -------- */}
-      <header className="relative px-4 py-4 flex items-center justify-between text-white shadow-md shadow-black/30 rounded-md">
+      <header className="relative px-4 py-4 flex items-center justify-between text-white shadow-md shadow-black/30">
         {/* Gradient + Golden Glow */}
         <div
-          className="absolute inset-0 pointer-events-none rounded-md"
+          className="absolute inset-0 pointer-events-none"
           style={{
             background:
               'linear-gradient(90deg, #3A0000 0%, #803030 50%, #D4A77A 100%)',
@@ -385,9 +392,9 @@ export default function DashboardChrome({
           <button
             onClick={goScheduleHome}
             className={`font-extrabold leading-none text-lg md:text-2xl ${
-              page === 'client-schedule' || page === 'staff-schedule'
+              isHeaderActive || page == 'staff-schedule'
                 ? 'text-white relative after:content-[""] after:block after:w-[85%] after:mx-auto after:h-[3px] after:rounded-full after:bg-white after:mt-2 after:transition-all after:duration-200 text-center px-3 py-2'
-                : 'text-white text-center relative hover:after:content-[""] hover:after:block hover:after:w-[85%] hover:after:mx-auto hover:after:h-[3px] hover:after:rounded-full hover:after:bg-white/70 hover:after:mt-2 hover:transition-all hover:duration-200 px-3 py-2 transition'
+                : 'text-white text-center relative hover:after:content-[""] hover:after:block hover:after:w-[85%] hover:after:mx-auto hover:after:h-[3px] hover:after:rounded-full hover:bg-transparent hover:after:bg-white/70 hover:after:mt-2 hover:transition-all hover:duration-200 px-3 py-2 transition'
             }`}
           >
             <span className="font-extrabold leading-none text-lg md:text-2xl inline-flex items-center gap-2 text-left">
@@ -423,50 +430,38 @@ export default function DashboardChrome({
           ) : page === 'staff-schedule' ? null : (
             // Default nav
             <>
-              {isManagement && (
+              {(isFamily || isManagement) && (
                 <Link
-                  href={ROUTES.clientList}
-                  className={`${activeUnderline(page, 'client-list', role!)} inline-flex items-center gap-2 text-left`}
+                  href={ROUTES.schedule}
+                  className={`${activeUnderline(page, 'client-schedule', role!)} inline-flex items-center gap-2 text-left`}
                 >
                   <Contact className="w-15 h-15 text-white" strokeWidth={1.3} />
-                  Client List
+                  Care Schedule
                 </Link>
               )}
 
               {isFamily && (
-                <>
-                  <Link
-                    href={ROUTES.peopleList}
-                    className={`${activeUnderline(page, 'people-list', role!)} inline-flex items-center gap-2 text-left`}
-                  >
-                    <Contact
-                      className="w-15 h-15 text-white"
-                      strokeWidth={1.3}
-                    />
-                    My Clients
-                  </Link>
-                  <Link
-                    href={
-                      activeClient.id
-                        ? ROUTES.organisationAccess(activeClient.id)
-                        : '#'
-                    }
-                    className={`${
-                      activeClient.id
-                        ? activeUnderline(page, 'organisation-access', role!)
-                        : 'cursor-not-allowed opacity-50'
-                    } inline-flex items-center gap-2 text-left`}
-                    onClick={(e) => {
-                      if (!activeClient.id) e.preventDefault();
-                    }}
-                  >
-                    <HouseHeart
-                      className="w-15 h-15 text-white"
-                      strokeWidth={1.3}
-                    />
-                    Client Organisations
-                  </Link>
-                </>
+                <Link
+                  href={
+                    activeClient.id
+                      ? ROUTES.organisationAccess(activeClient.id)
+                      : '#'
+                  }
+                  className={`${
+                    activeClient.id
+                      ? activeUnderline(page, 'organisation-access', role!)
+                      : 'cursor-not-allowed opacity-50'
+                  } inline-flex items-center gap-2 text-left`}
+                  onClick={(e) => {
+                    if (!activeClient.id) e.preventDefault();
+                  }}
+                >
+                  <HouseHeart
+                    className="w-15 h-15 text-white"
+                    strokeWidth={1.3}
+                  />
+                  PWSN Service Provider
+                </Link>
               )}
 
               <Link

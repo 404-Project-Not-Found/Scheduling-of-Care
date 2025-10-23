@@ -3,7 +3,7 @@
  * Front-end Author: Qingyue Zhao
  * Back-end Author: Denise Alexander
  *
- * Features (latest update):
+ * Features:
  * - Displays client list with avatar, name, and organisation access status.
  * - Organisation access statuses: approved / pending / revoked.
  * - Approved client rows:
@@ -17,14 +17,16 @@
  *
  * Updated by Denise Alexander (7/10/2025): back-end integrated to fetch client lists
  * from DB.
- *
- * Last Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
+ * Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
  * consistency and better navigation.
+ *
+ * Last Updated by Denise Alexander (23/10/2025): Added view care schedule and information bar
+ * and wording change Register New Client -> Request Access to New Client.
  */
 
 'use client';
 
-import { Search, Plus } from 'lucide-react';
+import { Search, Plus, Info } from 'lucide-react';
 
 import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -182,6 +184,19 @@ function ClientListInner() {
     router.push(`/client_profile?id=${c.id}`);
   };
 
+  const tryOpenSchedule = (c: Client) => {
+    if (c.orgAccess !== 'approved') {
+      setDenyTarget(c.name);
+      setDenyReason(c.orgAccess);
+      setDenyOpen(true);
+      return;
+    }
+
+    handleClientChange(c.id, c.name);
+
+    router.push(`/calendar_dashboard?id=${c.id}`);
+  };
+
   // ---- Management: request access again ----
   const requestAccess = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation(); // avoid row navigation
@@ -219,7 +234,7 @@ function ClientListInner() {
     >
       {/* Page body */}
       <div className="w-full h-full" style={{ backgroundColor: colors.pageBg }}>
-        <div className="max-w-[1380px] h-[680px] mx-auto px-6">
+        <div className="max-w-[1380px] mx-auto px-6">
           {/* Section title */}
           <div
             className="w-full mt-6 rounded-t-xl px-6 py-4 text-white text-2xl md:text-3xl font-extrabold"
@@ -256,8 +271,24 @@ function ClientListInner() {
                 style={{ backgroundColor: colors.header }}
               >
                 <Plus size={20} strokeWidth={2.5} />
-                Register new client
+                Request Access to New Client
               </button>
+            </div>
+
+            {/* Info section */}
+            <div className="flex items-start gap-4 bg-[#F9C9B1]/60 border-y border-[#3A0000]/30 shadow-sm py-4 px-6 mb-10">
+              <Info
+                size={28}
+                strokeWidth={2.5}
+                className="text-[#3A0000] flex-shrink-0 mt-1"
+              />
+              <div className="text-[#3A0000] leading-relaxed">
+                <h3 className="text-lg mb-0.5">
+                  As a <span className="font-extrabold">Management User</span>,
+                  you must request access to clients from family/POA to view
+                  client profiles and care schedules.
+                </h3>
+              </div>
             </div>
 
             {/* List area */}
@@ -323,21 +354,38 @@ function ClientListInner() {
                         <div className="shrink-0 flex items-center gap-2">
                           {/* Approved -> View profile */}
                           {c.orgAccess === 'approved' && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                tryOpenClient(c);
-                              }}
-                              className="px-4 py-2 rounded-lg text-white text-sm font-semibold hover:opacity-90"
-                              style={{
-                                background:
-                                  'linear-gradient(90deg, #803030 0%, #B44C4C 100%)',
-                                color: '#FFFFFF',
-                                boxShadow: '0 2px 6px rgba(58, 0, 0, 0.25)',
-                              }}
-                            >
-                              View profile
-                            </button>
+                            <>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  tryOpenClient(c);
+                                }}
+                                className="px-4 py-2 rounded-lg text-white text-sm font-semibold hover:opacity-90"
+                                style={{
+                                  background:
+                                    'linear-gradient(90deg, #F9C9B1 0%, #FAEBDC 100%)',
+                                  color: '#3A0000',
+                                  boxShadow: '0 1px 4px rgba(58, 0, 0, 0.2)',
+                                }}
+                              >
+                                View profile
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  tryOpenSchedule(c);
+                                }}
+                                className="px-4 py-2 rounded-lg text-white text-sm font-semibold hover:opacity-90"
+                                style={{
+                                  background:
+                                    'linear-gradient(90deg, #803030 0%, #B44C4C 100%)',
+                                  color: '#FFFFFF',
+                                  boxShadow: '0 2px 6px rgba(58, 0, 0, 0.25)',
+                                }}
+                              >
+                                View care schedule
+                              </button>
+                            </>
                           )}
 
                           {/* Management actions (non-approved only) */}

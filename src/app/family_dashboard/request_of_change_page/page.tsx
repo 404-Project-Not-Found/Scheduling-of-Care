@@ -17,7 +17,7 @@
 
 'use client';
 
-import { AlertCircle } from 'lucide-react';
+import { Info } from 'lucide-react';
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -119,9 +119,9 @@ export default function RequestChangeFormPage() {
         // Map tasks to local ApiCareItem type
         const mapped: ApiCareItem[] = clientTasks.map((t) => ({
           slug: t.id || '',
-          label: t.title || '',
+          label: t.label || '',
           category: t.category || '',
-          status: 'Pending',
+          status: 'Waiting Verification',
         }));
 
         setAllTasks(mapped);
@@ -239,13 +239,13 @@ export default function RequestChangeFormPage() {
 
           {/* Privacy Notice Banner */}
           <div className="mt-6 mb-4 mx-auto flex items-start gap-4 bg-[#F9C9B1]/60 border border-[#3A0000]/30 rounded-xl px-6 py-4 shadow-sm">
-            <AlertCircle
+            <Info
               size={28}
               strokeWidth={2.5}
               className="text-[#3A0000] flex-shrink-0 mt-1"
             />
             <div className="text-[#3A0000]">
-              <h3 className="text-lg font-semibold mb-1">Notice</h3>
+              <h3 className="text-lg font-semibold mb-1">Instruction</h3>
               <p className="text-base leading-relaxed">
                 Please describe what you’d like to change about the care item.
                 Management will review your request and respond accordingly.

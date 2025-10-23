@@ -6,8 +6,12 @@
  * Purpose: Role-aware schedule dashboard that shows different client and staff schedule
  * options.
  *
- * Last Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
+ * Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
  * consistency and better navigation.
+ *
+ * Last Updated by Denise Alexander (23/10/2025): Updated logo, added role specific main
+ * dashboard titles and desciptions and changed page nav for family and management users to
+ * redirect to PWSN/Client list pages first when manage client care is selected.
  */
 
 'use client';
@@ -17,18 +21,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { getSession } from 'next-auth/react';
 import { getViewerRoleFE } from '@/lib/mock/mockApi';
-import {
-  CalendarDays,
-  Users,
-  FileText,
-  Receipt,
-  ClipboardList,
-  HelpCircle,
-  User,
-  LogOut,
-  Info,
-  Contact,
-} from 'lucide-react';
+import { CalendarDays, Users, User, LogOut } from 'lucide-react';
 
 const palette = {
   header: '#3A0000',
@@ -39,7 +32,6 @@ const palette = {
 };
 
 type Role = 'family' | 'management' | 'carer' | null;
-type StrictRole = Exclude<Role, null>;
 
 type ButtonDef = {
   label: string;
@@ -57,26 +49,6 @@ const BUTTONS: ButtonDef[] = [
     label: 'Staff Schedule',
     icon: Users,
     href: '/management_dashboard/staff_schedule',
-  },
-  {
-    label: 'Budget Reports',
-    icon: FileText,
-    href: '/calendar_dashboard/budget_report',
-  },
-  {
-    label: 'Transactions',
-    icon: Receipt,
-    href: '/calendar_dashboard/transaction_history',
-  },
-  {
-    label: 'Family Requests',
-    icon: ClipboardList,
-    href: '/request-log-page',
-  },
-  {
-    label: 'FAQ',
-    icon: HelpCircle,
-    href: '/faq',
   },
 ];
 
@@ -169,7 +141,6 @@ export default function DashboardPage() {
 
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const showAvatar = true;
-  const avatarSrc = '/default_profile.png';
 
   const goProfile = () => {
     setUserMenuOpen(false);
@@ -206,7 +177,7 @@ export default function DashboardPage() {
       className="min-h-screen w-full flex flex-col"
       style={{ backgroundColor: palette.pageBg }}
     >
-      {/* ===== Header ===== */}
+      {/* Header */}
       <div
         className="w-full flex items-center justify-between px-8 py-5"
         style={{
@@ -217,25 +188,14 @@ export default function DashboardPage() {
       >
         {/* Logo + Title */}
         <div className="flex items-center gap-4 flex-wrap">
-          <div className="flex items-center">
-            <Image
-              src="/logo.png"
-              alt="Logo"
-              width={60}
-              height={60}
-              className="object-contain"
-              priority
-            />
-          </div>
-          <h1
-            className="text-4xl md:text-4xl font-semibold text-white tracking-tight drop-shadow-md"
-            style={{
-              fontFamily: `'DM Sans', sans-serif`,
-              letterSpacing: '-0.4px',
-            }}
-          >
-            Scheduling of Care
-          </h1>
+          <Image
+            src="/logo-name.png"
+            alt="Logo"
+            width={220}
+            height={220}
+            className="object-contain"
+            priority
+          />
         </div>
 
         {/* Right: Avatar dropdown */}
@@ -304,61 +264,89 @@ export default function DashboardPage() {
         <div className="mt-4 w-325 mx-auto border-t-1 border-[#3A0000]/25 rounded-full"></div>
       </section>
 
-      {/* ===== Main Dashboards ===== */}
+      {/* Main Dashboard */}
       <main className="flex flex-col items-center justify-center w-full px-8 py-14">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 w-full max-w-6xl">
-          {['Client Schedule', 'Staff Schedule'].map((mainLabel) => {
-            const mainAction = actions.find((a) => a.label === mainLabel);
+          {['client', 'staff'].map((type) => {
+            const mainAction = actions.find((a) =>
+              type === 'client'
+                ? a.label === 'Client Schedule'
+                : a.label === 'Staff Schedule'
+            );
             if (!mainAction) return null;
             const Icon = mainAction.icon;
 
+            // ----- Role Based Titles -----
+            const title =
+              type === 'client'
+                ? role === 'management'
+                  ? 'Manage Client Care'
+                  : role === 'family'
+                    ? 'Manage My PWSN Care'
+                    : 'Manage Client Care'
+                : role === 'management'
+                  ? 'Manage Staff Schedule'
+                  : 'View Staff Schedule';
+
+            // ----- Role Based Descriptions -----
+            const description =
+              type === 'client'
+                ? role === 'management'
+                  ? 'View and manage all client care schedules, reports and progress updates.'
+                  : role === 'family'
+                    ? 'Monitor and manage care schedules for your PWSN.'
+                    : 'Complete assigned care items and document submissions.'
+                : role === 'management'
+                  ? 'View and manage all staff members, their shifts and availability.'
+                  : role === 'family'
+                    ? "View the schedules of staff involved in your PWSN's care."
+                    : 'View your assigned shifts and the overall staff schedule.';
+
             return (
               <div
-                key={mainLabel}
-                onClick={() => router.push(mainAction.href)}
+                key={type}
+                onClick={() => {
+                  // Redirect users to the correct main page depending on role
+                  if (type === 'client') {
+                    if (role === 'family')
+                      router.push('/family_dashboard/people_list');
+                    else if (role === 'management')
+                      router.push('/management_dashboard/clients_list');
+                    else router.push('/calendar_dashboard'); // carer
+                  } else {
+                    router.push(mainAction.href); // staff schedule unchanged
+                  }
+                }}
                 className="group flex flex-col justify-between text-center 
-          bg-white
-          rounded-3xl p-10 shadow-md hover:shadow-[0_6px_20px_rgba(58,0,0,0.25)] 
-          hover:-translate-y-1 transition-all border border-[#3A0000]/15 cursor-pointer 
-          min-h-[340px]"
+            bg-white rounded-3xl p-10 shadow-md hover:shadow-[0_6px_20px_rgba(58,0,0,0.25)] 
+            hover:-translate-y-1 transition-all border border-[#3A0000]/15 cursor-pointer 
+            min-h-[340px]"
               >
                 <div>
                   <div
                     className="relative inline-flex items-center justify-center w-20 h-20 mx-auto mb-5
-              rounded-full bg-[#3A0000]/10 group-hover:bg-[#3A0000]/15 transition"
+                rounded-full bg-[#3A0000]/10 group-hover:bg-[#3A0000]/15 transition"
                   >
                     <Icon className="w-12 h-12 text-[#3A0000] group-hover:scale-110 transition-transform" />
                   </div>
+
+                  {/* Dynamic title */}
                   <h2 className="text-3xl font-extrabold text-[#3A0000] mb-3 drop-shadow-sm">
-                    {mainLabel}
+                    {title}
                   </h2>
+
+                  {/* Dynamic description */}
                   <p className="text-[#3A0000]/90 font-medium text-base mb-6 leading-relaxed">
-                    {(() => {
-                      if (mainLabel === 'Client Schedule') {
-                        if (role === 'management')
-                          return 'View and manage all client schedules and care plans.';
-                        if (role === 'family')
-                          return 'View and manage your loved ones’ care schedules.';
-                        if (role === 'carer')
-                          return 'Complete assigned care items and track client routines.';
-                      } else if (mainLabel === 'Staff Schedule') {
-                        if (role === 'management')
-                          return 'View and manage all staff members and their shift schedules.';
-                        if (role === 'family')
-                          return 'View staff schedules involved in your loved one’s care.';
-                        if (role === 'carer')
-                          return 'View your shifts and the overall staff schedule.';
-                      }
-                      return '';
-                    })()}
+                    {description}
                   </p>
+
                   <span
                     className="relative text-[#3A0000]/80 text-md font-semibold group-hover:text-[#3A0000]
-              after:content-[''] after:absolute after:left-1/2 after:-translate-x-1/2 after:bottom-[-3px]
-              after:w-0 after:h-[2px] after:rounded-full after:bg-[#3A0000]/70
-              group-hover:after:w-[80%] after:transition-all after:duration-300 after:ease-out"
+                after:content-[''] after:absolute after:left-1/2 after:-translate-x-1/2 after:bottom-[-3px]
+                after:w-0 after:h-[2px] after:rounded-full after:bg-[#3A0000]/70
+                group-hover:after:w-[80%] after:transition-all after:duration-300 after:ease-out"
                   >
-                    View Schedule →
+                    View Details →
                   </span>
                 </div>
               </div>

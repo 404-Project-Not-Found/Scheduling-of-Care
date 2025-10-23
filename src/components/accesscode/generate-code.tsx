@@ -16,6 +16,7 @@
 
 'use client';
 
+import { Info } from 'lucide-react';
 import { set } from 'mongoose';
 import React, { useEffect, useState } from 'react';
 
@@ -136,15 +137,18 @@ export default function GenerateCode({
         </div>
 
         {/* notice */}
-        <div
-          className="w-full px-6 md:px-8 py-5 md:py-6"
-          style={{ backgroundColor: palette.notice }}
-        >
-          <p className="text-sm sm:text-base md:text-lg leading-relaxed text-black">
-            Please generate a staff invite code based on the role of the new
-            staff member. Copy the code and send it to the new staff member so
-            that they can sign up to your organisation.
-          </p>
+        <div className="flex items-start gap-4 bg-[#F9C9B1]/60 border-y border-[#3A0000]/30 shadow-sm py-4 px-6 mb-10">
+          <Info
+            size={28}
+            strokeWidth={2.5}
+            className="text-[#3A0000] flex-shrink-0 mt-1"
+          />
+          <h3 className="text-lg mb-0.5">
+            <span className="font-bold">Note:</span> Please generate a staff
+            invite code based on the role of the new staff member. Copy the code
+            and send it to the new staff member so that they can sign up to your
+            organisation.
+          </h3>
         </div>
 
         {/* message states */}

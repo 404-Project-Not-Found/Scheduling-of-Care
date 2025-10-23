@@ -5,9 +5,11 @@
  *
  * Updated by Denise Alexander (7/10/2025): back-end integrated to implement
  * organisation access workflow.
- *
- * Last Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
+ * Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
  * consistency and better navigation.
+ *
+ * Last Updated by Denise Alexander (23/10/2025): Changed wording for organisation -> service provider
+ * as per client's request.
  *
  * NOTE:
  * This page has been refactored to allow families to select the active client
@@ -173,7 +175,7 @@ export default function ManageOrganisationAccessPage() {
           {/* Section header with back button */}
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-[#3A0000] text-3xl font-semibold">
-              Manage Organisation Access
+              Manage Service Provider Access
             </h2>
             <button
               onClick={() => router.push('/family_dashboard/people_list')}
@@ -217,20 +219,20 @@ export default function ManageOrganisationAccessPage() {
             ) : (
               <>
                 <Group
-                  title="Organisations with Access"
+                  title="Service Providers with Client Access"
                   items={orgs.filter((o) => o.status === 'approved')}
                   onRevoke={(id) => updateOrgStatus(id, 'revoke')}
                 />
                 <hr className="my-5 border-black" />
                 <Group
-                  title="Organisations who have Requested Access"
+                  title="Service Providers who have Requested Client Access"
                   items={orgs.filter((o) => o.status === 'pending')}
                   onApprove={(id) => updateOrgStatus(id, 'approve')}
                   onRemove={(id) => updateOrgStatus(id, 'reject')}
                 />
                 <hr className="my-5 border-black" />
                 <Group
-                  title="Revoked Organisations"
+                  title="Serivce Providers whose Client Access is Revoked"
                   items={orgs.filter((o) => o.status === 'revoked')}
                 />
               </>
@@ -326,7 +328,7 @@ function Legend({ className = '' }: { className?: string }) {
   const legendItems = [
     {
       action: 'Approve',
-      description: 'Gives organisation access to client',
+      description: 'Gives the service provider access to client',
       style: {
         backgroundColor: '#4CAF50',
         color: 'white',
@@ -335,7 +337,7 @@ function Legend({ className = '' }: { className?: string }) {
     },
     {
       action: 'Reject',
-      description: 'Rejects organisation request to client access',
+      description: "Rejects the service provider's request to client access",
       style: {
         backgroundColor: '#E53935',
         color: 'white',
@@ -344,7 +346,7 @@ function Legend({ className = '' }: { className?: string }) {
     },
     {
       action: 'Revoke',
-      description: 'Removes organisation access to client',
+      description: "Removes the service provider's access to client",
       style: {
         backgroundColor: '#D57A2E',
         color: 'white',

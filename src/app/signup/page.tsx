@@ -3,9 +3,14 @@
  * Front-end Author: Qingyue Zhao
  * Back-end Author: Denise Alexander
  * Date Created: 05/09/2025
+ *
+ * Last Updated by Denise Alexander (23/10/2025): Added role specific sign up instructions as per
+ * client's request.
  */
 
 'use client';
+
+import { Info } from 'lucide-react';
 
 import Image from 'next/image';
 import Link from 'next/link';
@@ -251,273 +256,359 @@ export default function SignupPage() {
   const canSubmit = pwCheck.score >= 3 && !mismatch;
 
   return (
-    <div className="min-h-screen w-full bg-[#F3E9D9] flex flex-col items-center justify-center px-4">
-      {/* Logo in top-left */}
-      <div className="absolute left-8 top-8">
+    <div className="min-h-screen w-full bg-[#FAEBDC] text-zinc-900 flex flex-col">
+      {/* Logo + Title */}
+      <div className="flex items-center gap-4 flex-wrap px-8 pt-8">
         <Image
           src="/logo-name.png"
-          alt="Scheduling of Care"
-          width={210}
-          height={64}
+          alt="Logo"
+          width={220}
+          height={220}
+          className="object-contain"
           priority
         />
       </div>
 
-      {/* Page title */}
-      <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-black mb-12 text-center w-full">
-        {displayRole} Sign Up
-      </h1>
+      {/* Centered Title + Form */}
+      <div className="flex flex-col items-center justify-center flex-1 w-full px-8">
+        {/* Page title */}
+        <h1 className="text-4xl sm:text-4xl font-extrabold tracking-tight text-[#3A0000] mb-6 text-center w-full">
+          {displayRole} Sign Up
+        </h1>
 
-      {/* Success banner after signup */}
-      {success && (
-        <div
-          role="alert"
-          className="fixed top-0 left-0 w-full bg-[#DCF4D9] text-[#1B4B1B] px-6 py-4 text-center font-semibold shadow-md z-50"
+        {/* Success banner after signup */}
+        {success && (
+          <div
+            role="alert"
+            className="fixed top-0 left-0 w-full bg-[#DCF4D9] text-[#1B4B1B] px-6 py-4 text-center font-semibold shadow-md z-50"
+          >
+            Sign up was successful! Redirecting to login...
+          </div>
+        )}
+
+        {/* Sign Up instructions */}
+        {(role === 'family' ||
+          role === 'carer' ||
+          (role === 'management' && orgAction)) && (
+          <div className="w-full max-w-lg mb-10">
+            <div className="bg-[#F9C9B1]/60 border border-[#3A0000]/30 rounded-xl shadow-sm py-4 px-6 flex items-start gap-4">
+              <Info
+                size={28}
+                strokeWidth={2.5}
+                className="text-[#3A0000] flex-shrink-0 mt-1"
+              />
+              <div className="text-[#3A0000] text-left">
+                <h3 className="text-lg font-semibold mb-1">Instructions</h3>
+
+                {/* Family / POA */}
+                {role === 'family' && (
+                  <p className="text-base leading-relaxed">
+                    As a{' '}
+                    <span className="font-semibold">
+                      Family Member or Power of Attorney (POA)
+                    </span>
+                    , simply enter your{' '}
+                    <span className="font-semibold">full name,</span>
+                    <span className="font-semibold"> email</span> and
+                    <span className="font-semibold"> password</span> below.
+                    You’ll use these credentials to log into the{' '}
+                    <span className="italic">Scheduling of Care </span>web app
+                    each time.
+                  </p>
+                )}
+
+                {/* Management creating a new organisation */}
+                {role === 'management' && orgAction === 'create' && (
+                  <p className="text-base leading-relaxed">
+                    As a <span className="font-semibold">Management User</span>{' '}
+                    registering a new service provider, please enter your{' '}
+                    <span className="font-semibold">service provider name</span>
+                    . This will register both{' '}
+                    <span className="font-semibold">you</span> and your
+                    <span className="font-semibold">
+                      {' '}
+                      service provider
+                    </span>{' '}
+                    into the system.
+                  </p>
+                )}
+
+                {/* Management joining existing organisation */}
+                {role === 'management' && orgAction === 'join' && (
+                  <p className="text-base leading-relaxed">
+                    As a <span className="font-semibold">Management User</span>{' '}
+                    joining an existing service provider, you’ll need a{' '}
+                    <span className="font-semibold">
+                      service provider invite code
+                    </span>
+                    . Please contact your service provider’s management staff to
+                    receive this code before signing up.
+                  </p>
+                )}
+
+                {/* Carer */}
+                {role === 'carer' && (
+                  <p className="text-base leading-relaxed">
+                    As a <span className="font-semibold">Carer</span>, you must
+                    have a valid
+                    <span className="font-semibold">
+                      {' '}
+                      service provider invite code.
+                    </span>{' '}
+                    Please contact your management team to receive this code
+                    before signing up.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Signup form */}
+        <form
+          onSubmit={handleSubmit}
+          className="w-full max-w-lg space-y-8 text-black"
         >
-          Sign up was successful! Redirecting to login...
-        </div>
-      )}
-
-      {/* Signup form */}
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-lg space-y-8 text-black"
-      >
-        {/* Organisation field for carer/management */}
-        {(role === 'management' || role === 'carer') && orgAction && (
-          <div className="flex flex-col gap-2">
-            {orgAction === 'create' && role === 'management' && (
-              <>
-                <label htmlFor="orgName" className="text-[20px] font-medium">
-                  Enter Organisation Name{' '}
-                  <span className="text-red-600">*</span>
-                </label>
-                <input
-                  id="orgName"
-                  name="orgName"
-                  type="text"
-                  required
-                  className="w-full rounded-md border border-[#6E1B1B] bg-white px-4 py-2.5 text-lg"
-                />
-              </>
-            )}
-            {orgAction === 'join' &&
-              (role === 'carer' || role === 'management') && (
+          {/* Organisation field for carer/management */}
+          {(role === 'management' || role === 'carer') && orgAction && (
+            <div className="flex flex-col gap-2">
+              {orgAction === 'create' && role === 'management' && (
                 <>
-                  <label htmlFor="invite" className="text-[20px] font-medium">
-                    Enter Organisation Invite Code{' '}
+                  <label htmlFor="orgName" className="text-[20px] font-medium">
+                    Enter Service Provider Name{' '}
                     <span className="text-red-600">*</span>
                   </label>
                   <input
-                    id="invite"
-                    name="invite"
+                    id="orgName"
+                    name="orgName"
                     type="text"
                     required
                     className="w-full rounded-md border border-[#6E1B1B] bg-white px-4 py-2.5 text-lg"
                   />
                 </>
               )}
-          </div>
-        )}
+              {orgAction === 'join' &&
+                (role === 'carer' || role === 'management') && (
+                  <>
+                    <label htmlFor="invite" className="text-[20px] font-medium">
+                      Enter Service Provider Invite Code{' '}
+                      <span className="text-red-600">*</span>
+                    </label>
+                    <input
+                      id="invite"
+                      name="invite"
+                      type="text"
+                      required
+                      className="w-full rounded-md border border-[#6E1B1B] bg-white px-4 py-2.5 text-lg"
+                    />
+                  </>
+                )}
+            </div>
+          )}
 
-        {/* Full Name */}
-        <div className="flex flex-col gap-2">
-          <label htmlFor="userName" className="text-[20px] font-medium">
-            Enter Full Name <span className="text-red-600">*</span>
-          </label>
-          <input
-            id="userName"
-            type="text"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            className="w-full rounded-md border border-[#6E1B1B] bg-white px-4 py-2.5 text-lg"
-            required
-          />
-        </div>
-
-        {/* Email */}
-        <div className="flex flex-col gap-2">
-          <label htmlFor="email" className="text-[20px] font-medium">
-            Enter Email <span className="text-red-600">*</span>
-          </label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-md border border-[#6E1B1B] bg-white px-4 py-2.5 text-lg"
-            required
-          />
-        </div>
-
-        {/* Password with strength meter */}
-        <div className="flex flex-col gap-2">
-          <label htmlFor="password" className="text-[20px] font-medium">
-            Create Password <span className="text-red-600">*</span>
-          </label>
-          <div className="relative w-full">
+          {/* Full Name */}
+          <div className="flex flex-col gap-2">
+            <label htmlFor="userName" className="text-[20px] font-medium">
+              Enter Full Name <span className="text-red-600">*</span>
+            </label>
             <input
-              id="password"
-              type={showPw ? 'text' : 'password'}
-              value={password}
-              onChange={(e) => {
-                if (!pwTouched) setPwTouched(true);
-                setPassword(e.target.value);
-              }}
-              onFocus={() => setPwTouched(true)}
+              id="userName"
+              type="text"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
               className="w-full rounded-md border border-[#6E1B1B] bg-white px-4 py-2.5 text-lg"
               required
             />
-            <button
-              type="button"
-              onClick={() => setShowPw((v) => !v)}
-              className="underline absolute right-3 top-1/2 -translate-y-1/2 text-[16px] text-[#4A0A0A]"
-            >
-              {showPw ? 'Hide' : 'Show'}
-            </button>
           </div>
 
-          {/* Show strength only after typing */}
-          {pwTouched && password.length > 0 && (
-            <>
-              {/* Strength bar */}
-              <div className="mt-2">
-                <div className="w-full h-2 rounded bg-[#EADBC6] overflow-hidden">
-                  <div
-                    className="h-2 rounded transition-all"
-                    style={{
-                      width: `${(pwCheck.score / 4) * 100}%`,
-                      backgroundColor: pwCheck.color,
-                    }}
-                  />
-                </div>
-                <div className="mt-1 text-sm" style={{ color: pwCheck.color }}>
-                  Strength:{' '}
-                  <span className="font-semibold">{pwCheck.label}</span>
-                </div>
-              </div>
+          {/* Email */}
+          <div className="flex flex-col gap-2">
+            <label htmlFor="email" className="text-[20px] font-medium">
+              Enter Email <span className="text-red-600">*</span>
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full rounded-md border border-[#6E1B1B] bg-white px-4 py-2.5 text-lg"
+              required
+            />
+          </div>
 
-              {/* Checklist */}
-              <ul className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-                <li className="flex items-center gap-2">
-                  <Check ok={pwCheck.checks.len12} /> At least 12 characters
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check ok={pwCheck.checks.lower && pwCheck.checks.upper} />{' '}
-                  Upper & lower case
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check ok={pwCheck.checks.digit} /> At least one number
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check ok={pwCheck.checks.symbol} /> At least one symbol
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check ok={pwCheck.checks.noNameOrEmail} /> No name/email
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check ok={pwCheck.checks.noCommonSeq} /> No common sequences
-                </li>
-              </ul>
+          {/* Password with strength meter */}
+          <div className="flex flex-col gap-2">
+            <label htmlFor="password" className="text-[20px] font-medium">
+              Create Password <span className="text-red-600">*</span>
+            </label>
+            <div className="relative w-full">
+              <input
+                id="password"
+                type={showPw ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => {
+                  if (!pwTouched) setPwTouched(true);
+                  setPassword(e.target.value);
+                }}
+                onFocus={() => setPwTouched(true)}
+                className="w-full rounded-md border border-[#6E1B1B] bg-white px-4 py-2.5 text-lg"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPw((v) => !v)}
+                className="underline absolute right-3 top-1/2 -translate-y-1/2 text-[16px] text-[#4A0A0A]"
+              >
+                {showPw ? 'Hide' : 'Show'}
+              </button>
+            </div>
 
-              {/* Suggestions */}
-              {pwCheck.messages.length > 0 && (
-                <div className="mt-2 bg-[#FFF3CD] text-[#5C3C00] px-3 py-2 rounded text-sm">
-                  <div className="font-semibold mb-1">
-                    Tips to improve your password:
+            {/* Show strength only after typing */}
+            {pwTouched && password.length > 0 && (
+              <>
+                {/* Strength bar */}
+                <div className="mt-2">
+                  <div className="w-full h-2 rounded bg-[#EADBC6] overflow-hidden">
+                    <div
+                      className="h-2 rounded transition-all"
+                      style={{
+                        width: `${(pwCheck.score / 4) * 100}%`,
+                        backgroundColor: pwCheck.color,
+                      }}
+                    />
                   </div>
-                  <ul className="list-disc pl-5 space-y-1">
-                    {pwCheck.messages.map((m, i) => (
-                      <li key={i}>{m}</li>
-                    ))}
-                  </ul>
+                  <div
+                    className="mt-1 text-sm"
+                    style={{ color: pwCheck.color }}
+                  >
+                    Strength:{' '}
+                    <span className="font-semibold">{pwCheck.label}</span>
+                  </div>
                 </div>
-              )}
-            </>
-          )}
-        </div>
 
-        {/* Confirm password */}
-        <div className="flex flex-col gap-2">
-          <label htmlFor="confirm" className="text-[20px] font-medium">
-            Retype Password <span className="text-red-600">*</span>
-          </label>
-          <input
-            id="confirm"
-            type={showPw ? 'text' : 'password'}
-            value={confirm}
-            onChange={(e) => {
-              if (!confirmTouched) setConfirmTouched(true);
-              setConfirm(e.target.value);
-            }}
-            onFocus={() => setConfirmTouched(true)}
-            className="w-full rounded-md border border-[#6E1B1B] bg-white px-4 py-2.5 text-lg"
-            required
-          />
-          {mismatchVisible && (
-            <div className="text-red-700 bg-red-100 px-3 py-2 rounded text-sm">
-              Passwords do not match.
+                {/* Checklist */}
+                <ul className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                  <li className="flex items-center gap-2">
+                    <Check ok={pwCheck.checks.len12} /> At least 12 characters
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check ok={pwCheck.checks.lower && pwCheck.checks.upper} />{' '}
+                    Upper & lower case
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check ok={pwCheck.checks.digit} /> At least one number
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check ok={pwCheck.checks.symbol} /> At least one symbol
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check ok={pwCheck.checks.noNameOrEmail} /> No name/email
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check ok={pwCheck.checks.noCommonSeq} /> No common
+                    sequences
+                  </li>
+                </ul>
+
+                {/* Suggestions */}
+                {pwCheck.messages.length > 0 && (
+                  <div className="mt-2 bg-[#FFF3CD] text-[#5C3C00] px-3 py-2 rounded text-sm">
+                    <div className="font-semibold mb-1">
+                      Tips to improve your password:
+                    </div>
+                    <ul className="list-disc pl-5 space-y-1">
+                      {pwCheck.messages.map((m, i) => (
+                        <li key={i}>{m}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Confirm password */}
+          <div className="flex flex-col gap-2">
+            <label htmlFor="confirm" className="text-[20px] font-medium">
+              Retype Password <span className="text-red-600">*</span>
+            </label>
+            <input
+              id="confirm"
+              type={showPw ? 'text' : 'password'}
+              value={confirm}
+              onChange={(e) => {
+                if (!confirmTouched) setConfirmTouched(true);
+                setConfirm(e.target.value);
+              }}
+              onFocus={() => setConfirmTouched(true)}
+              className="w-full rounded-md border border-[#6E1B1B] bg-white px-4 py-2.5 text-lg"
+              required
+            />
+            {mismatchVisible && (
+              <div className="text-red-700 bg-red-100 px-3 py-2 rounded text-sm">
+                Passwords do not match.
+              </div>
+            )}
+          </div>
+
+          {/* Error messages */}
+          {error && (
+            <div className="text-red-700 bg-red-100 px-4 py-2 rounded">
+              {error}
             </div>
           )}
-        </div>
+          {userExists && (
+            <div className="bg-[#DFC9A9] px-4 py-2 rounded">
+              Account already exists. Try a new email or{' '}
+              <Link
+                href={`/?email=${encodeURIComponent(email)}`}
+                className="underline font-bold text-[#4A0A0A]"
+              >
+                login
+              </Link>
+            </div>
+          )}
 
-        {/* Error messages */}
-        {error && (
-          <div className="text-red-700 bg-red-100 px-4 py-2 rounded">
-            {error}
-          </div>
-        )}
-        {userExists && (
-          <div className="bg-[#DFC9A9] px-4 py-2 rounded">
-            Account already exists. Try a new email or{' '}
-            <Link
-              href={`/?email=${encodeURIComponent(email)}`}
-              className="underline font-bold text-[#4A0A0A]"
+          {/* Submit button */}
+          <div className="flex flex-col items-center pt-2">
+            <button
+              type="submit"
+              disabled={!canSubmit}
+              className={`rounded-full text-white text-xl font-semibold px-10 py-3 transition ${
+                canSubmit
+                  ? 'bg-[#4A0A0A] hover:opacity-95'
+                  : 'bg-[#a78b7a] cursor-not-allowed'
+              }`}
             >
-              login
-            </Link>
+              Sign Up
+            </button>
+            {!canSubmit && pwTouched && (
+              <div className="mt-2 text-sm text-[#4A0A0A]">
+                {mismatchVisible
+                  ? 'Please make sure both passwords match.'
+                  : 'Password must be at least Strong to continue.'}
+              </div>
+            )}
           </div>
-        )}
 
-        {/* Submit button */}
-        <div className="flex flex-col items-center pt-2">
-          <button
-            type="submit"
-            disabled={!canSubmit}
-            className={`rounded-full text-white text-xl font-semibold px-10 py-3 transition ${
-              canSubmit
-                ? 'bg-[#4A0A0A] hover:opacity-95'
-                : 'bg-[#a78b7a] cursor-not-allowed'
-            }`}
-          >
-            Sign Up
-          </button>
-          {!canSubmit && pwTouched && (
-            <div className="mt-2 text-sm text-[#4A0A0A]">
-              {mismatchVisible
-                ? 'Please make sure both passwords match.'
-                : 'Password must be at least Strong to continue.'}
-            </div>
-          )}
-        </div>
+          {/* Back link */}
+          <p className="text-center text-lg mt-4">
+            Not your role? Back to{' '}
+            <Link href="/role" className="underline font-bold">
+              Role Selection
+            </Link>
+          </p>
+        </form>
 
-        {/* Back link */}
-        <p className="text-center text-lg mt-4">
-          Not your role? Back to{' '}
-          <Link href="/role" className="underline font-bold">
-            Role Selection
-          </Link>
-        </p>
-      </form>
-
-      {/* Help floating button */}
-      <Link
-        href="/help"
-        aria-label="Help"
-        className="fixed bottom-6 right-6 flex h-12 w-12 items-center justify-center rounded-full bg-[#E37E72] text-white text-2xl font-bold shadow-md hover:shadow-lg"
-      >
-        ?
-      </Link>
+        {/* Help floating button */}
+        <Link
+          href="/help"
+          aria-label="Help"
+          className="fixed bottom-6 right-6 flex h-12 w-12 items-center justify-center rounded-full bg-[#E37E72] text-white text-2xl font-bold shadow-md hover:shadow-lg"
+        >
+          ?
+        </Link>
+      </div>
     </div>
   );
 }

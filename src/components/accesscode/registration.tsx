@@ -10,11 +10,15 @@
  * - Notice bar text replaced with client registration instruction.
  * - Blocks background scrolling when open, closes on ESC key or overlay click.
  *
- * Last Updated by Denise Alexander (7/10/2025): added back-end integration to register new client.
+ * Updated by Denise Alexander (7/10/2025): added back-end integration to register new client.
+ *
+ * Last Updated by Denise Alexander (23/10/2025): Wording change for Register New Client -> Request
+ * Access to New Client and changed design of notice bar.
  */
 
 'use client';
 
+import { Info } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
 const palette = {
@@ -129,7 +133,7 @@ export default function RegisterClientPanel({
           className="w-full flex items-center justify-center px-6 py-4 relative"
           style={{ backgroundColor: palette.header, color: '#fff' }}
         >
-          <h2 className="text-2xl font-bold">Register New Client</h2>
+          <h2 className="text-2xl font-bold">Request Access to New Client</h2>
           <button
             onClick={onClose}
             aria-label="Close"
@@ -140,18 +144,20 @@ export default function RegisterClientPanel({
         </div>
 
         {/* Notice bar */}
-        <div
-          className="w-full px-6 md:px-8 py-5 md:py-6"
-          style={{ backgroundColor: palette.notice }}
-        >
-          <p className="text-sm sm:text-base md:text-lg leading-relaxed text-black">
-            <span className="font-bold">Notice:</span> Please request a client
-            access code from the family member in charge of the client’s account
-            to register a new client. Once registered, the system will
-            automatically send an access request to the client’s family
-            member/POA. After their approval, you will be able to access all
-            information related to that client.
-          </p>
+        <div className="flex items-start gap-4 bg-[#F9C9B1]/60 border-y border-[#3A0000]/30 shadow-sm py-4 px-6 mb-10">
+          <Info
+            size={28}
+            strokeWidth={2.5}
+            className="text-[#3A0000] flex-shrink-0 mt-1"
+          />
+          <h3 className="text-lg mb-0.5">
+            <span className="font-bold">Note:</span> Please enter the client
+            access code given from the family member in charge of the client’s
+            account. Once requested, the system will automatically send the
+            access request to the client’s family member/POA. After their
+            approval, you will be able to access all information related to that
+            client.
+          </h3>
         </div>
 
         {error && (
@@ -203,7 +209,7 @@ export default function RegisterClientPanel({
               className="rounded-full px-6 sm:px-7 py-3 text-white text-lg font-semibold shadow-sm active:translate-y-[1px]"
               style={{ backgroundColor: palette.btn }}
             >
-              Register
+              Request
             </button>
           </form>
         </section>
