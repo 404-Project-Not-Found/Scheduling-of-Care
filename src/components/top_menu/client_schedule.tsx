@@ -667,35 +667,6 @@ export default function DashboardChrome({
             {computedBannerTitle ? (
               <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
                 <div className="flex items-center gap-3 justify-center">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (activeClient.id) router.push(ROUTES.profile);
-                    }}
-                    disabled={!activeClient.id}
-                    className={`rounded-full border border-black/20 focus:outline-none focus:ring-2 focus:ring-black/30 flex-shrink-0 ${
-                      activeClient.id
-                        ? 'cursor-pointer hover:ring-2 hover:ring-black/50'
-                        : 'cursor-not-allowed opacity-60'
-                    }`}
-                    style={{ width: 65, height: 65, backgroundColor: 'white' }}
-                    aria-label="Open client profile"
-                    title={
-                      activeClient.id
-                        ? 'Open client profile'
-                        : 'Select a client first'
-                    }
-                  >
-                    <div className="flex items-center justify-center w-full h-full">
-                      <User
-                        size={50} // Icon size
-                        strokeWidth={0.3}
-                        fill={palette.header}
-                        color={palette.header}
-                      />
-                    </div>
-                  </button>
-
                   <h1 className="font-extrabold leading-none text-2xl md:text-3xl select-none whitespace-nowrap">
                     {computedBannerTitle}
                   </h1>
