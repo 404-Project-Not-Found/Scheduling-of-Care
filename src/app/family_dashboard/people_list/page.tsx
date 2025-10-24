@@ -16,9 +16,10 @@
  * client lists from DB.
  * Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
  * consistency and better navigation.
- *
- * Last Updated by Denise Alexander (23/10/2025): Wording change - organisation -> service provider
+ * Updated by Denise Alexander (23/10/2025): Wording change - organisation -> service provider
  * and added information bar.
+ *
+ * Last Updated by Denise Alexander (24/10/2025): added back-end for client profile pictures.
  */
 
 'use client';
@@ -27,7 +28,7 @@ import { Plus, Search, Info } from 'lucide-react';
 
 import React, { Suspense, useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-
+import Image from 'next/image';
 import DashboardChrome from '@/components/top_menu/client_schedule';
 import * as data from '@/lib/data';
 import { useActiveClient } from '@/context/ActiveClientContext';
@@ -36,6 +37,7 @@ type Client = {
   id: string;
   name: string;
   dashboardType?: 'full' | 'partial';
+  avatarUrl?: string;
 };
 
 const colors = {
@@ -63,6 +65,7 @@ function FamilyClientListInner() {
   const [q, setQ] = useState('');
   const { client: activeClient, handleClientChange } = useActiveClient();
   const [loadingClientId, setLoadingClientId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
@@ -72,10 +75,13 @@ function FamilyClientListInner() {
           id: c._id,
           name: c.name,
           dashboardType: c.dashboardType,
+          avatarUrl: c.avatarUrl || '',
         }));
         setClients(mapped);
       } catch {
         setClients([]);
+      } finally {
+        setIsLoading(false);
       }
     })();
   }, []);
@@ -175,9 +181,17 @@ function FamilyClientListInner() {
                   border: '1px solid rgba(58,0,0,0.25)',
                 }}
               >
-                {filtered.length === 0 ? (
+                {isLoading ? (
                   <div className="h-full flex items-center justify-center text-gray-600">
-                    Loading clients...
+                    Loading clients…
+                  </div>
+                ) : clients.length === 0 ? (
+                  <div className="h-full flex items-center justify-center text-gray-600">
+                    No clients found.
+                  </div>
+                ) : filtered.length === 0 ? (
+                  <div className="h-full flex items-center justify-center text-gray-600">
+                    No matching clients.
                   </div>
                 ) : (
                   <ul className="divide-y divide-[rgba(58,0,0,0.15)]">
@@ -198,19 +212,35 @@ function FamilyClientListInner() {
                           }
                         >
                           <div
-                            className="shrink-0 rounded-full flex items-center justify-center"
+                            className="shrink-0 rounded-full overflow-hidden flex items-center justify-center"
                             style={{
                               width: 64,
                               height: 64,
                               border: '1px solid #3A0000',
                               backgroundColor: '#fff',
-                              color: '#3A0000',
-                              fontWeight: 900,
-                              fontSize: 20,
                             }}
                           >
-                            {c.name.charAt(0).toUpperCase()}
+                            {c.avatarUrl ? (
+                              <Image
+                                src={c.avatarUrl}
+                                alt={`${c.name}'s profile`}
+                                width={64}
+                                height={64}
+                                className="object-cover"
+                              />
+                            ) : (
+                              <span
+                                style={{
+                                  color: '#3A0000',
+                                  fontWeight: 900,
+                                  fontSize: 20,
+                                }}
+                              >
+                                {c.name.charAt(0).toUpperCase()}
+                              </span>
+                            )}
                           </div>
+
                           <div
                             className="text-xl md:text-2xl font-semibold"
                             style={{ color: colors.text }}

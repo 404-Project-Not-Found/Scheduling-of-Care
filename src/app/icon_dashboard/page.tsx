@@ -8,10 +8,12 @@
  *
  * Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
  * consistency and better navigation.
- *
- * Last Updated by Denise Alexander (23/10/2025): Updated logo, added role specific main
+ * Updated by Denise Alexander (23/10/2025): Updated logo, added role specific main
  * dashboard titles and desciptions and changed page nav for family and management users to
  * redirect to PWSN/Client list pages first when manage client care is selected.
+ *
+ * Last Updated by Denise Alexander (24/10/2025): Added back-end for user profile picture and
+ * changed carer redirect to client list.
  */
 
 'use client';
@@ -57,6 +59,7 @@ export default function DashboardPage() {
   const [title, setTitle] = useState('Dashboard');
   const router = useRouter();
   const [userName, setUserName] = useState<string>(''); // new
+  const [profilePic, setProfilePic] = useState<string | null>(null);
 
   // Mock flag
   const isMock =
@@ -108,16 +111,16 @@ export default function DashboardPage() {
         return;
       }
 
-      // Get user's name
-      if (isMock) {
-        // Mock name
-        const em = (localStorage.getItem('lastLoginEmail') || '').split('@')[0];
-        setUserName(em.charAt(0).toUpperCase() + em.slice(1));
-      } else {
-        const session = await getSession();
-        if (session?.user?.name) {
-          setUserName(session.user.name);
-        }
+      try {
+        const res = await fetch('/api/v1/user/profile', {
+          credentials: 'include',
+        });
+        if (!res.ok) throw new Error('Failed to load user');
+        const data = await res.json();
+        if (data?.fullName) setUserName(data.fullName);
+        if (data?.profilePic) setProfilePic(data.profilePic);
+      } catch (err) {
+        console.error('Error fetching user profile:', err);
       }
 
       const r = session.user.role as Role;
@@ -206,18 +209,29 @@ export default function DashboardPage() {
               <div className="relative">
                 <button
                   onClick={() => setUserMenuOpen((v) => !v)}
-                  className="h-16 w-16 rounded-full flex items-center justify-center overflow-hidden border-2 border-white/80 hover:border-black/50 focus:outline-none focus:ring-2 focus:ring-white/70"
+                  className="h-16 w-16 rounded-full flex items-center justify-center overflow-hidden
+           border-2 border-white/70 hover:shadow-[0_0_0_3px_rgba(249,201,177,0.7)] transition-all duration-200"
                   style={{ backgroundColor: 'white' }}
                   aria-haspopup="menu"
                   aria-expanded={userMenuOpen}
                   title="Account"
                 >
-                  <User
-                    size={50}
-                    strokeWidth={0.3}
-                    fill={palette.header}
-                    color={palette.header}
-                  />
+                  {profilePic ? (
+                    <Image
+                      src={profilePic}
+                      alt="Profile picture"
+                      fill
+                      className="object-cover rounded-full"
+                      sizes="(max-width: 768px) 64px, 128px"
+                    />
+                  ) : (
+                    <User
+                      size={50}
+                      strokeWidth={0.3}
+                      fill={palette.header}
+                      color={palette.header}
+                    />
+                  )}
                 </button>
 
                 {/* Dropdown Menu */}
@@ -232,7 +246,7 @@ export default function DashboardPage() {
                       onClick={goProfile}
                     >
                       <User size={24} strokeWidth={2} color={palette.header} />
-                      Update your details
+                      Manage your account
                     </button>
                     <button
                       className="w-full px-4 py-3 flex items-center gap-2 font-extrabold hover:bg-gray-50 rounded-lg text-left"
@@ -310,9 +324,7 @@ export default function DashboardPage() {
                   if (type === 'client') {
                     if (role === 'family')
                       router.push('/family_dashboard/people_list');
-                    else if (role === 'management')
-                      router.push('/management_dashboard/clients_list');
-                    else router.push('/calendar_dashboard'); // carer
+                    else router.push('/management_dashboard/clients_list');
                   } else {
                     router.push(mainAction.href); // staff schedule unchanged
                   }

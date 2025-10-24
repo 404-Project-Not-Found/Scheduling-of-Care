@@ -1,9 +1,20 @@
+/**
+ * File path: /components/top_menu/AccessDropdown.tsx
+ * Front-end Author: Qingyue Zhao
+ * Back-end Author: Denise Alexander
+ *
+ * Purpose: displays all users (family/management/carer) who have access to a client.
+ *
+ * Last Updated by Denise Alexander (24/10/2025): added phone number as field.
+ *
+ */
+
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { getUsersWithAccess, type AccessUser } from '@/lib/data';
-import { ChevronDown, Mail, User } from 'lucide-react';
+import { ChevronDown, Mail, User, Phone } from 'lucide-react';
 
 const palette = {
   header: '#3A0000',
@@ -18,6 +29,25 @@ export default function AccessMenu({ clientId }: { clientId?: string | null }) {
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
+
+  // Click outside the box -> close the dropdown
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (buttonRef.current && !buttonRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('click', handleClickOutside);
+    } else {
+      document.removeEventListener('click', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     let mounted = true;
@@ -109,6 +139,10 @@ export default function AccessMenu({ clientId }: { clientId?: string | null }) {
                       <span className="text-sm text-black/60 flex items-center gap-1">
                         <Mail className="w-4 h-4" />
                         {u.email}
+                      </span>
+                      <span className="text-sm text-black/60 flex items-center gap-1">
+                        <Phone className="w-4 h-4" />
+                        {u.phone}
                       </span>
                       <span className="text-sm text-black/60 mt-0.5">
                         {formatRole(u.role)}

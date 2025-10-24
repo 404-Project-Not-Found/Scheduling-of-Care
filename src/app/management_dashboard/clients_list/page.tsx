@@ -19,9 +19,11 @@
  * from DB.
  * Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
  * consistency and better navigation.
- *
- * Last Updated by Denise Alexander (23/10/2025): Added view care schedule and information bar
+ * Updated by Denise Alexander (23/10/2025): Added view care schedule and information bar
  * and wording change Register New Client -> Request Access to New Client.
+ *
+ * Last Updated by Denise Alexander (24/10/2025): carers can now view client lists as well but
+ * only approved clients.
  */
 
 'use client';
@@ -31,7 +33,7 @@ import { Search, Plus, Info } from 'lucide-react';
 import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSession } from 'next-auth/react';
-
+import Image from 'next/image';
 import DashboardChrome from '@/components/top_menu/client_schedule';
 import RegisterClientPanel from '@/components/accesscode/registration';
 import { useActiveClient } from '@/context/ActiveClientContext';
@@ -50,6 +52,7 @@ type Client = {
   name: string;
   dashboardType?: 'full' | 'partial';
   orgAccess: OrgAccess;
+  avatarUrl?: string;
 };
 // Organisation history entry returned by API
 type OrgHistEntry = {
@@ -85,6 +88,7 @@ export default function ClientListPage() {
 function ClientListInner() {
   const router = useRouter();
   const { handleClientChange } = useActiveClient();
+  const [isLoading, setIsLoading] = useState(true);
 
   // ---- Current viewer role (carer / family / management) ----
   const [role, setRole] = useState<'carer' | 'family' | 'management'>('family');
@@ -132,6 +136,7 @@ function ClientListInner() {
             id: c._id,
             name: c.name,
             orgAccess: latestOrg?.status ?? 'pending',
+            avatarUrl: c.avatarUrl || '',
           };
         })
       );
@@ -140,6 +145,8 @@ function ClientListInner() {
     } catch (err) {
       console.error('Error loading clients.', err);
       setClients([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -165,10 +172,18 @@ function ClientListInner() {
   // ---- Search filter ----
   const filtered = useMemo(() => {
     const t = q.trim().toLowerCase();
+
+    // Role-based filtering
+    const visibleClients =
+      role === 'carer'
+        ? clients.filter((c) => c.orgAccess === 'approved')
+        : clients;
+
+    // Search filtering
     return t
-      ? clients.filter((c) => c.name.toLowerCase().includes(t))
-      : clients;
-  }, [clients, q]);
+      ? visibleClients.filter((c) => c.name.toLowerCase().includes(t))
+      : visibleClients;
+  }, [clients, q, role]);
 
   // ---- Navigation guard ----
   const tryOpenClient = (c: Client) => {
@@ -265,14 +280,16 @@ function ClientListInner() {
                 />
               </div>
               {/* CTA: Register new client */}
-              <button
-                onClick={addNewClient}
-                className="flex items-center gap-2 rounded-xl px-5 py-3 text-lg font-bold text-white hover:opacity-90"
-                style={{ backgroundColor: colors.header }}
-              >
-                <Plus size={20} strokeWidth={2.5} />
-                Request Access to New Client
-              </button>
+              {role === 'management' && (
+                <button
+                  onClick={addNewClient}
+                  className="flex items-center gap-2 rounded-xl px-5 py-3 text-lg font-bold text-white hover:opacity-90"
+                  style={{ backgroundColor: colors.header }}
+                >
+                  <Plus size={20} strokeWidth={2.5} />
+                  Request Access to New Client
+                </button>
+              )}
             </div>
 
             {/* Info section */}
@@ -284,9 +301,11 @@ function ClientListInner() {
               />
               <div className="text-[#3A0000] leading-relaxed">
                 <h3 className="text-lg mb-0.5">
-                  As a <span className="font-extrabold">Management User</span>,
-                  you must request access to clients from family/POA to view
-                  client profiles and care schedules.
+                  As a <span className="font-extrabold capitalize">{role}</span>{' '}
+                  user,
+                  {role === 'management'
+                    ? ' you must request access to clients from family/POA to view their profiles and schedules.'
+                    : ' you can view client profiles and their care schedules.'}
                 </h3>
               </div>
             </div>
@@ -300,9 +319,17 @@ function ClientListInner() {
                   border: '1px solid rgba(58,0,0,0.25)',
                 }}
               >
-                {filtered.length === 0 ? (
+                {isLoading ? (
                   <div className="h-full flex items-center justify-center text-gray-600">
-                    Loading clients...
+                    Loading clients…
+                  </div>
+                ) : clients.length === 0 ? (
+                  <div className="h-full flex items-center justify-center text-gray-600">
+                    No clients found.
+                  </div>
+                ) : filtered.length === 0 ? (
+                  <div className="h-full flex items-center justify-center text-gray-600">
+                    No matching clients.
                   </div>
                 ) : (
                   <ul className="divide-y divide-[rgba(58,0,0,0.15)]">
@@ -318,19 +345,33 @@ function ClientListInner() {
                         >
                           {/* Avatar circle */}
                           <div
-                            className="shrink-0 rounded-full flex items-center justify-center"
+                            className="shrink-0 rounded-full overflow-hidden flex items-center justify-center"
                             style={{
                               width: 64,
                               height: 64,
                               border: '1px solid #3A0000',
                               backgroundColor: '#fff',
-                              color: '#3A0000',
-                              fontWeight: 900,
-                              fontSize: 20,
                             }}
-                            aria-hidden
                           >
-                            {c.name.charAt(0).toUpperCase()}
+                            {c.avatarUrl ? (
+                              <Image
+                                src={c.avatarUrl}
+                                alt={`${c.name}'s profile`}
+                                width={64}
+                                height={64}
+                                className="object-cover"
+                              />
+                            ) : (
+                              <span
+                                style={{
+                                  color: '#3A0000',
+                                  fontWeight: 900,
+                                  fontSize: 20,
+                                }}
+                              >
+                                {c.name.charAt(0).toUpperCase()}
+                              </span>
+                            )}
                           </div>
 
                           {/* Name + access badge */}
