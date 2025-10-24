@@ -5,9 +5,10 @@
  *
  * Updated by Denise Alexander (7/10/2025): enables either mock mode or real back-end API.
  * Updated by Zahra Rizqita (13/10/2025): implement fetching and saving task.
- *
- * Last Updated by Denise Alexander (16/10/2025): added new helper functions for family
+ * Updated by Denise Alexander (16/10/2025): added new helper functions for family
  * requests handling.
+ *
+ * Last Updated by Denise Alexander (24/10/2025): added phone as a property for AccessUser type.
  */
 
 import * as mockApi from './mock/mockApi';
@@ -37,6 +38,7 @@ export interface AccessUser {
   _id: string;
   fullName: string;
   email: string;
+  phone?: string;
   role: 'carer' | 'family' | 'management';
 }
 

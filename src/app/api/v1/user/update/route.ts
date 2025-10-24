@@ -3,7 +3,10 @@
  * Author: Denise Alexander
  * Date Created: 22/09/2025
  *
- * Purpose: Updates users details when they change email or password.
+ * Purpose: Updates users details when they change their details.
+ *
+ * Last Updated by Denise Alexander (24/10/2025): users can now update
+ * their name, email, phone number and password.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -22,12 +25,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
     }
 
-    const { email, password } = await req.json();
+    const { email, password, fullName, phone, profilePic } = await req.json();
 
     await connectDB();
 
-    // Object to update email and/or password
-    const updateData: { email?: string; password?: string } = {};
+    // Object to update user details
+    const updateData: {
+      email?: string;
+      password?: string;
+      fullName?: string;
+      phone?: string;
+      profilePic?: string;
+    } = {};
 
     if (email) {
       const userExists = await User.findOne({ email: email.toLowerCase() });
@@ -45,21 +54,33 @@ export async function POST(req: NextRequest) {
       updateData.password = await bcrypt.hash(password, 10);
     }
 
+    if (fullName) updateData.fullName = fullName;
+
+    if (phone) updateData.phone = phone;
+
+    if (profilePic) updateData.profilePic = profilePic;
+
     // Update the user in the DB using their session ID
-    const updateUser = await User.findByIdAndUpdate(
+    const updatedUser = await User.findByIdAndUpdate(
       session.user.id, // Ensures they can only update their own account
       updateData,
       { new: true }
     );
 
     // User does not exist
-    if (!updateUser) {
+    if (!updatedUser) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     // Successfully updated
     return NextResponse.json({
       message: 'User details updated successfully',
+      user: {
+        fullName: updatedUser.fullName,
+        email: updatedUser.email,
+        phone: updatedUser.phone,
+        profilePic: updatedUser.profilePic,
+      },
     });
   } catch (err) {
     console.error(err);
