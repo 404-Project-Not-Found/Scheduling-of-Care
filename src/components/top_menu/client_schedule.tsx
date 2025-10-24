@@ -43,8 +43,7 @@ import {
   SquarePlus,
   Settings2,
   Printer,
-  Users,
-  UserPlus,
+  UserSearch,
 } from 'lucide-react';
 
 const palette = {
@@ -406,7 +405,10 @@ export default function DashboardChrome({
             )}
             {(page == 'client-list' || page == 'people-list') && (
               <span className="hidden lg:flex items-center gap-2 font-extrabold text-white text-lg px-2 text-left">
-                <UserPlus className="w-15 h-15 text-white" strokeWidth={1.3} />
+                <UserSearch
+                  className="w-15 h-15 text-white"
+                  strokeWidth={1.3}
+                />
                 {computedHeaderTitle}
               </span>
             )}
