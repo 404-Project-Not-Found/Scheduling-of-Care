@@ -1,5 +1,6 @@
 'use client';
 
+import { ArrowRight } from 'lucide-react';
 import type { Task } from '@/lib/mock/mockApi';
 import { getNextDue } from '@/lib/care-item-helpers/date-helpers';
 import { ClientTask } from '@/app/calendar_dashboard/page';
@@ -133,14 +134,15 @@ export default function TasksPanel({
                 <p className="text-sm text-gray-700">
                   Scheduled due: {t.nextDue}
                 </p>
+                <span
+                  className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(
+                    displayStatus
+                  )}`}
+                >
+                  {displayStatus}
+                </span>
               </div>
-              <span
-                className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(
-                  displayStatus
-                )}`}
-              >
-                {displayStatus}
-              </span>
+              <ArrowRight size={22} strokeWidth={2.5} />
             </li>
           );
         })}

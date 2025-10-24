@@ -43,6 +43,8 @@ import {
   SquarePlus,
   Settings2,
   Printer,
+  Users,
+  UserPlus,
 } from 'lucide-react';
 
 const palette = {
@@ -391,15 +393,29 @@ export default function DashboardChrome({
 
           <button
             onClick={goScheduleHome}
-            className={`font-extrabold leading-none text-lg md:text-2xl ${
+            className={`font-extrabold leading-none text-lg md:text-lg ${
               isHeaderActive || page == 'staff-schedule'
                 ? 'text-white relative after:content-[""] after:block after:w-[85%] after:mx-auto after:h-[3px] after:rounded-full after:bg-white after:mt-2 after:transition-all after:duration-200 text-center px-3 py-2'
                 : 'text-white text-center relative hover:after:content-[""] hover:after:block hover:after:w-[85%] hover:after:mx-auto hover:after:h-[3px] hover:after:rounded-full hover:bg-transparent hover:after:bg-white/70 hover:after:mt-2 hover:transition-all hover:duration-200 px-3 py-2 transition'
             }`}
           >
-            <span className="font-extrabold leading-none text-lg md:text-2xl inline-flex items-center gap-2 text-left">
-              {computedHeaderTitle}
-            </span>
+            {page == 'staff-schedule' && (
+              <span className="hidden lg:flex items-center gap-2 font-extrabold text-white text-2xl px-2 text-left">
+                {computedHeaderTitle}
+              </span>
+            )}
+            {(page == 'client-list' || page == 'people-list') && (
+              <span className="hidden lg:flex items-center gap-2 font-extrabold text-white text-lg px-2 text-left">
+                <UserPlus className="w-15 h-15 text-white" strokeWidth={1.3} />
+                {computedHeaderTitle}
+              </span>
+            )}
+            {page == 'client-schedule' && (
+              <span className="hidden lg:flex items-center gap-2 font-extrabold text-white text-lg px-2 text-left">
+                <Contact className="w-15 h-15 text-white" strokeWidth={1.3} />
+                {computedHeaderTitle}
+              </span>
+            )}
           </button>
         </div>
 
