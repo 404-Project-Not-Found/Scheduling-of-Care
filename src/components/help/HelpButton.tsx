@@ -390,11 +390,7 @@ const managementMatchers: Matcher[] = [
       ? { pageKey: 'management/requests', sectionId: 'management-requests' }
       : null,
   (p) =>
-    p.includes('/manage_care_item/edit')
-      ? { pageKey: 'management/edit-care-items', sectionId: 'edit-care-item' }
-      : null,
-  (p) =>
-    p.includes('/manage_care_item/add')
+    (p.includes('/manage_care_item/edit')|| p.includes('/manage_care_item/add'))
       ? { pageKey: 'management/add-care-items', sectionId: 'add-care-item' }
       : null,
   (p) =>
@@ -402,13 +398,6 @@ const managementMatchers: Matcher[] = [
       ? {
           pageKey: 'management/register-client',
           sectionId: 'management-register-client',
-        }
-      : null,
-  (p) =>
-    p.includes('/old_organisation_access') || p.includes('/organisation')
-      ? {
-          pageKey: 'management/organisation',
-          sectionId: 'management-organisation',
         }
       : null,
   (p) =>
