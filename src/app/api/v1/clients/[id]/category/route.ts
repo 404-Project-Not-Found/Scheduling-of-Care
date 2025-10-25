@@ -10,15 +10,21 @@ import { connectDB } from '@/lib/mongodb';
 import Category from '@/models/Category';
 import { findOrCreateNewCategory } from '@/lib/category-helpers';
 import { Types } from 'mongoose';
+import { slugify } from '@/lib/slug';
 
 export const runtime = 'nodejs';
+
+interface CategoryDeleteBody {
+  clientId?: string;
+  slug?: string;
+  name?: string;
+}
 
 function isObjectIdString(s: unknown): s is string {
   return typeof s === 'string' && Types.ObjectId.isValid(s);
 }
 
 // Search through categories if clientId is given, return only categories used by that client
-
 export async function GET(
   req: NextRequest,
   ctx: { params: Promise<{ id: string }> }
@@ -116,4 +122,47 @@ export async function POST(req: Request) {
     const msg = e instanceof Error ? e.message : 'Failed to create category';
     return NextResponse.json({ error: msg }, { status: 500 });
   }
+}
+
+// Delete a category
+export async function DELETE(req: Request) {
+  await connectDB();
+
+  let body: CategoryDeleteBody;
+  try {
+    body = (await req.json()) as CategoryDeleteBody;
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+  }
+
+  const clientIdStr = (body.clientId || '').trim();
+  if (!clientIdStr || !Types.ObjectId.isValid(clientIdStr)) {
+    return NextResponse.json(
+      { error: 'clientId must be a valid ObjectID' },
+      { status: 422 }
+    );
+  }
+  const clientId = new Types.ObjectId(clientIdStr);
+
+  const resolvedSlug =
+    (body.slug || '').trim() ||
+    (body.name ? slugify(body.name.trim()) : '');
+
+  if (!resolvedSlug) {
+    return NextResponse.json(
+      { error: 'Provide slug or name to delete' },
+      { status: 422 }
+    );
+  }
+
+  const deleted = await Category.findOneAndDelete({ clientId, slug: resolvedSlug }).lean();
+  if (!deleted) {
+    return NextResponse.json({ error: 'Category not found' }, { status: 404 });
+  }
+
+  return NextResponse.json({
+    ok: true,
+    slug: resolvedSlug,
+    deletedId: String(deleted._id),
+  });
 }

@@ -6,9 +6,10 @@
  * Schema for category for care items
  */
 
-import { Schema, Types, model, models } from 'mongoose';
+import { Schema, Types, model, models, Model } from 'mongoose';
 
-interface CategoryDoc {
+export interface CategoryDoc {
+  _id: Types.ObjectId;
   name: string;
   slug: string;
 
@@ -30,5 +31,6 @@ const CategorySchema = new Schema<CategoryDoc>(
 
 // Client each has one category slug
 CategorySchema.index({ clientId: 1, slug: 1 }, { unique: true });
-
-export default models.Category || model('Category', CategorySchema);
+type CategoryModel = Model<CategoryDoc>;
+const Category = (models.Category as CategoryModel) || model<CategoryDoc>('Category', CategorySchema);
+export default Category;

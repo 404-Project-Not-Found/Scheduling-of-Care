@@ -110,6 +110,8 @@ export default function EditSelectorPage() {
 
   const [itemSlug, setItemSlug] = useState<string>('');
 
+  const capitalise = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : '');
+
   /* ------------------------------ Role ------------------------------ */
   const [role, setRole] = useState<Role>('carer'); // default
 
@@ -265,6 +267,45 @@ export default function EditSelectorPage() {
     }
   };
 
+  // delete a category
+  const onDeleteCategory = async () => {
+    if(!activeClientId || !category) return;
+
+    const confirmed = window.confirm( 
+      `Delete the category “${category}” for this client?\n\n` + 
+      `This permanently removes the category. Tasks/items under this category are NOT automatically changed.` 
+    );
+
+    if(!confirmed) return;
+
+    try {
+      const res = await fetch(
+        `/api/v1/clients/${encodeURIComponent(activeClientId)}/category`,
+        {
+          method: 'DELETE',
+          headers: {'Content-Type' : 'application/json'},
+          body: JSON.stringify({
+            clientId: activeClientId,
+            name: category
+          }),
+        }
+      );
+      if(!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        const msg = err?.error || 'Failed to delete category';
+        alert(msg);
+        return;
+      }
+      setCatalog((prev) => prev.filter((c) => c.category !== category));
+      setCategory('');
+      setLabel('');
+      setCareItemOptions([]);
+    } catch(e) {
+      console.error(e);
+      alert('Network error while deleting category.');
+    }
+  }
+
   const statusOptions = useMemo(
     () => ['in progress', 'Completed', 'Not started', 'Paused', 'Cancelled'],
     []
@@ -283,7 +324,7 @@ export default function EditSelectorPage() {
       colors={chromeColors}
     >
       {/* Fill entire area below the topbar */}
-      <div className="w-full bg-[#FFF5EC] px-6 py-5">
+      <div className="w-full min-h-screen bg-[#FFF5EC] px-6 py-5">
         {/* Section title bar */}
         <div className="flex items-center justify-between flex-wrap gap-4">
           <h2 className="text-[#3A0000] text-3xl font-semibold">
@@ -316,22 +357,24 @@ export default function EditSelectorPage() {
           <div className="space-y-6 max-w-3xl mx-auto">
             {/* Category (dropdown) */}
             <Field label="Category">
-              <select
-                key={activeClientId || 'no-client'}
-                value={category}
-                onChange={(e) => {
-                  setCategory(e.target.value.trim());
-                  setLabel(''); // reset task when category changes
-                }}
-                className="w-full rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black"
-              >
-                <option value="">Select a category…</option>
-                {catalog.map((c: { category: string }) => (
-                  <option key={c.category} value={c.category}>
-                    {c.category}
-                  </option>
-                ))}
-              </select>
+              <div className="flex items-center gap-3">
+                <select
+                  key={activeClientId || 'no-client'}
+                  value={category}
+                  onChange={(e) => {
+                    setCategory(e.target.value.trim());
+                    setLabel(''); // reset task when category changes
+                  }}
+                  className="w-full rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black"
+                >
+                  <option value="">Select a category…</option>
+                  {catalog.map((c: { category: string }) => (
+                    <option key={c.category} value={c.category}>
+                      {capitalise(c.category)}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </Field>
 
             {/* Task name (dropdown depends on category) */}
@@ -367,81 +410,13 @@ export default function EditSelectorPage() {
               )}
             </Field>
 
-            <Field label="Date Range">
-              <div className="flex items-center gap-3">
-                <input
-                  type="date"
-                  value={dateFrom}
-                  onChange={(e) => setDateFrom(e.target.value)}
-                  className="w-40 rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black"
-                />
-                <span className="text-[#1c130f] text-lg">to</span>
-                <input
-                  type="date"
-                  value={dateTo}
-                  onChange={(e) => setDateTo(e.target.value)}
-                  min={dateFrom || undefined}
-                  className="w-40 rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black"
-                />
-              </div>
-            </Field>
-
-            <Field label="Repeat Every">
-              <div className="flex items-center gap-3">
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  value={frequencyCountStr}
-                  onChange={(e) =>
-                    setFrequencyCountStr(e.target.value.replace(/[^\d]/g, ''))
-                  }
-                  className="w-28 rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black"
-                  placeholder="e.g., 90"
-                />
-                <select
-                  value={frequencyUnit}
-                  onChange={(e) => setFrequencyUnit(e.target.value as Unit)}
-                  className="w-40 rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black"
-                >
-                  <option value="day">day(s)</option>
-                  <option value="week">week(s)</option>
-                  <option value="month">month(s)</option>
-                  <option value="year">year(s)</option>
-                </select>
-              </div>
-            </Field>
-
-            <Field label="Status">
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                className="w-full rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black"
-              >
-                {statusOptions.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </select>
-            </Field>
-
-            <Field label="Notes">
-              <input
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                className="w-full rounded-lg bg-white border border-[#7c5040]/40 px-3 py-2 text-lg outline-none focus:ring-4 focus:ring-[#7c5040]/20 text-black"
-                placeholder="e.g., add notes for this care item here"
-              />
-            </Field>
-
             {/* Footer buttons */}
             <div className="pt-2 flex items-center justify-center gap-30">
               <button
-                //onClick={onDelete}
-                className="px-5 py-2.5 rounded-md text-lg font-medium text-white bg-[#B3261E] hover:bg-[#99201A] transition"
+                onClick={onDeleteCategory}
+                className="whitespace-nowrap flex-shrink-0 px-6 py-2.5 rounded-md text-lg font-medium text-white bg-[#B3261E] hover:bg-[#99201A] transition min-w-[180px]"
               >
-                Delete
+                Delete Category
               </button>
               <button
                 onClick={() => router.push('/calendar_dashboard')}

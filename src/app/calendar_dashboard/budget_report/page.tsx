@@ -535,7 +535,7 @@ function BudgetReportInner() {
       >
         {/* Top bar */}
         <div className="w-full px-6 py-5">
-          {/* LINE 1: Title */}
+          {/* Title */}
           <h2 className="text-[#3A0000] text-3xl font-semibold mb-3">
             Annual Budget
           </h2>
@@ -543,7 +543,7 @@ function BudgetReportInner() {
           {/* Divider */}
           <hr className="mt-4 mb-4 w-340 mx-auto border-t border-[#3A0000]/25 rounded-full" />
 
-          {/* LINE 2: Year selector + search + edit */}
+          {/* Year selector */}
           <div className="flex items-center justify-between flex-wrap gap-4 w-full">
             {/* LEFT: Year selector */}
             <div className="flex items-center gap-2">
@@ -569,7 +569,7 @@ function BudgetReportInner() {
               )}
             </div>
 
-            {/* RIGHT: Search + Edit (+ Rollover for current year) */}
+            {/* RIGHT: Search + Edit + Rollover for current year */}
             <div className="flex items-center gap-3">
               <div className="relative">
                 <Search
@@ -605,53 +605,6 @@ function BudgetReportInner() {
                     Roll over from {year - 1}
                   </button>
                 )}
-
-              {role === 'management' &&
-                (!isEditing ? (
-                  <button
-                    onClick={startEdit}
-                    disabled={loading.budgetLoad}
-                    className="px-4 py-1.5 rounded-md font-semibold text-[#3A0000] transition"
-                    style={{
-                      background:
-                        'linear-gradient(90deg, #F9C9B1 0%, #FBE8D4 100%)',
-                      border: '1px solid #B47A64',
-                      boxShadow: '0 2px 5px rgba(180, 122, 100, 0.25)',
-                    }}
-                  >
-                    Edit
-                  </button>
-                ) : (
-                  <>
-                    <button
-                      onClick={saveAnnual}
-                      disabled={loading.savingAnnualLoad}
-                      className="px-4 py-1.5 rounded-md font-semibold text-[#3A0000] transition"
-                      style={{
-                        background:
-                          'linear-gradient(90deg, #F8CBA6 0%, #FBE8D4 100%)',
-                        border: '1px solid #B47A64',
-                        boxShadow: '0 2px 5px rgba(180, 122, 100, 0.25)',
-                      }}
-                    >
-                      {loading.savingAnnualLoad ? 'Saving…' : 'Save'}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setIsEditing(false);
-                        setAnnualBudgetInput('');
-                      }}
-                      disabled={loading.savingAnnualLoad}
-                      className="px-4 py-1.5 rounded-md font-semibold text-[#3A0000] transition hover:opacity-80"
-                      style={{
-                        backgroundColor: '#EBD5C4',
-                        border: '1px solid #C9A794',
-                      }}
-                    >
-                      Cancel
-                    </button>
-                  </>
-                ))}
             </div>
           </div>
         </div>
@@ -700,6 +653,36 @@ function BudgetReportInner() {
                         className="w-full max-w-[220px] mx-auto text-center text-2xl font-bold rounded-md bg-white text-black px-3 py-2 border"
                       />
                       <div className="text-sm mt-2">Annual Budget</div>
+
+                      {/** Save / cancel inside tile */}
+                      <div className="mt-4 flex items-center justify-center gap-3">
+                        <button
+                          onClick={saveAnnual}
+                          disabled={loading.savingAnnualLoad || isPastYear}
+                          className="px-4 py-1.5 rounded-md font-semibold text-[#3A0000] transition"
+                          style={{
+                            background: 'linear-gradient(90deg, #F8CBA6 0%, #FBE8D4 100%)',
+                            border: '1px solid #B47A64',
+                            boxShadow: '0 2px 5px rgba(180, 122, 100, 0.25)',
+                          }}
+                        >
+                          {loading.savingAnnualLoad ? 'Saving…' : 'Save'}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setIsEditing(false);
+                            setAnnualBudgetInput('');
+                          }}
+                          disabled={loading.savingAnnualLoad}
+                          className="px-4 py-1.5 rounded-md font-semibold text-[#3A0000] transition hover:opacity-80"
+                          style={{
+                            backgroundColor: '#EBD5C4',
+                            border: '1px solid #C9A794',
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
                     </>
                   ) : (
                     <>
@@ -707,6 +690,22 @@ function BudgetReportInner() {
                         ${summary.annualAllocated.toLocaleString()}
                       </div>
                       <div className="text-sm">Annual Budget</div>
+
+                      {/** Edit button */}
+                      <div className="mt-4">
+                        <button
+                          onClick={startEdit}
+                          disabled={loading.budgetLoad}
+                          className="px-4 py-1.5 rounded-md font-semibold text-[#3A0000] transition"
+                          style={{
+                            background: 'linear-gradient(90deg, #F9C9B1 0%, #FBE8D4 100%)',
+                            border: '1px solid #B47A64',
+                            boxShadow: '0 2px 5px rgba(180, 122, 100, 0.25)',
+                          }}
+                        >
+                          Edit
+                        </button>
+                      </div>
                     </>
                   )}
                 </div>
