@@ -647,14 +647,14 @@ export const faqData: FAQBook = {
   },
 
   'management/add-care-items': {
-    title: 'Management — Add Care Items',
+    title: 'Management — Manage Care Items',
     sections: [
       {
         id: 'add-care-item',
-        title: 'Create care items',
+        title: 'Add and Edit care items',
         body: [
           'Q: How do I add or edit a care item template for clients?',
-          'A: Go to “Care Items”, create a new template or edit an existing one, then assign it to clients as needed.',
+          'A: Go to “Care Items”, create a new template by click on "add care item" or edit an existing one by click on "edit care item". Please fill in all required fields on this page and then click on "add" or "save".',
           'Q: Can I import items from CSV?',
           'A: If enabled by your organisation, use the “Import” option on the Care Items page.',
         ],
