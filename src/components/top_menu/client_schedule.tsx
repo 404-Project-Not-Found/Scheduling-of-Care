@@ -10,14 +10,16 @@
  *
  * Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
  * consistency and better navigation.
- *
- * Last Updated by Denise Alexander (23/10/2025):
+ * Updated by Denise Alexander (23/10/2025):
  * - Reordered heading + sub headings based on role:
  *    - family/POA: switched care schedule and My PWSN
  *    - management: switched care schedule and Client List
  * - Wording changes:
  *    - Client -> PWSN (for family/POA users)
  *    - Oragnisation -> Service Provider
+ *
+ * Last Updated by Denise Alexander (24/10/2025): added logo to My PWSN/Client List, adjusted text size
+ * and redirection logic.
  */
 
 'use client';
@@ -43,6 +45,7 @@ import {
   SquarePlus,
   Settings2,
   Printer,
+  UserSearch,
 } from 'lucide-react';
 
 const palette = {
@@ -76,6 +79,14 @@ type ClientLite = {
   name: string;
   orgAccess?: 'approved' | 'pending' | 'revoked';
 };
+
+interface UserResponse {
+  email: string;
+  role: string;
+  fullName: string;
+  phone?: string;
+  profilePic?: string | null;
+}
 
 type ChromeProps = {
   page: PageKey;
@@ -234,6 +245,18 @@ export default function DashboardChrome({
     resetClient,
   } = useActiveClient();
 
+  const [user, setUser] = useState<UserResponse | null>(null);
+
+  // Fetch user details for avatar
+  useEffect(() => {
+    const fetchUser = async () => {
+      const res = await fetch('/api/v1/user/profile');
+      const data: UserResponse = await res.json();
+      setUser(data);
+    };
+    fetchUser();
+  }, []);
+
   // Load viewer role once
   useEffect(() => {
     const loadRole = async () => {
@@ -252,14 +275,14 @@ export default function DashboardChrome({
   const isFamily = role === 'family';
   const isManagement = role === 'management';
 
-  // Header title click → client/PWSN list
+  // Header title click → client/PWSN lists
   const goScheduleHome = () => {
     if (page === 'staff-schedule' || page === 'staff-list') {
       router.push(ROUTES.staffSchedule);
       return;
     }
 
-    if (isManagement) {
+    if (isManagement || isCarer) {
       router.push(ROUTES.clientList);
     } else if (isFamily) {
       router.push(ROUTES.peopleList);
@@ -363,8 +386,8 @@ export default function DashboardChrome({
   // Determines whether the header title should be underlined or not
   const isHeaderActive =
     (isManagement && page === 'client-list') ||
-    (isFamily && page === 'people-list') ||
-    (!isManagement && !isFamily && page === 'client-schedule');
+    (isCarer && page === 'client-list') ||
+    (isFamily && page === 'people-list');
 
   return (
     <div className="min-h-screen flex flex-col" style={{ color: colors.text }}>
@@ -391,14 +414,31 @@ export default function DashboardChrome({
 
           <button
             onClick={goScheduleHome}
-            className={`font-extrabold leading-none text-lg md:text-2xl ${
+            className={`font-extrabold leading-none text-lg md:text-lg ${
               isHeaderActive || page == 'staff-schedule'
                 ? 'text-white relative after:content-[""] after:block after:w-[85%] after:mx-auto after:h-[3px] after:rounded-full after:bg-white after:mt-2 after:transition-all after:duration-200 text-center px-3 py-2'
                 : 'text-white text-center relative hover:after:content-[""] hover:after:block hover:after:w-[85%] hover:after:mx-auto hover:after:h-[3px] hover:after:rounded-full hover:bg-transparent hover:after:bg-white/70 hover:after:mt-2 hover:transition-all hover:duration-200 px-3 py-2 transition'
             }`}
           >
-            <span className="font-extrabold leading-none text-lg md:text-2xl inline-flex items-center gap-2 text-left">
-              {computedHeaderTitle}
+            {/* Header Title */}
+            <span className="hidden lg:flex items-center gap-2 font-extrabold text-white text-lg px-2 text-left">
+              {isFamily ? (
+                <>
+                  <UserSearch
+                    className="w-15 h-15 text-white"
+                    strokeWidth={1.3}
+                  />
+                  My PWSN
+                </>
+              ) : (
+                <>
+                  <UserSearch
+                    className="w-15 h-15 text-white"
+                    strokeWidth={1.3}
+                  />
+                  Client List
+                </>
+              )}
             </span>
           </button>
         </div>
@@ -430,15 +470,13 @@ export default function DashboardChrome({
           ) : page === 'staff-schedule' ? null : (
             // Default nav
             <>
-              {(isFamily || isManagement) && (
-                <Link
-                  href={ROUTES.schedule}
-                  className={`${activeUnderline(page, 'client-schedule', role!)} inline-flex items-center gap-2 text-left`}
-                >
-                  <Contact className="w-15 h-15 text-white" strokeWidth={1.3} />
-                  Care Schedule
-                </Link>
-              )}
+              <Link
+                href={ROUTES.schedule}
+                className={`${activeUnderline(page, 'client-schedule', role!)} inline-flex items-center gap-2 text-left`}
+              >
+                <Contact className="w-15 h-15 text-white" strokeWidth={1.3} />
+                Care Schedule
+              </Link>
 
               {isFamily && (
                 <Link
@@ -535,18 +573,28 @@ export default function DashboardChrome({
             <div className="relative">
               <button
                 onClick={() => setUserMenuOpen((v) => !v)}
-                className="h-16 w-16 rounded-full flex items-center justify-center overflow-hidden border-2 border-white/80 hover:border-black/50 focus:outline-none focus:ring-2 focus:ring-white/70"
+                className="h-16 w-16 rounded-full flex items-center justify-center overflow-hidden
+           border-2 border-white/70 hover:shadow-[0_0_0_3px_rgba(249,201,177,0.7)] transition-all duration-200"
                 style={{ backgroundColor: 'white' }}
                 aria-haspopup="menu"
                 aria-expanded={userMenuOpen}
                 title="Account"
               >
-                <User
-                  size={50}
-                  strokeWidth={0.3}
-                  fill={palette.header}
-                  color={palette.header}
-                />
+                {user?.profilePic ? (
+                  <Image
+                    src={user.profilePic}
+                    alt="User profile"
+                    fill
+                    className="object-cover rounded-full"
+                  />
+                ) : (
+                  <User
+                    size={50}
+                    strokeWidth={0.3}
+                    fill={palette.header}
+                    color={palette.header}
+                  />
+                )}
               </button>
               {userMenuOpen && (
                 <div
@@ -559,7 +607,7 @@ export default function DashboardChrome({
                     onClick={goProfile}
                   >
                     <User size={30} strokeWidth={2} color={palette.header} />
-                    Update your details
+                    Manage your account
                   </button>
                   <button
                     className="w-full px-4 py-3 flex items-center gap-2 font-extrabold hover:bg-gray-50 rounded-lg"
@@ -619,35 +667,6 @@ export default function DashboardChrome({
             {computedBannerTitle ? (
               <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
                 <div className="flex items-center gap-3 justify-center">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (activeClient.id) router.push(ROUTES.profile);
-                    }}
-                    disabled={!activeClient.id}
-                    className={`rounded-full border border-black/20 focus:outline-none focus:ring-2 focus:ring-black/30 flex-shrink-0 ${
-                      activeClient.id
-                        ? 'cursor-pointer hover:ring-2 hover:ring-black/50'
-                        : 'cursor-not-allowed opacity-60'
-                    }`}
-                    style={{ width: 65, height: 65, backgroundColor: 'white' }}
-                    aria-label="Open client profile"
-                    title={
-                      activeClient.id
-                        ? 'Open client profile'
-                        : 'Select a client first'
-                    }
-                  >
-                    <div className="flex items-center justify-center w-full h-full">
-                      <User
-                        size={50} // Icon size
-                        strokeWidth={0.3}
-                        fill={palette.header}
-                        color={palette.header}
-                      />
-                    </div>
-                  </button>
-
                   <h1 className="font-extrabold leading-none text-2xl md:text-3xl select-none whitespace-nowrap">
                     {computedBannerTitle}
                   </h1>

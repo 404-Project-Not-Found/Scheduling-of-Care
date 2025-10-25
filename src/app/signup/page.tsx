@@ -4,8 +4,10 @@
  * Back-end Author: Denise Alexander
  * Date Created: 05/09/2025
  *
- * Last Updated by Denise Alexander (23/10/2025): Added role specific sign up instructions as per
+ * Updated by Denise Alexander (23/10/2025): Added role specific sign up instructions as per
  * client's request.
+ *
+ * Last Updated by Denise Alexander (24/10/2025): Added phone number as field in the form.
  */
 
 'use client';
@@ -121,6 +123,7 @@ export default function SignupPage() {
   // Controlled input states
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
 
@@ -432,6 +435,22 @@ export default function SignupPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full rounded-md border border-[#6E1B1B] bg-white px-4 py-2.5 text-lg"
+              required
+            />
+          </div>
+
+          {/* Phone Number */}
+          <div className="flex flex-col gap-2">
+            <label htmlFor="phone" className="text-[20px] font-medium">
+              Enter Phone Number <span className="text-red-600">*</span>
+            </label>
+            <input
+              id="phone"
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="w-full rounded-md border border-[#6E1B1B] bg-white px-4 py-2.5 text-lg"
+              placeholder="e.g. 0412 345 678"
               required
             />
           </div>

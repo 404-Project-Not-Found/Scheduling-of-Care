@@ -4,6 +4,9 @@
  * Date Created: 22/09/2025
  *
  * Purpose: Retrieves logged-in users information including email and password.
+ *
+ * Last Updated by Denise Alexander (24/10/2025): added phone number and profile picture
+ * as properties of user.
  */
 
 import { NextResponse } from 'next/server';
@@ -17,6 +20,8 @@ interface IUser {
   email: string;
   role: string;
   fullName: string;
+  phone?: string;
+  profilePic?: string;
 }
 
 /**
@@ -41,5 +46,7 @@ export async function GET() {
     email: user.email,
     role: user.role,
     fullName: user.fullName,
+    phone: user.phone || '',
+    profilePic: user.profilePic || null,
   });
 }

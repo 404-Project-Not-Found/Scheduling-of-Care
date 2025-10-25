@@ -5,8 +5,10 @@
  *
  * Purpose: Retrieves all clients under an organisation's care for staff members (management and carers) to view.
  *
- * Last Updated by Denise Alexander - 7/10/2025: to fetch the most recent update to organisation-client link
+ * Updated by Denise Alexander (7/10/2025): to fetch the most recent update to organisation-client link
  * status.
+ *
+ * Last Updated by Denise Alexander (24/10/2025): added avatarUrl as a property for client type.
  */
 
 import { NextResponse } from 'next/server';
@@ -30,6 +32,7 @@ interface OrgHistoryItem {
 interface ClientWithOrg {
   _id: mongoose.Types.ObjectId;
   name: string;
+  avatarUrl?: string;
   dashboardType?: 'full' | 'partial';
   organisationHistory?: OrgHistoryItem[];
 }
@@ -87,6 +90,7 @@ export async function GET() {
     return {
       _id: c._id,
       name: c.name,
+      avatarUrl: c.avatarUrl || '',
       dashboardType: c.dashboardType,
       orgAccess: latestOrg?.status ?? 'pending', // default pending
     };

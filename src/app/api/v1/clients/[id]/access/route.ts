@@ -4,6 +4,8 @@
  * Date Created: 19/10/2025
  *
  * Purpose: retrieve all users (family/management/carer) who have access to a client.
+ *
+ * Last Updated by Denise Alexander (24/10/2025): added phone number as field.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -18,6 +20,7 @@ interface AccessUser {
   _id: string;
   fullName: string;
   email: string;
+  phone?: string;
   role: 'family' | 'management' | 'carer';
 }
 
@@ -27,6 +30,7 @@ interface LeanClient {
     _id: string;
     fullName: string;
     email: string;
+    phone?: string;
     role: 'family' | 'carer' | 'management';
   };
   organisationHistory?: {
@@ -65,7 +69,7 @@ export async function GET(
     // 'createdBy' -> family user
     // 'organisationHistory.organisation' -> linked organisations
     const client = (await Client.findById(clientId)
-      .populate('createdBy', 'fullName email role')
+      .populate('createdBy', 'fullName email phone role')
       .populate({
         path: 'organisationHistory.organisation',
         select: 'name',
@@ -84,6 +88,7 @@ export async function GET(
         _id: client.createdBy._id.toString(),
         fullName: client.createdBy.fullName,
         email: client.createdBy.email,
+        phone: client.createdBy.phone,
         role: 'family',
       });
     }
@@ -100,7 +105,7 @@ export async function GET(
         organisation: { $in: approvedOrgIds },
         role: { $in: ['carer', 'management'] },
         status: 'active',
-      }).select('fullName email role');
+      }).select('fullName email phone role');
 
       // Add all matched users to the access list.
       staffUsers.forEach((u) => {
@@ -108,6 +113,7 @@ export async function GET(
           _id: u._id.toString(),
           fullName: u.fullName,
           email: u.email,
+          phone: u.phone,
           role: u.role as 'carer' | 'management',
         });
       });

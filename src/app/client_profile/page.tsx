@@ -8,8 +8,9 @@
  * Updated by Denise Alexander (07-10-2025): back-end integration.
  * Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
  * consistency and better navigation.
+ * Updated by Denise Alexander (23/10/2025): wording change Client -> PWSN.
  *
- * Last Updated by Denise Alexander (23/10/2025): wording change Client -> PWSN.
+ * Last Updated by Denise Alexander (24/10/2025): added back-end for client profile picture.
  *
  * Notes:
  * - Fixed-height viewport section (h-[680px]) to avoid bottom gutters.
@@ -285,29 +286,6 @@ function ClientProfilePageInner() {
 
   const onSave = saveClient;
 
-  if (loading) {
-    return (
-      <DashboardChrome
-        page="profile"
-        clients={clients}
-        onClientChange={(id) => router.push(`/client_profile?id=${id}`)}
-        colors={{
-          header: colors.header,
-          banner: colors.banner,
-          text: colors.text,
-        }}
-      >
-        <div
-          className="flex-1 flex items-center justify-center"
-          style={{ backgroundColor: colors.pageBg }}
-        >
-          <h2 className="text-2xl md:text-3xl font-extrabold">
-            Loading client profile…
-          </h2>
-        </div>
-      </DashboardChrome>
-    );
-  }
   if (error) {
     return (
       <DashboardChrome
@@ -366,7 +344,7 @@ function ClientProfilePageInner() {
             <div>{pageTitle}</div>
             {error && <div className="text-red-600 text-lg mb-4">{error}</div>}
             <button
-              onClick={() => router.push(backHref)}
+              onClick={() => router.back()}
               className="flex items-center gap-2 text-base md:text-lg font-semibold bg-white/10 px-4 py-1.5 rounded hover:bg-white/20 transition"
               aria-label="Back"
             >
@@ -401,7 +379,7 @@ function ClientProfilePageInner() {
                       {/* Column 1: avatar */}
                       <div className="flex-[0.6] flex flex-col items-center gap-6">
                         <div
-                          className="rounded-full flex items-center justify-center overflow-hidden"
+                          className="relative rounded-full overflow-hidden flex items-center justify-center"
                           style={{
                             width: 200,
                             height: 200,
@@ -413,9 +391,8 @@ function ClientProfilePageInner() {
                             <Image
                               src={avatarUrl}
                               alt="Profile avatar"
-                              width={100}
-                              height={100}
-                              className="object-cover rounded-full"
+                              fill
+                              className="object-cover"
                             />
                           ) : (
                             <div className="flex items-center justify-center w-full h-full">
