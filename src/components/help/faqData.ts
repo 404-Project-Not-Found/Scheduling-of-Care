@@ -170,11 +170,11 @@ export const faqData: FAQBook = {
   },
 
   'family/client-schedule': {
-    title: 'Family / POA — Client Schedule',
+    title: 'Family / POA — PWSN Care Schedule',
     sections: [
       {
         id: 'family-client-schedule',
-        title: 'Calendar view of the client schedule',
+        title: 'Calendar view of your PWSN’s Care schedule',
         body: [
           'Q: What does the "Care Schedule" page show?',
           'A: It displays care items scheduled in the selected month for the selected PWSN.',
