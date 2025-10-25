@@ -401,13 +401,6 @@ const managementMatchers: Matcher[] = [
         }
       : null,
   (p) =>
-    p.includes('/old_organisation_access') || p.includes('/organisation')
-      ? {
-          pageKey: 'management/organisation',
-          sectionId: 'management-organisation',
-        }
-      : null,
-  (p) =>
     p.includes('/request-log-page')
       ? {
           pageKey: 'management/request-log',

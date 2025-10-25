@@ -339,16 +339,16 @@ export const faqData: FAQBook = {
   },
 
   'family/request-form': {
-    title: 'Family / POA — Request of Change Form',
+    title: 'Family / POA — Family reuqest',
     sections: [
       {
         id: 'family-request-form',
         title: 'Submit a change request',
         body: [
-          'Q: What does the "Request Form" page do?',
-          'A: You can send a change request for a care item to the service provider’s management.',
-          'Q: What does “Submit” do?',
-          'A: Sends your change request to the service provider’s management automatically for review.',
+          'Q: What does the "Family Reuqest" page do?',
+          'A: You can send a change request for a care item to the service provider’s management by clicking on "Add new request".',
+          'Q: What should I do after click on "add new request"?',
+          'A: Fill in all required information and click "submit", then it will sends your change request to the service provider’s management automatically for review.',
           'Q: What does “Cancel/Close” do?',
           'A: Dismisses the form without sending a request.',
         ],
@@ -358,7 +358,7 @@ export const faqData: FAQBook = {
 
   // Family / POA — Update Details
   'family/update-details': {
-    title: 'Family / POA — Update Details',
+    title: 'Family / POA — Manage Account',
     sections: [
       {
         id: 'family-update-details',
@@ -408,8 +408,8 @@ export const faqData: FAQBook = {
           'A: On the main dashboard, choose either “Staff Schedule” or “Manage Client care”.',
           'Q: What do the “Staff Schedule” / “Manage Client care” options do?',
           'A: They switch the main calendar view to show staff schedule of your co-workers vs. client schedule and all the care items.',
-          'Q: What happens if no client is selected?',
-          'A: You’ll see “No client selected”. Use “Select a client” to pick one before viewing items.',
+          'Q: How can I manage my account and password?',
+          'A: Click the profile icon at the top right corner of the page to access your account settings and password options.'
         ],
       },
     ],
@@ -553,26 +553,18 @@ export const faqData: FAQBook = {
    * ========================= */
 
   'management/dashboard': {
-    title: 'Management — Dashboard',
+    title: 'Management — Main Dashboard',
     sections: [
       {
         id: 'management-dashboard-overview',
-        title: 'Overview & navigation',
+        title: 'Switch between Client Care and Staff Schedule',
         body: [
-          'Q: Where can I review pending items at a glance?',
-          'A: Use the dashboard cards for pending access requests, receipts awaiting review, and change requests.',
-          'Q: How do I navigate to management tools quickly?',
-          'A: Use the top navigation: Care Items, View Transactions, Budget Report, Request Log, Organisation, and more.',
-          'Q: Can I filter by site or team?',
-          'A: If enabled, use the site/team filter at the top of the dashboard.',
-          'Q: What happens when I click "Client Schedule"?',
+          'Q: What happens when I click "Manage Client Care"?',
           'A: You’ll open the Client Schedule Management page to view a client’s calendar, see care items, and manage scheduling for client.',
-          'Q: What happens when I click "Staff Schedule"?',
+          'Q: What happens when I click "Manage Staff Care"?',
           'A: You’ll open the Staff Shift Management page to view all staff schedules, and assign shifts.',
-
-
-
-
+          'Q: How can I manage my account and password?',
+          'A: Click the profile icon at the top right corner of the page to access your account settings and password options.'
         ],
       },
     ],
@@ -624,7 +616,7 @@ export const faqData: FAQBook = {
     sections: [
       {
         id: 'client-list',
-        title: 'Manage clients',
+        title: 'Manage your Clients',
         body: [
           'Q: How do I register a new client?',
           'A: Go to “Client List”, click “Add Client”, and fill in the required details.',
@@ -651,7 +643,7 @@ export const faqData: FAQBook = {
     sections: [
       {
         id: 'add-care-item',
-        title: 'Add and Edit care items',
+        title: 'Add and Edit Care Items',
         body: [
           'Q: How do I add or edit a care item template for clients?',
           'A: Go to “Care Items”, create a new template by click on "add care item" or edit an existing one by click on "edit care item". Please fill in all required fields on this page and then click on "add" or "save".',
@@ -667,14 +659,12 @@ export const faqData: FAQBook = {
     sections: [
       {
         id: 'mgmt-transactions',
-        title: 'Audit & approval',
+        title: 'View receipts uploaded by carers',
         body: [
           'Q: How do I review receipts uploaded by carers?',
-          'A: Open “View Transactions” to filter by client, date, or status, then open a receipt to inspect details.',
-          'Q: What do “Approve / Reject” actions do?',
-          'A: “Approve” confirms the expense; “Reject” sends it back for correction with your notes.',
-          'Q: Can I export transactions?',
-          'A: Use the export/download controls (if enabled) to get a CSV or PDF for auditing.',
+          'A: Click the file name to automatically download it in your browser.',
+          'Q: How can I find a receipt for specific care item?',
+          'A: Type the keywords for that care item into the top-right search bar to search.'
         ],
       },
     ],
@@ -703,32 +693,18 @@ export const faqData: FAQBook = {
   },
 
   'management/request-log': {
-    title: 'Management — Request Log',
+    title: 'Management — Request from Family Member/POA of clients',
     sections: [
       {
         id: 'mgmt-request-log',
-        title: 'Change requests',
+        title: 'Requests Log Page',
         body: [
-          'Q: How do I review change requests from Family/POA?',
-          'A: Open “Request Log”, select a request to read details, and choose Approve or Reject with comments.',
-          'Q: What happens after I approve or reject?',
-          'A: The requester is notified, and the system updates the related care item if applicable.',
-        ],
-      },
-    ],
-  },
-
-  'management/organisation-access': {
-    title: 'Management — Organisation Access',
-    sections: [
-      {
-        id: 'management-organisation',
-        title: 'Access requests & revocations',
-        body: [
-          'Q: How do I approve or revoke an organisation’s access to a client?',
-          'A: Go to “Organisation”, open the relevant client, then approve incoming requests or revoke existing access.',
-          'Q: Can I see access history?',
-          'A: Yes. Use the history view to audit previous grants and revocations.',
+          'Q: What is this page for?',
+          'A: It allows you to view requests made by family/POA of the client with details of the care item, what the requested change was, who it was requested by, the date it was requested, the status of the request, and if the request has been implemented, the resolution date',
+          'Q: What does it mean when the status is set to Pending?',
+          'A: "Pending" means a family member has submitted a request, but it has not yet been actioned by your organisation.',
+          'Q: What does it mean when the status is set to Implemented?',
+          'A: "Implemented" means your organisation or any staff/carer has completed the request and updated the related care item in the system. Once it’s set to "Implemented", the family member can see the status change and know their request has been implemented.',
         ],
       },
     ],
@@ -739,28 +715,26 @@ export const faqData: FAQBook = {
     sections: [
       {
         id: 'mgmt-client-profile',
-        title: 'Review & edit client details',
+        title: 'view client details',
         body: [
           'Q: Who‘s profile is this?',
           'A: The client you currently have selected and their name are shown in the center of the pink banner.',
-          'Q: How do I update a client’s profile on behalf of the organisation?',
-          'A: Open the client profile, edit the necessary fields, and click “Save”.',
-          'Q: How do I regenerate an access code if needed?',
-          'A: Use “Generate Access Code”; remember this numeric code is the client’s personal token—keep it secure.',
+          'Q: Can I change anything on thus page?',
+          'A: No, only a family member can update this page on behalf of the client. As a organisation manager, you can only view this page.',
         ],
       },
     ],
   },
 
-  // Management — Update Details
+
   'management/update-details': {
-    title: 'Management — Update Details',
+    title: 'Management — Manage your account',
     sections: [
       {
         id: 'management-update-details',
         title: 'Manage your account details',
         body: [
-          'Q: What does the "Update your Details" page do?',
+          'Q: What does the "Manage your account" page do?',
           'A: It lets you change your email and password for this Management account.',
           'Q: What is this password for?',
           'A: It’s the password for this Management account, use to log in to this account and manage your client.',
@@ -780,8 +754,12 @@ export const faqData: FAQBook = {
         body: [
           'Q: What does the "Staff Schedule" page do?',
           'A: It lets you view and manage the schedules of all staff members.',
-          'Q: How do I add a new staff member?',
-          'A: Click the "Add Staff" button and fill in the required details.',
+          'Q: What does "Manage staff" do?',
+          'A: It will go to the staff list oage where you can invite new staff or removing existing staff.',
+          'Q: What does "Shift Settings" do?',
+          'A: You can customize the time period of the shift.',
+          'Q: What does "Print" do?',
+          'A: You can print the content of this current page, the staff schedule for the week you are currently viewing.',
         ],
       },
     ],
@@ -797,7 +775,7 @@ export const faqData: FAQBook = {
           'Q: What does the "Staff List" page do?',
           'A: It lets you view and manage the details of all staff members.',
           'Q: How do I add a new staff member?',
-          'A: Click the "Add Staff" button and fill in the required details.',
+          'A: Click the “Generate Staff Invite Code” button. After clicking “Generate”, copy the generated code and send it to your organisation’s staff. They can use this code to sign up for a new account, then their name and details will automatically appear on this list.',
         ],
       },
     ],
