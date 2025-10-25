@@ -136,3 +136,35 @@ export async function getCareItemForClient(
 
   return items.map((i) => i.slug.toString());
 }
+
+export function addPeriodISO(iso: string, count: number, unit: 'day'|'week'|'month'|'year'): string {
+  const d = new Date(iso + 'T00:00:00Z');
+  if (unit === 'day') d.setUTCDate(d.getUTCDate() + count);
+  else if (unit === 'week') d.setUTCDate(d.getUTCDate() + 7 * count);
+  else if (unit === 'month') d.setUTCMonth(d.getUTCMonth() + count);
+  else if (unit === 'year') d.setUTCFullYear(d.getUTCFullYear() + count);
+  return d.toISOString().slice(0, 10);
+}
+
+export function lastScheduledOnOrBefore(
+  startISO: string,
+  count: number,
+  unit: 'day'|'week'|'month'|'year',
+  refISO: string
+): string | null {
+  if (!startISO) return null;
+  let curr = startISO;
+  if (curr > refISO) return null;
+  const step = unit === 'day' ? 30 : unit === 'week' ? 26 : unit === 'month' ? 12 : 5;
+
+  while (addPeriodISO(curr, count * step, unit) <= refISO) {
+    curr = addPeriodISO(curr, count * step, unit);
+  }
+
+  let next = addPeriodISO(curr, count, unit);
+  while (next <= refISO) {
+    curr = next;
+    next = addPeriodISO(curr, count, unit);
+  }
+  return curr;
+}

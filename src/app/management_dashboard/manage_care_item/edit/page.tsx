@@ -273,7 +273,7 @@ export default function EditSelectorPage() {
 
     const confirmed = window.confirm( 
       `Delete the category “${category}” for this client?\n\n` + 
-      `This permanently removes the category. Tasks/items under this category are NOT automatically changed.` 
+      `This permanently removes the category. Tasks/items under this category are NOT automatically changed.`
     );
 
     if(!confirmed) return;

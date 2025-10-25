@@ -7,7 +7,7 @@
  * Schema for Care Items in the database
  */
 
-import mongoose, { Schema, model, models, type Model, Types } from 'mongoose';
+import mongoose, { Schema, type Model, Types } from 'mongoose';
 
 export type Unit = 'day' | 'week' | 'month' | 'year';
 
@@ -80,6 +80,5 @@ const CareItemSchema = new Schema<CareItemDoc>(
 );
 
 CareItemSchema.index({ clientId: 1, categoryId: 1, deleted: 1, status: 1 });
-
-export default models.CareItem ||
-  model<CareItemDoc>('CareItem', CareItemSchema);
+const CareItem = (mongoose.models?.CareItem as Model<CareItemDoc>) || mongoose.model<CareItemDoc>('CareItem', CareItemSchema);
+export default CareItem;

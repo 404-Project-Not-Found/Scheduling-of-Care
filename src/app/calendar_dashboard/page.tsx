@@ -18,14 +18,16 @@
  * - TasksPanel receives either `selectedDate` or `year`+`month` to filter items,
  *  add a dropdown of list of users with access to the selected client
  *
- * Last Updated by Zahra Rizqita - 17/10/2025
+ * Updated by Zahra Rizqita - 17/10/2025
  * - Checking when task is marked as done by carer and when management mark task as completed
  * - Implement status change when this happens
  * - Real time update for task implementation
  * - Real time update for task verification
  *
- * Last Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
+ * Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
  * consistency and better navigation.
+ * 
+ * Last Updated by Zahra Rizqita (25/10/2025): Change to show warning if previous month have unfinished task
  */
 
 'use client';
@@ -39,6 +41,7 @@ import DashboardChrome from '@/components/top_menu/client_schedule';
 import CalendarPanel from '@/components/dashboard/CalendarPanel';
 import TasksPanel from '@/components/tasks/TasksPanel';
 import { futureOccurencesAfterLastDone } from '@/lib/care-item-helpers/date-helpers';
+import { lastScheduledOnOrBefore } from '@/lib/care-item-helpers/care_item_utils';
 
 import type { Task } from '@/lib/mock/mockApi';
 
@@ -92,6 +95,9 @@ export type ClientTask = Task & {
   frequencyUnit?: 'day' | 'week' | 'month' | 'year';
   lastDone: string;
   frequencyDays?: number;
+  // updated for warning
+  shouldCarryForward: boolean;
+  originalDue: string;
 };
 
 // Type status
@@ -402,6 +408,37 @@ function ClientSchedule() {
     });
   });
 
+  // warning of overdue occurrences from before visible month
+  const carryWarnings = useMemo(() => {
+    const warnings: Array<{ slug: string; label: string; originalDue: string }> = [];
+    const monthStartISO = ymd(windowStart); // first day of the visible month (YYYY-MM-DD)
+
+    for (const t of tasksByClient) {
+      const count = t.frequencyCount ?? 0;
+      const unit = t.frequencyUnit as 'day'|'week'|'month'|'year'|undefined;
+      if (!count || !unit) continue;
+
+      const start0 = ymd(t.dateFrom);
+      const last0 = ymd(t.lastDone);
+
+      if (!start0) continue;
+
+      const missed = lastScheduledOnOrBefore(start0, count, unit, monthStartISO);
+      if (!missed || missed >= monthStartISO) continue;
+
+      if (!last0 || last0 < missed) {
+        warnings.push({ slug: t.slug, label: t.label, originalDue: missed });
+      }
+    }
+
+    const dedup = new Map<string, { slug: string; label: string; originalDue: string }>();
+    for (const w of warnings) {
+      const prev = dedup.get(w.slug);
+      if (!prev || w.originalDue > prev.originalDue) dedup.set(w.slug, w);
+    }
+    return Array.from(dedup.values()).sort((a, b) => a.label.localeCompare(b.label));
+  }, [tasksByClient, windowStart, occurStatus]);
+
   /* ------------- Visible month/year coming from Calendar ------------- */
   const MONTH_NAMES = useMemo(
     () => [
@@ -615,6 +652,43 @@ function ClientSchedule() {
                   <p className="text-lg">Loading client&apos;s care items...</p>
                 )}
               </div>
+              
+              {carryWarnings.length > 0 && (
+                <div className="px-6 -mt-4 mb-4">
+                  <div className="rounded-lg border border-yellow-400 bg-yellow-50 p-4">
+                    <div className="font-bold text-yellow-900 mb-2">
+                      Overdue items from last month:
+                    </div>
+                    <ul className="space-y-2">
+                      {carryWarnings.map((w) => (
+                        <li key={w.slug} className="flex items-center justify-between gap-3">
+                          <div className="text-yellow-900">
+                            <span className="font-semibold">{w.label}</span>{' '}
+                            <span className="text-sm">
+                              — original due: <span className="font-mono">{w.originalDue}</span>
+                            </span>
+                          </div>
+                          <button
+                            className="px-3 py-1 rounded border border-yellow-600 text-yellow-900 bg-white hover:bg-yellow-100"
+                            onClick={() => {
+                              const base = tasksByClient.find(t => t.slug === w.slug);
+                              if (base) {
+                                setSelectedTask({
+                                  ...base,
+                                  shouldCarryForward: true,
+                                  originalDue: w.originalDue,
+                                });
+                              }
+                            }}
+                          >
+                            View
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
 
               {/* Task list */}
               <div className="px-6 pb-8">
