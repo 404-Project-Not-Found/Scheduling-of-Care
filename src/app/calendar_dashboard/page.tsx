@@ -528,6 +528,7 @@ function ClientSchedule() {
     }
   };
 
+  // mark task as done
   async function markTaskDone(
     task: ClientTask,
     fileName: string,
@@ -570,7 +571,7 @@ function ClientSchedule() {
         return;
       }
 
-      const updated = await res.json();
+      const updated: {lastDone?: string} = await res.json();
       setOccurStatus((prev) => ({
         ...prev,
         [occKey(slug, doneAt)]: 'Waiting Verification',
@@ -665,7 +666,7 @@ function ClientSchedule() {
                           <div className="text-yellow-900">
                             <span className="font-semibold">{w.label}</span>{' '}
                             <span className="text-sm">
-                              — original due: <span className="font-mono">{w.originalDue}</span>
+                              — originally due: <span className="font-mono">{w.originalDue}</span>
                             </span>
                           </div>
                           <button
@@ -817,7 +818,7 @@ function TaskDetail({
           <span className="font-extrabold">Frequency:</span> {task.frequency}
         </p>
         <p>
-          <span className="font-extrabold">Last Done:</span> {task.lastDone}
+          <span className="font-extrabold">Last Completed:</span> {task.lastDone}
         </p>
         <p>
           <span className="font-extrabold">Scheduled Due:</span> {task.nextDue}
@@ -978,7 +979,17 @@ function TaskDetail({
                     );
                     return;
                   }
-                  setOccurStatus((prev) => ({ ...prev, [key]: 'Completed' }));
+                  const data = await res.json();
+
+                  const key = occKey(task.slug, task.nextDue!);
+                  setOccurStatus(prev => ({ ...prev, [key]: 'Completed' }));
+
+                  setTasks(prev => prev.map(t =>
+                    t.slug === task.slug ? { ...t, lastDone: data.lastDone ?? task.nextDue!.slice(0,10) } : t
+                  ));
+                  setSelectedTask(prev =>
+                    prev?.slug === task.slug ? { ...prev, lastDone: data.lastDone ?? task.nextDue!.slice(0,10) } : prev
+                  );
                 } catch (e) {
                   alert('Network/Server error marking as completed');
                 }

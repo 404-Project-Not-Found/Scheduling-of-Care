@@ -8,18 +8,18 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import Category from '@/models/Category';
+import CareItem from '@/models/CareItem';
 import { findOrCreateNewCategory } from '@/lib/category-helpers';
-import { Types } from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 import { slugify } from '@/lib/slug';
 
 export const runtime = 'nodejs';
 
 interface CategoryDeleteBody {
-  clientId?: string;
-  slug?: string;
-  name?: string;
+    clientId?: string;
+    slug?: string;
+    name?: string;
 }
-
 function isObjectIdString(s: unknown): s is string {
   return typeof s === 'string' && Types.ObjectId.isValid(s);
 }
@@ -124,6 +124,7 @@ export async function POST(req: Request) {
   }
 }
 
+
 // Delete a category
 export async function DELETE(req: Request) {
   await connectDB();
@@ -155,14 +156,43 @@ export async function DELETE(req: Request) {
     );
   }
 
-  const deleted = await Category.findOneAndDelete({ clientId, slug: resolvedSlug }).lean();
-  if (!deleted) {
+  const category = await Category.findOne({ clientId, slug: resolvedSlug }).lean();
+  if (!category) {
     return NextResponse.json({ error: 'Category not found' }, { status: 404 });
   }
 
-  return NextResponse.json({
-    ok: true,
-    slug: resolvedSlug,
-    deletedId: String(deleted._id),
-  });
+  const session = await mongoose.startSession();
+  try {
+    let deletedCareItems = 0;
+    await session.withTransaction(async () => {
+      const careItemFilter = {
+        clientId,
+        $or: [
+          { categoryId: category._id },
+          { categorySlug: category.slug },
+          { category: category.name }
+        ],
+      };
+
+      const careRes = await CareItem.deleteMany(careItemFilter, { session });
+      deletedCareItems = careRes.deletedCount ?? 0;
+
+      await Category.deleteOne({ _id: category._id, clientId }, { session });
+    });
+
+    return NextResponse.json({
+      ok: true,
+      deletedCategoryId: String(category._id),
+      deletedCategorySlug: category.slug,
+      deletedCareItems,
+    });
+  } catch (e) {
+    console.error('Cascade delete failed', e);
+    return NextResponse.json(
+      { error: 'Failed to delete category and its items' },
+      { status: 500 }
+    );
+  } finally {
+    session.endSession();
+  }
 }

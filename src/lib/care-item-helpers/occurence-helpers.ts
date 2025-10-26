@@ -1,6 +1,3 @@
-/**
- * Helper to
- */
 
 export function occurrenceStatus(
   nextDue?: string

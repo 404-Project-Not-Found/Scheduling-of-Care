@@ -470,7 +470,7 @@ function BudgetReportInner() {
     const catSlug = (catMeta as any)?.slug as string | undefined;
     const confirmed = window.confirm(
       `Delete the category “${catName}” for this client?\n\n` +
-      `This is permanent and cannot be undone.`
+      `This will PERMANENTLY delete this category AND all care items under it. This action cannot be undone.`
     );
     if (!confirmed) return;
 
