@@ -461,6 +461,52 @@ function BudgetReportInner() {
     }
   };
 
+  // deleting category
+  const deleteCategoryRow = async (row: BudgetRow) => {
+    if (!activeClientId) return;
+
+    const catMeta = categories.find((c) => String(c.id) === String(row.categoryId));
+    const catName = catMeta?.name ?? row.category;
+    const catSlug = (catMeta as any)?.slug as string | undefined;
+    const confirmed = window.confirm(
+      `Delete the category “${catName}” for this client?\n\n` +
+      `This is permanent and cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch(
+        `/api/v1/clients/${encodeURIComponent(activeClientId)}/category`,
+        {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          cache: 'no-store',
+          body: JSON.stringify({
+            clientId: activeClientId,
+            slug: catSlug,
+            name: catSlug ? undefined : catName,
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        const msg = await res.text().catch(() => '');
+        setWarningText(msg || 'Failed to delete category.');
+        setShowWarning(true);
+        return;
+      }
+
+      setCategories((prev) => prev.filter((c) => String(c.id) !== String(row.categoryId)));
+      setRows((prev) => prev.filter((r) => String(r.categoryId) !== String(row.categoryId)));
+      if (editingRowId === row.categoryId) setEditingRowId(null);
+
+      setShowWarning(false);
+    } catch (e) {
+      setWarningText('Network or server error while deleting category.');
+      setShowWarning(true);
+    }
+  };
+
   const handleRollover = async (
     activeClientId: string,
     year: number,
@@ -880,6 +926,14 @@ function BudgetReportInner() {
                                     className="px-3 py-1 rounded-md bg-white/80 text-black font-semibold hover:bg-white disabled:opacity-60"
                                   >
                                     Cancel
+                                  </button>
+                                  <button
+                                    onClick={() => deleteCategoryRow(r)}
+                                    disabled={loading.saveRowId === r.categoryId}
+                                    className="whitespace-nowrap flex-shrink-0 px-4 py-2 rounded-md text-sm font-semibold text-white bg-[#B3261E] hover:bg-[#99201A] disabled:opacity-60"
+                                    title="Permanently delete this category"
+                                  >
+                                    Delete Category
                                   </button>
                                 </div>
                               ) : (
