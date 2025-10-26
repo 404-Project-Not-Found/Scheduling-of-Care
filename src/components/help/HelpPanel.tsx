@@ -34,7 +34,11 @@ type HelpContextValue = {
   pageKey: keyof FAQBook | null;
   sectionId: string | null;
   allowedPageKeys?: (keyof FAQBook)[];
-  open: (page: keyof FAQBook, anchorId?: string, opts?: HelpOpenOptions) => void;
+  open: (
+    page: keyof FAQBook,
+    anchorId?: string,
+    opts?: HelpOpenOptions
+  ) => void;
   close: () => void;
 };
 
@@ -50,7 +54,9 @@ export function HelpProvider({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [pageKey, setPageKey] = useState<keyof FAQBook | null>(null);
   const [sectionId, setSectionId] = useState<string | null>(null);
-  const [allowedPageKeys, setAllowedPageKeys] = useState<(keyof FAQBook)[] | undefined>(undefined);
+  const [allowedPageKeys, setAllowedPageKeys] = useState<
+    (keyof FAQBook)[] | undefined
+  >(undefined);
 
   const open = useCallback(
     (page: keyof FAQBook, anchor?: string, opts?: HelpOpenOptions) => {
@@ -108,14 +114,18 @@ const palette = {
   backdrop: 'rgba(0,0,0,0.45)',
 };
 
-function getRoleFromKey(k: keyof FAQBook): 'family' | 'carer' | 'management' | 'other' {
+function getRoleFromKey(
+  k: keyof FAQBook
+): 'family' | 'carer' | 'management' | 'other' {
   const [role] = String(k).split('/', 1);
-  if (role === 'family' || role === 'carer' || role === 'management') return role;
+  if (role === 'family' || role === 'carer' || role === 'management')
+    return role;
   return 'other';
 }
 
 function cleanPageTitle(t: string) {
-  return t.replace(/^Family\s*\/\s*POA\s*—\s*/i, '')
+  return t
+    .replace(/^Family\s*\/\s*POA\s*—\s*/i, '')
     .replace(/^Carer\s*—\s*/i, '')
     .replace(/^Management\s*—\s*/i, '')
     .trim();
@@ -194,12 +204,15 @@ function HelpPanelOverlay({
   }, [defaultScrollId, activeKey]);
 
   const [selectedId, setSelectedId] = useState<string | undefined>(dividerId);
-  useEffect(() => { setSelectedId(dividerId); }, [dividerId]);
+  useEffect(() => {
+    setSelectedId(dividerId);
+  }, [dividerId]);
 
   const sidebarRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     const el = document.getElementById(`toc-${activeKey}`);
-    if (el && sidebarRef.current) el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    if (el && sidebarRef.current)
+      el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }, [activeKey]);
 
   const handleJump = (id: string) => {
@@ -214,15 +227,20 @@ function HelpPanelOverlay({
   const roleKeys = (Object.keys(faqData) as (keyof FAQBook)[]).filter(
     (k) => getRoleFromKey(k) === currentRole
   );
-  const visibleKeys = allowedPageKeys && allowedPageKeys.length
-    ? roleKeys.filter((k) => allowedPageKeys.includes(k))
-    : roleKeys;
+  const visibleKeys =
+    allowedPageKeys && allowedPageKeys.length
+      ? roleKeys.filter((k) => allowedPageKeys.includes(k))
+      : roleKeys;
 
   // --- Search state ---
   const [searchQuery, setSearchQuery] = useState('');
 
   // Compute filtered sections with matching Q/A
-  const filteredSections: { section: FAQSection; matchedPairs?: QAPair[]; pageTitle: string }[] = [];
+  const filteredSections: {
+    section: FAQSection;
+    matchedPairs?: QAPair[];
+    pageTitle: string;
+  }[] = [];
   if (searchQuery.trim()) {
     const query = searchQuery.toLowerCase();
     for (const key of Object.keys(faqData) as (keyof FAQBook)[]) {
@@ -231,11 +249,22 @@ function HelpPanelOverlay({
       for (const section of page.sections ?? []) {
         const qaPairs = parseQAPairs(section.body);
         const matchedPairs = qaPairs.filter(
-          (p) => p.q.toLowerCase().includes(query) || p.a.some((a) => a.toLowerCase().includes(query))
+          (p) =>
+            p.q.toLowerCase().includes(query) ||
+            p.a.some((a) => a.toLowerCase().includes(query))
         );
-        const sectionText = Array.isArray(section.body) ? section.body.join(' ') : section.body ?? '';
-        if (matchedPairs.length > 0 || sectionText.toLowerCase().includes(query)) {
-          filteredSections.push({ section, matchedPairs: matchedPairs.length ? matchedPairs : undefined, pageTitle: page.title });
+        const sectionText = Array.isArray(section.body)
+          ? section.body.join(' ')
+          : (section.body ?? '');
+        if (
+          matchedPairs.length > 0 ||
+          sectionText.toLowerCase().includes(query)
+        ) {
+          filteredSections.push({
+            section,
+            matchedPairs: matchedPairs.length ? matchedPairs : undefined,
+            pageTitle: page.title,
+          });
         }
       }
     }
@@ -243,7 +272,12 @@ function HelpPanelOverlay({
 
   return createPortal(
     <>
-      <div onClick={onClose} aria-hidden className="fixed inset-0 transition-opacity" style={{ background: palette.backdrop, zIndex: 1000 }} />
+      <div
+        onClick={onClose}
+        aria-hidden
+        className="fixed inset-0 transition-opacity"
+        style={{ background: palette.backdrop, zIndex: 1000 }}
+      />
       <aside
         role="dialog"
         aria-modal="true"
@@ -258,8 +292,17 @@ function HelpPanelOverlay({
         }}
       >
         {/* Header & Search */}
-        <div className="flex items-center justify-between px-5 sm:px-6 py-3 border-b" style={{ borderColor: palette.deepBrown, background: palette.deepBrown }}>
-          <h2 className="text-2xl md:text-3xl font-semibold" style={{ color: 'white' }}>
+        <div
+          className="flex items-center justify-between px-5 sm:px-6 py-3 border-b"
+          style={{
+            borderColor: palette.deepBrown,
+            background: palette.deepBrown,
+          }}
+        >
+          <h2
+            className="text-2xl md:text-3xl font-semibold"
+            style={{ color: 'white' }}
+          >
             {page?.title ? `${page.title} FAQs` : 'Help - FAQs'}
           </h2>
           <div className="flex items-center gap-3">
@@ -277,14 +320,33 @@ function HelpPanelOverlay({
               title="Print"
               aria-label="Print"
               style={{ color: palette.deepBrown }}
-            >Print</button>
-            <button onClick={onClose} aria-label="Close help" className="rounded-full px-2 text-3xl leading-none hover:opacity-75" style={{ color: 'white' }} title="Close">×</button>
+            >
+              Print
+            </button>
+            <button
+              onClick={onClose}
+              aria-label="Close help"
+              className="rounded-full px-2 text-3xl leading-none hover:opacity-75"
+              style={{ color: 'white' }}
+              title="Close"
+            >
+              ×
+            </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-[340px_1fr] gap-4 sm:gap-6 px-5 sm:px-6 py-4 overflow-hidden" style={{ height: 'calc(100% - 56px)', color: palette.deepBrown }}>
-          <nav ref={sidebarRef} className="hidden md:block h-full overflow-y-auto self-stretch">
-            <div className="rounded-xl p-4" style={{ background: 'rgba(58,0,0,0.10)', minHeight: '140vh' }}>
+        <div
+          className="grid grid-cols-1 md:grid-cols-[340px_1fr] gap-4 sm:gap-6 px-5 sm:px-6 py-4 overflow-hidden"
+          style={{ height: 'calc(100% - 56px)', color: palette.deepBrown }}
+        >
+          <nav
+            ref={sidebarRef}
+            className="hidden md:block h-full overflow-y-auto self-stretch"
+          >
+            <div
+              className="rounded-xl p-4"
+              style={{ background: 'rgba(58,0,0,0.10)', minHeight: '140vh' }}
+            >
               <ul className="flex flex-col gap-5">
                 {visibleKeys.map((key) => {
                   const id = `__page-divider__${key}`;
@@ -295,11 +357,18 @@ function HelpPanelOverlay({
                       <button
                         id={`toc-${key}`}
                         type="button"
-                        onClick={() => { setActiveKey(key); requestAnimationFrame(() => handleJump(`__page-divider__${key}`)); }}
+                        onClick={() => {
+                          setActiveKey(key);
+                          requestAnimationFrame(() =>
+                            handleJump(`__page-divider__${key}`)
+                          );
+                        }}
                         className="block w-full text-left no-underline"
                         style={{
                           color: isSelected ? '#fff' : palette.deepBrown,
-                          background: isSelected ? palette.deepBrown : 'rgba(58,0,0,0.08)',
+                          background: isSelected
+                            ? palette.deepBrown
+                            : 'rgba(58,0,0,0.08)',
                           borderRadius: 16,
                           padding: '16px 18px',
                           lineHeight: 1.35,
@@ -309,7 +378,18 @@ function HelpPanelOverlay({
                         }}
                       >
                         {isCurrent && (
-                          <div className="mb-1" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', fontWeight: 600, color: isSelected ? '#fff' : palette.deepBrown, opacity: 0.95 }}>
+                          <div
+                            className="mb-1"
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 6,
+                              fontSize: '0.85rem',
+                              fontWeight: 600,
+                              color: isSelected ? '#fff' : palette.deepBrown,
+                              opacity: 0.95,
+                            }}
+                          >
                             <span>Current page</span>
                           </div>
                         )}
@@ -322,26 +402,52 @@ function HelpPanelOverlay({
             </div>
           </nav>
 
-          <div ref={contentRef} className="space-y-8 h-full overflow-y-auto pr-1">
+          <div
+            ref={contentRef}
+            className="space-y-8 h-full overflow-y-auto pr-1"
+          >
             {searchQuery.trim() ? (
               <div className="space-y-6">
-                {filteredSections.length ? filteredSections.map(({ section, matchedPairs, pageTitle }) => (
-                  <div key={section.id}>
-                    <h3 className="text-xl md:text-2xl font-semibold mb-3" style={{ color: palette.deepBrown }}>
-                      {cleanPageTitle(pageTitle)}: {section.title}
-                    </h3>
-                    <FAQSectionBlock section={section} color={palette.deepBrown} highlight={searchQuery} filteredPairs={matchedPairs} />
-                  </div>
-                )) : <p style={{ color: palette.deepBrown }}>No results found.</p>}
+                {filteredSections.length ? (
+                  filteredSections.map(
+                    ({ section, matchedPairs, pageTitle }) => (
+                      <div key={section.id}>
+                        <h3
+                          className="text-xl md:text-2xl font-semibold mb-3"
+                          style={{ color: palette.deepBrown }}
+                        >
+                          {cleanPageTitle(pageTitle)}: {section.title}
+                        </h3>
+                        <FAQSectionBlock
+                          section={section}
+                          color={palette.deepBrown}
+                          highlight={searchQuery}
+                          filteredPairs={matchedPairs}
+                        />
+                      </div>
+                    )
+                  )
+                ) : (
+                  <p style={{ color: palette.deepBrown }}>No results found.</p>
+                )}
               </div>
             ) : (
               <>
                 <section id={dividerId} className="scroll-mt-24">
-                  <h3 className="text-xl md:text-2xl font-semibold mb-3" style={{ color: palette.deepBrown }}>
+                  <h3
+                    className="text-xl md:text-2xl font-semibold mb-3"
+                    style={{ color: palette.deepBrown }}
+                  >
                     {cleanPageTitle(page?.title ?? 'Help')}
                   </h3>
                 </section>
-                {(sections as FAQSection[]).map((s) => <FAQSectionBlock key={s.id} section={s} color={palette.deepBrown} />)}
+                {(sections as FAQSection[]).map((s) => (
+                  <FAQSectionBlock
+                    key={s.id}
+                    section={s}
+                    color={palette.deepBrown}
+                  />
+                ))}
               </>
             )}
           </div>
@@ -350,8 +456,12 @@ function HelpPanelOverlay({
 
       <style jsx global>{`
         @keyframes faq-drawer-in {
-          from { transform: translateY(100%); }
-          to { transform: translateY(0%); }
+          from {
+            transform: translateY(100%);
+          }
+          to {
+            transform: translateY(0%);
+          }
         }
       `}</style>
     </>,
@@ -380,35 +490,68 @@ function FAQSectionBlock({
     if (!highlight) return text;
     const regex = new RegExp(`(${highlight})`, 'gi');
     return text.split(regex).map((part, i) =>
-      regex.test(part) ? <mark key={i} style={{ background: 'yellow', color: 'inherit' }}>{part}</mark> : part
+      regex.test(part) ? (
+        <mark key={i} style={{ background: 'yellow', color: 'inherit' }}>
+          {part}
+        </mark>
+      ) : (
+        part
+      )
     );
   };
 
   return (
     <section id={section.id} className="scroll-mt-24">
-      <h3 className="text-lg md:text-xl font-semibold mb-1" style={{ color }}>{section.title}</h3>
+      <h3 className="text-lg md:text-xl font-semibold mb-1" style={{ color }}>
+        {section.title}
+      </h3>
 
       {hasQA ? (
         <div className="space-y-4">
           {qaPairs.map((pair, idx) => (
-            <details key={idx} className="rounded-xl" style={{ background: 'rgba(58,0,0,0.06)', border: '1px solid rgba(58,0,0,0.15)', padding: '14px 16px' }}>
+            <details
+              key={idx}
+              className="rounded-xl"
+              style={{
+                background: 'rgba(58,0,0,0.06)',
+                border: '1px solid rgba(58,0,0,0.15)',
+                padding: '14px 16px',
+              }}
+            >
               <summary className="cursor-pointer select-none" style={{ color }}>
-                <span className="font-semibold">{highlightText(pair.q || 'Question')}</span>
+                <span className="font-semibold">
+                  {highlightText(pair.q || 'Question')}
+                </span>
               </summary>
               <div className="mt-2 space-y-2" style={{ color }}>
-                {pair.a.length ? pair.a.map((p, i) => <p key={i}>{highlightText(p)}</p>) : <p>—</p>}
+                {pair.a.length ? (
+                  pair.a.map((p, i) => <p key={i}>{highlightText(p)}</p>)
+                ) : (
+                  <p>—</p>
+                )}
               </div>
             </details>
           ))}
         </div>
-      ) : (() => {
-        const body = Array.isArray(section.body) ? section.body : section.body ? [section.body] : [];
-        return body.length ? (
-          <div className="space-y-3 leading-relaxed text-[1rem]" style={{ color }}>
-            {body.map((p, i) => <p key={i}>{highlightText(p)}</p>)}
-          </div>
-        ) : null;
-      })()}
+      ) : (
+        (() => {
+          const body = Array.isArray(section.body)
+            ? section.body
+            : section.body
+              ? [section.body]
+              : [];
+          return body.length ? (
+            <div
+              className="space-y-3 leading-relaxed text-[1rem]"
+              style={{ color }}
+            >
+              {body.map((p, i) => (
+                <p key={i}>{highlightText(p)}</p>
+              ))}
+            </div>
+          ) : null;
+        })()
+      )}
     </section>
   );
 }

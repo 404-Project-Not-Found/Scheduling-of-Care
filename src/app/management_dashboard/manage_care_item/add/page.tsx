@@ -47,7 +47,6 @@ type ApiClientWithAccess = ApiClient & {
   orgAccess?: 'approved' | 'pending' | 'revoked';
 };
 
-
 type Unit = 'day' | 'week' | 'month' | 'year';
 
 type CatalogItem = {

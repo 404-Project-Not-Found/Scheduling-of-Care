@@ -32,5 +32,7 @@ const CategorySchema = new Schema<CategoryDoc>(
 // Client each has one category slug
 CategorySchema.index({ clientId: 1, slug: 1 }, { unique: true });
 type CategoryModel = Model<CategoryDoc>;
-const Category = (mongoose.models.Category as CategoryModel) || mongoose.model<CategoryDoc>('Category', CategorySchema);
+const Category =
+  (mongoose.models.Category as CategoryModel) ||
+  mongoose.model<CategoryDoc>('Category', CategorySchema);
 export default Category;

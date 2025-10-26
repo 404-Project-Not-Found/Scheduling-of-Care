@@ -26,7 +26,7 @@
  *
  * Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
  * consistency and better navigation.
- * 
+ *
  * Last Updated by Zahra Rizqita (25/10/2025): Change to show warning if previous month have unfinished task
  */
 
@@ -410,12 +410,21 @@ function ClientSchedule() {
 
   // warning of overdue occurrences from before visible month
   const carryWarnings = useMemo(() => {
-    const warnings: Array<{ slug: string; label: string; originalDue: string }> = [];
+    const warnings: Array<{
+      slug: string;
+      label: string;
+      originalDue: string;
+    }> = [];
     const monthStartISO = ymd(windowStart); // first day of the visible month (YYYY-MM-DD)
 
     for (const t of tasksByClient) {
       const count = t.frequencyCount ?? 0;
-      const unit = t.frequencyUnit as 'day'|'week'|'month'|'year'|undefined;
+      const unit = t.frequencyUnit as
+        | 'day'
+        | 'week'
+        | 'month'
+        | 'year'
+        | undefined;
       if (!count || !unit) continue;
 
       const start0 = ymd(t.dateFrom);
@@ -423,7 +432,12 @@ function ClientSchedule() {
 
       if (!start0) continue;
 
-      const missed = lastScheduledOnOrBefore(start0, count, unit, monthStartISO);
+      const missed = lastScheduledOnOrBefore(
+        start0,
+        count,
+        unit,
+        monthStartISO
+      );
       if (!missed || missed >= monthStartISO) continue;
 
       if (!last0 || last0 < missed) {
@@ -431,12 +445,17 @@ function ClientSchedule() {
       }
     }
 
-    const dedup = new Map<string, { slug: string; label: string; originalDue: string }>();
+    const dedup = new Map<
+      string,
+      { slug: string; label: string; originalDue: string }
+    >();
     for (const w of warnings) {
       const prev = dedup.get(w.slug);
       if (!prev || w.originalDue > prev.originalDue) dedup.set(w.slug, w);
     }
-    return Array.from(dedup.values()).sort((a, b) => a.label.localeCompare(b.label));
+    return Array.from(dedup.values()).sort((a, b) =>
+      a.label.localeCompare(b.label)
+    );
   }, [tasksByClient, windowStart, occurStatus]);
 
   /* ------------- Visible month/year coming from Calendar ------------- */
@@ -571,7 +590,7 @@ function ClientSchedule() {
         return;
       }
 
-      const updated: {lastDone?: string} = await res.json();
+      const updated: { lastDone?: string } = await res.json();
       setOccurStatus((prev) => ({
         ...prev,
         [occKey(slug, doneAt)]: 'Waiting Verification',
@@ -653,7 +672,7 @@ function ClientSchedule() {
                   <p className="text-lg">Loading client&apos;s care items...</p>
                 )}
               </div>
-              
+
               {carryWarnings.length > 0 && (
                 <div className="px-6 -mt-4 mb-4">
                   <div className="rounded-lg border border-yellow-400 bg-yellow-50 p-4">
@@ -662,17 +681,23 @@ function ClientSchedule() {
                     </div>
                     <ul className="space-y-2">
                       {carryWarnings.map((w) => (
-                        <li key={w.slug} className="flex items-center justify-between gap-3">
+                        <li
+                          key={w.slug}
+                          className="flex items-center justify-between gap-3"
+                        >
                           <div className="text-yellow-900">
                             <span className="font-semibold">{w.label}</span>{' '}
                             <span className="text-sm">
-                              — originally due: <span className="font-mono">{w.originalDue}</span>
+                              — originally due:{' '}
+                              <span className="font-mono">{w.originalDue}</span>
                             </span>
                           </div>
                           <button
                             className="px-3 py-1 rounded border border-yellow-600 text-yellow-900 bg-white hover:bg-yellow-100"
                             onClick={() => {
-                              const base = tasksByClient.find(t => t.slug === w.slug);
+                              const base = tasksByClient.find(
+                                (t) => t.slug === w.slug
+                              );
                               if (base) {
                                 setSelectedTask({
                                   ...base,
@@ -818,7 +843,8 @@ function TaskDetail({
           <span className="font-extrabold">Frequency:</span> {task.frequency}
         </p>
         <p>
-          <span className="font-extrabold">Last Completed:</span> {task.lastDone}
+          <span className="font-extrabold">Last Completed:</span>{' '}
+          {task.lastDone}
         </p>
         <p>
           <span className="font-extrabold">Scheduled Due:</span> {task.nextDue}
@@ -982,13 +1008,26 @@ function TaskDetail({
                   const data = await res.json();
 
                   const key = occKey(task.slug, task.nextDue!);
-                  setOccurStatus(prev => ({ ...prev, [key]: 'Completed' }));
+                  setOccurStatus((prev) => ({ ...prev, [key]: 'Completed' }));
 
-                  setTasks(prev => prev.map(t =>
-                    t.slug === task.slug ? { ...t, lastDone: data.lastDone ?? task.nextDue!.slice(0,10) } : t
-                  ));
-                  setSelectedTask(prev =>
-                    prev?.slug === task.slug ? { ...prev, lastDone: data.lastDone ?? task.nextDue!.slice(0,10) } : prev
+                  setTasks((prev) =>
+                    prev.map((t) =>
+                      t.slug === task.slug
+                        ? {
+                            ...t,
+                            lastDone:
+                              data.lastDone ?? task.nextDue!.slice(0, 10),
+                          }
+                        : t
+                    )
+                  );
+                  setSelectedTask((prev) =>
+                    prev?.slug === task.slug
+                      ? {
+                          ...prev,
+                          lastDone: data.lastDone ?? task.nextDue!.slice(0, 10),
+                        }
+                      : prev
                   );
                 } catch (e) {
                   alert('Network/Server error marking as completed');

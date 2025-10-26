@@ -1,4 +1,3 @@
-
 export function occurrenceStatus(
   nextDue?: string
 ): 'Overdue' | 'Due' | 'Pending' {

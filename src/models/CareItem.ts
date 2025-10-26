@@ -80,5 +80,7 @@ const CareItemSchema = new Schema<CareItemDoc>(
 );
 
 CareItemSchema.index({ clientId: 1, categoryId: 1, deleted: 1, status: 1 });
-const CareItem = (mongoose.models?.CareItem as Model<CareItemDoc>) || mongoose.model<CareItemDoc>('CareItem', CareItemSchema);
+const CareItem =
+  (mongoose.models?.CareItem as Model<CareItemDoc>) ||
+  mongoose.model<CareItemDoc>('CareItem', CareItemSchema);
 export default CareItem;

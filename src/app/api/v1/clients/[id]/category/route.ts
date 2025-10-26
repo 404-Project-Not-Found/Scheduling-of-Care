@@ -16,9 +16,9 @@ import { slugify } from '@/lib/slug';
 export const runtime = 'nodejs';
 
 interface CategoryDeleteBody {
-    clientId?: string;
-    slug?: string;
-    name?: string;
+  clientId?: string;
+  slug?: string;
+  name?: string;
 }
 function isObjectIdString(s: unknown): s is string {
   return typeof s === 'string' && Types.ObjectId.isValid(s);
@@ -124,7 +124,6 @@ export async function POST(req: Request) {
   }
 }
 
-
 // Delete a category
 export async function DELETE(req: Request) {
   await connectDB();
@@ -146,8 +145,7 @@ export async function DELETE(req: Request) {
   const clientId = new Types.ObjectId(clientIdStr);
 
   const resolvedSlug =
-    (body.slug || '').trim() ||
-    (body.name ? slugify(body.name.trim()) : '');
+    (body.slug || '').trim() || (body.name ? slugify(body.name.trim()) : '');
 
   if (!resolvedSlug) {
     return NextResponse.json(
@@ -156,7 +154,10 @@ export async function DELETE(req: Request) {
     );
   }
 
-  const category = await Category.findOne({ clientId, slug: resolvedSlug }).lean();
+  const category = await Category.findOne({
+    clientId,
+    slug: resolvedSlug,
+  }).lean();
   if (!category) {
     return NextResponse.json({ error: 'Category not found' }, { status: 404 });
   }
@@ -170,7 +171,7 @@ export async function DELETE(req: Request) {
         $or: [
           { categoryId: category._id },
           { categorySlug: category.slug },
-          { category: category.name }
+          { category: category.name },
         ],
       };
 

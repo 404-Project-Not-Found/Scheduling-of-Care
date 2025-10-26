@@ -13,10 +13,10 @@ import { Types } from 'mongoose';
 
 export async function POST(
   req: Request,
-  { params }: { params: Promise<{ id: string, slug: string }> }
+  { params }: { params: Promise<{ id: string; slug: string }> }
 ) {
   await connectDB();
-  const {id: clientIdStr, slug: rawSlug } = await params;
+  const { id: clientIdStr, slug: rawSlug } = await params;
   if (!Types.ObjectId.isValid(clientIdStr)) {
     return NextResponse.json({ error: 'invalid client id' }, { status: 400 });
   }
@@ -32,9 +32,14 @@ export async function POST(
 
   const dateISO = date.slice(0, 10);
 
-  const occur = await Occurrence.findOne({ careItemSlug: slug, clientId, date });
+  const occur = await Occurrence.findOne({
+    careItemSlug: slug,
+    clientId,
+    date,
+  });
 
-  if (!occur) return NextResponse.json({ error: 'Occurence not found' }, { status: 404 });
+  if (!occur)
+    return NextResponse.json({ error: 'Occurence not found' }, { status: 404 });
 
   if (occur.status !== 'Waiting Verification') {
     return NextResponse.json(

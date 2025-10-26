@@ -465,12 +465,15 @@ function BudgetReportInner() {
   const deleteCategoryRow = async (row: BudgetRow) => {
     if (!activeClientId) return;
 
-    const catMeta = categories.find((c) => String(c.id) === String(row.categoryId));
+    const catMeta = categories.find(
+      (c) => String(c.id) === String(row.categoryId)
+    );
     const catName = catMeta?.name ?? row.category;
-    const catSlug = (catMeta as any)?.slug as string | undefined;
+    const catSlug: string | undefined =
+      catMeta && 'slug' in catMeta ? (catMeta.slug as string) : undefined;
     const confirmed = window.confirm(
       `Delete the category “${catName}” for this client?\n\n` +
-      `This will PERMANENTLY delete this category AND all care items under it. This action cannot be undone.`
+        `This will PERMANENTLY delete this category AND all care items under it. This action cannot be undone.`
     );
     if (!confirmed) return;
 
@@ -496,8 +499,12 @@ function BudgetReportInner() {
         return;
       }
 
-      setCategories((prev) => prev.filter((c) => String(c.id) !== String(row.categoryId)));
-      setRows((prev) => prev.filter((r) => String(r.categoryId) !== String(row.categoryId)));
+      setCategories((prev) =>
+        prev.filter((c) => String(c.id) !== String(row.categoryId))
+      );
+      setRows((prev) =>
+        prev.filter((r) => String(r.categoryId) !== String(row.categoryId))
+      );
       if (editingRowId === row.categoryId) setEditingRowId(null);
 
       setShowWarning(false);
@@ -707,7 +714,8 @@ function BudgetReportInner() {
                           disabled={loading.savingAnnualLoad || isPastYear}
                           className="px-4 py-1.5 rounded-md font-semibold text-[#3A0000] transition"
                           style={{
-                            background: 'linear-gradient(90deg, #F8CBA6 0%, #FBE8D4 100%)',
+                            background:
+                              'linear-gradient(90deg, #F8CBA6 0%, #FBE8D4 100%)',
                             border: '1px solid #B47A64',
                             boxShadow: '0 2px 5px rgba(180, 122, 100, 0.25)',
                           }}
@@ -744,7 +752,8 @@ function BudgetReportInner() {
                           disabled={loading.budgetLoad}
                           className="px-4 py-1.5 rounded-md font-semibold text-[#3A0000] transition"
                           style={{
-                            background: 'linear-gradient(90deg, #F9C9B1 0%, #FBE8D4 100%)',
+                            background:
+                              'linear-gradient(90deg, #F9C9B1 0%, #FBE8D4 100%)',
                             border: '1px solid #B47A64',
                             boxShadow: '0 2px 5px rgba(180, 122, 100, 0.25)',
                           }}
@@ -929,7 +938,9 @@ function BudgetReportInner() {
                                   </button>
                                   <button
                                     onClick={() => deleteCategoryRow(r)}
-                                    disabled={loading.saveRowId === r.categoryId}
+                                    disabled={
+                                      loading.saveRowId === r.categoryId
+                                    }
                                     className="whitespace-nowrap flex-shrink-0 px-4 py-2 rounded-md text-sm font-semibold text-white bg-[#B3261E] hover:bg-[#99201A] disabled:opacity-60"
                                     title="Permanently delete this category"
                                   >
