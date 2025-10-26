@@ -23,7 +23,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { getSession } from 'next-auth/react';
 import { getViewerRoleFE } from '@/lib/mock/mockApi';
-import { CalendarDays, Users, User, LogOut } from 'lucide-react';
+import { CalendarDays, Users, User, LogOut, ArrowRight } from 'lucide-react';
 
 const palette = {
   header: '#3A0000',
@@ -353,12 +353,23 @@ export default function DashboardPage() {
                   </p>
 
                   <span
-                    className="relative text-[#3A0000]/80 text-md font-semibold group-hover:text-[#3A0000]
-                after:content-[''] after:absolute after:left-1/2 after:-translate-x-1/2 after:bottom-[-3px]
-                after:w-0 after:h-[2px] after:rounded-full after:bg-[#3A0000]/70
-                group-hover:after:w-[80%] after:transition-all after:duration-300 after:ease-out"
-                  >
-                    View Details →
+                    className="group relative inline-flex items-center gap-1.5
+                                text-[#3A0000]/80 text-md font-semibold
+                                hover:text-[#3A0000]
+                                after:content-[''] after:absolute after:left-1/2 after:-translate-x-1/2 after:bottom-[-3px]
+                                after:w-0 after:h-[2px] after:rounded-full after:bg-[#3A0000]/70
+                                group-hover:after:w-[80%] after:transition-all after:duration-300 after:ease-out"
+                    >
+                    View Details
+                    <span
+                        className="ml-1 inline-flex h-5 w-5 items-center justify-center
+                                rounded-full bg-[#3A0000]/10 ring-1 ring-[#3A0000]/10
+                                transition-all duration-300 ease-out
+                                group-hover:translate-x-0.5 group-hover:bg-[#3A0000]/15"
+                        aria-hidden="true"
+                    >
+                        <ArrowRight className="h-3.5 w-3.5 text-[#3A0000]" strokeWidth={2} />
+                    </span>
                   </span>
                 </div>
               </div>
