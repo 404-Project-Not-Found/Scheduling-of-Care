@@ -11,6 +11,9 @@ on:
     paths:
       - 'frontend/**'
       - 'backend/**'
+      - 'src/**'
+      - 'styles/**'
+      - 'components/**'
       - '.github/workflows/**'
 
   pull_request:
@@ -18,6 +21,9 @@ on:
     paths:
       - 'frontend/**'
       - 'backend/**'
+      - 'src/**'
+      - 'styles/**'
+      - 'components/**'
       - '.github/workflows/**'
 
 concurrency:
