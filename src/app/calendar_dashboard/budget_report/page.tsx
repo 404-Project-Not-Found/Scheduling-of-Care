@@ -150,10 +150,15 @@ function BudgetReportInner() {
 
   // Load clients + active client on mount
   useEffect(() => {
+    let cancelled = false;
+    setLoading((s) => ({ ...s, clientsLoad: true }));
+
     (async () => {
-      setLoading((s) => ({ ...s, clientsLoad: true }));
       try {
-        const list: ApiClient[] = await getClients();
+        const [list, active] = await Promise.all([getClients(), getActiveClient()]);
+
+        if(cancelled) return;
+
         const mapped: ClientLite[] = (list as ApiClientWithAccess[]).map(
           (c) => ({
             id: c._id,
@@ -162,19 +167,20 @@ function BudgetReportInner() {
           })
         );
         setClients(mapped);
-
-        const active = await getActiveClient();
-        setActiveClientId(active.id);
+        setActiveClientId(active?.id ?? null);
         setDisplayName(active.name || '');
       } catch (err) {
-        console.error('Failed to fetch clients.', err);
-        setClients([]);
-        setActiveClientId(null);
-        setDisplayName('');
+        if(!cancelled) {
+          console.error('Failed to fetch clients.', err);
+          setClients([]);
+          setActiveClientId(null);
+          setDisplayName('');
+        }
       } finally {
-        setLoading((s) => ({ ...s, clientsLoad: false }));
+        if(!cancelled) setLoading((s) => ({ ...s, clientsLoad: false }));
       }
     })();
+    return () => {cancelled = true}
   }, []);
 
   // Change active client
@@ -195,31 +201,45 @@ function BudgetReportInner() {
   // ===== Categories =====
   const [categories, setCategories] = useState<CategoryLite[]>([]);
   useEffect(() => {
-    const abort = new AbortController();
-    (async () => {
-      if (!activeClientId) {
+    if (!activeClientId) {
         setCategories([]);
         return;
       }
+    const abort = new AbortController();
+    let cancelled = false;
+    (async () => {
       setLoading((s) => ({ ...s, catLoad: true }));
       try {
         const cats = await getCategoriesForClient(activeClientId, abort.signal);
+        if(cancelled) return;
         setCategories(cats);
       } catch (e) {
-        console.error('Failed to load categories:', e);
-        setCategories([]);
+        if(!cancelled) {
+          console.error('Failed to load categories:', e);
+          setCategories([]);
+        }
       } finally {
-        setLoading((s) => ({ ...s, catLoad: false }));
+        if(!cancelled) setLoading((s) => ({ ...s, catLoad: false }));
       }
     })();
-    return () => abort.abort();
+    return () => {
+      cancelled = true;
+      abort.abort();
+    };
   }, [activeClientId]);
 
   // ===== Query and year =====
   const [q, setQ] = useState('');
+  const [qDebounce, setQDebounce] = useState('');
   const [years, setYears] = useState<number[]>([]);
   const [todayDate, setTodaysDate] = useState<string>();
   const [year, setYear] = useState<number>(new Date().getFullYear());
+
+  // reduce filtered recomputes on large tables
+  useEffect(() => {
+    const t = setTimeout(() => setQDebounce(q.trim().toLowerCase()), 150);
+    return () => clearTimeout(t);
+  }, [q]);
 
   // get current date
   useEffect(() => {
@@ -233,15 +253,17 @@ function BudgetReportInner() {
 
   // get years available in database
   useEffect(() => {
+    if (!activeClientId) {
+      setYears([]);
+      return;
+    }
     const abort = new AbortController();
+    let cancelled = false;
     const load = async () => {
-      if (!activeClientId) {
-        setYears([]);
-        return;
-      }
       setLoading((s) => ({ ...s, yearsLoad: true }));
       try {
         const list = await getAvailableYears(activeClientId, abort.signal);
+        if(cancelled) return;
         if (list.length > 0) {
           setYears(list);
           if (!list.includes(year)) setYear(list[0]);
@@ -251,16 +273,21 @@ function BudgetReportInner() {
           setYear(curr);
         }
       } catch (e) {
-        console.error('Failed to load years:', e);
-        const curr = new Date().getFullYear();
-        setYears([curr]);
-        setYear(curr);
+        if(!cancelled) {
+          console.error('Failed to load years:', e);
+          const curr = new Date().getFullYear();
+          setYears([curr]);
+          setYear(curr);
+        }
       } finally {
-        setLoading((s) => ({ ...s, yearsLoad: false }));
+        if(!cancelled) setLoading((s) => ({ ...s, yearsLoad: false }));
       }
     };
     load();
-    return () => abort.abort();
+    return () => {
+      cancelled = true;
+      abort.abort();
+    };
   }, [activeClientId]);
 
   // ===== Budget rows =====
@@ -274,50 +301,79 @@ function BudgetReportInner() {
 
   // fetch rows + summary when client/year changes
   useEffect(() => {
+    if (!activeClientId) {
+      setRows([]);
+      setSummary({ annualAllocated: 0, spent: 0, remaining: 0, surplus: 0 });
+      return;
+    }
     const abort = new AbortController();
-    const load = async () => {
-      if (!activeClientId) {
-        setRows([]);
-        setSummary({ annualAllocated: 0, spent: 0, remaining: 0, surplus: 0 });
-        return;
-      }
+    let cancelled = false;
+
+    (async () => {
       setLoading((s) => ({ ...s, budgetLoad: true }));
       try {
         const [r, s] = await Promise.all([
           getBudgetRows(activeClientId, year, abort.signal),
           getBudgetSummary(activeClientId, year, abort.signal),
         ]);
+        if (cancelled) return;
         setRows(r);
         setSummary(s);
       } catch (e) {
-        console.error('Failed to load budget data:', e);
-        setRows([]);
-        setSummary({ annualAllocated: 0, spent: 0, remaining: 0, surplus: 0 });
+        if (!cancelled) {
+          console.error('Failed to load budget data:', e);
+          setRows([]);
+          setSummary({ annualAllocated: 0, spent: 0, remaining: 0, surplus: 0 });
+        }
       } finally {
-        setLoading((s) => ({ ...s, budgetLoad: false }));
+        if (!cancelled) setLoading((s) => ({ ...s, budgetLoad: false }));
       }
+    })();
+
+    return () => {
+      cancelled = true;
+      abort.abort();
     };
-    load();
-    return () => abort.abort();
   }, [activeClientId, year]);
+
 
   // Real time update via SSE
   useEffect(() => {
-    if (!activeClientId) return;
-    const stop = openBudgetSSE(activeClientId, year, async () => {
-      try {
-        const [r, s] = await Promise.all([
-          getBudgetRows(activeClientId, year),
-          getBudgetSummary(activeClientId, year),
-        ]);
-        setRows(r);
-        setSummary(s);
-      } catch (e) {
-        console.error('Refresh failed:', e);
+    if (!activeClientId || loading.budgetLoad) return;
+
+    let stop = () => {};
+    const start = () => {
+      stop = openBudgetSSE(activeClientId, year, async () => {
+        try {
+          const [r, s] = await Promise.all([
+            getBudgetRows(activeClientId, year),
+            getBudgetSummary(activeClientId, year),
+          ]);
+          React.startTransition?.(() => {
+            setRows(r);
+            setSummary(s);
+          });
+        } catch (e) {
+          console.error('Refresh failed:', e);
+        }
+      });
+    };
+
+    const onVis = () => {
+      if (document.hidden) {
+        stop();
+      } else {
+        start();
       }
-    });
-    return () => stop();
-  }, [activeClientId, year]);
+    };
+
+    start();
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      stop();
+      document.removeEventListener('visibilitychange', onVis);
+    };
+  }, [activeClientId, year, loading.budgetLoad]);
 
   const isPastYear = year < new Date().getFullYear();
 
@@ -336,6 +392,7 @@ function BudgetReportInner() {
       );
     });
   }, [categories, rows]);
+
 
   // ===== Editing state =====
   const [isEditing, setIsEditing] = useState(false);
@@ -514,6 +571,19 @@ function BudgetReportInner() {
     }
   };
 
+  const lowCategories = useMemo(() => {
+    return rowsAll
+      .filter((r) => r.allocated > 0)
+      .map((r) => {
+        const remaining = r.allocated - r.spent;
+        const ratio = remaining / r.allocated;
+        return { name: r.category, remaining, percent: ratio * 100, show: remaining > 0 && ratio <= LOW_BUDGET_THRESHOLD };
+      })
+      .filter((x) => x.show)
+      .map(({ name, remaining, percent }) => ({ name, remaining, percent }));
+  }, [rowsAll]);
+
+
   const handleRollover = async (
     activeClientId: string,
     year: number,
@@ -554,13 +624,12 @@ function BudgetReportInner() {
 
   /** Filter by search */
   const filtered = useMemo(() => {
-    const t = q.trim().toLowerCase();
-    if (!t) return rowsAll;
+    if(!qDebounce) return rowsAll;
     return rowsAll.filter(
       (r) =>
-        r.item.toLowerCase().includes(t) || r.category.toLowerCase().includes(t)
+        r.item.toLowerCase().includes(qDebounce) || r.category.toLowerCase().includes(qDebounce)
     );
-  }, [q, rowsAll]);
+  }, [qDebounce, rowsAll]);
 
   /** Totals */
   const totals = useMemo(() => {
@@ -643,9 +712,9 @@ function BudgetReportInner() {
                 year === new Date().getFullYear() && (
                   <button
                     onClick={() =>
-                      handleRollover(activeClientId!, year, setRows, setSummary)
+                      activeClientId && handleRollover(activeClientId!, year, setRows, setSummary)
                     }
-                    disabled={loading.budgetLoad}
+                    disabled={loading.budgetLoad || !activeClientId}
                     className="px-3 py-1.5 rounded-md font-semibold text-[#3A0000] transition"
                     style={{
                       background:
@@ -795,40 +864,18 @@ function BudgetReportInner() {
               </div>
 
               {/* Low budget warning list */}
-              {(() => {
-                const lowCategories = rowsAll
-                  .filter((r) => {
-                    if (r.allocated <= 0) return false;
-                    const remaining = r.allocated - r.spent;
-                    const ratio = remaining / r.allocated;
-                    return ratio > 0 && ratio <= LOW_BUDGET_THRESHOLD;
-                  })
-                  .map((r) => ({
-                    name: r.category,
-                    remaining: r.allocated - r.spent,
-                    percent: ((r.allocated - r.spent) / r.allocated) * 100,
-                  }));
-
-                if (lowCategories.length === 0) return null;
-
-                return (
-                  <div className="mb-6 rounded-lg border border-yellow-400 bg-yellow-100 px-6 py-4 text-yellow-800">
-                    <div className="font-semibold mb-2">
-                      ⚠️ The following categories are nearing their budget
-                      limit:
-                    </div>
-                    <ul className="list-disc list-inside space-y-1">
-                      {lowCategories.map((c) => (
-                        <li key={c.name}>
-                          <span className="font-medium">{c.name}</span> —
-                          remaining ${c.remaining.toFixed(2)} (
-                          {c.percent.toFixed(1)}%)
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                );
-              })()}
+              {lowCategories.length > 0 && (
+                <div className="mb-6 rounded-lg border border-yellow-400 bg-yellow-100 px-6 py-4 text-yellow-800">
+                  <div className="font-semibold mb-2">⚠️ The following categories are nearing their budget limit:</div>
+                  <ul className="list-disc list-inside space-y-1">
+                    {lowCategories.map((c) => (
+                      <li key={c.name}>
+                        <span className="font-medium">{c.name}</span> — remaining ${c.remaining.toFixed(2)} ({c.percent.toFixed(1)}%)
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               {/* Table */}
               <div className="rounded-2xl border border-[#3A0000]/30 bg-white overflow-hidden">

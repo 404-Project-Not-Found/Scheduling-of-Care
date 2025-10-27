@@ -90,7 +90,7 @@ const BudgetYearSchema = new Schema<BudgetYearDoc>(
   { timestamps: true }
 );
 
-BudgetYearSchema.index({ clientId: 1, year: 1 }, { unique: true });
+BudgetYearSchema.index({ clientId: 1, year: 1 }, { unique: true, name: 'byClientYear'});
 
 export type BudgetYearHydrated = HydratedDocument<BudgetYearDoc>;
 export type BudgetYearLean = BudgetYearDoc;
