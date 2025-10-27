@@ -21,9 +21,11 @@
  * consistency and better navigation.
  * Updated by Denise Alexander (23/10/2025): Added view care schedule and information bar
  * and wording change Register New Client -> Request Access to New Client.
- *
- * Last Updated by Denise Alexander (24/10/2025): carers can now view client lists as well but
+ * Updated by Denise Alexander (24/10/2025): carers can now view client lists as well but
  * only approved clients.
+ *
+ * Last Updated by Denise Alexander (28/10/2025): reverted changes made to fetch profile
+ * picture.
  */
 
 'use client';
@@ -305,7 +307,7 @@ function ClientListInner() {
                   user,
                   {role === 'management'
                     ? ' you must request access to clients from family/POA to view their profiles and schedules.'
-                    : ' you can view client profiles and their care schedules.'}
+                    : ' you can view client profiles, update their health and medical history and view client care schedules.'}
                 </h3>
               </div>
             </div>
@@ -353,25 +355,15 @@ function ClientListInner() {
                               backgroundColor: '#fff',
                             }}
                           >
-                            {c.avatarUrl ? (
-                              <Image
-                                src={c.avatarUrl}
-                                alt={`${c.name}'s profile`}
-                                width={64}
-                                height={64}
-                                className="object-cover"
-                              />
-                            ) : (
-                              <span
-                                style={{
-                                  color: '#3A0000',
-                                  fontWeight: 900,
-                                  fontSize: 20,
-                                }}
-                              >
-                                {c.name.charAt(0).toUpperCase()}
-                              </span>
-                            )}
+                            <span
+                              style={{
+                                color: '#3A0000',
+                                fontWeight: 900,
+                                fontSize: 20,
+                              }}
+                            >
+                              {c.name.charAt(0).toUpperCase()}
+                            </span>
                           </div>
 
                           {/* Name + access badge */}
