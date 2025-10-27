@@ -390,7 +390,7 @@ const managementMatchers: Matcher[] = [
       ? { pageKey: 'management/requests', sectionId: 'management-requests' }
       : null,
   (p) =>
-    (p.includes('/manage_care_item/edit')|| p.includes('/manage_care_item/add'))
+    p.includes('/manage_care_item/edit') || p.includes('/manage_care_item/add')
       ? { pageKey: 'management/add-care-items', sectionId: 'add-care-item' }
       : null,
   (p) =>

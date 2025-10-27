@@ -3,11 +3,19 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import dayGridPlugin from '@fullcalendar/daygrid';
-import interactionPlugin from '@fullcalendar/interaction';
+import interactionPlugin, { DateClickArg } from '@fullcalendar/interaction';
 import '@/styles/fullcalendar.css';
+import type {
+  CalendarApi,
+  DatesSetArg,
+  EventClickArg,
+  DayCellContentArg,
+} from '@fullcalendar/core';
 
 // Load FullCalendar on the client only
-const FullCalendar = dynamic(() => import('@fullcalendar/react'), { ssr: false });
+const FullCalendar = dynamic(() => import('@fullcalendar/react'), {
+  ssr: false,
+});
 
 /** Unified status type used by the calendar coloring. */
 export type StatusUI =
@@ -19,11 +27,11 @@ export type StatusUI =
 
 export type Task = {
   id: string;
-  title?: string;       // preferred
-  label?: string;       // legacy/alternative field
-  nextDue: string;      // 'YYYY-MM-DD'
+  title?: string; // preferred
+  label?: string; // legacy/alternative field
+  nextDue: string; // 'YYYY-MM-DD'
   endExclusive?: string;
-  status?: string;      // optional raw status from backend (any casing)
+  status?: string; // optional raw status from backend (any casing)
 };
 
 type CalendarPanelProps = {
@@ -53,7 +61,8 @@ function addOneDay(ymd: string): string {
 function normalizeStatus(raw?: string): StatusUI | undefined {
   if (!raw) return undefined;
   const s = raw.trim().toLowerCase().replace(/[_-]+/g, ' ');
-  if (/\bwaiting\b|\bverify|\bverification/.test(s)) return 'Waiting Verification';
+  if (/\bwaiting\b|\bverify|\bverification/.test(s))
+    return 'Waiting Verification';
   if (/\boverdue\b/.test(s)) return 'Overdue';
   if (/\bcomplete(d)?\b/.test(s)) return 'Completed';
   if (/\bpending\b/.test(s)) return 'Pending';
@@ -93,7 +102,7 @@ export default function CalendarPanel(props: CalendarPanelProps) {
   const { tasks = [], onDateClick, onMonthYearChange, debug = false } = props;
 
   const rootRef = useRef<HTMLDivElement | null>(null);
-  const apiRef = useRef<any>(null);
+  const apiRef = useRef<CalendarApi>(null);
 
   // Visible month (driven by FullCalendar)
   const [year, setYear] = useState<number>(new Date().getFullYear());
@@ -103,7 +112,10 @@ export default function CalendarPanel(props: CalendarPanelProps) {
   const [openPicker, setOpenPicker] = useState<boolean>(false);
 
   // Icon position next to the toolbar title
-  const [iconPos, setIconPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
+  const [iconPos, setIconPos] = useState<{ top: number; left: number }>({
+    top: 0,
+    left: 0,
+  });
 
   /** Mark days that have at least one task (to tint the cell). */
   const taskDates = useMemo(
@@ -113,7 +125,7 @@ export default function CalendarPanel(props: CalendarPanelProps) {
           const start = t.nextDue;
           const endEx = t.endExclusive ?? addOneDay(t.nextDue);
           const days: string[] = [];
-          let cur = new Date(`${start}T00:00:00`);
+          const cur = new Date(`${start}T00:00:00`);
           const end = new Date(`${endEx}T00:00:00`);
           while (cur < end) {
             days.push(yyyymmdd(cur));
@@ -163,8 +175,18 @@ export default function CalendarPanel(props: CalendarPanelProps) {
   }, [tasks, debug]);
 
   const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December',
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
 
   // Year dropdown options centered on current visible year
@@ -199,7 +221,7 @@ export default function CalendarPanel(props: CalendarPanelProps) {
   };
 
   /** Sync visible month/year after each view change. */
-  const onDatesSet = (arg: any) => {
+  const onDatesSet = (arg: DatesSetArg) => {
     apiRef.current = arg.view.calendar;
     const cur = arg.view.calendar.getDate();
     const y = cur.getFullYear();
@@ -235,12 +257,35 @@ export default function CalendarPanel(props: CalendarPanelProps) {
         aria-label="Pick month and year"
         onClick={() => setOpenPicker((v) => !v)}
         className="absolute z-10 -translate-y-1/2 p-1 hover:bg-black/5 rounded"
-        style={{ top: iconPos.top, left: iconPos.left, background: 'transparent' }}
+        style={{
+          top: iconPos.top,
+          left: iconPos.left,
+          background: 'transparent',
+        }}
         title="Pick month & year"
       >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <rect x="3" y="4" width="18" height="17" rx="2" stroke="#3A0000" strokeWidth="2" />
-          <path d="M8 2v4M16 2v4M3 9h18" stroke="#3A0000" strokeWidth="2" strokeLinecap="round" />
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden="true"
+        >
+          <rect
+            x="3"
+            y="4"
+            width="18"
+            height="17"
+            rx="2"
+            stroke="#3A0000"
+            strokeWidth="2"
+          />
+          <path
+            d="M8 2v4M16 2v4M3 9h18"
+            stroke="#3A0000"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
         </svg>
       </button>
 
@@ -248,46 +293,38 @@ export default function CalendarPanel(props: CalendarPanelProps) {
         plugins={[dayGridPlugin, interactionPlugin]}
         initialView="dayGridMonth"
         headerToolbar={{ left: 'prev', center: 'title', right: 'next' }}
-
         /** Never fold events into "+X more" */
         dayMaxEventRows={false}
         expandRows={true}
         height="auto"
-
         events={events}
         eventDisplay="block"
         eventClassNames={(arg) => arg.event.classNames}
-
         /** Clicking a day → tell parent to show that day's tasks in TasksPanel */
-        dateClick={(info: any) => {
+        dateClick={(info: DateClickArg) => {
           const d = yyyymmdd(info.date);
           onDateClick(d);
         }}
-
         /** Clicking an event → same behavior (filter by its start date) */
-        eventClick={(info: any) => {
+        eventClick={(info: EventClickArg) => {
           // FullCalendar passes a Date in local tz; convert to 'YYYY-MM-DD'
           const start: Date = info.event.start!;
           onDateClick(yyyymmdd(start));
         }}
-
         /** Lightweight custom content (lets your CSS truncation apply) */
         eventContent={(arg) => {
           const safe = String(arg.event.title ?? 'Untitled');
           return { html: `<span class="task-grid-title">${safe}</span>` };
         }}
-
         datesSet={onDatesSet}
-
         /** Add cell classes for today / days that have tasks (for subtle tint) */
-        dayCellClassNames={(info: any) => {
+        dayCellClassNames={(info: DayCellContentArg) => {
           const d = yyyymmdd(info.date);
           const cls: string[] = [];
           if (d === todayStr) cls.push('fc-today-custom');
           if (taskDates.has(d)) cls.push('fc-task-day');
           return cls;
         }}
-
         fixedWeekCount={false}
         showNonCurrentDates={false}
       />
@@ -310,7 +347,9 @@ export default function CalendarPanel(props: CalendarPanelProps) {
               }}
             >
               {months.map((label, idx) => (
-                <option key={label} value={idx + 1}>{label}</option>
+                <option key={label} value={idx + 1}>
+                  {label}
+                </option>
               ))}
             </select>
 
@@ -325,7 +364,9 @@ export default function CalendarPanel(props: CalendarPanelProps) {
               }}
             >
               {yearOptions.map((y) => (
-                <option key={y} value={y}>{y}</option>
+                <option key={y} value={y}>
+                  {y}
+                </option>
               ))}
             </select>
 

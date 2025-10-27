@@ -76,7 +76,10 @@ export async function PUT(
   if (data.avatarUrl && isBase64Image(data.avatarUrl)) {
     // Get current client to delete old avatar if exists
     const currentClient = await Client.findById(id);
-    if (currentClient?.avatarUrl && currentClient.avatarUrl.startsWith('/uploads/')) {
+    if (
+      currentClient?.avatarUrl &&
+      currentClient.avatarUrl.startsWith('/uploads/')
+    ) {
       deleteImage(currentClient.avatarUrl);
     }
 

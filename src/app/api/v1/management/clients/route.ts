@@ -63,14 +63,13 @@ export async function GET() {
   // Return all clients that have this organisation in their history
   const clients = await Client.find({
     'organisationHistory.organisation': session.user.organisation,
-    
   })
     .select('-avatarUrl')
     .populate({
       path: 'organisationHistory.organisation',
       select: 'name',
     })
-    
+
     .lean<ClientWithOrg[]>();
 
   // Gets the latest organisation-client status

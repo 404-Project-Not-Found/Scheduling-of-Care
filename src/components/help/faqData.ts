@@ -20,11 +20,9 @@ export type FAQPage = {
 
 export type FAQBook = Record<string, FAQPage>;
 
-
 /* ====================================================================
  * FAQ content
  * ==================================================================== */
-
 
 export const faqData: FAQBook = {
   /* =========================
@@ -163,7 +161,7 @@ export const faqData: FAQBook = {
           'Q: What do the “Manage My PWSN Care” options do?',
           'A: They allow you to monitor and manage care schedules for your PWSN.',
           'Q: How can I manage my account and password?',
-          'A: Click the profile icon at the top right corner of the page to access your account settings and password options.'
+          'A: Click the profile icon at the top right corner of the page to access your account settings and password options.',
         ],
       },
     ],
@@ -237,7 +235,7 @@ export const faqData: FAQBook = {
         body: [
           'Q: What does "My PWSN List" mean?',
           'A: It shows all the family members or loved ones you wish the service provider to provide special care for them.',
-          'Q: What does the button "add new PWSN" mean?' ,
+          'Q: What does the button "add new PWSN" mean?',
           'A: It allows add new family memebers or loved ones you wish the service to provide special care for them.',
           'Q: What does “Update PWSN Profile" do (per row)?',
           'A: Opens that PWSN’s profile for editing their personal information',
@@ -258,7 +256,7 @@ export const faqData: FAQBook = {
         title: 'Create or update a profile',
         body: [
           'Q: Why do I see “Access code” on the profile?',
-            'A: The numeric access code links this person’s personal information; It allows you to give any service provider access to this person’s personal information: copy the code and send it to them via email, text message, or in person.',
+          'A: The numeric access code links this person’s personal information; It allows you to give any service provider access to this person’s personal information: copy the code and send it to them via email, text message, or in person.',
           'Q: How do I add new PWSN and grant access to a service privider if they don’t have an access code?',
           'A: Click “Create one here” to generate an access code, then copy and save it with the profile.',
           'Q: What does “Save” do?',
@@ -409,7 +407,7 @@ export const faqData: FAQBook = {
           'Q: What do the “Staff Schedule” / “Manage Client care” options do?',
           'A: They switch the main calendar view to show staff schedule of your co-workers vs. client schedule and all the care items.',
           'Q: How can I manage my account and password?',
-          'A: Click the profile icon at the top right corner of the page to access your account settings and password options.'
+          'A: Click the profile icon at the top right corner of the page to access your account settings and password options.',
         ],
       },
     ],
@@ -514,7 +512,6 @@ export const faqData: FAQBook = {
           'A: Lets you upload images/PDFs and associate them with the transaction.',
           'Q: How do I log a refund?',
           'A: Follow the same steps as you did for the purchase form but choose the purchase occurence at the end',
-          
         ],
       },
     ],
@@ -564,7 +561,7 @@ export const faqData: FAQBook = {
           'Q: What happens when I click "Manage Staff Care"?',
           'A: You’ll open the Staff Shift Management page to view all staff schedules, and assign shifts.',
           'Q: How can I manage my account and password?',
-          'A: Click the profile icon at the top right corner of the page to access your account settings and password options.'
+          'A: Click the profile icon at the top right corner of the page to access your account settings and password options.',
         ],
       },
     ],
@@ -595,19 +592,17 @@ export const faqData: FAQBook = {
       },
 
       {
-        
         id: 'management-client-schedule-colours-status',
         title: 'Calendar colours & status',
         body: [
-        'Q: What do the blue and red highlights mean?',
-        'A: Red marks today’s date. Blue marks days that have one or more scheduled or due care items in the selected month.',
-        'Q: What do the status tags (Overdue, Completed, Due) mean?',
-        'A: Overdue = date has passed and the item is not yet completed. Completed = item has been marked done. Due = item is upcoming and not yet completed.',
-        'Q: What does "Users with Client Access" show?',
-        'A: A quick list of users who currently have permission to view or manage this client.',
+          'Q: What do the blue and red highlights mean?',
+          'A: Red marks today’s date. Blue marks days that have one or more scheduled or due care items in the selected month.',
+          'Q: What do the status tags (Overdue, Completed, Due) mean?',
+          'A: Overdue = date has passed and the item is not yet completed. Completed = item has been marked done. Due = item is upcoming and not yet completed.',
+          'Q: What does "Users with Client Access" show?',
+          'A: A quick list of users who currently have permission to view or manage this client.',
         ],
-        
-      }
+      },
     ],
   },
 
@@ -627,14 +622,14 @@ export const faqData: FAQBook = {
         id: 'client-list-access-status',
         title: 'Access status',
         body: [
-        'Q: What does "Approved" mean?',
-        'A: Your organisation currently has active access to the client’s records and can manage their schedule.',
-        'Q: What does "Pending" mean?',
-        'A: The client is registered and access is awaiting approval from the family member or Power of Attorney (POA).',
-        'Q: What does "Revoked" mean?',
-        'A: The client is no longer under your organisation’s care and access has been removed.',
-      ],
-      }
+          'Q: What does "Approved" mean?',
+          'A: Your organisation currently has active access to the client’s records and can manage their schedule.',
+          'Q: What does "Pending" mean?',
+          'A: The client is registered and access is awaiting approval from the family member or Power of Attorney (POA).',
+          'Q: What does "Revoked" mean?',
+          'A: The client is no longer under your organisation’s care and access has been removed.',
+        ],
+      },
     ],
   },
 
@@ -664,7 +659,7 @@ export const faqData: FAQBook = {
           'Q: How do I review receipts uploaded by carers?',
           'A: Click the file name to automatically download it in your browser.',
           'Q: How can I find a receipt for specific care item?',
-          'A: Type the keywords for that care item into the top-right search bar to search.'
+          'A: Type the keywords for that care item into the top-right search bar to search.',
         ],
       },
     ],
@@ -726,7 +721,6 @@ export const faqData: FAQBook = {
     ],
   },
 
-
   'management/update-details': {
     title: 'Management — Manage your account',
     sections: [
@@ -781,4 +775,3 @@ export const faqData: FAQBook = {
     ],
   },
 };
-

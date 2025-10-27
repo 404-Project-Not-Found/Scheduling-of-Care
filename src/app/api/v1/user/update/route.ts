@@ -84,7 +84,6 @@ export async function POST(req: NextRequest) {
         );
         updateData.profilePic = imagePath;
       } else {
-  
         updateData.profilePic = profilePic;
       }
     }
@@ -119,4 +118,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-
