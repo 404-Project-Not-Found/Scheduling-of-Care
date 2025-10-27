@@ -9,7 +9,7 @@ export async function GET(
 ) {
   await connectDB();
 
-  const { id, slug } = params;
+  const { id, slug } = await params;
   if (!Types.ObjectId.isValid(id)) {
     return NextResponse.json({ error: 'Invalid client id' }, { status: 400 });
   }

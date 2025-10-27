@@ -4,14 +4,7 @@
  * Date Created: 02/10/2025
  */
 
-import {
-  Schema,
-  model,
-  models,
-  Types,
-  Model,
-  HydratedDocument,
-} from 'mongoose';
+import mongoose, { Schema, Types, Model, HydratedDocument } from 'mongoose';
 
 export interface CareItemBudget {
   careItemSlug: string;
@@ -102,4 +95,5 @@ BudgetYearSchema.index({ clientId: 1, year: 1 }, { unique: true });
 export type BudgetYearHydrated = HydratedDocument<BudgetYearDoc>;
 export type BudgetYearLean = BudgetYearDoc;
 export const BudgetYear: Model<BudgetYearDoc> =
-  models.BudgetYear || model<BudgetYearDoc>('BudgetYear', BudgetYearSchema);
+  mongoose.models.BudgetYear ||
+  mongoose.model<BudgetYearDoc>('BudgetYear', BudgetYearSchema);
