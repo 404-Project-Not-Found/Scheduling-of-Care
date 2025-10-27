@@ -152,28 +152,33 @@ function ClientSchedule() {
 
   // Load clients + active client on mount
   useEffect(() => {
+    let cancelled = false;
     (async () => {
       try {
-        const list: ApiClient[] = await getClients();
-        const mapped: ClientLite[] = (list as ApiClientWithAccess[]).map(
-          (c) => ({
-            id: c._id,
-            name: c.name,
-            orgAccess: c.orgAccess,
-          })
-        );
+        const [list, active] = await Promise.all([
+          getClients(), 
+          getActiveClient()
+        ]);
+        if(cancelled) return;
+        
+        const mapped: ClientLite[] = (list as ApiClientWithAccess[]).map((c) => ({
+          id: c._id,
+          name: c.name,
+          orgAccess: c.orgAccess,
+        }));
         setClients(mapped);
-
-        const active = await getActiveClient();
-        setActiveClientId(active.id);
-        setDisplayName(active.name || '');
+        setActiveClientId(active?.id ?? null);
+        setDisplayName(active?.name ?? '');
       } catch (err) {
-        console.error('Failed to fetch clients.', err);
-        setClients([]);
-        setActiveClientId(null);
-        setDisplayName('');
+        if(!cancelled) {
+          console.error('Failed to fetch clients.', err);
+          setClients([]);
+          setActiveClientId(null);
+          setDisplayName('');
+        }
       }
     })();
+    return () => {cancelled = true};
   }, []);
 
   // Change active client (persists with helper)
@@ -200,9 +205,12 @@ function ClientSchedule() {
 
   // Load tasks
   useEffect(() => {
+    if (!activeClientId) return;
+    let cancelled = false;
     (async () => {
       try {
         const list = await getTasks(activeClientId);
+        if(cancelled) return;
         setTasks(
           (Array.isArray(list) ? list : []).map((t: MaybeSlugTask) => ({
             ...t,
@@ -210,41 +218,47 @@ function ClientSchedule() {
           })) as ClientTask[]
         );
       } catch (err) {
-        console.error('Failed to fetch tasks.', err);
-        setTasks([]);
+        if(!cancelled) {
+          console.error('Failed to fetch tasks.', err);
+          setTasks([]);
+        }
       }
     })();
-  }, []);
+
+    return () => {cancelled = true};
+  }, [activeClientId]);
 
   // Persist changes (mock FE storage)
   useEffect(() => {
     if (!tasks) return;
-    (async () => {
-      try {
-        await saveTasks(tasks);
-      } catch (err) {
-        console.error('Failed to save tasks', err);
-      }
-    })();
+    const t = setTimeout(() => {
+      saveTasks(tasks).catch((err) => console.error('Failed to save tasks', err));
+    }, 300);
+
+    return () => clearTimeout(t);
   }, [tasks]);
 
   // Attach a file via query (?addedFile=...) for carer role
   const hasAddedFile = useRef(false);
+
   useEffect(() => {
     if (role !== 'carer') return;
-    if (addedFile && selectedTask && !hasAddedFile.current) {
-      addFile(selectedTask.slug, addedFile);
-      hasAddedFile.current = true;
-    }
-  }, [addedFile, selectedTask, role]);
+    if(!addedFile || ! selectedTask || hasAddedFile.current) return;
+
+    addFile(selectedTask.slug, addedFile);
+    hasAddedFile.current = true;
+  }, [role, addedFile, selectedTask?.slug]);
 
   useEffect(() => {
-    (async () => {
-      if (!selectedTask || !activeClientId || !selectedTask.nextDue) return;
-      const url = `/api/v1/clients/${activeClientId}/care_item/${encodeURIComponent(selectedTask.slug)}/occurrence?date=${selectedTask.nextDue.slice(0, 10)}&include=files,comments`;
-      const res = await fetch(url, { cache: 'no-store' });
-      if (!res.ok) return;
+    if (!selectedTask?.slug || !activeClientId || !selectedTask.nextDue) return;
+    const controller = new AbortController();
 
+    (async () => {
+      const url = `/api/v1/clients/${activeClientId}/care_item/${encodeURIComponent(
+        selectedTask.slug
+      )}/occurrence?date=${selectedTask.nextDue.slice(0, 10)}&include=files,comments`;
+      const res = await fetch(url, { cache: 'no-store', signal: controller.signal });
+      if (!res.ok) return;
       const data: { files?: string[]; comments?: string[] } = await res.json();
 
       setSelectedTask((prev) =>
@@ -252,7 +266,6 @@ function ClientSchedule() {
           ? { ...prev, files: data.files ?? [], comments: data.comments ?? [] }
           : prev
       );
-
       setTasks((prev) =>
         prev.map((t) =>
           t.slug === selectedTask.slug
@@ -261,6 +274,8 @@ function ClientSchedule() {
         )
       );
     })();
+
+    return () => controller.abort();
   }, [selectedTask?.slug, selectedTask?.nextDue, activeClientId]);
 
   /* --------------- Derived: filter by client and date --------------- */
@@ -296,13 +311,25 @@ function ClientSchedule() {
   const windowStart = selectedDate || monthStart;
   const windowEnd = selectedDate || monthEnd;
 
-  useEffect(() => {
-    const slugs = tasksByClient.map(getSlug);
-    const lcSlugs = slugs.map((s) => s.toLowerCase());
-    if (!slugs.length) return;
+  const slugsKey = useMemo(() => {
+    const s = tasksByClient.map(getSlug).map((x) => x.toLowerCase()).sort();
+    return s.join(',');
+  }, [tasksByClient]);
 
-    fetchOccurencesForWindow(windowStart, windowEnd, lcSlugs);
-  }, [activeClientId, windowStart, windowEnd, tasksByClient.length]);
+  useEffect(() => {
+    if (!activeClientId || !slugsKey) return;
+
+    const slugs = slugsKey.split(',');
+    const controller = new AbortController();
+    const t = setTimeout(() => {
+      fetchOccurencesForWindow(windowStart, windowEnd, slugs);
+    }, 150);
+
+    return() => {
+      clearTimeout(t);
+      controller.abort();
+    };
+  }, [activeClientId, windowStart, windowEnd, slugsKey]);
 
   function deriveStatusFromDate(due?: string): StatusUI {
     const date = (due || '').slice(0, 10);
@@ -406,7 +433,7 @@ function ClientSchedule() {
       const uiStatus = occurStatus[key] ?? deriveStatusFromDate(d);
       return { ...t, nextDue: d, status: uiStatus } as ClientTask;
     });
-  });
+  }, [tasksByClient, windowStart, windowEnd, occurStatus]);
 
   // warning of overdue occurrences from before visible month
   const carryWarnings = useMemo(() => {
@@ -456,7 +483,7 @@ function ClientSchedule() {
     return Array.from(dedup.values()).sort((a, b) =>
       a.label.localeCompare(b.label)
     );
-  }, [tasksByClient, windowStart, occurStatus]);
+  }, [tasksByClient, windowStart]);
 
   /* ------------- Visible month/year coming from Calendar ------------- */
   const MONTH_NAMES = useMemo(
