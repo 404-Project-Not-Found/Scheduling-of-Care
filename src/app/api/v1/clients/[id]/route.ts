@@ -9,6 +9,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import Client from '@/models/Client';
+import {
+  saveBase64Image,
+  deleteImage,
+  isBase64Image,
+} from '@/lib/image-upload';
 
 /**
  * Fetches a single client by their MongoDB ID.
@@ -27,7 +32,8 @@ export async function GET(
     await connectDB();
 
     // Find client by ID and return plain JS object
-    const client = await Client.findById(id).lean();
+    // Exclude avatarUrl to reduce payload size
+    const client = await Client.findById(id).select('-avatarUrl').lean();
 
     // Client does not exist
     if (!client) {
@@ -66,6 +72,22 @@ export async function PUT(
   // Parse new client data
   const data = await req.json();
 
+  // Handle avatar update if it's a base64 image
+  if (data.avatarUrl && isBase64Image(data.avatarUrl)) {
+    // Get current client to delete old avatar if exists
+    const currentClient = await Client.findById(id);
+    if (currentClient?.avatarUrl && currentClient.avatarUrl.startsWith('/uploads/')) {
+      deleteImage(currentClient.avatarUrl);
+    }
+
+    // Save new image and update the data
+    data.avatarUrl = saveBase64Image(
+      data.avatarUrl,
+      `client_${data.name || id}`,
+      'clients'
+    );
+  }
+
   //Update the client and return the updated document
   const updated = await Client.findByIdAndUpdate(id, data, {
     new: true,
@@ -88,6 +110,12 @@ export async function DELETE(
   const { id } = await context.params;
 
   await connectDB();
+
+  // Get client to delete avatar if exists
+  const client = await Client.findById(id);
+  if (client?.avatarUrl && client.avatarUrl.startsWith('/uploads/')) {
+    deleteImage(client.avatarUrl);
+  }
 
   // Delete client document by ID
   await Client.findByIdAndDelete(id);

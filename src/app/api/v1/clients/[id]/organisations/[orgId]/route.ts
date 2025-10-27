@@ -45,7 +45,7 @@ export async function GET(
   await connectDB();
 
   // Find client by ID
-  const client = await Client.findById(id).lean<Client>();
+  const client = await Client.findById(id).select('-avatarUrl').lean<Client>();
   if (!client) {
     return NextResponse.json({ error: 'Client not found.' }, { status: 404 });
   }

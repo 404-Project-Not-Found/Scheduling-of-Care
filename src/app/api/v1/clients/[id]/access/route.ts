@@ -68,8 +68,10 @@ export async function GET(
     // Fetch client and populate references
     // 'createdBy' -> family user
     // 'organisationHistory.organisation' -> linked organisations
+    // Exclude large fields like avatarUrl to improve performance
     const client = (await Client.findById(clientId)
-      .populate('createdBy', 'fullName email phone role')
+      .select('-avatarUrl -medicalNotes')
+      .populate('createdBy', 'fullName email phone role') // exclude password, profilePic
       .populate({
         path: 'organisationHistory.organisation',
         select: 'name',
@@ -100,12 +102,13 @@ export async function GET(
         .map((h) => h.organisation!._id) ?? [];
 
     // --- Step 3: Find all active staff users belonging to approved organisations. ---
+    // Exclude large fields like profilePic, password to improve performance
     if (approvedOrgIds.length) {
       const staffUsers = await User.find({
         organisation: { $in: approvedOrgIds },
         role: { $in: ['carer', 'management'] },
         status: 'active',
-      }).select('fullName email phone role');
+      }).select('fullName email phone role'); // only select needed fields, exclude profilePic, password
 
       // Add all matched users to the access list.
       staffUsers.forEach((u) => {

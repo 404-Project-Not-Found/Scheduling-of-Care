@@ -18,6 +18,7 @@ import Client from '@/models/Client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import mongoose from 'mongoose';
+import { sanitizeAvatarUrl } from '@/lib/image-upload';
 
 // ------------------ Type Definitions -------------------
 type OrgAccess = 'approved' | 'pending' | 'revoked';
@@ -62,11 +63,14 @@ export async function GET() {
   // Return all clients that have this organisation in their history
   const clients = await Client.find({
     'organisationHistory.organisation': session.user.organisation,
+    
   })
+    .select('-avatarUrl')
     .populate({
       path: 'organisationHistory.organisation',
       select: 'name',
     })
+    
     .lean<ClientWithOrg[]>();
 
   // Gets the latest organisation-client status
@@ -90,7 +94,7 @@ export async function GET() {
     return {
       _id: c._id,
       name: c.name,
-      avatarUrl: c.avatarUrl || '',
+      avatarUrl: sanitizeAvatarUrl(c.avatarUrl), // Replace base64 with default
       dashboardType: c.dashboardType,
       orgAccess: latestOrg?.status ?? 'pending', // default pending
     };

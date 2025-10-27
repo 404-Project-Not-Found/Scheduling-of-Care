@@ -15,6 +15,12 @@ import User from '@/models/User';
 import bcrypt from 'bcryptjs';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import {
+  saveBase64Image,
+  deleteImage,
+  isBase64Image,
+  sanitizeAvatarUrl,
+} from '@/lib/image-upload';
 
 export async function POST(req: NextRequest) {
   try {
@@ -58,7 +64,30 @@ export async function POST(req: NextRequest) {
 
     if (phone) updateData.phone = phone;
 
-    if (profilePic) updateData.profilePic = profilePic;
+    // Handle profile picture upload
+    if (profilePic) {
+      // If it's a base64 image, save it as a file
+      if (isBase64Image(profilePic)) {
+        // Get current user to delete old profile pic if exists
+        const currentUser = await User.findById(session.user.id);
+        if (
+          currentUser?.profilePic &&
+          currentUser.profilePic.startsWith('/uploads/')
+        ) {
+          deleteImage(currentUser.profilePic);
+        }
+
+        const imagePath = saveBase64Image(
+          profilePic,
+          `user_${session.user.id}`,
+          'avatars'
+        );
+        updateData.profilePic = imagePath;
+      } else {
+  
+        updateData.profilePic = profilePic;
+      }
+    }
 
     // Update the user in the DB using their session ID
     const updatedUser = await User.findByIdAndUpdate(
@@ -79,7 +108,7 @@ export async function POST(req: NextRequest) {
         fullName: updatedUser.fullName,
         email: updatedUser.email,
         phone: updatedUser.phone,
-        profilePic: updatedUser.profilePic,
+        profilePic: sanitizeAvatarUrl(updatedUser.profilePic), // Replace base64 with default
       },
     });
   } catch (err) {
@@ -90,3 +119,4 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
