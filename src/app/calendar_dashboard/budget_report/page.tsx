@@ -69,6 +69,9 @@ const colors = {
   text: '#2b2b2b',
 };
 
+/* ------------------------------- Utils ------------------------------- */
+const capitalise = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : '');
+
 /* ---------------------------------- Status  ---------------------------------- */
 const LOW_BUDGET_THRESHOLD = 0.15;
 type Tone = 'green' | 'yellow' | 'red';
@@ -803,21 +806,23 @@ function BudgetReportInner() {
                       <div className="text-sm">Annual Budget</div>
 
                       {/** Edit button */}
-                      <div className="mt-4">
-                        <button
-                          onClick={startEdit}
-                          disabled={loading.budgetLoad}
-                          className="px-4 py-1.5 rounded-md font-semibold text-[#3A0000] transition"
-                          style={{
-                            background:
-                              'linear-gradient(90deg, #F9C9B1 0%, #FBE8D4 100%)',
-                            border: '1px solid #B47A64',
-                            boxShadow: '0 2px 5px rgba(180, 122, 100, 0.25)',
-                          }}
-                        >
-                          Edit
-                        </button>
-                      </div>
+                      { role === 'management' && !isPastYear && (
+                          <div className="mt-4">
+                          <button
+                            onClick={startEdit}
+                            disabled={loading.budgetLoad}
+                            className="px-4 py-1.5 rounded-md font-semibold text-[#3A0000] transition"
+                            style={{
+                              background:
+                                'linear-gradient(90deg, #F9C9B1 0%, #FBE8D4 100%)',
+                              border: '1px solid #B47A64',
+                              boxShadow: '0 2px 5px rgba(180, 122, 100, 0.25)',
+                            }}
+                          >
+                            Edit
+                          </button>
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
@@ -908,7 +913,7 @@ function BudgetReportInner() {
                                 className="font-bold text-gray-400 cursor-not-allowed"
                                 title="Set a budget before viewing details"
                               >
-                                {r.category}
+                                {capitalise(r.category)}
                               </span>
                             )}
                           </td>

@@ -1,3 +1,9 @@
+/**
+ * File path: /models/Transaction.ts
+ * Author: Zahra Rizqita
+ * Date Created: 02/10/2025
+ */
+
 import { Schema, model, models, Types, Document, Model } from 'mongoose';
 
 type TrKind = 'Purchase' | 'Refund';
@@ -16,7 +22,7 @@ export interface TransactionDoc extends Document {
   year: number;
   date: Date;
   type: TrKind;
-  madeByUserId: string;
+  madeByUserId: Types.ObjectId;
   receiptUrl?: string;
   lines: (IOTransactionLine & Document)[];
   note?: string;
