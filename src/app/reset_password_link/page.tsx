@@ -88,7 +88,7 @@ export default function ResetPasswordEmailPage() {
               <div className="text-[#3A0000] text-left">
                 <h3 className="text-lg font-semibold mb-2">Instructions</h3>
                 <p className="text-base leading-relaxed">
-                  Enter your{' '}
+                  Please enter your{' '}
                   <span className="font-semibold">account email</span> below and
                   click{' '}
                   <span className="font-semibold">
