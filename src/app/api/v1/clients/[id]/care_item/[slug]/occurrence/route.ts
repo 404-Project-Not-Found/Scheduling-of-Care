@@ -1,8 +1,13 @@
-import { NextResponse } from 'next/server';
-import { Types } from 'mongoose';
-import { connectDB } from '@/lib/mongodb';
-import Occurrence from '@/models/Occurrence';
+/**
+ * Filename: /app/api/care-item/[slug]/done/route.ts
+ * Author: Zahra Rizqita
+ * Date Created: 15/10/2025
+ */
 
+import { NextResponse } from 'next/server';
+import { FilterQuery, Types } from 'mongoose';
+import { connectDB } from '@/lib/mongodb';
+import Occurrence, { IOccurrence } from '@/models/Occurrence';
 
 const isYYYYMMDD = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s);
 const toUTCStart = (yyyyMmDd: string) => new Date(`${yyyyMmDd}T00:00:00.000Z`);
@@ -38,7 +43,6 @@ export async function GET(
       );
     }
 
-
     const MAX_DAYS = 93;
     const start = toUTCStart(startStr);
     const endNext = toUTCStart(endStr);
@@ -68,7 +72,7 @@ export async function GET(
       status: 1,
     } as const;
 
-    const filter: any = {
+    const filter: FilterQuery<IOccurrence> = {
       clientId,
       date: { $gte: start, $lt: endNext },
     };
@@ -82,7 +86,9 @@ export async function GET(
     const body = rows.map((r) => ({
       careItemSlug: r.careItemSlug,
       date:
-        r.date instanceof Date ? r.date.toISOString().slice(0, 10) : String(r.date),
+        r.date instanceof Date
+          ? r.date.toISOString().slice(0, 10)
+          : String(r.date),
       status: r.status,
     }));
 
@@ -98,4 +104,3 @@ export async function GET(
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }
-

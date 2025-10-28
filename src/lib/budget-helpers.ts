@@ -55,7 +55,7 @@ type CategoryApi = {
 
 export type CategoryLite = { id: string; name: string };
 type BudgetFull = { summary: BudgetSummary; rows: BudgetRow[] };
-const fullCache = new Map<string, Promise<BudgetFull>>(); 
+const fullCache = new Map<string, Promise<BudgetFull>>();
 const keyOf = (clientId: string, year: number) => `${clientId}:${year}`;
 
 /*--------------------------- functions ----------------------------------------- */
@@ -83,13 +83,15 @@ export async function getBudgetFull(
   year: number,
   signal?: AbortSignal
 ): Promise<BudgetFull> {
-
   const key = keyOf(clientId, year);
 
   let p = fullCache.get(key);
   if (!p) {
     p = (async () => {
-      const res = await fetch(`/api/v1/clients/${encodeURIComponent(clientId)}/budget/full?year=${year}`, { cache: 'no-store', signal });
+      const res = await fetch(
+        `/api/v1/clients/${encodeURIComponent(clientId)}/budget/full?year=${year}`,
+        { cache: 'no-store', signal }
+      );
 
       if (!res.ok) {
         fullCache.delete(key);
@@ -106,7 +108,9 @@ export async function getBudgetFull(
   return p;
 }
 
-export function invalidateBudgetFull(clientId: string, year: number) { fullCache.delete(keyOf(clientId, year)); }
+export function invalidateBudgetFull(clientId: string, year: number) {
+  fullCache.delete(keyOf(clientId, year));
+}
 
 export async function getBudgetRowsAndSum(
   clientId: string,
@@ -115,7 +119,6 @@ export async function getBudgetRowsAndSum(
 ): Promise<{ rows: BudgetRow[]; summary: BudgetSummary }> {
   return getBudgetFull(clientId, year, signal);
 }
-
 
 export function openBudgetSSE(
   clientId: string,

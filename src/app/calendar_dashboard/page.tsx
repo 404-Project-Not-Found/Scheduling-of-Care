@@ -156,21 +156,23 @@ function ClientSchedule() {
     (async () => {
       try {
         const [list, active] = await Promise.all([
-          getClients(), 
-          getActiveClient()
+          getClients(),
+          getActiveClient(),
         ]);
-        if(cancelled) return;
-        
-        const mapped: ClientLite[] = (list as ApiClientWithAccess[]).map((c) => ({
-          id: c._id,
-          name: c.name,
-          orgAccess: c.orgAccess,
-        }));
+        if (cancelled) return;
+
+        const mapped: ClientLite[] = (list as ApiClientWithAccess[]).map(
+          (c) => ({
+            id: c._id,
+            name: c.name,
+            orgAccess: c.orgAccess,
+          })
+        );
         setClients(mapped);
         setActiveClientId(active?.id ?? null);
         setDisplayName(active?.name ?? '');
       } catch (err) {
-        if(!cancelled) {
+        if (!cancelled) {
           console.error('Failed to fetch clients.', err);
           setClients([]);
           setActiveClientId(null);
@@ -178,7 +180,9 @@ function ClientSchedule() {
         }
       }
     })();
-    return () => {cancelled = true};
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Change active client (persists with helper)
@@ -210,7 +214,7 @@ function ClientSchedule() {
     (async () => {
       try {
         const list = await getTasks(activeClientId);
-        if(cancelled) return;
+        if (cancelled) return;
         setTasks(
           (Array.isArray(list) ? list : []).map((t: MaybeSlugTask) => ({
             ...t,
@@ -218,21 +222,25 @@ function ClientSchedule() {
           })) as ClientTask[]
         );
       } catch (err) {
-        if(!cancelled) {
+        if (!cancelled) {
           console.error('Failed to fetch tasks.', err);
           setTasks([]);
         }
       }
     })();
 
-    return () => {cancelled = true};
+    return () => {
+      cancelled = true;
+    };
   }, [activeClientId]);
 
   // Persist changes (mock FE storage)
   useEffect(() => {
     if (!tasks) return;
     const t = setTimeout(() => {
-      saveTasks(tasks).catch((err) => console.error('Failed to save tasks', err));
+      saveTasks(tasks).catch((err) =>
+        console.error('Failed to save tasks', err)
+      );
     }, 300);
 
     return () => clearTimeout(t);
@@ -243,7 +251,7 @@ function ClientSchedule() {
 
   useEffect(() => {
     if (role !== 'carer') return;
-    if(!addedFile || ! selectedTask || hasAddedFile.current) return;
+    if (!addedFile || !selectedTask || hasAddedFile.current) return;
 
     addFile(selectedTask.slug, addedFile);
     hasAddedFile.current = true;
@@ -257,7 +265,10 @@ function ClientSchedule() {
       const url = `/api/v1/clients/${activeClientId}/care_item/${encodeURIComponent(
         selectedTask.slug
       )}/occurrence?date=${selectedTask.nextDue.slice(0, 10)}&include=files,comments`;
-      const res = await fetch(url, { cache: 'no-store', signal: controller.signal });
+      const res = await fetch(url, {
+        cache: 'no-store',
+        signal: controller.signal,
+      });
       if (!res.ok) return;
       const data: { files?: string[]; comments?: string[] } = await res.json();
 
@@ -312,7 +323,10 @@ function ClientSchedule() {
   const windowEnd = selectedDate || monthEnd;
 
   const slugsKey = useMemo(() => {
-    const s = tasksByClient.map(getSlug).map((x) => x.toLowerCase()).sort();
+    const s = tasksByClient
+      .map(getSlug)
+      .map((x) => x.toLowerCase())
+      .sort();
     return s.join(',');
   }, [tasksByClient]);
 
@@ -325,7 +339,7 @@ function ClientSchedule() {
       fetchOccurencesForWindow(windowStart, windowEnd, slugs);
     }, 150);
 
-    return() => {
+    return () => {
       clearTimeout(t);
       controller.abort();
     };
@@ -377,63 +391,66 @@ function ClientSchedule() {
   const onOrBefore = (d: string, end: string) => d <= end;
 
   // Completion-driven using lastDone
-  const tasksForCalendar: ClientTask[] = tasksByClient.flatMap((t) => {
-    const count = t.frequencyCount ?? 0;
-    const unit = t.frequencyUnit as
-      | 'day'
-      | 'week'
-      | 'month'
-      | 'year'
-      | undefined;
-    if (!count || !unit) return [];
+  const tasksForCalendar: ClientTask[] = tasksByClient.flatMap(
+    (t) => {
+      const count = t.frequencyCount ?? 0;
+      const unit = t.frequencyUnit as
+        | 'day'
+        | 'week'
+        | 'month'
+        | 'year'
+        | undefined;
+      if (!count || !unit) return [];
 
-    const start0 = ymd(t.dateFrom);
-    const end0 = ymd(t.dateTo) || null;
-    const last0 = ymd(t.lastDone);
+      const start0 = ymd(t.dateFrom);
+      const end0 = ymd(t.dateTo) || null;
+      const last0 = ymd(t.lastDone);
 
-    const occs = futureOccurencesAfterLastDone(
-      start0,
-      last0,
-      count,
-      unit,
-      windowStart,
-      windowEnd,
-      end0
-    );
+      const occs = futureOccurencesAfterLastDone(
+        start0,
+        last0,
+        count,
+        unit,
+        windowStart,
+        windowEnd,
+        end0
+      );
 
-    if (
-      start0 &&
-      (!last0 || last0 < start0) &&
-      onOrAfter(start0, ymd(windowStart)) &&
-      onOrBefore(start0, ymd(windowEnd))
-    ) {
-      if (!occs.includes(start0)) occs.unshift(start0);
-    }
+      if (
+        start0 &&
+        (!last0 || last0 < start0) &&
+        onOrAfter(start0, ymd(windowStart)) &&
+        onOrBefore(start0, ymd(windowEnd))
+      ) {
+        if (!occs.includes(start0)) occs.unshift(start0);
+      }
 
-    const dbOccs = Object.entries(occurStatus)
-      .filter(([key]) => key.startsWith(`${t.slug}__`))
-      .map(([key]) => key.split('__')[1]);
+      const dbOccs = Object.entries(occurStatus)
+        .filter(([key]) => key.startsWith(`${t.slug}__`))
+        .map(([key]) => key.split('__')[1]);
 
-    const dbOccSet = new Set(dbOccs);
-    if (
-      start0 &&
-      onOrAfter(start0, ymd(windowStart)) &&
-      onOrBefore(start0, ymd(windowEnd)) &&
-      !dbOccSet.has(start0) &&
-      !occs.includes(start0) &&
-      (!last0 || last0 <= start0)
-    ) {
-      occs.unshift(start0);
-    }
+      const dbOccSet = new Set(dbOccs);
+      if (
+        start0 &&
+        onOrAfter(start0, ymd(windowStart)) &&
+        onOrBefore(start0, ymd(windowEnd)) &&
+        !dbOccSet.has(start0) &&
+        !occs.includes(start0) &&
+        (!last0 || last0 <= start0)
+      ) {
+        occs.unshift(start0);
+      }
 
-    const allOccDates = Array.from(new Set([...occs, ...dbOccs])).sort();
+      const allOccDates = Array.from(new Set([...occs, ...dbOccs])).sort();
 
-    return allOccDates.map((d) => {
-      const key = occKey(t.slug, d);
-      const uiStatus = occurStatus[key] ?? deriveStatusFromDate(d);
-      return { ...t, nextDue: d, status: uiStatus } as ClientTask;
-    });
-  }, [tasksByClient, windowStart, windowEnd, occurStatus]);
+      return allOccDates.map((d) => {
+        const key = occKey(t.slug, d);
+        const uiStatus = occurStatus[key] ?? deriveStatusFromDate(d);
+        return { ...t, nextDue: d, status: uiStatus } as ClientTask;
+      });
+    },
+    [tasksByClient, windowStart, windowEnd, occurStatus]
+  );
 
   // warning of overdue occurrences from before visible month
   const carryWarnings = useMemo(() => {

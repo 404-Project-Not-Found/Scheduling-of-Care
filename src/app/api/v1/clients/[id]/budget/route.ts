@@ -40,15 +40,18 @@ export async function GET(
   if (!Number.isInteger(year)) {
     return NextResponse.json({ error: 'Invalid year' }, { status: 400 });
   }
-  if(!Types.ObjectId.isValid(id)) return NextResponse.json({ error: 'Invalid clientId' }, { status: 422 });
+  if (!Types.ObjectId.isValid(id))
+    return NextResponse.json({ error: 'Invalid clientId' }, { status: 422 });
 
   const clientId = new Types.ObjectId(id);
 
   const budget = await BudgetYear.findOne({
     clientId,
     year,
-  }).select({categories: 1}).lean<BudgetYearLean>();
-  
+  })
+    .select({ categories: 1 })
+    .lean<BudgetYearLean>();
+
   if (!budget) {
     return new NextResponse(JSON.stringify([]), {
       status: 200,
@@ -60,24 +63,27 @@ export async function GET(
   }
 
   // Aggregate net spend per category for this client or year
-  const spentAggr = await Transaction.aggregate<SpentAggRow>([
-    { $match: { clientId, year, voidedAt: { $exists: false } } },
-    { $unwind: '$lines' },
-    {
-      $group: {
-        _id: '$lines.categoryId',
-        spent: {
-          $sum: {
-            $cond: [
-              { $eq: ['$type', 'Purchase'] },
-              '$lines.amount',
-              { $multiply: [-1, '$lines.amount'] },
-            ],
+  const spentAggr = await Transaction.aggregate<SpentAggRow>(
+    [
+      { $match: { clientId, year, voidedAt: { $exists: false } } },
+      { $unwind: '$lines' },
+      {
+        $group: {
+          _id: '$lines.categoryId',
+          spent: {
+            $sum: {
+              $cond: [
+                { $eq: ['$type', 'Purchase'] },
+                '$lines.amount',
+                { $multiply: [-1, '$lines.amount'] },
+              ],
+            },
           },
         },
       },
-    },
-  ], {allowDiskUse: true});
+    ],
+    { allowDiskUse: true }
+  );
 
   const spentByCat = new Map<string, number>(
     spentAggr.map((r) => [

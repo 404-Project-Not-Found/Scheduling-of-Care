@@ -24,20 +24,26 @@ export async function POST(req: Request) {
 
   const ids = (body as LookupBody)?.ids;
   if (!Array.isArray(ids) || ids.length === 0) {
-    return NextResponse.json({ error: 'ids must be a non-empty array' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'ids must be a non-empty array' },
+      { status: 400 }
+    );
   }
 
   const validIds = [...new Set(ids)].filter((id) => Types.ObjectId.isValid(id));
   if (validIds.length === 0) {
-    return NextResponse.json({ error: 'No valid ObjectIds provided' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'No valid ObjectIds provided' },
+      { status: 400 }
+    );
   }
 
-  const users = await User.find({ _id: { $in: validIds } }).select('_id fullName');
+  const users = await User.find({ _id: { $in: validIds } }).select(
+    '_id fullName'
+  );
 
   const map: Record<string, string> = {};
   for (const u of users) map[String(u._id)] = u.fullName;
 
   return NextResponse.json({ users: map });
 }
-
-

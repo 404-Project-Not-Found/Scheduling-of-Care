@@ -10,8 +10,10 @@ import { connectDB } from '@/lib/mongodb';
 import { BudgetYear } from '@/models/Budget';
 import { Types } from 'mongoose';
 
-
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const { id } = await params;
   await connectDB();
 
@@ -28,7 +30,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
   return new NextResponse(JSON.stringify(years), {
     status: 200,
-    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=60, stale-while-revalidate=300' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'public, max-age=60, stale-while-revalidate=300',
+    },
   });
 }
-

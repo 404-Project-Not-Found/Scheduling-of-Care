@@ -216,9 +216,7 @@ function TransactionHistoryInner() {
 
   useEffect(() => {
     const needed = Array.from(
-      new Set(
-        rows.map((r) => r.madeBy).filter((id) => id && !userNameById[id])
-      )
+      new Set(rows.map((r) => r.madeBy).filter((id) => id && !userNameById[id]))
     );
     if (needed.length === 0) return;
 
@@ -257,7 +255,6 @@ function TransactionHistoryInner() {
         .includes(q);
     });
   }, [rows, search, userNameById]);
-
 
   return (
     <DashboardChrome
@@ -372,7 +369,9 @@ function TransactionHistoryInner() {
                         >
                           <td className="px-6 py-5 font-semibold">{t.type}</td>
                           <td className="px-6 py-5">{t.date}</td>
-                          <td className="px-6 py-5">{userNameById[t.madeBy]}</td>
+                          <td className="px-6 py-5">
+                            {userNameById[t.madeBy]}
+                          </td>
                           <td className="px-6 py-5">{t.receipt}</td>
                           <td className="px-6 py-5">
                             <div className="flex flex-col gap-1">

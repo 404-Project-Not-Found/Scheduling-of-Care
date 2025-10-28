@@ -70,7 +70,8 @@ const colors = {
 };
 
 /* ------------------------------- Utils ------------------------------- */
-const capitalise = (s = '') => s.trim().replace(/^./u, ch => ch.toUpperCase());
+const capitalise = (s = '') =>
+  s.trim().replace(/^./u, (ch) => ch.toUpperCase());
 
 /* ---------------------------------- Status  ---------------------------------- */
 const LOW_BUDGET_THRESHOLD = 0.15;
@@ -158,9 +159,12 @@ function BudgetReportInner() {
 
     (async () => {
       try {
-        const [list, active] = await Promise.all([getClients(), getActiveClient()]);
+        const [list, active] = await Promise.all([
+          getClients(),
+          getActiveClient(),
+        ]);
 
-        if(cancelled) return;
+        if (cancelled) return;
 
         const mapped: ClientLite[] = (list as ApiClientWithAccess[]).map(
           (c) => ({
@@ -173,17 +177,19 @@ function BudgetReportInner() {
         setActiveClientId(active?.id ?? null);
         setDisplayName(active.name || '');
       } catch (err) {
-        if(!cancelled) {
+        if (!cancelled) {
           console.error('Failed to fetch clients.', err);
           setClients([]);
           setActiveClientId(null);
           setDisplayName('');
         }
       } finally {
-        if(!cancelled) setLoading((s) => ({ ...s, clientsLoad: false }));
+        if (!cancelled) setLoading((s) => ({ ...s, clientsLoad: false }));
       }
     })();
-    return () => {cancelled = true}
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Change active client
@@ -205,24 +211,24 @@ function BudgetReportInner() {
   const [categories, setCategories] = useState<CategoryLite[]>([]);
   useEffect(() => {
     if (!activeClientId) {
-        setCategories([]);
-        return;
-      }
+      setCategories([]);
+      return;
+    }
     const abort = new AbortController();
     let cancelled = false;
     (async () => {
       setLoading((s) => ({ ...s, catLoad: true }));
       try {
         const cats = await getCategoriesForClient(activeClientId, abort.signal);
-        if(cancelled) return;
+        if (cancelled) return;
         setCategories(cats);
       } catch (e) {
-        if(!cancelled) {
+        if (!cancelled) {
           console.error('Failed to load categories:', e);
           setCategories([]);
         }
       } finally {
-        if(!cancelled) setLoading((s) => ({ ...s, catLoad: false }));
+        if (!cancelled) setLoading((s) => ({ ...s, catLoad: false }));
       }
     })();
     return () => {
@@ -266,7 +272,7 @@ function BudgetReportInner() {
       setLoading((s) => ({ ...s, yearsLoad: true }));
       try {
         const list = await getAvailableYears(activeClientId, abort.signal);
-        if(cancelled) return;
+        if (cancelled) return;
         if (list.length > 0) {
           setYears(list);
           if (!list.includes(year)) setYear(list[0]);
@@ -276,14 +282,14 @@ function BudgetReportInner() {
           setYear(curr);
         }
       } catch (e) {
-        if(!cancelled) {
+        if (!cancelled) {
           console.error('Failed to load years:', e);
           const curr = new Date().getFullYear();
           setYears([curr]);
           setYear(curr);
         }
       } finally {
-        if(!cancelled) setLoading((s) => ({ ...s, yearsLoad: false }));
+        if (!cancelled) setLoading((s) => ({ ...s, yearsLoad: false }));
       }
     };
     load();
@@ -302,7 +308,6 @@ function BudgetReportInner() {
     surplus: 0,
   });
 
-
   // fetch rows + summary when client/year changes
   useEffect(() => {
     if (!activeClientId) {
@@ -316,7 +321,11 @@ function BudgetReportInner() {
     (async () => {
       setLoading((s) => ({ ...s, budgetLoad: true }));
       try {
-        const full = await getBudgetRowsAndSum(activeClientId, year, abort.signal);
+        const full = await getBudgetRowsAndSum(
+          activeClientId,
+          year,
+          abort.signal
+        );
         if (cancelled) return;
         setRows(full.rows);
         setSummary(full.summary);
@@ -324,7 +333,12 @@ function BudgetReportInner() {
         if (!cancelled) {
           console.error('Failed to load budget data:', e);
           setRows([]);
-          setSummary({ annualAllocated: 0, spent: 0, remaining: 0, surplus: 0 });
+          setSummary({
+            annualAllocated: 0,
+            spent: 0,
+            remaining: 0,
+            surplus: 0,
+          });
         }
       } finally {
         if (!cancelled) setLoading((s) => ({ ...s, budgetLoad: false }));
@@ -336,7 +350,6 @@ function BudgetReportInner() {
       abort.abort();
     };
   }, [activeClientId, year]);
-
 
   // Real time update via SSE
   useEffect(() => {
@@ -391,7 +404,6 @@ function BudgetReportInner() {
       );
     });
   }, [categories, rows]);
-
 
   // ===== Editing state =====
   const [isEditing, setIsEditing] = useState(false);
@@ -571,12 +583,16 @@ function BudgetReportInner() {
       .map((r) => {
         const remaining = r.allocated - r.spent;
         const ratio = remaining / r.allocated;
-        return { name: r.category, remaining, percent: ratio * 100, show: remaining > 0 && ratio <= LOW_BUDGET_THRESHOLD };
+        return {
+          name: r.category,
+          remaining,
+          percent: ratio * 100,
+          show: remaining > 0 && ratio <= LOW_BUDGET_THRESHOLD,
+        };
       })
       .filter((x) => x.show)
       .map(({ name, remaining, percent }) => ({ name, remaining, percent }));
   }, [rowsAll]);
-
 
   const handleRollover = async (
     activeClientId: string,
@@ -615,10 +631,11 @@ function BudgetReportInner() {
 
   /** Filter by search */
   const filtered = useMemo(() => {
-    if(!qDebounce) return rowsAll;
+    if (!qDebounce) return rowsAll;
     return rowsAll.filter(
       (r) =>
-        r.item.toLowerCase().includes(qDebounce) || r.category.toLowerCase().includes(qDebounce)
+        r.item.toLowerCase().includes(qDebounce) ||
+        r.category.toLowerCase().includes(qDebounce)
     );
   }, [qDebounce, rowsAll]);
 
@@ -703,7 +720,8 @@ function BudgetReportInner() {
                 year === new Date().getFullYear() && (
                   <button
                     onClick={() =>
-                      activeClientId && handleRollover(activeClientId!, year, setRows, setSummary)
+                      activeClientId &&
+                      handleRollover(activeClientId!, year, setRows, setSummary)
                     }
                     disabled={loading.budgetLoad || !activeClientId}
                     className="px-3 py-1.5 rounded-md font-semibold text-[#3A0000] transition"
@@ -806,8 +824,8 @@ function BudgetReportInner() {
                       <div className="text-sm">Annual Budget</div>
 
                       {/** Edit button */}
-                      { role === 'management' && !isPastYear && (
-                          <div className="mt-4">
+                      {role === 'management' && !isPastYear && (
+                        <div className="mt-4">
                           <button
                             onClick={startEdit}
                             disabled={loading.budgetLoad}
@@ -859,11 +877,17 @@ function BudgetReportInner() {
               {/* Low budget warning list */}
               {lowCategories.length > 0 && (
                 <div className="mb-6 rounded-lg border border-yellow-400 bg-yellow-100 px-6 py-4 text-yellow-800">
-                  <div className="font-semibold mb-2">⚠️ The following categories are nearing their budget limit:</div>
+                  <div className="font-semibold mb-2">
+                    ⚠️ The following categories are nearing their budget limit:
+                  </div>
                   <ul className="list-disc list-inside space-y-1">
                     {lowCategories.map((c) => (
                       <li key={capitalise(c.name)}>
-                        <span className="font-medium">{capitalise(c.name)}</span> — remaining ${c.remaining.toFixed(2)} ({c.percent.toFixed(1)}%)
+                        <span className="font-medium">
+                          {capitalise(c.name)}
+                        </span>{' '}
+                        — remaining ${c.remaining.toFixed(2)} (
+                        {c.percent.toFixed(1)}%)
                       </li>
                     ))}
                   </ul>

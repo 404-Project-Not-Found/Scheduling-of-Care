@@ -6,7 +6,10 @@ import { BudgetYear } from '@/models/Budget';
 
 export const runtime = 'nodejs';
 
-export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+export async function GET(
+  req: NextRequest,
+  ctx: { params: Promise<{ id: string }> }
+) {
   const url = new URL(req.url);
   const yearStr = url.searchParams.get('year') || '';
   const includeInitial = url.searchParams.get('initial') === '1';
@@ -32,48 +35,85 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
   const cleanup = () => {
     if (closed) return;
     closed = true;
-    try { heartbeat && clearInterval(heartbeat); } catch {}
+    try {
+      heartbeat && clearInterval(heartbeat);
+    } catch {}
     heartbeat = null;
-    try { unsubscribe && unsubscribe(); } catch {}
+    try {
+      unsubscribe && unsubscribe();
+    } catch {}
     unsubscribe = null;
     writer.close().catch(() => {});
   };
 
   const write = async (event: string, data?: unknown) => {
     if (closed) return;
-    const chunk = `event: ${event}\n` + `data: ${data === undefined ? '' : JSON.stringify(data)}\n\n`;
-    try { await writer.write(encoder.encode(chunk)); }
-    catch { cleanup(); }
+    const chunk =
+      `event: ${event}\n` +
+      `data: ${data === undefined ? '' : JSON.stringify(data)}\n\n`;
+    try {
+      await writer.write(encoder.encode(chunk));
+    } catch {
+      cleanup();
+    }
   };
 
   if (includeInitial) {
     try {
       await connectDB();
-      const doc = await BudgetYear.findOne({ clientId: new Types.ObjectId(clientIdStr), year })
-        .select({ annualAllocated: 1, surplus: 1, openingCarryover: 1, 'totals.spent': 1, 'totals.allocated': 1, categories: 1 })
+      const doc = await BudgetYear.findOne({
+        clientId: new Types.ObjectId(clientIdStr),
+        year,
+      })
+        .select({
+          annualAllocated: 1,
+          surplus: 1,
+          openingCarryover: 1,
+          'totals.spent': 1,
+          'totals.allocated': 1,
+          categories: 1,
+        })
         .lean();
 
       if (doc) {
         const annualAllocated = Math.round(doc.annualAllocated ?? 0);
         const spent = Math.round(doc.totals?.spent ?? 0);
         const remaining = Math.max(0, annualAllocated - spent);
-        const surplus = Math.max(0, Math.round(doc.surplus ?? annualAllocated - (doc.totals?.allocated ?? 0)));
+        const surplus = Math.max(
+          0,
+          Math.round(
+            doc.surplus ?? annualAllocated - (doc.totals?.allocated ?? 0)
+          )
+        );
         await write('snapshot', {
-          summary: { annualAllocated, spent, remaining, surplus, openingCarryover: Number(doc.openingCarryover ?? 0) },
+          summary: {
+            annualAllocated,
+            spent,
+            remaining,
+            surplus,
+            openingCarryover: Number(doc.openingCarryover ?? 0),
+          },
         });
       } else {
-        await write('snapshot', { summary: { annualAllocated: 0, spent: 0, remaining: 0, surplus: 0 } });
+        await write('snapshot', {
+          summary: { annualAllocated: 0, spent: 0, remaining: 0, surplus: 0 },
+        });
       }
-    } catch {
-    }
+    } catch {}
   }
 
-  unsubscribe = sseSubscribe(key, (event, data) => { void write(event, data); });
+  unsubscribe = sseSubscribe(key, (event, data) => {
+    void write(event, data);
+  });
 
   void write('ping', { ts: Date.now() });
-  heartbeat = setInterval(() => { void write('ping', { ts: Date.now() }); }, 25_000);
+  heartbeat = setInterval(() => {
+    void write('ping', { ts: Date.now() });
+  }, 25_000);
 
-  try { req.signal.addEventListener('abort', cleanup); } catch {}
+  try {
+    req.signal.addEventListener('abort', cleanup);
+  } catch {}
   return new Response(readable, {
     headers: {
       'Content-Type': 'text/event-stream',

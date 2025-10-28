@@ -430,10 +430,10 @@ function AddTransactionInner() {
       alert('Please select a client in the banner first.');
       return;
     }
-    if(!receiptFile) {
+    if (!receiptFile) {
       setUploadWarning('Please upload a receipt file before submitting!');
       return;
-    };
+    }
     setUploadWarning(null);
     setSubmitting(true);
     const receiptUrl = receiptFile ? `/uploads/${receiptFile.name}` : undefined;
@@ -788,16 +788,21 @@ function AddTransactionInner() {
                               style={inputStyle}
                             >
                               <option value="">Select a care item</option>
-                             {itemsForCat
-                              .filter((ci) => ci && (ci.slug || ci.id))
-                              .map((ci, idx) => {
-                                const key = ci.slug ?? ci.id ?? `fallback-${idx}`;
-                                return (
-                                  <option key={key} value={ci.slug ?? ''} disabled={!ci.slug}>
-                                    {ci.label}
-                                  </option>
-                                );
-                              })}
+                              {itemsForCat
+                                .filter((ci) => ci && (ci.slug || ci.id))
+                                .map((ci, idx) => {
+                                  const key =
+                                    ci.slug ?? ci.id ?? `fallback-${idx}`;
+                                  return (
+                                    <option
+                                      key={key}
+                                      value={ci.slug ?? ''}
+                                      disabled={!ci.slug}
+                                    >
+                                      {ci.label}
+                                    </option>
+                                  );
+                                })}
                             </select>
                           </div>
 
