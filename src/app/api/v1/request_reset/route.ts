@@ -7,19 +7,20 @@
  */
 
 import { NextResponse } from 'next/server';
-/*import crypto from 'crypto';
+import crypto from 'crypto';
 import { connectDB } from '@/lib/mongodb';
 import User from '@/models/User';
 import PasswordResetToken from '@/models/PasswordResetToken';
-import { sendResetEmail } from '@/lib/email';*/
+import { sendResetEmail } from '@/lib/email';
 
-// Temporarily disable route
-export async function POST() {
-  return NextResponse.json({ error: 'Temporarily disabled' }, { status: 503 });
-}
-
-/* export async function POST(req: Request) {
+/**
+ * Handles password reset link and email
+ * @param req
+ * @returns default response message
+ */
+export async function POST(req: Request) {
   await connectDB();
+
   try {
     const { email } = await req.json();
     if (!email) {
@@ -32,16 +33,24 @@ export async function POST() {
       });
     }
 
+    // Remove any previous tokens for this user
+    await PasswordResetToken.deleteMany({ userID: user._id });
+
+    // Generate a new token every time
     const token = crypto.randomBytes(32).toString('hex');
     const expiry = new Date(Date.now() + 15 * 60 * 1000);
 
+    // Save the new token to DB
     await PasswordResetToken.create({
       userID: user._id,
       token,
       expiresAt: expiry,
     });
 
+    // Build a new reset link each time
     const resetLink = `${process.env.NEXT_PUBLIC_APP_URI}/reset-password?token=${token}`;
+
+    // Send the new email
     await sendResetEmail(user.email, resetLink);
 
     return NextResponse.json({
@@ -52,4 +61,3 @@ export async function POST() {
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }
-*/
