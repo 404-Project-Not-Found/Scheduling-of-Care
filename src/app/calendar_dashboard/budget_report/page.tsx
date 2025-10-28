@@ -39,8 +39,7 @@ import {
 } from '@/lib/data';
 
 import {
-  getBudgetRows,
-  getBudgetSummary,
+  getBudgetRowsAndSum,
   openBudgetSSE,
   getAvailableYears,
   getCategoriesForClient,
@@ -299,6 +298,7 @@ function BudgetReportInner() {
     surplus: 0,
   });
 
+
   // fetch rows + summary when client/year changes
   useEffect(() => {
     if (!activeClientId) {
@@ -312,13 +312,10 @@ function BudgetReportInner() {
     (async () => {
       setLoading((s) => ({ ...s, budgetLoad: true }));
       try {
-        const [r, s] = await Promise.all([
-          getBudgetRows(activeClientId, year, abort.signal),
-          getBudgetSummary(activeClientId, year, abort.signal),
-        ]);
+        const full = await getBudgetRowsAndSum(activeClientId, year, abort.signal);
         if (cancelled) return;
-        setRows(r);
-        setSummary(s);
+        setRows(full.rows);
+        setSummary(full.summary);
       } catch (e) {
         if (!cancelled) {
           console.error('Failed to load budget data:', e);
@@ -345,13 +342,10 @@ function BudgetReportInner() {
     const start = () => {
       stop = openBudgetSSE(activeClientId, year, async () => {
         try {
-          const [r, s] = await Promise.all([
-            getBudgetRows(activeClientId, year),
-            getBudgetSummary(activeClientId, year),
-          ]);
+          const full = await getBudgetRowsAndSum(activeClientId, year);
           React.startTransition?.(() => {
-            setRows(r);
-            setSummary(s);
+            setRows(full.rows);
+            setSummary(full.summary);
           });
         } catch (e) {
           console.error('Refresh failed:', e);
@@ -434,12 +428,9 @@ function BudgetReportInner() {
         setSummary(json.summary);
       }
 
-      const [r, s] = await Promise.all([
-        getBudgetRows(activeClientId, year, undefined),
-        getBudgetSummary(activeClientId, year, undefined),
-      ]);
-      setRows(r);
-      setSummary(s);
+      const full = await getBudgetRowsAndSum(activeClientId, year, undefined);
+      setRows(full.rows);
+      setSummary(full.summary);
       setShowWarning(false);
     } catch (e) {
       setWarningText('Network or server error while saving annual budget.');
@@ -502,12 +493,9 @@ function BudgetReportInner() {
         setShowWarning(true);
         return;
       }
-      const [r, s] = await Promise.all([
-        getBudgetRows(activeClientId, year),
-        getBudgetSummary(activeClientId, year),
-      ]);
-      setRows(r);
-      setSummary(s);
+      const full = await getBudgetRowsAndSum(activeClientId, year);
+      setRows(full.rows);
+      setSummary(full.summary);
       setShowWarning(false);
       setEditingRowId(null);
     } catch (e) {
@@ -610,13 +598,10 @@ function BudgetReportInner() {
         }
       );
 
-      const [r, s] = await Promise.all([
-        getBudgetRows(activeClientId, year),
-        getBudgetSummary(activeClientId, year),
-      ]);
+      const full = await getBudgetRowsAndSum(activeClientId, year);
 
-      setRowsSetter(r);
-      setSummarySetter(s);
+      setRowsSetter(full.rows);
+      setSummarySetter(full.summary);
     } catch (err) {
       console.error('Rollover failed', err);
     }

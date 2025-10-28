@@ -75,5 +75,14 @@ const TransactionSchema = new Schema(
 
 TransactionSchema.index({ clientId: 1, year: 1, date: 1 });
 
+TransactionSchema.index(
+  { clientId: 1, year: 1, 'lines.categoryId': 1, type: 1 },
+  { name: 'byClientYearCategoryType', partialFilterExpression: { voidedAt: { $exists: false } } }
+);
+TransactionSchema.index(
+  { clientId: 1, year: 1, voidedAt: 1 },
+  { name: 'byClientYearVoided' }
+);
+
 export const Transaction: Model<TransactionDoc> =
   models.Transaction || model<TransactionDoc>('Transaction', TransactionSchema);

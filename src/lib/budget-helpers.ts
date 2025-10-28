@@ -54,6 +54,9 @@ type CategoryApi = {
 };
 
 export type CategoryLite = { id: string; name: string };
+type BudgetFull = { summary: BudgetSummary; rows: BudgetRow[] };
+const fullCache = new Map<string, Promise<BudgetFull>>(); 
+const keyOf = (clientId: string, year: number) => `${clientId}:${year}`;
 
 /*--------------------------- functions ----------------------------------------- */
 
@@ -62,24 +65,8 @@ export async function getBudgetRows(
   year: number,
   signal?: AbortSignal
 ): Promise<BudgetRow[]> {
-  const url = `/api/v1/clients/${encodeURIComponent(clientId)}/budget?year=${encodeURIComponent(
-    String(year)
-  )}`;
-  const res = await fetch(url, { cache: 'no-store', signal });
-  if (!res.ok) {
-    throw new Error(`fetchBudgetRows failed (${res.status})`);
-  }
-  const data = (await res.json()) as unknown;
-  if (!Array.isArray(data)) return [];
-  return data
-    .map((r) => ({
-      categoryId: String((r as { categoryId: unknown }).categoryId ?? ''),
-      item: String((r as { item: unknown }).item ?? ''),
-      category: String((r as { category: unknown }).category ?? ''),
-      allocated: Number((r as { allocated: unknown }).allocated ?? 0),
-      spent: Number((r as { spent: unknown }).spent ?? 0),
-    }))
-    .filter((r) => r.category.length > 0);
+  const full = await getBudgetFull(clientId, year, signal);
+  return full.rows;
 }
 
 export async function getBudgetSummary(
@@ -87,20 +74,46 @@ export async function getBudgetSummary(
   year: number,
   signal?: AbortSignal
 ): Promise<BudgetSummary> {
-  const url = `/api/v1/clients/${encodeURIComponent(
-    clientId
-  )}/budget/summary?year=${encodeURIComponent(String(year))}`;
-  const res = await fetch(url, { cache: 'no-store', signal });
-  if (!res.ok) throw new Error(`fetchBudgetSummary failed (${res.status})`);
-  const data = (await res.json()) as Partial<BudgetSummary>;
-  return {
-    annualAllocated: Number(data.annualAllocated ?? 0),
-    spent: Number(data.spent ?? 0),
-    remaining: Number(data.remaining ?? 0),
-    surplus: Number(data.surplus ?? 0),
-    openingCarryover: Number(data.openingCarryover ?? 0),
-  };
+  const full = await getBudgetFull(clientId, year, signal);
+  return full.summary;
 }
+
+export async function getBudgetFull(
+  clientId: string,
+  year: number,
+  signal?: AbortSignal
+): Promise<BudgetFull> {
+
+  const key = keyOf(clientId, year);
+
+  let p = fullCache.get(key);
+  if (!p) {
+    p = (async () => {
+      const res = await fetch(`/api/v1/clients/${encodeURIComponent(clientId)}/budget/full?year=${year}`, { cache: 'no-store', signal });
+
+      if (!res.ok) {
+        fullCache.delete(key);
+        throw new Error(`budget/full ${res.status} ${res.statusText}`);
+      }
+
+      const json = (await res.json()) as BudgetFull;
+      return json;
+    })();
+
+    fullCache.set(key, p);
+  }
+
+  return p;
+}
+
+export async function getBudgetRowsAndSum(
+  clientId: string,
+  year: number,
+  signal?: AbortSignal
+): Promise<{ rows: BudgetRow[]; summary: BudgetSummary }> {
+  return getBudgetFull(clientId, year, signal);
+}
+
 
 export function openBudgetSSE(
   clientId: string,
