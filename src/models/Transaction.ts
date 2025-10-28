@@ -84,5 +84,10 @@ TransactionSchema.index(
   { name: 'byClientYearVoided' }
 );
 
+TransactionSchema.index(
+  { clientId: 1, year: 1, voidedAt: 1 },
+  { partialFilterExpression: { voidedAt: { $exists: false } } }
+);
+
 export const Transaction: Model<TransactionDoc> =
   models.Transaction || model<TransactionDoc>('Transaction', TransactionSchema);

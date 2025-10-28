@@ -191,7 +191,7 @@ function TransactionHistoryInner() {
     };
     load();
     return () => abort.abort();
-  }, [activeClientId]); // MERGE: keep effect dependency minimal
+  }, [activeClientId]);
 
   useEffect(() => {
     if (!activeClientId) {
@@ -240,7 +240,7 @@ function TransactionHistoryInner() {
         {/* Top bar: title + year + search + add */}
         <div className="w-full px-6 py-5">
           <div className="flex items-center justify-between flex-wrap gap-4">
-            {/* LEFT: Title + Year selector  (MERGE: restored year picker from HEAD) */}
+            {/* LEFT: Title + Year selector */}
             <div className="flex items-center gap-4">
               <h1 className="text-[#3A0000] text-3xl font-semibold">
                 Transaction History
