@@ -11,9 +11,11 @@
  * Updated by Denise Alexander (23/10/2025): Updated logo, added role specific main
  * dashboard titles and desciptions and changed page nav for family and management users to
  * redirect to PWSN/Client list pages first when manage client care is selected.
- *
- * Last Updated by Denise Alexander (24/10/2025): Added back-end for user profile picture and
+ * Updated by Denise Alexander (24/10/2025): Added back-end for user profile picture and
  * changed carer redirect to client list.
+ *
+ * Last Updated by Denise Alexander (28/10/2025): reverted changes made to fetch profile
+ * picture.
  */
 
 'use client';
@@ -59,7 +61,7 @@ export default function DashboardPage() {
   const [title, setTitle] = useState('Dashboard');
   const router = useRouter();
   const [userName, setUserName] = useState<string>(''); // new
-  const [profilePic, setProfilePic] = useState<string | null>(null);
+  // const [profilePic, setProfilePic] = useState<string | null>(null);
 
   // Mock flag
   const isMock =
@@ -118,7 +120,7 @@ export default function DashboardPage() {
         if (!res.ok) throw new Error('Failed to load user');
         const data = await res.json();
         if (data?.fullName) setUserName(data.fullName);
-        if (data?.profilePic) setProfilePic(data.profilePic);
+        // if (data?.profilePic) setProfilePic(data.profilePic);
       } catch (err) {
         console.error('Error fetching user profile:', err);
       }
@@ -216,22 +218,12 @@ export default function DashboardPage() {
                   aria-expanded={userMenuOpen}
                   title="Account"
                 >
-                  {profilePic ? (
-                    <Image
-                      src={profilePic}
-                      alt="Profile picture"
-                      fill
-                      className="object-cover rounded-full"
-                      sizes="(max-width: 768px) 64px, 128px"
-                    />
-                  ) : (
-                    <User
-                      size={50}
-                      strokeWidth={0.3}
-                      fill={palette.header}
-                      color={palette.header}
-                    />
-                  )}
+                  <User
+                    size={50}
+                    strokeWidth={0.3}
+                    fill={palette.header}
+                    color={palette.header}
+                  />
                 </button>
 
                 {/* Dropdown Menu */}
@@ -359,16 +351,19 @@ export default function DashboardPage() {
                                 after:content-[''] after:absolute after:left-1/2 after:-translate-x-1/2 after:bottom-[-3px]
                                 after:w-0 after:h-[2px] after:rounded-full after:bg-[#3A0000]/70
                                 group-hover:after:w-[80%] after:transition-all after:duration-300 after:ease-out"
-                    >
+                  >
                     View Details
                     <span
-                        className="ml-1 inline-flex h-5 w-5 items-center justify-center
+                      className="ml-1 inline-flex h-5 w-5 items-center justify-center
                                 rounded-full bg-[#3A0000]/10 ring-1 ring-[#3A0000]/10
                                 transition-all duration-300 ease-out
                                 group-hover:translate-x-0.5 group-hover:bg-[#3A0000]/15"
-                        aria-hidden="true"
+                      aria-hidden="true"
                     >
-                        <ArrowRight className="h-3.5 w-3.5 text-[#3A0000]" strokeWidth={2} />
+                      <ArrowRight
+                        className="h-3.5 w-3.5 text-[#3A0000]"
+                        strokeWidth={2}
+                      />
                     </span>
                   </span>
                 </div>

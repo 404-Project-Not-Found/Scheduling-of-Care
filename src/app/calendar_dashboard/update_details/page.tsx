@@ -6,9 +6,11 @@
  *
  * Updated by Denise Alexander (7/10/2025): back-end integration
  * added.
- *
- * Last Updated by Denise Alexander (24/10/2025): Re-desgined the page to include
+ * Updated by Denise Alexander (24/10/2025): Re-desgined the page to include
  * user's name, email, phone number and new password.
+ *
+ * Last Updated by Denise Alexander (28/10/2025): reverted changes made to fetch profile
+ * picture.
  */
 
 'use client';
@@ -19,7 +21,6 @@ import { User, ArrowLeft } from 'lucide-react';
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { getSession } from 'next-auth/react';
 
 const colors = {
   pageBg: '#ffd9b3',
@@ -29,7 +30,6 @@ const colors = {
   orange: '#F4A261',
 };
 
-type Role = 'carer' | 'family' | 'management';
 const isMock = process.env.NEXT_PUBLIC_ENABLE_MOCK === '1';
 
 export default function UpdateDetailsPage() {
@@ -39,8 +39,7 @@ export default function UpdateDetailsPage() {
   const [phone, setPhone] = useState('');
   const [pwd, setPwd] = useState('');
   const [show, setShow] = useState(false);
-  const [profilePic, setProfilePic] = useState<string | null>(null);
-  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  // const [profilePic, setProfilePic] = useState<string | null>(null);
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -69,7 +68,7 @@ export default function UpdateDetailsPage() {
         if (data?.fullName) setFullName(data.fullName);
         if (data?.email) setEmail(data.email);
         if (data?.phone) setPhone(data.phone || '');
-        if (data?.profilePic) setProfilePic(data.profilePic);
+        // if (data?.profilePic) setProfilePic(data.profilePic);
       } catch (err) {
         console.error('Error fetching user:', err);
       }
@@ -112,7 +111,7 @@ export default function UpdateDetailsPage() {
     if (email) body.email = email;
     if (phone) body.phone = phone;
     if (pwd) body.password = pwd;
-    if (profilePic) body.profilePic = profilePic;
+    // if (profilePic) body.profilePic = profilePic;
 
     if (
       !body.fullName &&
@@ -159,7 +158,7 @@ export default function UpdateDetailsPage() {
     }
   };
 
-  const handlePicChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  /* const handlePicChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadFile(file);
@@ -169,7 +168,7 @@ export default function UpdateDetailsPage() {
       setProfilePic(reader.result as string);
     };
     reader.readAsDataURL(file);
-  };
+  }; */
 
   // -------------------------------
   // UI
@@ -224,24 +223,15 @@ export default function UpdateDetailsPage() {
           {/* Profile Pic */}
           <section className="flex flex-col items-center text-center">
             <div className="relative w-32 h-32 mb-4">
-              {profilePic ? (
-                <Image
-                  src={profilePic}
-                  alt="Profile"
-                  fill
-                  className="object-cover rounded-full border-2 border-[#3A0000]/40"
+              <div className="w-full h-full flex items-center justify-center rounded-full border-2 border-[#3A0000]/40 bg-white">
+                <User
+                  className="text-[#3A0000]"
+                  size={70}
+                  strokeWidth={0.3}
+                  fill={colors.header}
+                  color={colors.header}
                 />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center rounded-full border-2 border-[#3A0000]/40 bg-white">
-                  <User
-                    className="text-[#3A0000]"
-                    size={70}
-                    strokeWidth={0.3}
-                    fill={colors.header}
-                    color={colors.header}
-                  />
-                </div>
-              )}
+              </div>
             </div>
 
             <button
@@ -251,20 +241,18 @@ export default function UpdateDetailsPage() {
               Upload photo
             </button>
 
-            {profilePic && (
-              <button
-                onClick={() => setProfilePic(null)}
-                className="mt-2 text-sm text-red-600 hover:underline"
-              >
-                Remove photo
-              </button>
-            )}
+            <button
+              // onClick={() => setProfilePic(null)}
+              className="mt-2 text-sm text-red-600 hover:underline"
+            >
+              Remove photo
+            </button>
 
             <input
               type="file"
               ref={fileInputRef}
               accept="image/*"
-              onChange={handlePicChange}
+              // onChange={handlePicChange}
               className="hidden"
             />
           </section>
@@ -275,7 +263,7 @@ export default function UpdateDetailsPage() {
               className="block text-lg font-semibold mb-2"
               style={{ color: colors.text }}
             >
-              Name
+              Full Name
             </label>
             <input
               type="text"
@@ -292,7 +280,7 @@ export default function UpdateDetailsPage() {
               className="block text-lg font-semibold mb-2"
               style={{ color: colors.text }}
             >
-              Email
+              Email Address
             </label>
             <input
               type="email"
@@ -309,7 +297,7 @@ export default function UpdateDetailsPage() {
               className="block text-lg font-semibold mb-2"
               style={{ color: colors.text }}
             >
-              Phone number
+              Phone Number
             </label>
             <input
               type="tel"
@@ -326,7 +314,7 @@ export default function UpdateDetailsPage() {
               className="block text-lg font-semibold mb-2"
               style={{ color: colors.text }}
             >
-              Password
+              New Password
             </label>
             <input
               type={show ? 'text' : 'password'}

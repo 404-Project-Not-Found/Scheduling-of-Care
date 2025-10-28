@@ -30,10 +30,13 @@ export async function GET(req: Request, context: { params: { id: string } }) {
   await connectDB();
 
   // Finds the client by ID and populates organisation names
-  const client = await Client.findById(params.id).populate({
-    path: 'organisationHistory.organisation',
-    select: 'name',
-  });
+  const client = await Client.findById(params.id)
+    .select('organisationHistory')
+    .populate({
+      path: 'organisationHistory.organisation',
+      select: 'name',
+    })
+    .lean();
 
   if (!client) {
     return NextResponse.json({ error: 'Client not found' }, { status: 404 });

@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import Client from '@/models/Client';
+import { sanitizeAvatarUrl } from '@/lib/image-upload';
 
 /**
  * Checks whether a client with the inputted access code exists
@@ -40,7 +41,7 @@ export async function GET(req: NextRequest) {
             name: existingClient.name,
             dob: existingClient.dob,
             notes: existingClient.notes,
-            avatarUrl: existingClient.avatarUrl,
+            avatarUrl: sanitizeAvatarUrl(existingClient.avatarUrl), // Replace base64 with default
           }
         : null,
     });

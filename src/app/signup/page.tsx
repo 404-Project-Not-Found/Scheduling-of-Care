@@ -427,7 +427,7 @@ export default function SignupPage() {
           {/* Email */}
           <div className="flex flex-col gap-2">
             <label htmlFor="email" className="text-[20px] font-medium">
-              Enter Email <span className="text-red-600">*</span>
+              Enter Email Address<span className="text-red-600">*</span>
             </label>
             <input
               id="email"

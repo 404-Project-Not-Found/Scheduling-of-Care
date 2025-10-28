@@ -19,6 +19,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import mongoose from 'mongoose';
 import { getOrgIds } from '@/lib/get_org_ids';
+import { sanitizeAvatarUrl } from '@/lib/image-upload';
 
 // Type for staff documents returned from MongoDB
 type StaffDoc = {
@@ -79,7 +80,7 @@ export async function GET() {
     status:
       s.status ??
       (['management', 'carer'].includes(s.role || '') ? 'active' : undefined),
-    avatarUrl: s.avatarUrl,
+    avatarUrl: sanitizeAvatarUrl(s.avatarUrl), // Replace base64 with default
     org: s.organisation?.name || '',
   }));
 
@@ -128,7 +129,7 @@ export async function POST(req: NextRequest) {
         email: newStaff.email,
         role: newStaff.role,
         status: newStaff.status,
-        avatarUrl: newStaff.avatarUrl,
+        avatarUrl: sanitizeAvatarUrl(newStaff.avatarUrl), // Replace base64 with default
         org: newStaff.organisation?.name || '',
       },
       { status: 201 }
