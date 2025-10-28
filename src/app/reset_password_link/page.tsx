@@ -76,7 +76,7 @@ export default function ResetPasswordEmailPage() {
         {!submitted && (
           <form
             onSubmit={handleSubmit}
-            className="w-full max-w-lg bg-[#F7ECD9]/60 border border-[#3A0000]/30 rounded-xl shadow-sm py-10 px-8 space-y-10"
+            className="w-full max-w-lg bg-white/80 border border-[#3A0000]/30 rounded-xl shadow-sm py-10 px-8 space-y-10"
           >
             {/* Instructions */}
             <div className="w-full bg-[#F9C9B1]/70 border border-[#3A0000]/30 rounded-xl shadow-sm py-5 px-6 flex items-start gap-4">
@@ -91,8 +91,8 @@ export default function ResetPasswordEmailPage() {
                   Please enter your{' '}
                   <span className="font-semibold">account email</span> below and
                   click{' '}
-                  <span className="font-semibold">
-                    &quot;Request Reset Link&quot;
+                  <span className="font-semibold underline">
+                    Request Reset Link
                   </span>
                   . You’ll receive an email with further instructions to reset
                   your password.
