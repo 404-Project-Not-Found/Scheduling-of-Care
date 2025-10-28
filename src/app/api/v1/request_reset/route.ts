@@ -3,7 +3,7 @@
  * Author: Denise Alexander
  * Date Created: 17/09/2025
  *
- * Purpose: Handle requets to reset user passwords.
+ * Purpose: Handles requests to reset user password.
  */
 
 import { NextResponse } from 'next/server';
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
     });
 
     // Build a new reset link each time
-    const resetLink = `${process.env.NEXT_PUBLIC_APP_URI}/reset-password?token=${token}`;
+    const resetLink = `${process.env.NEXT_PUBLIC_APP_URI}/reset_password?token=${token}`;
 
     // Send the new email
     await sendResetEmail(user.email, resetLink);
