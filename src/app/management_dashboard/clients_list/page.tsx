@@ -25,12 +25,12 @@
  * only approved clients.
  *
  * Last Updated by Denise Alexander (28/10/2025): reverted changes made to fetch profile
- * picture.
+ * picture and added org access filter for management view.
  */
 
 'use client';
 
-import { Search, Plus, Info } from 'lucide-react';
+import { Search, Plus, Info, ChevronDown } from 'lucide-react';
 
 import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -109,6 +109,7 @@ function ClientListInner() {
   const addNewClient = () => setShowRegister(true);
 
   const [orgId, setOrgId] = useState<string | undefined>();
+  const [accessFilter, setAccessFilter] = useState<'all' | OrgAccess>('all');
 
   // ---- Load clients ----
   const loadClients = async (orgId: string) => {
@@ -182,10 +183,18 @@ function ClientListInner() {
         : clients;
 
     // Search filtering
-    return t
-      ? visibleClients.filter((c) => c.name.toLowerCase().includes(t))
-      : visibleClients;
-  }, [clients, q, role]);
+    let result = visibleClients;
+
+    if (role === 'management' && accessFilter !== 'all') {
+      result = result.filter((c) => c.orgAccess === accessFilter);
+    }
+
+    if (t) {
+      result = result.filter((c) => c.name.toLowerCase().includes(t));
+    }
+
+    return result;
+  }, [clients, q, role, accessFilter]);
 
   // ---- Navigation guard ----
   const tryOpenClient = (c: Client) => {
@@ -266,21 +275,54 @@ function ClientListInner() {
             style={{ borderColor: '#3A000022' }}
           >
             {/* Controls */}
-            <div className="flex items-center justify-between px-6 py-4 gap-4">
-              {/* Search bar */}
-              <div className="relative flex-1 max-w-[350px]">
-                <input
-                  value={q}
-                  onChange={(e) => setQ(e.target.value)}
-                  placeholder="Search for client"
-                  className="w-full h-12 rounded-full bg-white border text-black px-10 focus:outline-none"
-                  style={{ borderColor: '#3A0000' }}
-                />
-                <Search
-                  size={20}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-black/60 pointer-events-none"
-                />
+            <div className="flex items-center justify-between px-6 py-4 gap-4 flex-wrap">
+              <div className="flex items-center gap-3 flex-1 max-w-[600px]">
+                {/* Search bar */}
+                <div className="relative flex-1">
+                  <input
+                    value={q}
+                    onChange={(e) => setQ(e.target.value)}
+                    placeholder="Search for client"
+                    className="w-full h-12 rounded-full bg-white border text-black px-10 focus:outline-none"
+                    style={{ borderColor: '#3A0000' }}
+                  />
+                  <Search
+                    size={20}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-black/60 pointer-events-none"
+                  />
+                </div>
+
+                {/* Filter for Organisation Access Status - Management ONLY */}
+                {role === 'management' && (
+                  <div className="relative">
+                    <select
+                      value={accessFilter}
+                      onChange={(e) =>
+                        setAccessFilter(e.target.value as 'all' | OrgAccess)
+                      }
+                      className="h-12 pl-4 pr-10 rounded-xl font-semibold cursor-pointer appearance-none focus:outline-none transition hover:opacity-90"
+                      style={{
+                        backgroundColor: '#B44C4C',
+                        color: 'white',
+                        minWidth: '160px',
+                      }}
+                    >
+                      <option value="all">All access status</option>
+                      <option value="approved">Approved</option>
+                      <option value="pending">Pending</option>
+                      <option value="revoked">Revoked</option>
+                    </select>
+
+                    {/* Chevron icon overlay */}
+                    <ChevronDown
+                      size={20}
+                      strokeWidth={2.5}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-white pointer-events-none"
+                    />
+                  </div>
+                )}
               </div>
+
               {/* CTA: Register new client */}
               {role === 'management' && (
                 <button
@@ -306,8 +348,8 @@ function ClientListInner() {
                   As a <span className="font-extrabold capitalize">{role}</span>{' '}
                   user,
                   {role === 'management'
-                    ? ' you must request access to clients from family/POA to view their profiles and schedules.'
-                    : ' you can view client profiles, update their health and medical history and view client care schedules.'}
+                    ? ' you must request access to clients from family/POA to view their profiles and care schedules.'
+                    : ' you can view client profiles, update their health and medical history and manage client care schedules.'}
                 </h3>
               </div>
             </div>
