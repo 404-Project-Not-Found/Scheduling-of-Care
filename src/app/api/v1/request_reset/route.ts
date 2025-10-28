@@ -38,7 +38,7 @@ export async function POST(req: Request) {
 
     // Generate a new token every time
     const token = crypto.randomBytes(32).toString('hex');
-    const expiry = new Date(Date.now() + 15 * 60 * 1000);
+    const expiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
     // Save the new token to DB
     await PasswordResetToken.create({
