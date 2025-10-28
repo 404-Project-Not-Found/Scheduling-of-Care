@@ -1,11 +1,13 @@
 /**
  * File path: /reset_password_link/page.tsx
- * Authors: Devni Wijesinghe & Denise Alexander
+ * Front-end Author: Devni Wijesinghe
+ * Back-end Author: Denise Alexander
  * Date Created: 17/09/2025
  */
 
 'use client';
 
+import { Info } from 'lucide-react';
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -36,74 +38,109 @@ export default function ResetPasswordEmailPage() {
       console.error(err);
       alert('Something went wrong. Please try again.');
     }
-    /* Replace with API call to request reset link
-    console.log("Requesting reset link for:", email);
-    setSubmitted(true);*/
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-[#fff4e6] relative">
-      {/* Logo top-left */}
-      <div className="absolute top-6 left-6">
-        <Image src="/logo-name.png" alt="Logo" width={220} height={80} />
+    <div className="min-h-screen w-full bg-[#FAEBDC] text-zinc-900 flex flex-col">
+      {/* Logo */}
+      <div className="flex items-center gap-4 flex-wrap px-8 pt-8">
+        <Image
+          src="/logo-name.png"
+          alt="Logo"
+          width={220}
+          height={220}
+          className="object-contain"
+          priority
+        />
       </div>
 
-      <div className="flex flex-col items-center p-8 rounded-xl">
-        <h1 className="text-2xl font-bold mb-8 text-black">Reset Password</h1>
+      {/* Centered Content */}
+      <div className="flex flex-col items-center justify-center flex-1 w-full px-8">
+        {/* Page title */}
+        <h1 className="text-4xl sm:text-4xl font-extrabold tracking-tight text-[#3A0000] mb-8 text-center w-full">
+          Reset Password
+        </h1>
 
-        {submitted ? (
-          <p className="text-700 bg-[#DFC9A9] text-center">
-            If an account with <b>{email}</b> exists, a reset link has been
-            sent.
-          </p>
-        ) : (
+        {/* Success banner */}
+        {submitted && (
+          <div
+            role="alert"
+            className="fixed top-0 left-0 w-full bg-[#DCF4D9] text-[#1B4B1B] px-6 py-4 text-center font-semibold shadow-md z-50"
+          >
+            If an account with <b>{email}</b> exists, a reset link has been sent
+            to this account.
+          </div>
+        )}
+
+        {/* Form Section */}
+        {!submitted && (
           <form
             onSubmit={handleSubmit}
-            className="flex flex-col items-center space-y-6"
+            className="w-full max-w-lg bg-white/80 border border-[#3A0000]/30 rounded-xl shadow-sm py-10 px-8 space-y-10"
           >
-            {/* Label + input on same line */}
-            <label className="flex items-center space-x-4 text-black">
-              <span>Enter Email:</span>
+            {/* Instructions */}
+            <div className="w-full bg-[#F9C9B1]/70 border border-[#3A0000]/30 rounded-xl shadow-sm py-5 px-6 flex items-start gap-4">
+              <Info
+                size={30}
+                strokeWidth={2.5}
+                className="text-[#3A0000] flex-shrink-0 mt-1"
+              />
+              <div className="text-[#3A0000] text-left">
+                <h3 className="text-lg font-semibold mb-2">Instructions</h3>
+                <p className="text-base leading-relaxed">
+                  Please enter your{' '}
+                  <span className="font-semibold">account email</span> below and
+                  click{' '}
+                  <span className="font-semibold underline">
+                    Request Reset Link
+                  </span>
+                  . You’ll receive an email with further instructions to reset
+                  your password.
+                </p>
+              </div>
+            </div>
+
+            {/* Email Input */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
+              <label
+                htmlFor="email"
+                className="text-[20px] font-medium whitespace-nowrap"
+              >
+                Enter Email Address <span className="text-red-600">*</span>
+              </label>
               <input
+                id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="border border-[#3d0000] rounded px-3 py-1 text-black focus:outline-none"
+                className="flex-1 rounded-md border border-[#3A000] bg-white px-4 py-2.5 text-lg min-w-[200px]"
                 required
               />
-            </label>
+            </div>
 
-            <button
-              type="submit"
-              className="bg-[#3d0000] text-white px-6 py-2 rounded-full hover:opacity-90"
-            >
-              Request reset link
-            </button>
+            {/* Submit Button */}
+            <div className="flex flex-col items-center pt-4">
+              <button
+                type="submit"
+                className="rounded-full bg-[#4A0A0A] text-white text-xl font-semibold px-10 py-3 transition hover:opacity-95"
+              >
+                Request Reset Link
+              </button>
+            </div>
           </form>
         )}
 
-        <button
-          onClick={() => router.push('/')}
-          className="mt-6 text-black underline"
-        >
-          Back to Login
-        </button>
-      </div>
-
-      {/* Help circle pinned to bottom-right */}
-      <div className="fixed bottom-6 right-6 group">
-        <button
-          className="flex items-center justify-center w-10 h-10 rounded-full text-white font-bold cursor-pointer shadow-md"
-          style={{ backgroundColor: '#ed5f4f' }}
-        >
-          ?
-        </button>
-        {/* White tooltip above with black text */}
-        <div className="absolute bottom-12 right-0 opacity-0 group-hover:opacity-100 transition bg-white text-black text-xs px-3 py-2 rounded shadow-md whitespace-nowrap z-10">
-          Enter your account email and click &quot;Request reset link&quot;.
-          <br />
-          Check your inbox for the reset instructions.
-        </div>
+        {/* Back link */}
+        <p className="text-center text-lg mt-4">
+          Remembered your password?{' '}
+          <button
+            type="button"
+            onClick={() => router.push('/')}
+            className="underline font-bold text-[#4A0A0A]"
+          >
+            Back to Login
+          </button>
+        </p>
       </div>
     </div>
   );

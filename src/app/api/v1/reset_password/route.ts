@@ -3,7 +3,7 @@
  * Author: Denise Alexander
  * Date Created: 17/09/2025
  *
- * Purpose: Resets user's password when they update their account details.
+ * Purpose: Resets user's password when they add new pasword.
  */
 
 import { NextResponse } from 'next/server';
@@ -32,11 +32,11 @@ export async function POST(req: Request) {
     }
 
     const hashed = await bcrypt.hash(newPassword, 10);
-    await User.findByIdAndUpdate(resetRecord.userId, { password: hashed });
+    await User.findByIdAndUpdate(resetRecord.userID, { password: hashed });
 
     await PasswordResetToken.deleteOne({ token });
 
-    return NextResponse.json({ message: 'Password is reset successfully!' });
+    return NextResponse.json({ message: 'Password was reset successfully!' });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
