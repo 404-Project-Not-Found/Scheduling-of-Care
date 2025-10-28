@@ -1,5 +1,5 @@
 /**
- * File path: /lib/emails.ts
+ * File path: /lib/email.ts
  * Author: Denise Alexander
  * Date Created: 17/09/2025
  *
@@ -10,6 +10,7 @@ import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+// Sends email with link to reset password
 export async function sendResetEmail(to: string, resetLink: string) {
   try {
     await resend.emails.send({
@@ -17,8 +18,13 @@ export async function sendResetEmail(to: string, resetLink: string) {
       to,
       subject: 'Reset your password',
       html: `
-        <p>Click <a href="${resetLink}">here</a> to reset your password.</p>
-        <p>This link will expire in 15 minutes.</p>
+        <div style="font-family: Arial, sans-serif; font-size: 16px;">
+          <p style="line-height: 1.5;">
+            Click 
+            <a href="${resetLink}" style="font-weight: bold; text-decoration: underline;">here</a> 
+            to reset your password. This link will expire in 15 minutes.
+          </p>
+        </div>
       `,
     });
 
