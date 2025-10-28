@@ -47,8 +47,6 @@ type ApiClientWithAccess = ApiClient & {
   orgAccess?: 'approved' | 'pending' | 'revoked';
 };
 
-type UiClient = { id: string; name: string };
-
 type Unit = 'day' | 'week' | 'month' | 'year';
 
 type CatalogItem = {

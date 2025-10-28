@@ -90,3 +90,13 @@
   transform: translate(-50%, -50%);
   z-index: -1;
 }
+
+.fc .fc-daygrid-event{
+  visibility:hidden!important;
+  pointer-events:none;
+  background:transparent!important;
+  border:none!important;
+  box-shadow:none!important;
+}
+.fc .fc-daygrid-more-link{visibility:hidden!important;}
+.fc .fc-popover{display:none!important;}

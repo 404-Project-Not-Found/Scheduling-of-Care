@@ -8,17 +8,23 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import Category from '@/models/Category';
+import CareItem from '@/models/CareItem';
 import { findOrCreateNewCategory } from '@/lib/category-helpers';
-import { Types } from 'mongoose';
+import mongoose, { Types } from 'mongoose';
+import { slugify } from '@/lib/slug';
 
 export const runtime = 'nodejs';
 
+interface CategoryDeleteBody {
+  clientId?: string;
+  slug?: string;
+  name?: string;
+}
 function isObjectIdString(s: unknown): s is string {
   return typeof s === 'string' && Types.ObjectId.isValid(s);
 }
 
 // Search through categories if clientId is given, return only categories used by that client
-
 export async function GET(
   req: NextRequest,
   ctx: { params: Promise<{ id: string }> }
@@ -115,5 +121,79 @@ export async function POST(req: Request) {
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Failed to create category';
     return NextResponse.json({ error: msg }, { status: 500 });
+  }
+}
+
+// Delete a category
+export async function DELETE(req: Request) {
+  await connectDB();
+
+  let body: CategoryDeleteBody;
+  try {
+    body = (await req.json()) as CategoryDeleteBody;
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+  }
+
+  const clientIdStr = (body.clientId || '').trim();
+  if (!clientIdStr || !Types.ObjectId.isValid(clientIdStr)) {
+    return NextResponse.json(
+      { error: 'clientId must be a valid ObjectID' },
+      { status: 422 }
+    );
+  }
+  const clientId = new Types.ObjectId(clientIdStr);
+
+  const resolvedSlug =
+    (body.slug || '').trim() || (body.name ? slugify(body.name.trim()) : '');
+
+  if (!resolvedSlug) {
+    return NextResponse.json(
+      { error: 'Provide slug or name to delete' },
+      { status: 422 }
+    );
+  }
+
+  const category = await Category.findOne({
+    clientId,
+    slug: resolvedSlug,
+  }).lean();
+  if (!category) {
+    return NextResponse.json({ error: 'Category not found' }, { status: 404 });
+  }
+
+  const session = await mongoose.startSession();
+  try {
+    let deletedCareItems = 0;
+    await session.withTransaction(async () => {
+      const careItemFilter = {
+        clientId,
+        $or: [
+          { categoryId: category._id },
+          { categorySlug: category.slug },
+          { category: category.name },
+        ],
+      };
+
+      const careRes = await CareItem.deleteMany(careItemFilter, { session });
+      deletedCareItems = careRes.deletedCount ?? 0;
+
+      await Category.deleteOne({ _id: category._id, clientId }, { session });
+    });
+
+    return NextResponse.json({
+      ok: true,
+      deletedCategoryId: String(category._id),
+      deletedCategorySlug: category.slug,
+      deletedCareItems,
+    });
+  } catch (e) {
+    console.error('Cascade delete failed', e);
+    return NextResponse.json(
+      { error: 'Failed to delete category and its items' },
+      { status: 500 }
+    );
+  } finally {
+    session.endSession();
   }
 }
