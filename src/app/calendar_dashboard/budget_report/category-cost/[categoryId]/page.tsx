@@ -55,7 +55,8 @@ const getStatus = (
   return { tone: 'green', label: 'Within Limit' };
 };
 
-const capitalise = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : '');
+const capitalise = (s = '') =>
+  s.trim().replace(/^./u, (ch) => ch.toUpperCase());
 /* ------------------------------- Chrome colors ------------------------------- */
 const colors = {
   header: '#3A0000',
@@ -355,110 +356,131 @@ function CategoryCostInner() {
       onLogoClick={onLogoClick}
       showClientPicker={false}
     >
+      {/* Main scroll area */}
       <div
-        className="flex-1 h-[680px] bg-white/50 overflow-auto"
+        className="flex-1 min-h-screen bg-[#FFF5EC] overflow-auto"
         aria-busy={loadingAny}
       >
-        {/* Top bar */}
-        <div className="w-full bg-[#3A0000] px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <Link
-              href="/calendar_dashboard/budget_report"
-              className="flex items-center gap-2 text-white/90 hover:text-white font-semibold"
-            >
-              <ArrowLeft size={22} strokeWidth={2.5} />
-              Back
-            </Link>
-            <h2 className="text-white text-2xl font-semibold">
-              {niceCategoryName} Budget
-            </h2>
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-white text-lg">
-                Select year:
-              </span>
-              <select
-                value={String(year)}
-                onChange={(e) => setYear(Number(e.target.value))}
-                className="rounded-md bg-white text-sm px-3 py-1 border"
-                disabled={loadingAny}
+        {/* Shared container for top bar + main content */}
+        <div className="w-full max-w-8xl mx-auto px-6 md:px-12 py-6 md:py-10">
+          {/* Top bar */}
+          <div className="mb-8">
+            {/* Title + Back button */}
+            <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
+              <h2 className="text-[#3A0000] text-3xl font-semibold">
+                {niceCategoryName} Budget
+              </h2>
+
+              <button
+                onClick={() => router.push('/calendar_dashboard/budget_report')}
+                className="flex items-center gap-2 text-lg font-semibold text-[#3A0000] bg-[#EAD8C8] hover:bg-[#DFC8B4] border border-[#D4B8A0] rounded-md px-4 py-2 transition"
               >
-                {years.map((y) => (
-                  <option key={y} value={y}>
-                    {y}
-                  </option>
-                ))}
-              </select>
-              {year === new Date().getFullYear() && todayDate && (
-                <span className="font-semibold text-white text-lg ml-2">
-                  As of: {todayDate}
+                <ArrowLeft size={22} strokeWidth={2.5} />
+                Back
+              </button>
+            </div>
+
+            {/* Divider */}
+            <hr className="w-full border-t border-[#3A0000]/25 rounded-full mb-6" />
+
+            {/* Year selector + Search */}
+            <div className="flex items-center justify-between flex-wrap gap-4 mb-4">
+              {/* LEFT: Year selector */}
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-[#3A0000] text-lg">
+                  Select year:
                 </span>
-              )}
+                <select
+                  value={String(year)}
+                  onChange={(e) => setYear(Number(e.target.value))}
+                  disabled={loadingAny}
+                  className="rounded-md bg-white text-sm px-3 py-1 border"
+                >
+                  {years.map((y) => (
+                    <option key={y} value={y}>
+                      {y}
+                    </option>
+                  ))}
+                </select>
+                {year === new Date().getFullYear() && todayDate && (
+                  <span className="font-semibold text-black/70 text-sm ml-2">
+                    As of {todayDate}
+                  </span>
+                )}
+              </div>
+
+              {/* RIGHT: Search */}
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <Search
+                    size={20}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-black/60 pointer-events-none"
+                  />
+                  <input
+                    value={q}
+                    onChange={(e) => setQ(e.target.value)}
+                    placeholder="Search items"
+                    className="h-9 rounded-full bg-white text-black border px-10"
+                    disabled={loadingAny}
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="relative flex items-center gap-3">
-            <Search
-              size={20}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-black/60 pointer-events-none"
-            />
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search items"
-              className="h-9 rounded-full bg-white text-black pl-10 pr-4 border"
-              disabled={loadingAny}
-            />
-          </div>
-        </div>
+          {/* Main content */}
+          {loadingAny ? (
+            <div className="text-center py-32 text-gray-600 text-xl font-medium">
+              Loading category budget…
+            </div>
+          ) : (
+            <>
+              {/* Warning: Over budget */}
+              {detail && remaining < 0 && (
+                <div className="mb-6 rounded-xl border border-yellow-400 bg-yellow-100 text-yellow-900 px-4 py-4 flex justify-between items-center">
+                  <div className="font-semibold">
+                    ⚠️ WARNING: Category exceeded by{' '}
+                    <b>${Math.abs(remaining).toLocaleString()}</b>
+                  </div>
+                </div>
+              )}
 
-        {/* Loading screen OR content */}
-        {loadingAny ? (
-          <div className="w-full px-12 py-24 text-center text-gray-600 text-xl font-medium">
-            Loading category budget…
-          </div>
-        ) : (
-          <>
-            {/* Banners */}
-            {detail && remaining < 0 && (
-              <div className="w-full bg-[#fde7e4] border-y border-[#f5c2c2] px-6 py-3">
-                <p className="text-[#9b2c2c] font-semibold">
-                  WARNING: Category exceeded by{' '}
-                  <b>${Math.abs(remaining).toLocaleString()}</b>
-                </p>
-              </div>
-            )}
-            {lowItems.length > 0 && (
-              <div className="w-full bg-yellow-100 border-y border-yellow-300 px-6 py-3">
-                <p className="text-yellow-800 font-semibold mb-1">
-                  ⚠️ Items nearing their budget limit:
-                </p>
-                <ul className="list-disc list-inside text-yellow-800">
-                  {lowItems.map((it) => (
-                    <li key={it.careItemSlug}>
-                      <span className="font-medium">{it.label}</span> —
-                      remaining ${(it.allocated - it.spent).toFixed(2)} (
-                      {(
-                        ((it.allocated - it.spent) / it.allocated) *
-                        100
-                      ).toFixed(1)}
-                      %)
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {isPastYear && (
-              <div className="w-full bg-yellow-100 border-y border-yellow-300 px-6 py-3 text-yellow-900">
-                The selected year ({year}) is read-only. Switch to{' '}
-                {new Date().getFullYear()} to edit.
-              </div>
-            )}
+              {/* Warning: Low items */}
+              {lowItems.length > 0 && (
+                <div className="mb-6 rounded-lg border border-yellow-400 bg-yellow-100 px-6 py-4 text-yellow-800">
+                  <div className="font-semibold mb-2">
+                    ⚠️ The following items are nearing their budget limit:
+                  </div>
+                  <ul className="list-disc list-inside space-y-1">
+                    {lowItems.map((it) => (
+                      <li key={it.careItemSlug}>
+                        <span className="font-medium">
+                          {capitalise(it.label)}
+                        </span>{' '}
+                        — remaining ${(it.allocated - it.spent).toFixed(2)} (
+                        {(
+                          ((it.allocated - it.spent) / it.allocated) *
+                          100
+                        ).toFixed(1)}
+                        %)
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
-            {/* Content */}
-            <div className="w-full px-12 py-10">
-              {/* Tiles */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-18 mb-10 text-center">
-                <div className="rounded-2xl border px-6 py-8 bg-[#F8CBA6]">
+              {/* Read-only notice */}
+              {isPastYear && (
+                <div className="mb-6 rounded-xl border border-yellow-400 bg-yellow-100 text-yellow-900 px-6 py-4">
+                  The selected year ({year}) is read-only. Switch to{' '}
+                  {new Date().getFullYear()} to edit this category.
+                </div>
+              )}
+
+              {/* Summary tiles */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10 text-center items-stretch">
+                {/* Category Budget */}
+                <div className="rounded-2xl border px-4 py-8 bg-[#F8CBA6] h-full flex flex-col items-center justify-center text-center">
                   {isManagement && !isPastYear ? (
                     !isEditingCategory ? (
                       <>
@@ -466,11 +488,18 @@ function CategoryCostInner() {
                           ${(detail?.allocated ?? 0).toLocaleString()}
                         </div>
                         <div className="text-sm">{niceCategoryName} Budget</div>
-                        <div className="mt-3">
+
+                        <div className="mt-4">
                           <button
                             onClick={startEditCategory}
-                            className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10"
                             disabled={loadingAny}
+                            className="px-4 py-1.5 rounded-md font-semibold text-[#3A0000] transition"
+                            style={{
+                              background:
+                                'linear-gradient(90deg, #F9C9B1 0%, #FBE8D4 100%)',
+                              border: '1px solid #B47A64',
+                              boxShadow: '0 2px 5px rgba(180, 122, 100, 0.25)',
+                            }}
                           >
                             Edit
                           </button>
@@ -492,18 +521,29 @@ function CategoryCostInner() {
                         <div className="text-sm mt-2">
                           {niceCategoryName} Budget
                         </div>
-                        <div className="mt-3 flex gap-2 justify-center">
+
+                        <div className="mt-4 flex items-center justify-center gap-3">
                           <button
                             onClick={saveCategory}
-                            className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10 disabled:opacity-60"
                             disabled={saving.category}
+                            className="px-4 py-1.5 rounded-md font-semibold text-[#3A0000]"
+                            style={{
+                              background:
+                                'linear-gradient(90deg, #F8CBA6 0%, #FBE8D4 100%)',
+                              border: '1px solid #B47A64',
+                              boxShadow: '0 2px 5px rgba(180, 122, 100, 0.25)',
+                            }}
                           >
                             {saving.category ? 'Saving…' : 'Save'}
                           </button>
                           <button
                             onClick={cancelEditCategory}
-                            className="px-3 py-1 rounded-md bg-white/80 text-black font-semibold hover:bg-white disabled:opacity-60"
                             disabled={saving.category}
+                            className="px-4 py-1.5 rounded-md font-semibold text-[#3A0000] transition hover:opacity-80"
+                            style={{
+                              backgroundColor: '#EBD5C4',
+                              border: '1px solid #C9A794',
+                            }}
                           >
                             Cancel
                           </button>
@@ -520,16 +560,20 @@ function CategoryCostInner() {
                   )}
                 </div>
 
-                <div className="rounded-2xl border px-6 py-8 bg-white">
+                {/* Spent */}
+                <div className="rounded-2xl border px-4 py-8 bg-white flex flex-col items-center justify-center text-center h-full">
                   <div className="text-2xl font-bold">
                     ${(detail?.spent ?? 0).toLocaleString()}
                   </div>
                   <div className="text-sm">Spent to Date</div>
                 </div>
 
-                <div className="rounded-2xl border px-6 py-8 bg-white">
+                {/* Remaining */}
+                <div className="rounded-2xl border px-4 py-8 bg-white flex flex-col items-center justify-center text-center h-full">
                   <div
-                    className={`text-2xl font-bold ${remaining < 0 ? 'text-red-600' : 'text-green-600'}`}
+                    className={`text-2xl font-bold ${
+                      remaining < 0 ? 'text-red-600' : 'text-green-600'
+                    }`}
                   >
                     {remaining < 0
                       ? `-$${Math.abs(remaining).toLocaleString()}`
@@ -538,8 +582,9 @@ function CategoryCostInner() {
                   <div className="text-sm">Remaining Balance</div>
                 </div>
 
-                <div className="rounded-2xl border px-6 py-8 bg-white">
-                  <div className="text-2xl font-bold">
+                {/* Surplus */}
+                <div className="rounded-2xl border px-4 py-8 bg-white flex flex-col items-center justify-center text-center h-full">
+                  <div className="text-2xl font-bold text-black">
                     ${summary.surplus.toLocaleString()}
                   </div>
                   <div className="text-sm">Yearly Surplus</div>
@@ -547,9 +592,15 @@ function CategoryCostInner() {
               </div>
 
               {/* Table */}
-              <div className="rounded-2xl border border-[#3A0000] bg-white overflow-hidden">
+              <div className="rounded-2xl border border-[#3A0000]/30 bg-white overflow-hidden">
                 <table className="w-full text-left text-sm bg-white">
-                  <thead className="bg-[#3A0000] text-lg text-white">
+                  <thead
+                    className="text-[#3A0000] text-lg font-semibold"
+                    style={{
+                      backgroundColor: '#FBE8D4',
+                      borderBottom: '2px solid rgba(58, 0, 0, 0.15)',
+                    }}
+                  >
                     <tr>
                       <th className="px-4 py-4">Care Item</th>
                       <th className="px-4 py-4">Allocated</th>
@@ -573,7 +624,7 @@ function CategoryCostInner() {
                           className="border-b last:border-b border-[#3A0000]/20"
                         >
                           <td className="px-4 py-5 font-semibold">
-                            {it.label}
+                            {capitalise(it.label)}
                           </td>
                           <td className="px-4 py-5">
                             {isRowEditing ? (
@@ -602,7 +653,9 @@ function CategoryCostInner() {
                             ${it.spent.toLocaleString()}
                           </td>
                           <td
-                            className={`px-4 py-5 ${rem < 0 ? 'text-red-600' : ''}`}
+                            className={`px-4 py-5 ${
+                              rem < 0 ? 'text-red-600' : ''
+                            }`}
                           >
                             {rem < 0
                               ? `-$${Math.abs(rem).toLocaleString()}`
@@ -652,9 +705,9 @@ function CategoryCostInner() {
                   </tbody>
                 </table>
               </div>
-            </div>
-          </>
-        )}
+            </>
+          )}
+        </div>
       </div>
     </DashboardChrome>
   );

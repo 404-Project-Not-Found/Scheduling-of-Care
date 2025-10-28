@@ -26,27 +26,42 @@ export async function GET(
   await connectDB();
 
   const url = new URL(req.url);
-  const yearParam = url.searchParams.get('year');
-  const year = Number.isFinite(Number(yearParam))
-    ? Number(yearParam)
-    : new Date().getFullYear();
-
-  let clientId: Types.ObjectId;
-  try {
-    clientId = new Types.ObjectId(id);
-  } catch {
-    return NextResponse.json({ error: 'Invalid ClientId' }, { status: 422 });
+  const year = Number(url.searchParams.get('year') ?? new Date().getFullYear());
+  if (!Number.isInteger(year)) {
+    return NextResponse.json({ error: 'Invalid year' }, { status: 400 });
   }
 
-  const doc = await BudgetYear.findOne({ clientId, year }).lean();
+  if (!Types.ObjectId.isValid(id)) {
+    return NextResponse.json({ error: 'Invalid ClientId' }, { status: 422 });
+  }
+  const clientId = new Types.ObjectId(id);
+
+  const doc = await BudgetYear.findOne({ clientId, year })
+    .select({
+      annualAllocated: 1,
+      surplus: 1,
+      openingCarryover: 1,
+      'totals.spent': 1,
+      'totals.allocated': 1,
+    })
+    .lean();
+
   if (!doc) {
-    const empty: SummaryResponse = {
-      annualAllocated: 0,
-      spent: 0,
-      remaining: 0,
-      surplus: 0,
-    };
-    return NextResponse.json(empty);
+    return new NextResponse(
+      JSON.stringify({
+        annualAllocated: 0,
+        spent: 0,
+        remaining: 0,
+        surplus: 0,
+      }),
+      {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'private, max-age=20, stale-while-revalidate=60',
+        },
+      }
+    );
   }
 
   const annualAllocated = Math.round(doc.annualAllocated ?? 0);
@@ -57,12 +72,19 @@ export async function GET(
     Math.round(doc.surplus ?? annualAllocated - (doc.totals?.allocated ?? 0))
   );
 
-  const resBody: SummaryResponse = {
+  const body: SummaryResponse = {
     annualAllocated,
     spent,
     remaining,
     surplus,
     openingCarryover: Number(doc.openingCarryover ?? 0),
   };
-  return NextResponse.json(resBody);
+
+  return new NextResponse(JSON.stringify(body), {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'private, max-age=20, stale-while-revalidate=60',
+    },
+  });
 }

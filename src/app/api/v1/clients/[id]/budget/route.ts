@@ -36,43 +36,54 @@ export async function GET(
 
   const { id } = await ctx.params;
   const url = new URL(req.url);
-  const yearParam = url.searchParams.get('year');
-  const year = Number.isFinite(Number(yearParam))
-    ? Number(yearParam)
-    : new Date().getFullYear();
-
-  let clientId: Types.ObjectId;
-  try {
-    clientId = new Types.ObjectId(id);
-  } catch {
-    return NextResponse.json({ error: 'Invalid clientId' }, { status: 422 });
+  const year = Number(url.searchParams.get('year') ?? new Date().getFullYear());
+  if (!Number.isInteger(year)) {
+    return NextResponse.json({ error: 'Invalid year' }, { status: 400 });
   }
+  if (!Types.ObjectId.isValid(id))
+    return NextResponse.json({ error: 'Invalid clientId' }, { status: 422 });
+
+  const clientId = new Types.ObjectId(id);
 
   const budget = await BudgetYear.findOne({
     clientId,
     year,
-  }).lean<BudgetYearLean>();
-  if (!budget) return NextResponse.json([] as BudgetRow[]);
+  })
+    .select({ categories: 1 })
+    .lean<BudgetYearLean>();
+
+  if (!budget) {
+    return new NextResponse(JSON.stringify([]), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'private, max-age=20, stale-while-revalidate=60',
+      },
+    });
+  }
 
   // Aggregate net spend per category for this client or year
-  const spentAggr = await Transaction.aggregate<SpentAggRow>([
-    { $match: { clientId, year, voidedAt: { $exists: false } } },
-    { $unwind: '$lines' },
-    {
-      $group: {
-        _id: '$lines.categoryId',
-        spent: {
-          $sum: {
-            $cond: [
-              { $eq: ['$type', 'Purchase'] },
-              '$lines.amount',
-              { $multiply: [-1, '$lines.amount'] },
-            ],
+  const spentAggr = await Transaction.aggregate<SpentAggRow>(
+    [
+      { $match: { clientId, year, voidedAt: { $exists: false } } },
+      { $unwind: '$lines' },
+      {
+        $group: {
+          _id: '$lines.categoryId',
+          spent: {
+            $sum: {
+              $cond: [
+                { $eq: ['$type', 'Purchase'] },
+                '$lines.amount',
+                { $multiply: [-1, '$lines.amount'] },
+              ],
+            },
           },
         },
       },
-    },
-  ]);
+    ],
+    { allowDiskUse: true }
+  );
 
   const spentByCat = new Map<string, number>(
     spentAggr.map((r) => [
@@ -98,5 +109,11 @@ export async function GET(
     }
   );
 
-  return NextResponse.json(rows);
+  return new NextResponse(JSON.stringify(rows), {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'private, max-age=15, stale-while-revalidate=60',
+    },
+  });
 }

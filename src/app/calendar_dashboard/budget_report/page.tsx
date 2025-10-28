@@ -39,8 +39,8 @@ import {
 } from '@/lib/data';
 
 import {
-  getBudgetRows,
-  getBudgetSummary,
+  invalidateBudgetFull,
+  getBudgetRowsAndSum,
   openBudgetSSE,
   getAvailableYears,
   getCategoriesForClient,
@@ -68,6 +68,10 @@ const colors = {
   banner: '#F9C9B1',
   text: '#2b2b2b',
 };
+
+/* ------------------------------- Utils ------------------------------- */
+const capitalise = (s = '') =>
+  s.trim().replace(/^./u, (ch) => ch.toUpperCase());
 
 /* ---------------------------------- Status  ---------------------------------- */
 const LOW_BUDGET_THRESHOLD = 0.15;
@@ -150,10 +154,18 @@ function BudgetReportInner() {
 
   // Load clients + active client on mount
   useEffect(() => {
+    let cancelled = false;
+    setLoading((s) => ({ ...s, clientsLoad: true }));
+
     (async () => {
-      setLoading((s) => ({ ...s, clientsLoad: true }));
       try {
-        const list: ApiClient[] = await getClients();
+        const [list, active] = await Promise.all([
+          getClients(),
+          getActiveClient(),
+        ]);
+
+        if (cancelled) return;
+
         const mapped: ClientLite[] = (list as ApiClientWithAccess[]).map(
           (c) => ({
             id: c._id,
@@ -162,19 +174,22 @@ function BudgetReportInner() {
           })
         );
         setClients(mapped);
-
-        const active = await getActiveClient();
-        setActiveClientId(active.id);
+        setActiveClientId(active?.id ?? null);
         setDisplayName(active.name || '');
       } catch (err) {
-        console.error('Failed to fetch clients.', err);
-        setClients([]);
-        setActiveClientId(null);
-        setDisplayName('');
+        if (!cancelled) {
+          console.error('Failed to fetch clients.', err);
+          setClients([]);
+          setActiveClientId(null);
+          setDisplayName('');
+        }
       } finally {
-        setLoading((s) => ({ ...s, clientsLoad: false }));
+        if (!cancelled) setLoading((s) => ({ ...s, clientsLoad: false }));
       }
     })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Change active client
@@ -195,31 +210,45 @@ function BudgetReportInner() {
   // ===== Categories =====
   const [categories, setCategories] = useState<CategoryLite[]>([]);
   useEffect(() => {
+    if (!activeClientId) {
+      setCategories([]);
+      return;
+    }
     const abort = new AbortController();
+    let cancelled = false;
     (async () => {
-      if (!activeClientId) {
-        setCategories([]);
-        return;
-      }
       setLoading((s) => ({ ...s, catLoad: true }));
       try {
         const cats = await getCategoriesForClient(activeClientId, abort.signal);
+        if (cancelled) return;
         setCategories(cats);
       } catch (e) {
-        console.error('Failed to load categories:', e);
-        setCategories([]);
+        if (!cancelled) {
+          console.error('Failed to load categories:', e);
+          setCategories([]);
+        }
       } finally {
-        setLoading((s) => ({ ...s, catLoad: false }));
+        if (!cancelled) setLoading((s) => ({ ...s, catLoad: false }));
       }
     })();
-    return () => abort.abort();
+    return () => {
+      cancelled = true;
+      abort.abort();
+    };
   }, [activeClientId]);
 
   // ===== Query and year =====
   const [q, setQ] = useState('');
+  const [qDebounce, setQDebounce] = useState('');
   const [years, setYears] = useState<number[]>([]);
   const [todayDate, setTodaysDate] = useState<string>();
   const [year, setYear] = useState<number>(new Date().getFullYear());
+
+  // reduce filtered recomputes on large tables
+  useEffect(() => {
+    const t = setTimeout(() => setQDebounce(q.trim().toLowerCase()), 150);
+    return () => clearTimeout(t);
+  }, [q]);
 
   // get current date
   useEffect(() => {
@@ -233,15 +262,17 @@ function BudgetReportInner() {
 
   // get years available in database
   useEffect(() => {
+    if (!activeClientId) {
+      setYears([]);
+      return;
+    }
     const abort = new AbortController();
+    let cancelled = false;
     const load = async () => {
-      if (!activeClientId) {
-        setYears([]);
-        return;
-      }
       setLoading((s) => ({ ...s, yearsLoad: true }));
       try {
         const list = await getAvailableYears(activeClientId, abort.signal);
+        if (cancelled) return;
         if (list.length > 0) {
           setYears(list);
           if (!list.includes(year)) setYear(list[0]);
@@ -251,16 +282,21 @@ function BudgetReportInner() {
           setYear(curr);
         }
       } catch (e) {
-        console.error('Failed to load years:', e);
-        const curr = new Date().getFullYear();
-        setYears([curr]);
-        setYear(curr);
+        if (!cancelled) {
+          console.error('Failed to load years:', e);
+          const curr = new Date().getFullYear();
+          setYears([curr]);
+          setYear(curr);
+        }
       } finally {
-        setLoading((s) => ({ ...s, yearsLoad: false }));
+        if (!cancelled) setLoading((s) => ({ ...s, yearsLoad: false }));
       }
     };
     load();
-    return () => abort.abort();
+    return () => {
+      cancelled = true;
+      abort.abort();
+    };
   }, [activeClientId]);
 
   // ===== Budget rows =====
@@ -274,50 +310,82 @@ function BudgetReportInner() {
 
   // fetch rows + summary when client/year changes
   useEffect(() => {
+    if (!activeClientId) {
+      setRows([]);
+      setSummary({ annualAllocated: 0, spent: 0, remaining: 0, surplus: 0 });
+      return;
+    }
     const abort = new AbortController();
-    const load = async () => {
-      if (!activeClientId) {
-        setRows([]);
-        setSummary({ annualAllocated: 0, spent: 0, remaining: 0, surplus: 0 });
-        return;
-      }
+    let cancelled = false;
+
+    (async () => {
       setLoading((s) => ({ ...s, budgetLoad: true }));
       try {
-        const [r, s] = await Promise.all([
-          getBudgetRows(activeClientId, year, abort.signal),
-          getBudgetSummary(activeClientId, year, abort.signal),
-        ]);
-        setRows(r);
-        setSummary(s);
+        const full = await getBudgetRowsAndSum(
+          activeClientId,
+          year,
+          abort.signal
+        );
+        if (cancelled) return;
+        setRows(full.rows);
+        setSummary(full.summary);
       } catch (e) {
-        console.error('Failed to load budget data:', e);
-        setRows([]);
-        setSummary({ annualAllocated: 0, spent: 0, remaining: 0, surplus: 0 });
+        if (!cancelled) {
+          console.error('Failed to load budget data:', e);
+          setRows([]);
+          setSummary({
+            annualAllocated: 0,
+            spent: 0,
+            remaining: 0,
+            surplus: 0,
+          });
+        }
       } finally {
-        setLoading((s) => ({ ...s, budgetLoad: false }));
+        if (!cancelled) setLoading((s) => ({ ...s, budgetLoad: false }));
       }
+    })();
+
+    return () => {
+      cancelled = true;
+      abort.abort();
     };
-    load();
-    return () => abort.abort();
   }, [activeClientId, year]);
 
   // Real time update via SSE
   useEffect(() => {
-    if (!activeClientId) return;
-    const stop = openBudgetSSE(activeClientId, year, async () => {
-      try {
-        const [r, s] = await Promise.all([
-          getBudgetRows(activeClientId, year),
-          getBudgetSummary(activeClientId, year),
-        ]);
-        setRows(r);
-        setSummary(s);
-      } catch (e) {
-        console.error('Refresh failed:', e);
+    if (!activeClientId || loading.budgetLoad) return;
+
+    let stop = () => {};
+    const start = () => {
+      stop = openBudgetSSE(activeClientId, year, async () => {
+        try {
+          invalidateBudgetFull(activeClientId, year);
+          const full = await getBudgetRowsAndSum(activeClientId, year);
+          React.startTransition?.(() => {
+            setRows(full.rows);
+            setSummary(full.summary);
+          });
+        } catch (e) {
+          console.error('Refresh failed:', e);
+        }
+      });
+    };
+
+    const onVis = () => {
+      if (document.hidden) {
+        stop();
+      } else {
+        start();
       }
-    });
-    return () => stop();
-  }, [activeClientId, year]);
+    };
+
+    start();
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      stop();
+      document.removeEventListener('visibilitychange', onVis);
+    };
+  }, [activeClientId, year, loading.budgetLoad]);
 
   const isPastYear = year < new Date().getFullYear();
 
@@ -376,13 +444,10 @@ function BudgetReportInner() {
       if (json?.summary) {
         setSummary(json.summary);
       }
-
-      const [r, s] = await Promise.all([
-        getBudgetRows(activeClientId, year, undefined),
-        getBudgetSummary(activeClientId, year, undefined),
-      ]);
-      setRows(r);
-      setSummary(s);
+      invalidateBudgetFull(activeClientId, year);
+      const full = await getBudgetRowsAndSum(activeClientId, year, undefined);
+      setRows(full.rows);
+      setSummary(full.summary);
       setShowWarning(false);
     } catch (e) {
       setWarningText('Network or server error while saving annual budget.');
@@ -445,12 +510,10 @@ function BudgetReportInner() {
         setShowWarning(true);
         return;
       }
-      const [r, s] = await Promise.all([
-        getBudgetRows(activeClientId, year),
-        getBudgetSummary(activeClientId, year),
-      ]);
-      setRows(r);
-      setSummary(s);
+      invalidateBudgetFull(activeClientId, year);
+      const full = await getBudgetRowsAndSum(activeClientId, year);
+      setRows(full.rows);
+      setSummary(full.summary);
       setShowWarning(false);
       setEditingRowId(null);
     } catch (e) {
@@ -514,6 +577,23 @@ function BudgetReportInner() {
     }
   };
 
+  const lowCategories = useMemo(() => {
+    return rowsAll
+      .filter((r) => r.allocated > 0)
+      .map((r) => {
+        const remaining = r.allocated - r.spent;
+        const ratio = remaining / r.allocated;
+        return {
+          name: r.category,
+          remaining,
+          percent: ratio * 100,
+          show: remaining > 0 && ratio <= LOW_BUDGET_THRESHOLD,
+        };
+      })
+      .filter((x) => x.show)
+      .map(({ name, remaining, percent }) => ({ name, remaining, percent }));
+  }, [rowsAll]);
+
   const handleRollover = async (
     activeClientId: string,
     year: number,
@@ -540,13 +620,10 @@ function BudgetReportInner() {
         }
       );
 
-      const [r, s] = await Promise.all([
-        getBudgetRows(activeClientId, year),
-        getBudgetSummary(activeClientId, year),
-      ]);
+      const full = await getBudgetRowsAndSum(activeClientId, year);
 
-      setRowsSetter(r);
-      setSummarySetter(s);
+      setRowsSetter(full.rows);
+      setSummarySetter(full.summary);
     } catch (err) {
       console.error('Rollover failed', err);
     }
@@ -554,13 +631,13 @@ function BudgetReportInner() {
 
   /** Filter by search */
   const filtered = useMemo(() => {
-    const t = q.trim().toLowerCase();
-    if (!t) return rowsAll;
+    if (!qDebounce) return rowsAll;
     return rowsAll.filter(
       (r) =>
-        r.item.toLowerCase().includes(t) || r.category.toLowerCase().includes(t)
+        r.item.toLowerCase().includes(qDebounce) ||
+        r.category.toLowerCase().includes(qDebounce)
     );
-  }, [q, rowsAll]);
+  }, [qDebounce, rowsAll]);
 
   /** Totals */
   const totals = useMemo(() => {
@@ -586,85 +663,96 @@ function BudgetReportInner() {
         className="flex-1 min-h-screen bg-[#FFF5EC] overflow-auto"
         aria-busy={loadingAny}
       >
-        {/* Top bar */}
-        <div className="w-full px-6 py-5">
-          {/* Title */}
-          <h2 className="text-[#3A0000] text-3xl font-semibold mb-3">
-            Annual Budget
-          </h2>
+        {/* Shared container for top bar + content */}
+        <div className="w-full max-w-8xl mx-auto px-6 md:px-12 py-6 md:py-10">
+          {/* Top bar */}
+          <div className="mb-8">
+            {/* Title */}
+            <h2 className="text-[#3A0000] text-3xl font-semibold mb-3">
+              Annual Budget
+            </h2>
 
-          {/* Divider */}
-          <hr className="mt-4 mb-4 w-340 mx-auto border-t border-[#3A0000]/25 rounded-full" />
+            {/* Divider */}
+            <hr className="w-full border-t border-[#3A0000]/25 rounded-full mb-6" />
 
-          {/* Year selector */}
-          <div className="flex items-center justify-between flex-wrap gap-4 w-full">
-            {/* LEFT: Year selector */}
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-[#3A0000] text-lg">
-                Select year:
-              </span>
-              <select
-                value={String(year)}
-                onChange={(e) => setYear(Number(e.target.value))}
-                disabled={loading.yearsLoad || loading.budgetLoad}
-                className="rounded-md bg-white text-sm px-3 py-1 border"
-              >
-                {years.map((y) => (
-                  <option key={y} value={y}>
-                    {y}
-                  </option>
-                ))}
-              </select>
-              {year === new Date().getFullYear() && (
-                <span className="font-semibold text-black/70 text-sm ml-2">
-                  As of {todayDate}
+            {/* Year selector + Search + Actions */}
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              {/* LEFT: Year selector */}
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-[#3A0000] text-lg">
+                  Select year:
                 </span>
-              )}
-            </div>
-
-            {/* RIGHT: Search + Edit + Rollover for current year */}
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <Search
-                  size={20}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-black/60 pointer-events-none"
-                />
-                <input
-                  value={q}
-                  onChange={(e) => setQ(e.target.value)}
-                  placeholder="Search"
-                  disabled={loading.budgetLoad}
-                  className="h-9 rounded-full bg-white text-black border px-10"
-                />
+                <select
+                  value={String(year)}
+                  onChange={(e) => setYear(Number(e.target.value))}
+                  disabled={loading.yearsLoad || loading.budgetLoad}
+                  className="rounded-md bg-white text-sm px-3 py-1 border"
+                >
+                  {years.map((y) => (
+                    <option key={y} value={y}>
+                      {y}
+                    </option>
+                  ))}
+                </select>
+                {year === new Date().getFullYear() && (
+                  <span className="font-semibold text-black/70 text-sm ml-2">
+                    As of {todayDate}
+                  </span>
+                )}
               </div>
 
-              {role === 'management' &&
-                years.includes(year - 1) &&
-                year === new Date().getFullYear() && (
-                  <button
-                    onClick={() =>
-                      handleRollover(activeClientId!, year, setRows, setSummary)
-                    }
+              {/* RIGHT: Search + Rollover */}
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <Search
+                    size={20}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-black/60 pointer-events-none"
+                  />
+                  <input
+                    value={q}
+                    onChange={(e) => setQ(e.target.value)}
+                    placeholder="Search"
                     disabled={loading.budgetLoad}
-                    className="px-3 py-1.5 rounded-md font-semibold text-[#3A0000] transition"
-                    style={{
-                      background:
-                        'linear-gradient(90deg, #F9C9B1 0%, #FBE8D4 100%)',
-                      border: '1px solid #B47A64',
-                      boxShadow: '0 2px 5px rgba(180, 122, 100, 0.25)',
-                    }}
-                    title={`Copy categories and carry surplus from ${year - 1}`}
-                  >
-                    Roll over from {year - 1}
-                  </button>
-                )}
+                    className="h-9 rounded-full bg-white text-black border px-10"
+                  />
+                </div>
+
+                {role === 'management' &&
+                  years.includes(year - 1) &&
+                  year === new Date().getFullYear() && (
+                    <button
+                      onClick={() =>
+                        activeClientId &&
+                        handleRollover(
+                          activeClientId!,
+                          year,
+                          setRows,
+                          setSummary
+                        )
+                      }
+                      disabled={loading.budgetLoad || !activeClientId}
+                      className="px-3 py-1.5 rounded-md font-semibold text-[#3A0000] transition"
+                      style={{
+                        background:
+                          'linear-gradient(90deg, #F9C9B1 0%, #FBE8D4 100%)',
+                        border: '1px solid #B47A64',
+                        boxShadow: '0 2px 5px rgba(180, 122, 100, 0.25)',
+                      }}
+                      title={`Copy categories and carry surplus from ${year - 1}`}
+                    >
+                      Roll over from {year - 1}
+                    </button>
+                  )}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Main content */}
-        <div className="w-full px-6 md:px-12 py-6 md:py-10">
-          {loadingAny ? (
+          {/* Main content */}
+          {!activeClientId ? (
+            <div className="text-center py-32 text-gray-600 text-xl font-medium">
+              Please select a client to view their budget report.
+            </div>
+          ) : loadingAny ? (
             <div className="text-center py-32 text-gray-600 text-xl font-medium">
               Loading budget report…
             </div>
@@ -672,7 +760,7 @@ function BudgetReportInner() {
             <>
               {/* Warning banner */}
               {showWarning && (
-                <div className="mb-6 rounded-xl border border-yellow-400 bg-yellow-100 text-yellow-900 px-6 py-4 flex justify-between items-center">
+                <div className="mb-6 rounded-xl border border-yellow-400 bg-yellow-100 text-yellow-900 px-4 py-4 flex justify-between items-center">
                   <div className="font-semibold">{warningText}</div>
                   <button
                     onClick={() => setShowWarning(false)}
@@ -683,18 +771,18 @@ function BudgetReportInner() {
                 </div>
               )}
 
-              {/* Read only for previous years */}
+              {/* Read-only banner */}
               {isPastYear && (
-                <div className="mb-6 rounded-xl border border-yellow-400 bg-yellow-100 text-yellow-900 px-6 py-4">
+                <div className="mb-6 rounded-xl border border-yellow-400 bg-yellow-100 text-yellow-900 px-4 py-4">
                   The selected year ({year}) is read-only. Switch to{' '}
                   {new Date().getFullYear()} to edit the annual budget.
                 </div>
               )}
 
-              {/* Tiles : Annual, Spent, Remaining, Surplus) */}
+              {/* Tiles (aligned with title) */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10 text-center">
                 {/* Annual Budget */}
-                <div className="rounded-2xl border px-6 py-8 bg-[#F8CBA6]">
+                <div className="rounded-2xl border px-4 py-8 bg-[#F8CBA6]">
                   {role === 'management' && isEditing ? (
                     <>
                       <input
@@ -707,12 +795,11 @@ function BudgetReportInner() {
                       />
                       <div className="text-sm mt-2">Annual Budget</div>
 
-                      {/** Save / cancel inside tile */}
                       <div className="mt-4 flex items-center justify-center gap-3">
                         <button
                           onClick={saveAnnual}
                           disabled={loading.savingAnnualLoad || isPastYear}
-                          className="px-4 py-1.5 rounded-md font-semibold text-[#3A0000] transition"
+                          className="px-4 py-1.5 rounded-md font-semibold text-[#3A0000]"
                           style={{
                             background:
                               'linear-gradient(90deg, #F8CBA6 0%, #FBE8D4 100%)',
@@ -745,28 +832,29 @@ function BudgetReportInner() {
                       </div>
                       <div className="text-sm">Annual Budget</div>
 
-                      {/** Edit button */}
-                      <div className="mt-4">
-                        <button
-                          onClick={startEdit}
-                          disabled={loading.budgetLoad}
-                          className="px-4 py-1.5 rounded-md font-semibold text-[#3A0000] transition"
-                          style={{
-                            background:
-                              'linear-gradient(90deg, #F9C9B1 0%, #FBE8D4 100%)',
-                            border: '1px solid #B47A64',
-                            boxShadow: '0 2px 5px rgba(180, 122, 100, 0.25)',
-                          }}
-                        >
-                          Edit
-                        </button>
-                      </div>
+                      {role === 'management' && !isPastYear && (
+                        <div className="mt-4">
+                          <button
+                            onClick={startEdit}
+                            disabled={loading.budgetLoad}
+                            className="px-4 py-1.5 rounded-md font-semibold text-[#3A0000] transition"
+                            style={{
+                              background:
+                                'linear-gradient(90deg, #F9C9B1 0%, #FBE8D4 100%)',
+                              border: '1px solid #B47A64',
+                              boxShadow: '0 2px 5px rgba(180, 122, 100, 0.25)',
+                            }}
+                          >
+                            Edit
+                          </button>
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
 
                 {/* Spent to Date */}
-                <div className="rounded-2xl border px-6 py-8 bg-white">
+                <div className="rounded-2xl border px-4 py-8 bg-white flex flex-col items-center justify-center text-center">
                   <div className="text-2xl font-bold">
                     ${summary.spent.toLocaleString()}
                   </div>
@@ -774,9 +862,11 @@ function BudgetReportInner() {
                 </div>
 
                 {/* Remaining */}
-                <div className="rounded-2xl border px-6 py-8 bg-white">
+                <div className="rounded-2xl border px-4 py-8 bg-white flex flex-col items-center justify-center text-center">
                   <div
-                    className={`text-2xl font-bold ${effectiveRemaining < 0 ? 'text-red-600' : 'text-green-600'}`}
+                    className={`text-2xl font-bold ${
+                      effectiveRemaining < 0 ? 'text-red-600' : 'text-green-600'
+                    }`}
                   >
                     {effectiveRemaining < 0
                       ? `-$${Math.abs(effectiveRemaining).toLocaleString()}`
@@ -786,7 +876,7 @@ function BudgetReportInner() {
                 </div>
 
                 {/* Surplus */}
-                <div className="rounded-2xl border px-6 py-8 bg-white">
+                <div className="rounded-2xl border px-4 py-8 bg-white flex flex-col items-center justify-center text-center">
                   <div className="text-2xl font-bold text-black">
                     ${summary.surplus.toLocaleString()}
                   </div>
@@ -795,196 +885,184 @@ function BudgetReportInner() {
               </div>
 
               {/* Low budget warning list */}
-              {(() => {
-                const lowCategories = rowsAll
-                  .filter((r) => {
-                    if (r.allocated <= 0) return false;
-                    const remaining = r.allocated - r.spent;
-                    const ratio = remaining / r.allocated;
-                    return ratio > 0 && ratio <= LOW_BUDGET_THRESHOLD;
-                  })
-                  .map((r) => ({
-                    name: r.category,
-                    remaining: r.allocated - r.spent,
-                    percent: ((r.allocated - r.spent) / r.allocated) * 100,
-                  }));
-
-                if (lowCategories.length === 0) return null;
-
-                return (
-                  <div className="mb-6 rounded-lg border border-yellow-400 bg-yellow-100 px-6 py-4 text-yellow-800">
-                    <div className="font-semibold mb-2">
-                      ⚠️ The following categories are nearing their budget
-                      limit:
-                    </div>
-                    <ul className="list-disc list-inside space-y-1">
-                      {lowCategories.map((c) => (
-                        <li key={c.name}>
-                          <span className="font-medium">{c.name}</span> —
-                          remaining ${c.remaining.toFixed(2)} (
-                          {c.percent.toFixed(1)}%)
-                        </li>
-                      ))}
-                    </ul>
+              {lowCategories.length > 0 && (
+                <div className="mb-6 rounded-lg border border-yellow-400 bg-yellow-100 px-4 py-4 text-yellow-800">
+                  <div className="font-semibold mb-2">
+                    ⚠️ The following categories are nearing their budget limit:
                   </div>
-                );
-              })()}
+                  <ul className="list-disc list-inside space-y-1">
+                    {lowCategories.map((c) => (
+                      <li key={capitalise(c.name)}>
+                        <span className="font-medium">
+                          {capitalise(c.name)}
+                        </span>{' '}
+                        — remaining ${c.remaining.toFixed(2)} (
+                        {c.percent.toFixed(1)}%)
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               {/* Table */}
-              <div className="rounded-2xl border border-[#3A0000]/30 bg-white overflow-hidden">
-                <table className="w-full text-left text-sm bg-white">
-                  <thead
-                    className="text-[#3A0000] text-lg font-semibold"
-                    style={{
-                      backgroundColor: '#FBE8D4',
-                      borderBottom: '2px solid rgba(58, 0, 0, 0.15)',
-                    }}
-                  >
-                    <tr>
-                      <th className="px-4 py-4">Category</th>
-                      <th className="px-4 py-4">Allocated</th>
-                      <th className="px-4 py-4">Spent</th>
-                      <th className="px-5 py-5">Remaining</th>
-                      <th className="px-4 py-4">Status</th>
-                      <th className="px-4 py-4">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filtered.map((r) => {
-                      const remaining = r.allocated - r.spent;
-                      const status = getStatus(remaining, r.allocated);
-                      return (
-                        <tr
-                          key={r.categoryId}
-                          className="border-b last:border-b border-[#3A0000]/20"
-                        >
-                          <td className="px-4 py-5">
-                            {r.allocated > 0 ? (
-                              <Link
-                                href={`/calendar_dashboard/budget_report/category-cost/${encodeURIComponent(
-                                  r.categoryId
-                                )}`}
-                                className="font-bold text-black underline"
-                              >
-                                {r.category}
-                              </Link>
-                            ) : (
-                              <span
-                                className="font-bold text-gray-400 cursor-not-allowed"
-                                title="Set a budget before viewing details"
-                              >
-                                {r.category}
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-4 py-5">
-                            {editingRowId === r.categoryId ? (
-                              <input
-                                type="number"
-                                min={0}
-                                step={1}
-                                value={
-                                  allocInput[r.categoryId] ??
-                                  String(r.allocated)
-                                }
-                                onChange={(e) =>
-                                  setAllocInput((prev) => ({
-                                    ...prev,
-                                    [r.categoryId]: e.target.value,
-                                  }))
-                                }
-                                className="w-28 text-right rounded-md bg-white text-black px-2 py-1 border"
-                              />
-                            ) : (
-                              `$${r.allocated.toLocaleString()}`
-                            )}
-                          </td>
-                          <td className="px-4 py-5">
-                            ${r.spent.toLocaleString()}
-                          </td>
-                          <td
-                            className={`px-4 py-5 ${remaining < 0 ? 'text-red-600' : ''}`}
-                          >
-                            {remaining < 0
-                              ? `-$${Math.abs(remaining).toLocaleString()}`
-                              : `$${remaining.toLocaleString()}`}
-                          </td>
-                          <td className="px-4 py-5">
-                            <Badge tone={status.tone}>{status.label}</Badge>
-                          </td>
-                          <td className="px-4 py-5">
-                            {role === 'management' && !isPastYear ? (
-                              editingRowId === r.categoryId ? (
-                                <div className="flex gap-2">
-                                  <button
-                                    onClick={() => saveRow(r)}
-                                    disabled={
-                                      loading.saveRowId === r.categoryId
-                                    }
-                                    className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10 disabled:opacity-60"
-                                  >
-                                    {loading.saveRowId === r.categoryId
-                                      ? 'Saving…'
-                                      : 'Save'}
-                                  </button>
-                                  <button
-                                    onClick={cancelEditRow}
-                                    disabled={
-                                      loading.saveRowId === r.categoryId
-                                    }
-                                    className="px-3 py-1 rounded-md bg-white/80 text-black font-semibold hover:bg-white disabled:opacity-60"
-                                  >
-                                    Cancel
-                                  </button>
-                                  <button
-                                    onClick={() => deleteCategoryRow(r)}
-                                    disabled={
-                                      loading.saveRowId === r.categoryId
-                                    }
-                                    className="whitespace-nowrap flex-shrink-0 px-4 py-2 rounded-md text-sm font-semibold text-white bg-[#B3261E] hover:bg-[#99201A] disabled:opacity-60"
-                                    title="Permanently delete this category"
-                                  >
-                                    Delete Category
-                                  </button>
-                                </div>
-                              ) : (
-                                <button
-                                  onClick={() => startEditRow(r)}
-                                  className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10"
-                                >
-                                  Edit
-                                </button>
-                              )
-                            ) : (
-                              <span className="text-gray-400">—</span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-
-                  {filtered.length > 0 && (
-                    <tfoot>
-                      <tr className="bg-black/5 font-semibold">
-                        <td className="px-4 py-4">Subtotal</td>
-                        <td className="px-4 py-4">
-                          ${totals.allocated.toLocaleString()}
-                        </td>
-                        <td className="px-4 py-4">
-                          ${totals.spent.toLocaleString()}
-                        </td>
-                        <td className="px-4 py-4">
-                          {totals.remaining < 0
-                            ? `-$${Math.abs(totals.remaining).toLocaleString()}`
-                            : `$${totals.remaining.toLocaleString()}`}
-                        </td>
-                        <td />
-                        <td />
+              <div className="-mx-1 md:-mx-2">
+                <div className="rounded-2xl border border-[#3A0000]/30 bg-white overflow-hidden">
+                  <table className="w-full text-left text-sm bg-white">
+                    <thead
+                      className="text-[#3A0000] text-lg font-semibold"
+                      style={{
+                        backgroundColor: '#FBE8D4',
+                        borderBottom: '2px solid rgba(58, 0, 0, 0.15)',
+                      }}
+                    >
+                      <tr>
+                        <th className="px-4 py-4">Category</th>
+                        <th className="px-4 py-4">Allocated</th>
+                        <th className="px-4 py-4">Spent</th>
+                        <th className="px-4 py-4">Remaining</th>
+                        <th className="px-4 py-4">Status</th>
+                        <th className="px-4 py-4">Actions</th>
                       </tr>
-                    </tfoot>
-                  )}
-                </table>
+                    </thead>
+                    <tbody>
+                      {filtered.map((r) => {
+                        const remaining = r.allocated - r.spent;
+                        const status = getStatus(remaining, r.allocated);
+                        return (
+                          <tr
+                            key={r.categoryId}
+                            className="border-b last:border-b border-[#3A0000]/20"
+                          >
+                            <td className="px-4 py-5">
+                              {r.allocated > 0 ? (
+                                <Link
+                                  href={`/calendar_dashboard/budget_report/category-cost/${encodeURIComponent(
+                                    r.categoryId
+                                  )}`}
+                                  className="font-bold text-black underline"
+                                >
+                                  {capitalise(r.category)}
+                                </Link>
+                              ) : (
+                                <span
+                                  className="font-bold text-gray-400 cursor-not-allowed"
+                                  title="Set a budget before viewing details"
+                                >
+                                  {capitalise(r.category)}
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-4 py-5">
+                              {editingRowId === r.categoryId ? (
+                                <input
+                                  type="number"
+                                  min={0}
+                                  step={1}
+                                  value={
+                                    allocInput[r.categoryId] ??
+                                    String(r.allocated)
+                                  }
+                                  onChange={(e) =>
+                                    setAllocInput((prev) => ({
+                                      ...prev,
+                                      [r.categoryId]: e.target.value,
+                                    }))
+                                  }
+                                  className="w-28 text-right rounded-md bg-white text-black px-2 py-1 border"
+                                />
+                              ) : (
+                                `$${r.allocated.toLocaleString()}`
+                              )}
+                            </td>
+                            <td className="px-4 py-5">
+                              ${r.spent.toLocaleString()}
+                            </td>
+                            <td
+                              className={`px-4 py-5 ${
+                                remaining < 0 ? 'text-red-600' : ''
+                              }`}
+                            >
+                              {remaining < 0
+                                ? `-$${Math.abs(remaining).toLocaleString()}`
+                                : `$${remaining.toLocaleString()}`}
+                            </td>
+                            <td className="px-4 py-5">
+                              <Badge tone={status.tone}>{status.label}</Badge>
+                            </td>
+                            <td className="px-4 py-5">
+                              {role === 'management' && !isPastYear ? (
+                                editingRowId === r.categoryId ? (
+                                  <div className="flex gap-2 flex-wrap">
+                                    <button
+                                      onClick={() => saveRow(r)}
+                                      disabled={
+                                        loading.saveRowId === r.categoryId
+                                      }
+                                      className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10 disabled:opacity-60"
+                                    >
+                                      {loading.saveRowId === r.categoryId
+                                        ? 'Saving…'
+                                        : 'Save'}
+                                    </button>
+                                    <button
+                                      onClick={cancelEditRow}
+                                      disabled={
+                                        loading.saveRowId === r.categoryId
+                                      }
+                                      className="px-3 py-1 rounded-md bg-white/80 text-black font-semibold hover:bg-white disabled:opacity-60"
+                                    >
+                                      Cancel
+                                    </button>
+                                    <button
+                                      onClick={() => deleteCategoryRow(r)}
+                                      disabled={
+                                        loading.saveRowId === r.categoryId
+                                      }
+                                      className="whitespace-nowrap flex-shrink-0 px-4 py-2 rounded-md text-sm font-semibold text-white bg-[#B3261E] hover:bg-[#99201A] disabled:opacity-60"
+                                      title="Permanently delete this category"
+                                    >
+                                      Delete Category
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={() => startEditRow(r)}
+                                    className="px-3 py-1 rounded-md bg-white text-black font-semibold hover:bg-black/10"
+                                  >
+                                    Edit
+                                  </button>
+                                )
+                              ) : (
+                                <span className="text-gray-400">—</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+
+                    {filtered.length > 0 && (
+                      <tfoot>
+                        <tr className="bg-black/5 font-semibold">
+                          <td className="px-4 py-4">Subtotal</td>
+                          <td className="px-4 py-4">
+                            ${totals.allocated.toLocaleString()}
+                          </td>
+                          <td className="px-4 py-4">
+                            ${totals.spent.toLocaleString()}
+                          </td>
+                          <td className="px-4 py-4">
+                            {totals.remaining < 0
+                              ? `-$${Math.abs(totals.remaining).toLocaleString()}`
+                              : `$${totals.remaining.toLocaleString()}`}
+                          </td>
+                          <td />
+                          <td />
+                        </tr>
+                      </tfoot>
+                    )}
+                  </table>
+                </div>
               </div>
             </>
           )}

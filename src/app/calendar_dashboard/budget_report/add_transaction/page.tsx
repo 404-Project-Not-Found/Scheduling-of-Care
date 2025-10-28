@@ -423,12 +423,19 @@ function AddTransactionInner() {
   }, [refundables]);
 
   /* --------------------------- Submit -------------------------------*/
+  const [uploadWarning, setUploadWarning] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const handleSubmit = async () => {
     if (!activeClientId) {
       alert('Please select a client in the banner first.');
       return;
     }
-
+    if (!receiptFile) {
+      setUploadWarning('Please upload a receipt file before submitting!');
+      return;
+    }
+    setUploadWarning(null);
+    setSubmitting(true);
     const receiptUrl = receiptFile ? `/uploads/${receiptFile.name}` : undefined;
 
     const madeByIdToSend =
@@ -484,6 +491,8 @@ function AddTransactionInner() {
       } catch (e) {
         console.error(e);
         alert('Failed to add transaction.');
+      } finally {
+        setSubmitting(false);
       }
       return;
     }
@@ -535,6 +544,8 @@ function AddTransactionInner() {
     } catch (e) {
       console.error(e);
       alert('Failed to add refund.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -572,6 +583,12 @@ function AddTransactionInner() {
           {/* Divider */}
           <hr className="mt-4 mb-4 w-340 mx-auto border-t border-[#3A0000]/25 rounded-full" />
         </div>
+
+        {uploadWarning && (
+          <div className="mb-4 rounded-lg border border-red-400 bg-red-100 text-red-900 px-6 py-3 font-semibold">
+            {uploadWarning}
+          </div>
+        )}
 
         {/* Form area */}
         <div className="w-full max-w-[900px] mx-auto px-6 py-8">
@@ -771,11 +788,21 @@ function AddTransactionInner() {
                               style={inputStyle}
                             >
                               <option value="">Select a care item</option>
-                              {itemsForCat.map((ci) => (
-                                <option key={ci.id} value={ci.slug}>
-                                  {ci.label}
-                                </option>
-                              ))}
+                              {itemsForCat
+                                .filter((ci) => ci && (ci.slug || ci.id))
+                                .map((ci, idx) => {
+                                  const key =
+                                    ci.slug ?? ci.id ?? `fallback-${idx}`;
+                                  return (
+                                    <option
+                                      key={key}
+                                      value={ci.slug ?? ''}
+                                      disabled={!ci.slug}
+                                    >
+                                      {ci.label}
+                                    </option>
+                                  );
+                                })}
                             </select>
                           </div>
 
@@ -994,10 +1021,15 @@ function AddTransactionInner() {
                   Cancel
                 </button>
                 <button
-                  className="px-5 py-2.5 rounded-md text-lg font-medium text-white bg-[#3A0000] hover:bg-[#502121] transition"
+                  disabled={submitting || !receiptFile}
+                  className={`px-5 py-2.5 rounded-md text-lg font-medium text-white transition ${
+                    submitting || !receiptFile
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-[#3A0000] hover:bg-[#502121]'
+                  }`}
                   onClick={handleSubmit}
                 >
-                  Add
+                  {submitting ? 'Saving…' : 'Add'}
                 </button>
               </div>
             </div>

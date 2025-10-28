@@ -1,3 +1,9 @@
+/**
+ * File path: /models/Transaction.ts
+ * Author: Zahra Rizqita
+ * Date Created: 02/10/2025
+ */
+
 import { Schema, model, models, Types, Document, Model } from 'mongoose';
 
 type TrKind = 'Purchase' | 'Refund';
@@ -16,7 +22,7 @@ export interface TransactionDoc extends Document {
   year: number;
   date: Date;
   type: TrKind;
-  madeByUserId: string;
+  madeByUserId: Types.ObjectId;
   receiptUrl?: string;
   lines: (IOTransactionLine & Document)[];
   note?: string;
@@ -74,6 +80,23 @@ const TransactionSchema = new Schema(
 );
 
 TransactionSchema.index({ clientId: 1, year: 1, date: 1 });
+
+TransactionSchema.index(
+  { clientId: 1, year: 1, 'lines.categoryId': 1, type: 1 },
+  {
+    name: 'byClientYearCategoryType',
+    partialFilterExpression: { voidedAt: { $exists: false } },
+  }
+);
+TransactionSchema.index(
+  { clientId: 1, year: 1, voidedAt: 1 },
+  { name: 'byClientYearVoided' }
+);
+
+TransactionSchema.index(
+  { clientId: 1, year: 1, voidedAt: 1 },
+  { partialFilterExpression: { voidedAt: { $exists: false } } }
+);
 
 export const Transaction: Model<TransactionDoc> =
   models.Transaction || model<TransactionDoc>('Transaction', TransactionSchema);
