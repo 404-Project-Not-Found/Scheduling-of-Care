@@ -788,11 +788,16 @@ function AddTransactionInner() {
                               style={inputStyle}
                             >
                               <option value="">Select a care item</option>
-                              {itemsForCat.map((ci) => (
-                                <option key={ci.id} value={ci.slug}>
-                                  {ci.label}
-                                </option>
-                              ))}
+                             {itemsForCat
+                              .filter((ci) => ci && (ci.slug || ci.id))
+                              .map((ci, idx) => {
+                                const key = ci.slug ?? ci.id ?? `fallback-${idx}`;
+                                return (
+                                  <option key={key} value={ci.slug ?? ''} disabled={!ci.slug}>
+                                    {ci.label}
+                                  </option>
+                                );
+                              })}
                             </select>
                           </div>
 
