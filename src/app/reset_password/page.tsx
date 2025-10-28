@@ -1,5 +1,5 @@
 /**
- * File path: /reset_password/page.client.tsx
+ * File path: /reset_password/page.tsx
  * Front-end Authors: Devni Wijesinghe & Qingyue Zhao
  * Back-end Author: Denise Alexander
  * Date Created: 17/09/2025
