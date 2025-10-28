@@ -150,7 +150,7 @@ export async function PUT(
   return NextResponse.json(updated);
 }
 
-// soft delete one care item
+// permanently delete task
 export async function DELETE(
   _req: Request,
   { params }: { params: { slug: string } }
@@ -159,12 +159,9 @@ export async function DELETE(
 
   const slug = params.slug.toLowerCase();
 
-  const updated = await CareItem.findOneAndUpdate(
-    { slug: slug.toLowerCase() },
-    { $set: { deleted: true } },
-    { new: true }
-  ).lean();
+  const deleted = await CareItem.findOneAndDelete({ slug }).lean();
 
-  if (!updated) return errorJson('Task not found', 400);
-  return NextResponse.json({ ok: true, slug: slug, deleted: true });
+  if (!deleted) return errorJson('Task not found', 400);
+
+  return NextResponse.json({ ok: true, slug, deleted: true });
 }
