@@ -62,6 +62,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
   const surplus = Math.max(0, Math.round(budget.surplus ?? annualAllocated - (budget.totals?.allocated ?? 0)));
 
   return new NextResponse(JSON.stringify({
+    ok: true,
     summary: { annualAllocated, spent, remaining, surplus, openingCarryover: Number(budget.openingCarryover ?? 0) },
     rows
   }), {

@@ -106,6 +106,8 @@ export async function getBudgetFull(
   return p;
 }
 
+export function invalidateBudgetFull(clientId: string, year: number) { fullCache.delete(keyOf(clientId, year)); }
+
 export async function getBudgetRowsAndSum(
   clientId: string,
   year: number,

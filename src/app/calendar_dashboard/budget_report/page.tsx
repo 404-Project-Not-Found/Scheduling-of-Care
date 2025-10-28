@@ -39,6 +39,7 @@ import {
 } from '@/lib/data';
 
 import {
+  invalidateBudgetFull,
   getBudgetRowsAndSum,
   openBudgetSSE,
   getAvailableYears,
@@ -342,6 +343,7 @@ function BudgetReportInner() {
     const start = () => {
       stop = openBudgetSSE(activeClientId, year, async () => {
         try {
+          invalidateBudgetFull(activeClientId, year);
           const full = await getBudgetRowsAndSum(activeClientId, year);
           React.startTransition?.(() => {
             setRows(full.rows);
@@ -427,7 +429,7 @@ function BudgetReportInner() {
       if (json?.summary) {
         setSummary(json.summary);
       }
-
+      invalidateBudgetFull(activeClientId, year);
       const full = await getBudgetRowsAndSum(activeClientId, year, undefined);
       setRows(full.rows);
       setSummary(full.summary);
@@ -493,6 +495,7 @@ function BudgetReportInner() {
         setShowWarning(true);
         return;
       }
+      invalidateBudgetFull(activeClientId, year);
       const full = await getBudgetRowsAndSum(activeClientId, year);
       setRows(full.rows);
       setSummary(full.summary);
