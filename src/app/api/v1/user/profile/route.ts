@@ -14,7 +14,7 @@ import { connectDB } from '@/lib/mongodb';
 import User from '@/models/User';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-
+import { sanitizeAvatarUrl } from '@/lib/image-upload';
 interface IUser {
   _id: string;
   email: string;
@@ -35,18 +35,20 @@ export async function GET() {
   }
 
   await connectDB();
-  const user = await User.findById(session.user.id).lean<IUser>();
+  const user = await User.findById(session.user.id)
+    .select('-password') // Exclude large base64 data and password
+    .lean<IUser>();
 
   if (!user) {
     return NextResponse.json({ error: 'User does not exist' }, { status: 404 });
   }
 
-  // Returns the user's email, role, and full name as JSON
+  // Returns the user's email, role, and full name as JSON (without profilePic to reduce payload size)
   return NextResponse.json({
     email: user.email,
     role: user.role,
     fullName: user.fullName,
     phone: user.phone || '',
-    profilePic: user.profilePic || null,
+    profilePic: sanitizeAvatarUrl(user.profilePic),
   });
 }

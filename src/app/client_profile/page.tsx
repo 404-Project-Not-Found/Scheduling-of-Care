@@ -9,8 +9,10 @@
  * Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
  * consistency and better navigation.
  * Updated by Denise Alexander (23/10/2025): wording change Client -> PWSN.
+ * Updated by Denise Alexander (24/10/2025): added back-end for client profile picture.
  *
- * Last Updated by Denise Alexander (24/10/2025): added back-end for client profile picture.
+ * Last Updated by Denise Alexander (28/10/2025): added guard for required fields and
+ * made health and medical history editable for carer users.
  *
  * Notes:
  * - Fixed-height viewport section (h-[680px]) to avoid bottom gutters.
@@ -83,7 +85,7 @@ function ClientProfilePageInner() {
   const backHref = isManagement
     ? '/management_dashboard/clients_list'
     : isCarer
-      ? '/calendar_dashboard'
+      ? '/management_dashboard/clients_list'
       : '/family_dashboard/people_list';
 
   // ---- top chrome client switcher ----
@@ -230,9 +232,70 @@ function ClientProfilePageInner() {
   // ---- save client ----
   const saveClient = async () => {
     if (loading) return;
-    setLoading(true);
     setError('');
 
+    // If carer, skip required validation and only save medical notes
+    if (isCarer) {
+      setLoading(true);
+      try {
+        const payload = {
+          medicalNotes: {
+            diagnosedDisabilities,
+            currentMedication,
+            allergies,
+            recentMedicalHistory,
+            primaryHealthContact,
+          },
+        };
+
+        const url = `/api/v1/clients/${activeClient?.id}`;
+        const res = await fetch(url, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) throw new Error('Failed to save notes');
+
+        setError('');
+        router.push(backHref);
+      } catch (err) {
+        console.error(err);
+        setError('Failed to save notes. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    // Required client information
+    const requiredFields = [
+      { label: 'Full Name', value: name },
+      { label: 'Date of Birth', value: dob },
+      { label: 'Gender', value: gender },
+      { label: 'Access Code', value: accessCode },
+      { label: 'Phone Number', value: phoneNumber },
+      { label: 'Email', value: email },
+      { label: 'Address', value: address },
+      { label: 'Emergency Contact', value: emergencyContact },
+      { label: 'Primary Caregiver/Legal Guardian', value: primaryCaregiver },
+    ];
+
+    // Checks if the required fields are filled
+    const missing = requiredFields.filter((f) => !f.value?.trim());
+    if (missing.length > 0) {
+      const names = missing.map((f) => f.label).join(', ');
+      setError(`Please fill out the following required fields: ${names}.`);
+      return;
+    }
+
+    // Valid email checker
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+
+    setLoading(true);
     try {
       const payload = {
         name,
@@ -277,6 +340,8 @@ function ClientProfilePageInner() {
       setError(
         'Failed to save client. Please check your inputs and try again.'
       );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -285,28 +350,6 @@ function ClientProfilePageInner() {
   };
 
   const onSave = saveClient;
-
-  if (error) {
-    return (
-      <DashboardChrome
-        page="profile"
-        clients={clients}
-        onClientChange={(id) => router.push(`/client_profile?id=${id}`)}
-        colors={{
-          header: colors.header,
-          banner: colors.banner,
-          text: colors.text,
-        }}
-      >
-        <div
-          className="flex-1 flex items-center justify-center"
-          style={{ backgroundColor: colors.pageBg, color: 'red' }}
-        >
-          {error}
-        </div>
-      </DashboardChrome>
-    );
-  }
 
   const pageTitle = isNew
     ? 'Add New PWSN'
@@ -342,7 +385,6 @@ function ClientProfilePageInner() {
             style={{ backgroundColor: colors.header }}
           >
             <div>{pageTitle}</div>
-            {error && <div className="text-red-600 text-lg mb-4">{error}</div>}
             <button
               onClick={() => router.back()}
               className="flex items-center gap-2 text-base md:text-lg font-semibold bg-white/10 px-4 py-1.5 rounded hover:bg-white/20 transition"
@@ -375,6 +417,11 @@ function ClientProfilePageInner() {
                       isManagement ? 'pt-3 pb-3' : 'pt-3 pb-3'
                     } flex-none`}
                   >
+                    {error && (
+                      <div className="mb-4 text-red-800 text-base md:text-lg font-semibold rounded-md px-4 py-3 border border-red-400 bg-red-100">
+                        {error}
+                      </div>
+                    )}
                     <div className="flex flex-wrap gap-12 px-6 py-6">
                       {/* Column 1: avatar */}
                       <div className="flex-[0.6] flex flex-col items-center gap-6">
@@ -439,12 +486,12 @@ function ClientProfilePageInner() {
                             required
                             readOnly={!isFamily}
                           />
-                          <TextInput
+                          <DateInput
                             label="Date of Birth"
                             value={dob}
                             onChange={setDob}
-                            readOnly={!isFamily}
                             required
+                            readOnly={!isFamily}
                           />
                           <SelectInput
                             label="Gender"
@@ -494,30 +541,30 @@ function ClientProfilePageInner() {
                             readOnly={!isFamily}
                           />
                           <TextInput
-                            label="Email"
+                            label="Email Address"
                             value={email}
                             onChange={setEmail}
                             required
                             readOnly={!isFamily}
                           />
                           <TextInput
-                            label="Address"
+                            label="Home Address"
                             value={address}
                             onChange={setAddress}
                             required
                             readOnly={!isFamily}
                           />
                           <TextInput
-                            label="Emergency Contact"
-                            value={emergencyContact}
-                            onChange={setEmergencyContact}
+                            label="Emergency Contact Full Name"
+                            value={primaryCaregiver}
+                            onChange={setPrimaryCaregiver}
                             required
                             readOnly={!isFamily}
                           />
                           <TextInput
-                            label="Primary Caregiver/Legal Guardian"
-                            value={primaryCaregiver}
-                            onChange={setPrimaryCaregiver}
+                            label="Emergency Contact Phone Number"
+                            value={emergencyContact}
+                            onChange={setEmergencyContact}
                             required
                             readOnly={!isFamily}
                           />
@@ -529,31 +576,31 @@ function ClientProfilePageInner() {
                             label="Diagnosed Disabilities"
                             value={diagnosedDisabilities}
                             onChange={setDiagnosedDisabilities}
-                            readOnly={!isFamily}
+                            readOnly={!(isFamily || isCarer)}
                           />
                           <TextAreaInput
                             label="Current Medication"
                             value={currentMedication}
                             onChange={setCurrentMedication}
-                            readOnly={!isFamily}
+                            readOnly={!(isFamily || isCarer)}
                           />
                           <TextAreaInput
                             label="Allergies"
                             value={allergies}
                             onChange={setAllergies}
-                            readOnly={!isFamily}
+                            readOnly={!(isFamily || isCarer)}
                           />
                           <TextAreaInput
                             label="Recent Medical History"
                             value={recentMedicalHistory}
                             onChange={setRecentMedicalHistory}
-                            readOnly={!isFamily}
+                            readOnly={!(isFamily || isCarer)}
                           />
                           <TextAreaInput
                             label="Primary Healthcare Provider Contact"
                             value={primaryHealthContact}
                             onChange={setPrimaryHealthContact}
-                            readOnly={!isFamily}
+                            readOnly={!(isFamily || isCarer)}
                           />
                         </AccordionSection>
                       </div>
@@ -675,9 +722,14 @@ function TextInput({
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="h-10 rounded-md bg-white border px-3 text-sm outline-none text-black"
+        className={`h-10 rounded-md px-3 text-sm outline-none transition
+          ${
+            readOnly
+              ? 'bg-[#f7f3ef] text-gray-700 cursor-not-allowed border-0 appearance-none [&::-ms-expand]:hidden'
+              : 'bg-white text-black border border-[rgba(58,0,0,0.25)] focus:ring-2 focus:ring-[#3A0000]/30'
+          }
+        `}
         style={{
-          border: '1px solid rgba(58,0,0,0.25)',
           width,
           minWidth,
         }}
@@ -708,9 +760,14 @@ function TextAreaInput({
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-md bg-white border px-3 py-2 text-sm outline-none text-black"
+        className={`w-full rounded-md px-3 py-2 text-sm outline-none transition
+          ${
+            readOnly
+              ? 'bg-[#f7f3ef] text-gray-700 cursor-not-allowed border-0'
+              : 'bg-white text-black border border-[rgba(58,0,0,0.25)] focus:ring-2 focus:ring-[#3A0000]/30'
+          }
+        `}
         style={{
-          border: '1px solid rgba(58,0,0,0.25)',
           minWidth,
           height,
         }}
@@ -745,11 +802,17 @@ function SelectInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={readOnly}
-        className="h-10 rounded-md bg-white border px-3 text-sm outline-none text-black"
+        className={`h-10 rounded-md px-3 text-sm outline-none transition
+          ${
+            readOnly
+              ? 'bg-[#f7f3ef] text-gray-700 cursor-not-allowed border-0 appearance-none [&::-ms-expand]:hidden'
+              : 'bg-white text-black border border-[rgba(58,0,0,0.25)] focus:ring-2 focus:ring-[#3A0000]/30'
+          }
+        `}
         style={{
-          border: '1px solid rgba(58,0,0,0.25)',
           width,
           minWidth,
+          backgroundImage: readOnly ? 'none' : undefined,
         }}
         required={required}
       >
@@ -763,17 +826,43 @@ function SelectInput({
   );
 }
 
-function StaticText({
+function DateInput({
+  label,
   value,
-  placeholder,
+  onChange,
+  required = false,
+  readOnly = false,
+  minWidth = 250,
+  width = 180,
 }: {
-  value?: string;
-  placeholder: string;
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  required?: boolean;
+  readOnly?: boolean;
+  minWidth?: number;
+  width?: number;
 }) {
-  const shown = (value ?? '').trim();
   return (
-    <div className="text-[16px] text-black/80 min-h-12 flex items-center">
-      {shown || placeholder}
-    </div>
+    <FormRow label={label} required={required}>
+      <input
+        type="date"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={readOnly}
+        className={`h-10 rounded-md px-3 text-sm outline-none transition
+          ${
+            readOnly
+              ? 'bg-[#f7f3ef] text-gray-700 cursor-not-allowed border-0'
+              : 'bg-white text-black border border-[rgba(58,0,0,0.25)] focus:ring-2 focus:ring-[#3A0000]/30'
+          }
+        `}
+        style={{
+          width,
+          minWidth,
+        }}
+        required={required}
+      />
+    </FormRow>
   );
 }

@@ -516,7 +516,7 @@ function ClientSchedule() {
     // Otherwise -> month scope: "All care items" + "in <Month Year>"
     if (visibleYear && visibleMonth) {
       return {
-        main: 'All care items',
+        main: 'All Care Items',
         sub: `in ${MONTH_NAMES[visibleMonth - 1]} ${visibleYear}`,
       };
     }

@@ -165,9 +165,9 @@ function FamilyClientListInner() {
               <div className="text-[#3A0000] leading-relaxed">
                 <h3 className="text-lg mb-0.5">
                   As a <span className="font-extrabold">Family/POA</span>, you
-                  can add new PWSN into your list, update their profile details
-                  and manage which service providers receive access to your PWSN
-                  profile and care schedule.
+                  can add a new PWSN into your list, update their profile
+                  details and manage which service providers can receive access
+                  to your PWSN profile and care schedule.
                 </h3>
               </div>
             </div>

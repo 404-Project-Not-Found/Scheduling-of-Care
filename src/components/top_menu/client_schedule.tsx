@@ -17,9 +17,11 @@
  * - Wording changes:
  *    - Client -> PWSN (for family/POA users)
  *    - Oragnisation -> Service Provider
- *
- * Last Updated by Denise Alexander (24/10/2025): added logo to My PWSN/Client List, adjusted text size
+ * Updated by Denise Alexander (24/10/2025): added logo to My PWSN/Client List, adjusted text size
  * and redirection logic.
+ *
+ * Last Updated by Denise Alexander (28/10/2025): reverted changes made to fetch profile
+ * picture and fixed computedHeaderTitle logic to include staff schedule.
  */
 
 'use client';
@@ -302,7 +304,11 @@ export default function DashboardChrome({
 
   const computedHeaderTitle =
     headerTitle ??
-    (isFamily ? 'My PWSN' : isManagement ? 'Client List' : 'Care Schedule');
+    (page === 'staff-schedule'
+      ? 'Staff Schedule'
+      : isFamily
+        ? 'My PWSN'
+        : 'Client List');
 
   // -------- Banner picker visibility --------
   // Now: ALWAYS visible for all roles (carer/family/management), unless explicitly hidden via prop.
@@ -421,14 +427,20 @@ export default function DashboardChrome({
             }`}
           >
             {/* Header Title */}
-            <span className="hidden lg:flex items-center gap-2 font-extrabold text-white text-lg px-2 text-left">
-              {isFamily ? (
+            <span
+              className={`hidden lg:flex items-center gap-2 font-extrabold text-white px-2 text-left ${
+                page === 'staff-schedule' ? 'text-2xl' : 'text-lg'
+              }`}
+            >
+              {page === 'staff-schedule' ? (
+                <>{computedHeaderTitle}</>
+              ) : isFamily ? (
                 <>
                   <UserSearch
                     className="w-15 h-15 text-white"
                     strokeWidth={1.3}
                   />
-                  My PWSN
+                  {computedHeaderTitle}
                 </>
               ) : (
                 <>
@@ -436,7 +448,7 @@ export default function DashboardChrome({
                     className="w-15 h-15 text-white"
                     strokeWidth={1.3}
                   />
-                  Client List
+                  {computedHeaderTitle}
                 </>
               )}
             </span>
@@ -580,21 +592,12 @@ export default function DashboardChrome({
                 aria-expanded={userMenuOpen}
                 title="Account"
               >
-                {user?.profilePic ? (
-                  <Image
-                    src={user.profilePic}
-                    alt="User profile"
-                    fill
-                    className="object-cover rounded-full"
-                  />
-                ) : (
-                  <User
-                    size={50}
-                    strokeWidth={0.3}
-                    fill={palette.header}
-                    color={palette.header}
-                  />
-                )}
+                <User
+                  size={50}
+                  strokeWidth={0.3}
+                  fill={palette.header}
+                  color={palette.header}
+                />
               </button>
               {userMenuOpen && (
                 <div

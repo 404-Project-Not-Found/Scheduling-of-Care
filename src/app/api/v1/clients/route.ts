@@ -11,6 +11,7 @@ import { connectDB } from '@/lib/mongodb';
 import Client from '@/models/Client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { saveBase64Image, isBase64Image } from '@/lib/image-upload';
 
 /**
  * Retrieves all clients that belong to the currently authenticated user.
@@ -26,7 +27,10 @@ export async function GET() {
   await connectDB();
 
   // Fetch only the clients created by the logged in user
-  const clients = await Client.find({ createdBy: session.user.id }).lean();
+  // Exclude avatarUrl to reduce payload size (use separate endpoint to get avatar)
+  const clients = await Client.find({ createdBy: session.user.id })
+    .select('-avatarUrl')
+    .lean();
   // return client list
   return NextResponse.json(clients);
 }
@@ -45,6 +49,18 @@ export async function POST(req: NextRequest) {
 
   const data = await req.json();
   try {
+    await connectDB();
+
+    // Handle avatar upload if it's a base64 image
+    let avatarUrl = data.avatarUrl || '';
+    if (avatarUrl && isBase64Image(avatarUrl)) {
+      avatarUrl = saveBase64Image(
+        avatarUrl,
+        `client_${data.name || 'unknown'}`,
+        'clients'
+      );
+    }
+
     // Create client, attaching `createdBy` to track ownership
     const newClient = await Client.create({
       name: data.name,
@@ -52,7 +68,7 @@ export async function POST(req: NextRequest) {
       gender: data.gender,
       accessCode: data.accessCode,
       createdBy: session.user.id,
-      avatarUrl: data.avatarUrl || '',
+      avatarUrl,
       phoneNumber: data.phoneNumber || '',
       email: data.email || '',
       emergencyContact: data.emergencyContact || '',
