@@ -70,7 +70,7 @@ const colors = {
 };
 
 /* ------------------------------- Utils ------------------------------- */
-const capitalise = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : '');
+const capitalise = (s = '') => s.trim().replace(/^./u, ch => ch.toUpperCase());
 
 /* ---------------------------------- Status  ---------------------------------- */
 const LOW_BUDGET_THRESHOLD = 0.15;
@@ -862,8 +862,8 @@ function BudgetReportInner() {
                   <div className="font-semibold mb-2">⚠️ The following categories are nearing their budget limit:</div>
                   <ul className="list-disc list-inside space-y-1">
                     {lowCategories.map((c) => (
-                      <li key={c.name}>
-                        <span className="font-medium">{c.name}</span> — remaining ${c.remaining.toFixed(2)} ({c.percent.toFixed(1)}%)
+                      <li key={capitalise(c.name)}>
+                        <span className="font-medium">{capitalise(c.name)}</span> — remaining ${c.remaining.toFixed(2)} ({c.percent.toFixed(1)}%)
                       </li>
                     ))}
                   </ul>
@@ -906,7 +906,7 @@ function BudgetReportInner() {
                                 )}`}
                                 className="font-bold text-black underline"
                               >
-                                {r.category}
+                                {capitalise(r.category)}
                               </Link>
                             ) : (
                               <span

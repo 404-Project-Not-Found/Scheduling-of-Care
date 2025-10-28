@@ -55,7 +55,7 @@ const getStatus = (
   return { tone: 'green', label: 'Within Limit' };
 };
 
-const capitalise = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : '');
+const capitalise = (s = '') => s.trim().replace(/^./u, ch => ch.toUpperCase());
 /* ------------------------------- Chrome colors ------------------------------- */
 const colors = {
   header: '#3A0000',
@@ -435,7 +435,7 @@ function CategoryCostInner() {
                 <ul className="list-disc list-inside text-yellow-800">
                   {lowItems.map((it) => (
                     <li key={it.careItemSlug}>
-                      <span className="font-medium">{it.label}</span> —
+                      <span className="font-medium">{capitalise(it.label)}</span> —
                       remaining ${(it.allocated - it.spent).toFixed(2)} (
                       {(
                         ((it.allocated - it.spent) / it.allocated) *
@@ -573,7 +573,7 @@ function CategoryCostInner() {
                           className="border-b last:border-b border-[#3A0000]/20"
                         >
                           <td className="px-4 py-5 font-semibold">
-                            {it.label}
+                            {capitalise(it.label)}
                           </td>
                           <td className="px-4 py-5">
                             {isRowEditing ? (
