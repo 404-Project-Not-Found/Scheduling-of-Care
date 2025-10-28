@@ -3,14 +3,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import dayGridPlugin from '@fullcalendar/daygrid';
-import interactionPlugin, { DateClickArg } from '@fullcalendar/interaction';
-import '@/styles/fullcalendar.css';
+import interactionPlugin from '@fullcalendar/interaction';
 import type {
   CalendarApi,
   DatesSetArg,
+  DateClickArg,
   EventClickArg,
+  EventContentArg,
   DayCellContentArg,
 } from '@fullcalendar/core';
+import '@/styles/fullcalendar.css';
 
 // Load FullCalendar on the client only
 const FullCalendar = dynamic(() => import('@fullcalendar/react'), {
@@ -102,7 +104,7 @@ export default function CalendarPanel(props: CalendarPanelProps) {
   const { tasks = [], onDateClick, onMonthYearChange, debug = false } = props;
 
   const rootRef = useRef<HTMLDivElement | null>(null);
-  const apiRef = useRef<CalendarApi>(null);
+  const apiRef = useRef<CalendarApi | null>(null);
 
   // Visible month (driven by FullCalendar)
   const [year, setYear] = useState<number>(new Date().getFullYear());
