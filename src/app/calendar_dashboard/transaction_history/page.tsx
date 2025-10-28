@@ -85,6 +85,7 @@ function TransactionHistoryInner() {
 
   /* ------------------------------ Role ------------------------------ */
   const [role, setRole] = useState<Role>('carer'); // default
+  const [userNameById, setUserNameById] = useState<Record<string, string>>({});
 
   useEffect(() => {
     (async () => {
@@ -213,17 +214,50 @@ function TransactionHistoryInner() {
     })();
   }, [activeClientId, year]);
 
+  useEffect(() => {
+    const needed = Array.from(
+      new Set(
+        rows.map((r) => r.madeBy).filter((id) => id && !userNameById[id])
+      )
+    );
+    if (needed.length === 0) return;
+
+    const abort = new AbortController();
+
+    (async () => {
+      try {
+        const res = await fetch('/api/v1/user/lookup', {
+          method: 'POST',
+          signal: abort.signal,
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ ids: needed }),
+          cache: 'no-store',
+        });
+        if (!res.ok) throw new Error(`lookup ${res.status}`);
+
+        const data: { users: Record<string, string> } = await res.json();
+        setUserNameById((prev) => ({ ...prev, ...data.users }));
+      } catch (err) {
+        console.warn('User lookup failed', err);
+      }
+    })();
+
+    return () => abort.abort();
+  }, [rows, userNameById]);
+
   /** Filter */
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return rows;
-    return rows.filter((t) =>
-      [t.type, t.date, t.madeBy, t.receipt, ...t.items]
+    return rows.filter((t) => {
+      const madeByName = userNameById[t.madeBy] ?? t.madeBy;
+      return [t.type, t.date, madeByName, t.receipt, ...t.items]
         .join(' ')
         .toLowerCase()
-        .includes(q)
-    );
-  }, [rows, search]);
+        .includes(q);
+    });
+  }, [rows, search, userNameById]);
+
 
   return (
     <DashboardChrome
@@ -338,7 +372,7 @@ function TransactionHistoryInner() {
                         >
                           <td className="px-6 py-5 font-semibold">{t.type}</td>
                           <td className="px-6 py-5">{t.date}</td>
-                          <td className="px-6 py-5">{t.madeBy}</td>
+                          <td className="px-6 py-5">{userNameById[t.madeBy]}</td>
                           <td className="px-6 py-5">{t.receipt}</td>
                           <td className="px-6 py-5">
                             <div className="flex flex-col gap-1">
