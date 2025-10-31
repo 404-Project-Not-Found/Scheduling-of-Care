@@ -9,6 +9,7 @@
  * Last Updated by Denise Alexander (20/10/2025): UI design and layout changes for readability,
  * consistency and better navigation.
  */
+
 'use client';
 
 import { Search } from 'lucide-react';
@@ -197,8 +198,10 @@ function TransactionHistoryInner() {
   useEffect(() => {
     if (!activeClientId) {
       setRows([]);
+      setLoading((s) => ({ ...s, rows: false }));
       return;
     }
+
     (async () => {
       setLoading((s) => ({ ...s, rows: true }));
       setErrorText('');
@@ -339,7 +342,11 @@ function TransactionHistoryInner() {
           {/* Table container */}
           <div className="w-full pt-2 pb-6">
             <div className="rounded-2xl border border-[#3A0000]/30 bg-white overflow-hidden shadow-sm">
-              {loadingAny ? (
+              {!activeClientId ? (
+                <div className="p-6 text-gray-600">
+                  Please select a client to view transactions.
+                </div>
+              ) : loadingAny ? (
                 <div className="p-6 text-gray-600">Loading transactions…</div>
               ) : errorText ? (
                 <div className="p-6 text-red-600">{errorText}</div>

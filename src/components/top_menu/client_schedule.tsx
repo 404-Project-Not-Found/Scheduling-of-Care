@@ -27,7 +27,6 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { getViewerRole, signOutUser } from '@/lib/data';
@@ -429,10 +428,12 @@ export default function DashboardChrome({
             {/* Header Title */}
             <span
               className={`hidden lg:flex items-center gap-2 font-extrabold text-white px-2 text-left ${
-                page === 'staff-schedule' ? 'text-2xl' : 'text-lg'
+                page === 'staff-schedule' || page === 'staff-list'
+                  ? 'text-2xl'
+                  : 'text-lg'
               }`}
             >
-              {page === 'staff-schedule' ? (
+              {page === 'staff-schedule' || page === 'staff-list' ? (
                 <>{computedHeaderTitle}</>
               ) : isFamily ? (
                 <>
