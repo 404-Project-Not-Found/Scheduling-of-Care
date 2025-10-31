@@ -25,7 +25,6 @@ import DashboardChrome from '@/components/top_menu/client_schedule';
 import {
   getClients,
   getTasksByClient,
-  getCategoriesForClient,
   setActiveClient,
   getActiveClient,
   type Client as ApiClient,
@@ -60,7 +59,7 @@ export default function RequestChangeFormPage() {
 
   /* ---------- Top bar client dropdown ---------- */
   const [clients, setClients] = useState<Client[]>([]);
-  const [{ id: activeId, name: activeName }, setActive] = useState<{
+  const [{ id: activeId }, setActive] = useState<{
     id: string | null;
     name: string;
   }>({ id: null, name: '' });

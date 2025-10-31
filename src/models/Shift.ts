@@ -4,7 +4,7 @@
  * Date Created: 16/10/2025
  */
 
-import mongoose, { Schema, model, models } from 'mongoose';
+import { Schema, model, models } from 'mongoose';
 
 const ShiftSchema = new Schema(
   {

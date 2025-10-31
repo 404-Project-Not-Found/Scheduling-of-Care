@@ -11,7 +11,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "husky install",
-    "test": "echo 'No tests defined yet'"
+    "test": "jest --runInBand"
   },
   "dependencies": {
     "@auth/core": "^0.34.2",
