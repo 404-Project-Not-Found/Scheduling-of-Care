@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { connect, clearDatabase, closeDatabase } from '../jest.setup';
+import { connect, clearDatabase, closeDatabase } from '../set_up/db';
 import { Transaction } from '@/models/Transaction';
 
 

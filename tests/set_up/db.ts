@@ -1,3 +1,9 @@
+/**
+ * File path: /tests/set_up/db.ts
+ * Author: Denise Alexander
+ * Date Created: 30/09/2025
+ */
+
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 

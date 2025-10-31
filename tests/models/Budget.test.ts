@@ -1,6 +1,6 @@
 // tests/models/Budget.test.ts
 import mongoose from 'mongoose';
-import { connect, clearDatabase, closeDatabase } from '../jest.setup';
+import { connect, clearDatabase, closeDatabase } from '../set_up/db';
 import { BudgetYear } from '@/models/Budget';
 
 describe('BudgetYear model', () => {
