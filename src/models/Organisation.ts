@@ -17,6 +17,7 @@ export interface IInviteCode {
 
 // Represents an organisation in the system
 export interface IOrganisation extends Document {
+  _id: mongoose.Types.ObjectId;
   name: string;
   createdBy: mongoose.Types.ObjectId;
   members: mongoose.Types.ObjectId[];
