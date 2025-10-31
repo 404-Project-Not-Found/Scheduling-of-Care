@@ -1040,27 +1040,6 @@ function BudgetReportInner() {
                         );
                       })}
                     </tbody>
-
-                    {filtered.length > 0 && (
-                      <tfoot>
-                        <tr className="bg-black/5 font-semibold">
-                          <td className="px-4 py-4">Subtotal</td>
-                          <td className="px-4 py-4">
-                            ${totals.allocated.toLocaleString()}
-                          </td>
-                          <td className="px-4 py-4">
-                            ${totals.spent.toLocaleString()}
-                          </td>
-                          <td className="px-4 py-4">
-                            {totals.remaining < 0
-                              ? `-$${Math.abs(totals.remaining).toLocaleString()}`
-                              : `$${totals.remaining.toLocaleString()}`}
-                          </td>
-                          <td />
-                          <td />
-                        </tr>
-                      </tfoot>
-                    )}
                   </table>
                 </div>
               </div>
