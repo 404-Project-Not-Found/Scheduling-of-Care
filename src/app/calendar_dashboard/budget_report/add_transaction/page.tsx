@@ -562,13 +562,15 @@ function AddTransactionInner() {
     >
       {/* Main scroll area */}
       <div
-        className="flex-1 min-h-screen bg-[#FFF5EC] overflow-auto"
+        className="flex-1 h-[680px] bg-white/80 overflow-auto"
         aria-busy={loadAny}
       >
         {/* Section header */}
-        <div className="w-full px-6 py-3">
-          <div className="flex items-center justify-between text-[#3A0000] px-6 py-5 mb-3">
-            <h2 className="text-3xl font-semibold">Add Transaction</h2>
+        <div className="w-full px-6 py-5">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <h2 className="text-[#3A0000] text-3xl font-semibold">
+              Add Transaction
+            </h2>
             <button
               onClick={() =>
                 router.push('/calendar_dashboard/transaction_history')
@@ -580,8 +582,8 @@ function AddTransactionInner() {
             </button>
           </div>
 
-          {/* Divider */}
-          <hr className="mt-4 mb-4 w-340 mx-auto border-t border-[#3A0000]/25 rounded-full" />
+          {/* Divider (from main) */}
+          <hr className="mt-4 mb-6 w-340 mx-auto border-t border-[#3A0000]/25 rounded-full" />
         </div>
 
         {uploadWarning && (

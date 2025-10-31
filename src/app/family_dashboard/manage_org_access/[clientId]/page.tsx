@@ -328,7 +328,7 @@ function Legend({ className = '' }: { className?: string }) {
   const legendItems = [
     {
       action: 'Approve',
-      description: 'Gives the service provider access to client',
+      description: 'Gives the service provider access to client.',
       style: {
         backgroundColor: '#4CAF50',
         color: 'white',
@@ -337,7 +337,7 @@ function Legend({ className = '' }: { className?: string }) {
     },
     {
       action: 'Reject',
-      description: "Rejects the service provider's request to client access",
+      description: "Rejects the service provider's request to client access.",
       style: {
         backgroundColor: '#E53935',
         color: 'white',
@@ -346,7 +346,7 @@ function Legend({ className = '' }: { className?: string }) {
     },
     {
       action: 'Revoke',
-      description: "Removes the service provider's access to client",
+      description: "Removes the service provider's access to client.",
       style: {
         backgroundColor: '#D57A2E',
         color: 'white',

@@ -35,7 +35,6 @@ import { Search, Plus, Info, ChevronDown } from 'lucide-react';
 import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSession } from 'next-auth/react';
-import Image from 'next/image';
 import DashboardChrome from '@/components/top_menu/client_schedule';
 import RegisterClientPanel from '@/components/accesscode/registration';
 import { useActiveClient } from '@/context/ActiveClientContext';

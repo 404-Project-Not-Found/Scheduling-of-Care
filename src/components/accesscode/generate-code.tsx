@@ -17,7 +17,6 @@
 'use client';
 
 import { Info } from 'lucide-react';
-import { set } from 'mongoose';
 import React, { useEffect, useState } from 'react';
 
 const palette = {

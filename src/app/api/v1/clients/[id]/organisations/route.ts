@@ -19,6 +19,10 @@ interface OrgHistoryItem {
   status: 'pending' | 'approved' | 'revoked';
 }
 
+interface ClientDoc {
+  organisationHistory: OrgHistoryItem[];
+}
+
 /**
  * Retrieves the list of organisations linked to a specific client.
  * @param req
@@ -36,7 +40,7 @@ export async function GET(req: Request, context: { params: { id: string } }) {
       path: 'organisationHistory.organisation',
       select: 'name',
     })
-    .lean();
+    .lean<ClientDoc | null>();
 
   if (!client) {
     return NextResponse.json({ error: 'Client not found' }, { status: 404 });
