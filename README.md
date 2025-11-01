@@ -32,13 +32,14 @@
         <li><a href="#team-members">Team Members</a></li>
         <li><a href="#license">License</a></li>
         <li><a href="#links">Links</a></li>
+        <li><a href="#frontend-demo-mock-mode">Frontend Demo (Mock Mode)</a></li>
     </ol>
 
 <!-- Content -->
 
-<h2>About the Project</h2>
+<h2 id="about-the-project"> About the Project</h2>
 
-<h3>Features</h3>
+<h3 id="features">Features</h3>
 
 <h4><strong>Roles and Permissions for Users</strong></h4>
     <ul>
@@ -75,7 +76,7 @@
         <li>When only a certain amount is left for a category, a notification will appear on the app to warn users.</li>
     </ul>
 
-<h3>Tech Stack and Resources</h3>
+<h3 id="tech-stack-and-resources">Tech Stack and Resources</h3>
 
 <ul>
     <li><strong>Framework</strong>: <a href="https://nextjs.org/docs">Next.Js</a></li>
@@ -86,9 +87,9 @@
     <li><strong>Deployment</strong>: <a href="https://vercel.com/resources">Vercel</a></li>
 </ul>
 
-<h2>Getting Started</h2>
+<h2 id="getting-started">Getting Started</h2>
 
-<h3>Prerequisites</h3>
+<h3 id="prerequisites">Prerequisites</h3>
 
 Before running the app, ensure that you have the following:
 
@@ -100,7 +101,7 @@ Before running the app, ensure that you have the following:
      <li><a href="https://resend.com/signup">Resend account</a> (required for testing and custom domain verification is also needed for production).</li>
 </ul>
 
-<h3>MongoDB Setup Guide</h3>
+<h3 id="mongodb-setup-guide">MongoDB Setup Guide</h3>
 <ol>
     <li><strong>Create an Account</strong>
         <ol type="a">
@@ -164,7 +165,7 @@ export const connectDB = async () => {
 </ol>
 
 
-<h3>Local Development Setup</h3>
+<h3 id="local-development-setup">Local Development Setup</h3>
 <ol>
     <li>Clone this repository</li>
     <pre><code>git clone https://github.com/404-Project-Not-Found/Schedule-of-Care-Program.git
@@ -191,7 +192,7 @@ Then open <a href="http://localhost:3000">http://localhost:3000</a> on your brow
 
 </br>
 
-<h2>Deployment</h2>
+<h2 id="deployment">Deployment</h2>
 
 For deployment, do the following:
 
@@ -209,7 +210,7 @@ For more information, you can read the <a href="https://nextjs.org/docs/app/gett
 
 </br>
 
-<h2>Testing</h2>
+<h2 id="testing">Testing</h2>
 To run our unit testing, run the following:
  <pre><code># run all test
 npm run test
@@ -233,7 +234,7 @@ npx jest tests/models/Users.test.ts</code></pre>
 
 </br>
 
-<h2>Team Members</h2>
+<h2 id="team-members">Team Members</h2>
 
 <a href="https://github.com/dpalexander21">
 <img style="border-radius: 50%;" src="https://avatars.githubusercontent.com/u/201690137?v=4" width="50px">
@@ -253,12 +254,12 @@ npx jest tests/models/Users.test.ts</code></pre>
 
 </br>
 
-<h2>License</h2>
+<h2 id="license">License</h2>
 
 Scheduling for Care is licensed under the MIT license. See <a href="LICENSE">LICENSE</a> for details.
 </br>
 
-<h2>Links</h2>
+<h2 id="links">Links</h2>
 
 <ul>
     <li><a href="https://scheduling-of-care-web-app.vercel.app/ ">Application</a></li>
@@ -269,7 +270,7 @@ Scheduling for Care is licensed under the MIT license. See <a href="LICENSE">LIC
 
 </br>
 
-<h2>Frontend Demo (Mock Mode)</h2>
+<h2 id="frontend-demo-mock-mode">Frontend Demo (Mock Mode)</h2>
 
 > Quick guide for <strong>local frontend demo</strong> using mock data & mock login. Includes three demo accounts, `.env.local` setup, where to put the mock API and common gotchas.
 
