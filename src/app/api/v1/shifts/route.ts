@@ -18,12 +18,6 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import mongoose from 'mongoose';
 import { getOrgIds } from '@/lib/get_org_ids';
 
-// Client's organisation history
-interface OrgHistoryItem {
-  organisation: mongoose.Types.ObjectId;
-  status: 'pending' | 'approved' | 'revoked';
-}
-
 // Type for populated shift documents returned to DB
 interface ShiftPopulated {
   _id: mongoose.Types.ObjectId;

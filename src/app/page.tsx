@@ -13,7 +13,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect, Suspense } from 'react';
-import { signIn, getSession } from 'next-auth/react';
+import { signIn } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 
 import { mockSignIn } from '@/lib/mock/mockSignin';
@@ -149,9 +149,9 @@ export default function Home() {
               Welcome!
             </h1>
             <p className="text-lg lg:text-xl text-[#3A0000]/90 leading-relaxed mb-8">
-              Connect families, management, and carers seamlessly and manage
-              care schedules, budgets, and daily activities — all in one place
-              with clarity and confidence.
+              Connect families, management and carers seamlessly and manage care
+              schedules, budgets and daily activities — all in one place with
+              clarity and confidence.
             </p>
           </div>
         </section>

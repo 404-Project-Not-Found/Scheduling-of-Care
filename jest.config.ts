@@ -9,7 +9,8 @@ const config: JestConfigWithTsJest = {
   testPathIgnorePatterns: ['/node_modules/', '/.next/'],
   moduleNameMapper: { '^@/(.*)$': '<rootDir>/src/$1' },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
-  setupFilesAfterEnv: ['<rootDir>/tests/jest.setup.ts'],
+  setupFilesAfterEnv: ['<rootDir>/tests/set_up/db.ts'],
   testTimeout: 30000,
 };
+
 export default config;

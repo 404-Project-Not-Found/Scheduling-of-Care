@@ -660,11 +660,11 @@ function BudgetReportInner() {
     >
       {/* Main scroll area */}
       <div
-        className="flex-1 min-h-screen bg-[#FFF5EC] overflow-auto"
+        className="flex-1 h-[680px] bg-white/80 overflow-auto"
         aria-busy={loadingAny}
       >
         {/* Shared container for top bar + content */}
-        <div className="w-full max-w-8xl mx-auto px-6 md:px-12 py-6 md:py-10">
+        <div className="w-full px-6 py-5">
           {/* Top bar */}
           <div className="mb-8">
             {/* Title */}
@@ -1040,27 +1040,6 @@ function BudgetReportInner() {
                         );
                       })}
                     </tbody>
-
-                    {filtered.length > 0 && (
-                      <tfoot>
-                        <tr className="bg-black/5 font-semibold">
-                          <td className="px-4 py-4">Subtotal</td>
-                          <td className="px-4 py-4">
-                            ${totals.allocated.toLocaleString()}
-                          </td>
-                          <td className="px-4 py-4">
-                            ${totals.spent.toLocaleString()}
-                          </td>
-                          <td className="px-4 py-4">
-                            {totals.remaining < 0
-                              ? `-$${Math.abs(totals.remaining).toLocaleString()}`
-                              : `$${totals.remaining.toLocaleString()}`}
-                          </td>
-                          <td />
-                          <td />
-                        </tr>
-                      </tfoot>
-                    )}
                   </table>
                 </div>
               </div>
