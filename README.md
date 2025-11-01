@@ -85,9 +85,9 @@
 <ul>
     <li><strong>Framework</strong>: <a href="https://nextjs.org/docs">Next.Js</a></li>
     <li><strong>Frontend</strong>: <a href="https://react.dev/learn">React</a></li>
-    <li><strong>Backend</strong>: <a href="https://www.typescriptlang.org/docs/">Typescript</a>, <a href="https://www.mongodb.com/">Mongodb</a>, <a href="https://next-auth.js.org/getting-started/introduction">Auth.js(NextAuth)</a></li>
+    <li><strong>Backend</strong>: <a href="https://www.typescriptlang.org/docs/">Typescript</a>, <a href="https://www.mongodb.com/">Mongodb</a>, <a href="https://next-auth.js.org/getting-started/introduction">Auth.js(NextAuth)</a>, <a href="https://resend.com/">Resend</a></li>
     <li><strong>Testing</strong>: to be added</li>
-    <li><strong>CI</strong>:<a href="https://docs.github.com/en/actions/get-started/understand-github-actions">Github actions</a></li>
+    <li><strong>CI</strong>:<a href="https://docs.github.com/en/actions/get-started/understand-github-actions"> Github actions</a></li>
     <li><strong>Deployment</strong>: <a href="https://vercel.com/resources">Vercel</a></li>
 </ul>
 
@@ -101,8 +101,65 @@ Before running the app, ensure that you have the following:
     <li>Node.js</li>
     <li>Package manager - pnpm or npm or yarn</li>
     <li><a href="https://www.mongodb.com/cloud/atlas/register">MongoDB Atlas account</a>(or local MongoDB)</li>
-    <li><a href="https://nextjs.org/docs/app/getting-started/deploying">Vercel Account</a>(If going to deploy, no installation required locally but need to create account)</li>
+    <li><a href="https://vercel.com/signup">Vercel Account</a>(If going to deploy, no installation required locally but need to create account)</li>
+     <li><a href="https://resend.com/signup">Resend account</a>(required for testing and custom domain verification is also needed for production).</li>
 </ul>
+
+### MongoDB setup guide
+<ol>
+    <li>Create an account:
+        <ol type="a">
+            <li> Go to <a href="https://www.mongodb.com/cloud/atlas/register">MongoDB Atlas account</a>to create an account and sign up</li>
+        </ol>
+    </li>
+    <li>Create a cluster
+        <ol type="a">
+            <li> Choose the free options or if you wish to add more storage, choose the payment option</li>
+            <li> Pick the nearest region to where you are.</li>
+            <li> Create a cluster — for team projects, you can share a cluster but use separate databases for each environment or developer.</li>
+        </ol>
+    </li>
+    <li>Configure Access
+        <ol type="a">
+            <li>Add database user (username and password).</li>
+            <li> Add IP address or set to 0.0.0.0/0 (<b>Not ideal for production</b>, use only for testing).</li>
+        </ol>
+    </li>
+    <li>Get Connection String
+        <ol type="a">
+            <li> Click connect → choose driver and Node.js from dropdown → Use password and username from when you create your database.</li>
+            <li> Get the URI and place this in .env.local in your environment as the following:</li>
+            <pre><code>MONGODB_URI="mongodb+srv://<user>:<pass>@<cluster>.mongodb.net/<db>?retryWrites=true&w=majority"</code></pre>
+            <li> Add this your <code>.env.local</code> file</li>
+        </ol>
+    </li>
+    <li>Set up mongodb.ts
+        <ol type="a">
+            <li> Example setup connecting via Mongoose:</li>
+            <pre><code>
+            import mongoose from "mongoose";
+            const MONGODB_URI = process.env.MONGODB_URI as string;
+            if(!MONGODB_URI) throw new Error("Please add uri into .env.local");
+            declare global {
+                var _mongooseConnection: {isConnected?: boolean} | undefined;
+            }
+            export const connectDB = async () => {
+                if(global._mongooseConnection?.isConnected) return mongoose.connection;
+                try {
+                    await mongoose.connect(MONGODB_URI);
+                    global._mongooseConnection = {isConnected: true};
+                    console.log("MongoDB is connected via Mongoose");
+                    return mongoose.connection;
+                } catch(err) {
+                    console.error("MongoDB connection error:", err);
+                    throw err;
+                }
+            };
+            </code></pre>
+        </ol>
+    </li>
+</ol>
+
 
 ### Installation
 
