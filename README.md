@@ -26,6 +26,7 @@
             <ul>
                 <li><a href="#prerequisites">Prerequisites</a></li>
                 <li><a href="#installation">Installation</a></li>
+                <li><a href="#mongodb-setup-guide">Mongodb Setup Guide</a></li>
             </ul>
         </li>
         <li><a href="#deployment">Deployment</a></li>
@@ -105,7 +106,7 @@ Before running the app, ensure that you have the following:
      <li><a href="https://resend.com/signup">Resend account</a>(required for testing and custom domain verification is also needed for production).</li>
 </ul>
 
-### MongoDB setup guide
+### MongoDB Setup Guide
 <ol>
     <li>Create an account:
         <ol type="a">
@@ -136,61 +137,95 @@ Before running the app, ensure that you have the following:
     <li>Set up mongodb.ts
         <ol type="a">
             <li> Example setup connecting via Mongoose:</li>
-            <pre><code>
-            import mongoose from "mongoose";
-            const MONGODB_URI = process.env.MONGODB_URI as string;
-            if(!MONGODB_URI) throw new Error("Please add uri into .env.local");
-            declare global {
-                var _mongooseConnection: {isConnected?: boolean} | undefined;
-            }
-            export const connectDB = async () => {
-                if(global._mongooseConnection?.isConnected) return mongoose.connection;
-                try {
-                    await mongoose.connect(MONGODB_URI);
-                    global._mongooseConnection = {isConnected: true};
-                    console.log("MongoDB is connected via Mongoose");
-                    return mongoose.connection;
-                } catch(err) {
-                    console.error("MongoDB connection error:", err);
-                    throw err;
-                }
-            };
-            </code></pre>
+            <pre><code>import mongoose from "mongoose";
+
+const MONGODB_URI = process.env.MONGODB_URI as string;
+
+if (!MONGODB_URI) throw new Error("Please add uri into .env.local");
+
+declare global {
+  var _mongooseConnection: { isConnected?: boolean } | undefined;
+}
+
+export const connectDB = async () => {
+  if (global._mongooseConnection?.isConnected) return mongoose.connection;
+
+  try {
+    await mongoose.connect(MONGODB_URI);
+    global._mongooseConnection = { isConnected: true };
+    console.log("MongoDB is connected via Mongoose");
+    return mongoose.connection;
+  } catch (err) {
+    console.error("MongoDB connection error:", err);
+    throw err;
+  }
+};
+</code></pre>
+
         </ol>
     </li>
 </ol>
 
+### Set up NextAuth
+<ol>
+    <li>Generate a secret key, in your terminal run the following command</li>
+    <pre><code>openssl rand -base64 32</code></pre>
+    <p>it will output your <code>AUTH_SECRET</code></p>
+    <pre><code>[your_auth_secret]</code></pre>
+</ol>
+
 
 ### Installation
-
-If local development do the following:
-
 <ol>
     <li>Clone this repository</li>
     <pre><code>git clone https://github.com/404-Project-Not-Found/Schedule-of-Care-Program.git
 cd Schedule-of-Care-Program</code></pre>
     <li>Install dependencies</li>
-    <pre><code>npm install
+    <pre><code>pnpm install
+# or
+npm install
+#or
+yarn install</code></pre>
+    <li>Set up environment variables
+     <ol type="a">
+            <li> In your project root, create a <code>.env.local</code> file</li>
+            <li>Add your MongoDB URI, Auth_Secret, the local production URL, Resend API key and base URL</li>
+            <pre><code>MONGODB_URI=[your-mongodb-connection-string]
+AUTH_SECRET=[your_auth_secret]
+NEXTAUTH_URL=http://localhost:3000
+RESEND_API_KEY=[your-resend-api-key]
+NEXT_PUBLIC_APP_URI=http://localhost:3000
+            </code></pre>
+            <li>Run the development server</li>
+            <pre><code>pnpm dev
+#or
+npm run dev
+#or
+yarn dev
+            </code></pre>
+        </ol>
+    </li>
 
-    <li>Set up environment variables</li>
-    create a <code>.env.local</code> file in the root with the following as example:
-    <pre><code>MONGODB_URI="your-mongodb-connection"</code></pre>
-    <li>Run the development server</li>
-    <pre><code>npm dev
 
 </ol>
-Open <a href="http://localhost:3000">http://localhost:3000</a> on your browser to view the result
+Then open <a href="http://localhost:3000">http://localhost:3000</a> on your browser to view the app
 
 </br>
 
 ## Deployment
 
-Once deployment, do the following:
+For deployment, do the following:
 
 <ol>
     <li>Push code to GitHub</li>
     <li>Connect the repo to Vercel</li>
-    <li>Add the <code>MONGODB_URI</code> to environment variables in Vercel</li>
+    <li>Add the environment variables in Vercel under Project Settings → Environment Variables:</li>
+    <pre><code>MONGODB_URI=[your-mongodb-connection-string]
+AUTH_SECRET=[your-auth-secret>]
+NEXTAUTH_URL=[your-production-url]
+RESEND_API_KEY=[your-resend-api-key]
+NEXT_PUBLIC_APP_URI=[your-production-url]   
+    </code></pre> 
     <li>Vercel will then auto-build and deploys each push to the default branch</li>
 </ol>
 For more information, you can read the <a href="https://nextjs.org/docs/app/getting-started/deploying">Next.js Deployment Documentation</a>
@@ -199,7 +234,7 @@ For more information, you can read the <a href="https://nextjs.org/docs/app/gett
 
 ## Testing
 
-To be added
+
 
 ## Team Members
 
