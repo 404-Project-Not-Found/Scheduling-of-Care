@@ -194,8 +194,7 @@ yarn install</code></pre>
 AUTH_SECRET=[your_auth_secret]
 NEXTAUTH_URL=http://localhost:3000
 RESEND_API_KEY=[your-resend-api-key]
-NEXT_PUBLIC_APP_URI=http://localhost:3000
-            </code></pre>
+NEXT_PUBLIC_APP_URI=http://localhost:3000</code></pre>
             <li>Run the development server</li>
             <pre><code>pnpm dev
 #or
@@ -233,6 +232,26 @@ For more information, you can read the <a href="https://nextjs.org/docs/app/gett
 </br>
 
 ## Testing
+To run our unit testing, run the following:
+ <pre><code># run all test
+npm run test
+# run a specific test
+npx jest tests/models/Users.test.ts<code></pre>
+
+Test Coverage:
+<ul>
+  <li><code>/tests/models/Budget.test.ts</code></li>
+  <li><code>/tests/models/CareItem.test.ts</code></li>
+  <li><code>/tests/models/Category.test.ts</code></li>
+  <li><code>/tests/models/Client.test.ts</code></li>
+  <li><code>/tests/models/FamilyRequest.test.ts</code></li>
+  <li><code>/tests/models/Occurrence.test.ts</code></li>
+  <li><code>/tests/models/Organisation.test.ts</code></li>
+  <li><code>/tests/models/PasswordResetToken.test.ts</code></li>
+  <li><code>/tests/models/Shift.test.ts</code></li>
+  <li><code>/tests/models/Transaction.test.ts</code></li>
+  <li><code>/tests/models/User.test.ts</code></li>
+</ul>
 
 
 
@@ -254,17 +273,22 @@ For more information, you can read the <a href="https://nextjs.org/docs/app/gett
 <img style="border-radius: 50%;" src="https://avatars.githubusercontent.com/u/136954712?v=4" width="50px">
 </a>
 
+</br>
 ## License
 
 Scheduling for Care is licensed under the MIT license. See <a href="LICENSE">LICENSE</a> for details.
+</br>
 
 ## Links
 
 <ul>
-    <li><a href="">Website</a> -- TBA</li>
+    <li><a href="">Website</a></li>
     <li><a href="https://team404projectnotfound.atlassian.net/wiki/spaces/09ace67881cc434bab85e12ce5e340a7/overview">Documentation: Confluence</a> -- Requires permission to view</li>
     <li><a href="https://github.com/404-Project-Not-Found/Schedule-of-Care-Program">Source Code</a></li>
+    <li><a href="https://team404projectnotfound.atlassian.net/wiki/spaces/09ace67881cc434bab85e12ce5e340a7/pages/100106349/Handover+Documents?atlOrigin=eyJpIjoiZjAzMDBmM2EwODAwNDAyOGJlNzExMmE4Y2FiNTQ4NjMiLCJwIjoiYyJ9 ">Handover Document</a></li>
 </ul>
+
+</br>
 
 # Frontend Demo (Mock Mode)
 
