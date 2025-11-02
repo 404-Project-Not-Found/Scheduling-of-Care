@@ -29,7 +29,6 @@ describe('BudgetYear model', () => {
     expect(doc.clientId.toString()).toBe(clientId.toString());
     expect(doc.year).toBe(2025);
 
-
     expect(doc.annualAllocated).toBe(0);
     expect(doc.surplus).toBe(0);
     expect(doc.categories).toEqual([]);
@@ -114,9 +113,7 @@ describe('BudgetYear model', () => {
           categoryId,
           allocated: 100,
           spent: 0,
-          items: [
-            { careItemSlug: 'x', allocated: 10, spent: -5 },
-          ],
+          items: [{ careItemSlug: 'x', allocated: 10, spent: -5 }],
         },
       ],
       totals: { allocated: 100, spent: 0 },

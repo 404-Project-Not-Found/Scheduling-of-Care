@@ -2,7 +2,6 @@ import mongoose from 'mongoose';
 import { connect, clearDatabase, closeDatabase } from '../set_up/db';
 import { Transaction } from '@/models/Transaction';
 
-
 beforeAll(async () => {
   await connect();
   await Transaction.init();
@@ -29,7 +28,12 @@ describe('Transaction Model', () => {
       type: 'Purchase',
       madeByUserId: userId,
       lines: [
-        { categoryId, careItemSlug: 'Physio-Weekly', amount: 120, label: 'Physio (Weekly)' }
+        {
+          categoryId,
+          careItemSlug: 'Physio-Weekly',
+          amount: 120,
+          label: 'Physio (Weekly)',
+        },
       ],
       note: 'Initial purchase',
     });
@@ -55,7 +59,9 @@ describe('Transaction Model', () => {
       lines: [],
     });
 
-    await expect(invalid.validate()).rejects.toThrow(/At least one line required/);
+    await expect(invalid.validate()).rejects.toThrow(
+      /At least one line required/
+    );
   });
 
   it('fails validation if amount is negative', async () => {
@@ -86,7 +92,9 @@ describe('Transaction Model', () => {
       date: new Date('2025-10-28T00:00:00Z'),
       type: 'Purchase',
       madeByUserId: userId,
-      lines: [{ categoryId, careItemSlug: 'test-item', amount: 200, label: 'Item' }],
+      lines: [
+        { categoryId, careItemSlug: 'test-item', amount: 200, label: 'Item' },
+      ],
     });
 
     const lineId = purchase.lines[0]._id;
@@ -97,28 +105,39 @@ describe('Transaction Model', () => {
       date: new Date('2025-10-29T00:00:00Z'),
       type: 'Refund',
       madeByUserId: userId,
-      lines: [{
-        categoryId,
-        careItemSlug: 'test-item',
-        amount: 200,
-        refundOfTransId: purchase._id,
-        refundOfLineId: lineId,
-      }],
+      lines: [
+        {
+          categoryId,
+          careItemSlug: 'test-item',
+          amount: 200,
+          refundOfTransId: purchase._id,
+          refundOfLineId: lineId,
+        },
+      ],
       note: 'Full refund',
     });
 
     expect(refund.type).toBe('Refund');
-    expect(refund.lines[0].refundOfTransId?.toString()).toBe(purchase._id.toString());
+    expect(refund.lines[0].refundOfTransId?.toString()).toBe(
+      purchase._id.toString()
+    );
   });
 
   it('exposes expected indexes', async () => {
     const idx = await Transaction.collection.indexes();
-    const byClientYearDate = idx.find((i) => i.key.clientId === 1 && i.key.year === 1 && i.key.date === 1);
+    const byClientYearDate = idx.find(
+      (i) => i.key.clientId === 1 && i.key.year === 1 && i.key.date === 1
+    );
     const byCYCT = idx.find((i) => i.name === 'byClientYearCategoryType');
-    const byCYV  = idx.find((i) => i.name === 'byClientYearVoided');
+    const byCYV = idx.find((i) => i.name === 'byClientYearVoided');
 
     expect(byClientYearDate).toBeDefined();
-    expect(byCYCT?.key).toEqual({ clientId: 1, year: 1, 'lines.categoryId': 1, type: 1 });
+    expect(byCYCT?.key).toEqual({
+      clientId: 1,
+      year: 1,
+      'lines.categoryId': 1,
+      type: 1,
+    });
     //expect(byCYCT?.partialFilterExpression).toEqual({ voidedAt: { $eq: null} });
     expect(byCYV?.key).toEqual({ clientId: 1, year: 1, voidedAt: 1 });
   });
