@@ -2,7 +2,7 @@
 
 <div align="center">
     <a href="https://github.com/404-Project-Not-Found/Schedule-of-Care-Program">
-        <img src="images/logo-name.png" alt="Logo" width="3" height="125">
+        <img src="images/logo-name.png" alt="Logo" width="300" height="125">
     </a>
     <p align="left">
         <i>Scheduling of Care</i> is a tool to assist the people who care and manage the care of people with special needs (PWSN). It places responsibilities, updates and schedules into one application, making it easier to ensure care items are documented and responsive to change.
