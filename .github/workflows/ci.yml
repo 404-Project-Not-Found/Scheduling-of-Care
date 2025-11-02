@@ -17,7 +17,7 @@ on:
       - '.github/workflows/**'
 
   pull_request:
-    branches: ['*']
+    branches: [main]
     paths:
       - 'frontend/**'
       - 'backend/**'
