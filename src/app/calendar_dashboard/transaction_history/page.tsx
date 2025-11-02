@@ -315,24 +315,25 @@ function TransactionHistoryInner() {
                 />
               </div>
 
-              {role === 'carer' && (
-                <button
-                  className="px-4 py-2 rounded-md font-semibold text-[#3A0000] hover:opacity-90 transition"
-                  style={{
-                    background:
-                      'linear-gradient(90deg, #F9C9B1 0%, #FBE8D4 100%)',
-                    border: '1px solid #B47A64',
-                    boxShadow: '0 2px 6px rgba(180, 122, 100, 0.25)',
-                  }}
-                  onClick={() =>
-                    router.push(
-                      '/calendar_dashboard/budget_report/add_transaction'
-                    )
-                  }
-                >
-                  Add new transaction
-                </button>
-              )}
+              {role === 'carer' ||
+                (role === 'management' && (
+                  <button
+                    className="px-4 py-2 rounded-md font-semibold text-[#3A0000] hover:opacity-90 transition"
+                    style={{
+                      background:
+                        'linear-gradient(90deg, #F9C9B1 0%, #FBE8D4 100%)',
+                      border: '1px solid #B47A64',
+                      boxShadow: '0 2px 6px rgba(180, 122, 100, 0.25)',
+                    }}
+                    onClick={() =>
+                      router.push(
+                        '/calendar_dashboard/budget_report/add_transaction'
+                      )
+                    }
+                  >
+                    Add new transaction
+                  </button>
+                ))}
             </div>
           </div>
 

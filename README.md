@@ -2,7 +2,7 @@
 
 <div align="center">
     <a href="https://github.com/404-Project-Not-Found/Schedule-of-Care-Program">
-        <img src="images/logo-name.png" alt="Logo" width="325" height="150">
+        <img src="images/logo-name.png" alt="Logo" width="300" height="125">
     </a>
     <p align="left">
         <i>Scheduling of Care</i> is a tool to assist the people who care and manage the care of people with special needs (PWSN). It places responsibilities, updates and schedules into one application, making it easier to ensure care items are documented and responsive to change.
@@ -10,30 +10,32 @@
 </div>
 
 <!-- TABLE OF CONTENTS -->
+
 <Strong>Table of Contents</strong>
-    <ol>
-        <li>
-            <a href="#about-the-project">About the Project</a>
-            <ul>
-                <li><a href="#features">Features</a></li>
-                <li><a href="#tech-stack-and-resources">Tech Stack and Resources</a></li>
-            </ul>
-        </li>
-        <li>
-            <a href=#getting-started>Getting Started</a>
-            <ul>
-                <li><a href="#prerequisites">Prerequisites</a></li>
-                 <li><a href="#mongodb-setup-guide">Mongodb Setup Guide</a></li>
-                <li><a href="#local-development-setup">Local Development Setup</a></li>
-            </ul>
-        </li>
-        <li><a href="#deployment">Deployment</a></li>
-        <li><a href=#testing>Testing</a></li>
-        <li><a href="#team-members">Team Members</a></li>
-        <li><a href="#license">License</a></li>
-        <li><a href="#links">Links</a></li>
-        <li><a href="#frontend-demo-mock-mode">Frontend Demo (Mock Mode)</a></li>
-    </ol>
+
+<ol>
+<li>
+<a href="#about-the-project">About the Project</a>
+<ul>
+<li><a href="#features">Features</a></li>
+<li><a href="#tech-stack-and-resources">Tech Stack and Resources</a></li>
+</ul>
+</li>
+<li>
+<a href=#getting-started>Getting Started</a>
+<ul>
+<li><a href="#prerequisites">Prerequisites</a></li>
+<li><a href="#mongodb-setup-guide">Mongodb Setup Guide</a></li>
+<li><a href="#local-development-setup">Local Development Setup</a></li>
+</ul>
+</li>
+<li><a href="#deployment">Deployment</a></li>
+<li><a href=#testing>Testing</a></li>
+<li><a href="#team-members">Team Members</a></li>
+<li><a href="#license">License</a></li>
+<li><a href="#links">Links</a></li>
+<li><a href="#frontend-demo-mock-mode">Frontend Demo (Mock Mode)</a></li>
+</ol>
 
 <!-- Content -->
 
@@ -138,22 +140,23 @@ const MONGODB_URI = process.env.MONGODB_URI as string;
 if (!MONGODB_URI) throw new Error("Please add uri into .env.local");
 
 declare global {
-  var _mongooseConnection: { isConnected?: boolean } | undefined;
+var \_mongooseConnection: { isConnected?: boolean } | undefined;
 }
 
 export const connectDB = async () => {
-  if (global._mongooseConnection?.isConnected) return mongoose.connection;
+if (global.\_mongooseConnection?.isConnected) return mongoose.connection;
 
-  try {
-    await mongoose.connect(MONGODB_URI);
-    global._mongooseConnection = { isConnected: true };
-    console.log("MongoDB is connected via Mongoose");
-    return mongoose.connection;
-  } catch (err) {
-    console.error("MongoDB connection error:", err);
-    throw err;
-  }
+try {
+await mongoose.connect(MONGODB_URI);
+global.\_mongooseConnection = { isConnected: true };
+console.log("MongoDB is connected via Mongoose");
+return mongoose.connection;
+} catch (err) {
+console.error("MongoDB connection error:", err);
+throw err;
+}
 };</code></pre>
+
 </ol>
 
 <h3>Set up NextAuth</h3>
@@ -163,7 +166,6 @@ export const connectDB = async () => {
     <p>it will output your <code>AUTH_SECRET</code>:</p>
     <pre><code>[your_auth_secret]</code></pre>
 </ol>
-
 
 <h3 id="local-development-setup">Local Development Setup</h3>
 <ol>
@@ -185,7 +187,6 @@ NEXT_PUBLIC_APP_URI=http://localhost:3000</code></pre>
             <pre><code>npm run dev</code></pre>
         </ol>
     </li>
-
 
 </ol>
 Then open <a href="http://localhost:3000">http://localhost:3000</a> on your browser to view the app

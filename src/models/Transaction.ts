@@ -4,7 +4,15 @@
  * Date Created: 02/10/2025
  */
 
-import { Schema, model, models, Types, Document, Model, HydratedDocument} from 'mongoose';
+import {
+  Schema,
+  model,
+  models,
+  Types,
+  Document,
+  Model,
+  HydratedDocument,
+} from 'mongoose';
 
 type TrKind = 'Purchase' | 'Refund';
 
@@ -29,7 +37,7 @@ export interface TransactionDoc extends Document {
   note?: string;
   voidedAt?: Date;
   createdAt: Date;
-  updatedAt:Date;
+  updatedAt: Date;
 }
 
 const TransactionLineSchema = new Schema(
@@ -86,14 +94,16 @@ TransactionSchema.index({ clientId: 1, year: 1, date: 1 });
 
 TransactionSchema.index(
   { clientId: 1, year: 1, 'lines.categoryId': 1, type: 1 },
-  { name: 'byClientYearCategoryType', partialFilterExpression: { voidedAt: null } }
+  {
+    name: 'byClientYearCategoryType',
+    partialFilterExpression: { voidedAt: null },
+  }
 );
 
 TransactionSchema.index(
   { clientId: 1, year: 1, voidedAt: 1 },
   { name: 'byClientYearVoided' }
 );
-
 
 type TxDoc = HydratedDocument<TransactionDoc>;
 

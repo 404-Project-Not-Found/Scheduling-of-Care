@@ -87,7 +87,7 @@ async function fetchCarersForClient(
   }>;
   // only carers, return id+name to match CarerLite
   return data
-    .filter((u) => u.role === 'carer')
+    .filter((u) => u.role === 'carer' || u.role === 'management')
     .map((u) => ({ id: u._id, name: u.fullName }));
 }
 
@@ -645,7 +645,7 @@ function AddTransactionInner() {
                   className="text-2xl font-extrabold"
                   style={{ color: colors.label }}
                 >
-                  Made By (Carer / User)
+                  Made By (Carer / Management)
                 </label>
                 {carers.length > 0 ? (
                   <select

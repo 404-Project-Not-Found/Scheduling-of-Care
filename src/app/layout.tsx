@@ -6,6 +6,7 @@ import { TransactionProvider } from '@/context/TransactionContext';
 import { ActiveClientProvider } from '@/context/ActiveClientContext';
 import { HelpProvider } from '@/components/help/HelpPanel';
 import HelpButton from '@/components/help/HelpButton';
+import PrintFloatingButton from '@/components/print/button';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -37,10 +38,11 @@ export default function RootLayout({
           <TransactionProvider>
             <ActiveClientProvider>
               {children}
+
               <Suspense fallback={null}>
-                {/* Show one global floating Help button on every page */}
                 <HelpButton />
               </Suspense>
+              <PrintFloatingButton />
             </ActiveClientProvider>
           </TransactionProvider>
         </HelpProvider>

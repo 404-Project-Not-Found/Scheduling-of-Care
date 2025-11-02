@@ -1,4 +1,3 @@
-
 import mongoose from 'mongoose';
 import { connect, clearDatabase, closeDatabase } from '../set_up/db';
 import CareItem from '@/models/CareItem';

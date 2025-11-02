@@ -358,13 +358,13 @@ export default function StaffSchedulePage() {
                   </button>
                 </>
               )}
-              <button
+              {/* <button
                 onClick={() => typeof window !== 'undefined' && window.print()}
                 className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white hover:bg-white transition border border-[#3A0000]/20 text-[#3A0000] font-semibold text-base shadow-sm"
               >
                 <Printer size={18} />
                 Print
-              </button>
+              </button> */}
             </div>
           </div>
         </div>

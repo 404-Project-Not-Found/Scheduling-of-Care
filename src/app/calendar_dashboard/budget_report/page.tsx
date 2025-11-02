@@ -347,7 +347,7 @@ function BudgetReportInner() {
 
     return () => {
       cancelled = true;
-      abort.abort();
+      //abort.abort();
     };
   }, [activeClientId, year]);
 

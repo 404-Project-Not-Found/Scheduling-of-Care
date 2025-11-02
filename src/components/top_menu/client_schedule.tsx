@@ -688,7 +688,7 @@ export default function DashboardChrome({
           </div>
 
           {/* Right: Print button (management on client-schedule) */}
-          <div className="relative z-10 justify-self-end">
+          {/* <div className="relative z-10 justify-self-end">
             {page === 'client-schedule' && (
               <button
                 onClick={handlePrint}
@@ -699,7 +699,7 @@ export default function DashboardChrome({
                 Print
               </button>
             )}
-          </div>
+          </div> */}
         </div>
       )}
 

@@ -18,7 +18,9 @@ afterAll(async () => {
 describe('Occurrence Model', () => {
   it('fails validation when required fields are missing', async () => {
     const invalid = new Occurrence({});
-    await expect(invalid.validate()).rejects.toThrow(mongoose.Error.ValidationError);
+    await expect(invalid.validate()).rejects.toThrow(
+      mongoose.Error.ValidationError
+    );
   });
 
   it('creates an occurrence successfully with defaults and normalization', async () => {
@@ -27,7 +29,7 @@ describe('Occurrence Model', () => {
       careItemSlug: 'Physio-Weekly',
       clientId,
       date: new Date('2025-10-30T00:00:00Z'),
-      dateKey: '2025-10-30'
+      dateKey: '2025-10-30',
     });
 
     expect(occ._id).toBeDefined();
@@ -48,9 +50,11 @@ describe('Occurrence Model', () => {
       date: new Date(),
       dateKey: '2025-10-31',
       status: 'Unknown',
-    } as any);
+    } as unknown);
 
-    await expect(invalid.validate()).rejects.toThrow(mongoose.Error.ValidationError);
+    await expect(invalid.validate()).rejects.toThrow(
+      mongoose.Error.ValidationError
+    );
   });
 
   it('enforces unique (clientId, careItemSlug, dateKey)', async () => {
@@ -76,8 +80,11 @@ describe('Occurrence Model', () => {
   it('exposes supporting index byClient_date_range_slug', async () => {
     const idx = await Occurrence.collection.indexes();
     const hit = idx.find(
-      (i) => i.name === 'byClient_date_range_slug' &&
-             i.key.clientId === 1 && i.key.date === 1 && i.key.careItemSlug === 1
+      (i) =>
+        i.name === 'byClient_date_range_slug' &&
+        i.key.clientId === 1 &&
+        i.key.date === 1 &&
+        i.key.careItemSlug === 1
     );
     expect(hit).toBeDefined();
   });

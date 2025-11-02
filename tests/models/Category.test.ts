@@ -18,7 +18,9 @@ afterAll(async () => {
 describe('Category Model', () => {
   it('fails validation when required fields are missing', async () => {
     const invalid = new Category({});
-    await expect(invalid.validate()).rejects.toThrow(mongoose.Error.ValidationError);
+    await expect(invalid.validate()).rejects.toThrow(
+      mongoose.Error.ValidationError
+    );
   });
 
   it('creates a category successfully with valid data', async () => {
@@ -58,7 +60,11 @@ describe('Category Model', () => {
     ).rejects.toThrow();
 
     const otherClient = new mongoose.Types.ObjectId();
-    const ok = await Category.create({ name: 'Therapy-x', slug: 'therapy', clientId: otherClient });
+    const ok = await Category.create({
+      name: 'Therapy-x',
+      slug: 'therapy',
+      clientId: otherClient,
+    });
     expect(ok._id).toBeDefined();
   });
 
